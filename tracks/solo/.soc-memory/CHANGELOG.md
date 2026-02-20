@@ -1,0 +1,1 @@
+# Solo Trip Track — Changelog

@@ -1,0 +1,1112 @@
++-----------------------------------------------------------------------+
+| **Overplanned**                                                       |
+|                                                                       |
+| *Infrastructure, Data & Cost Strategy --- Full Reference*             |
++-----------------------------------------------------------------------+
+
+This document covers the complete infrastructure and data strategy for
+Overplanned: image sourcing and quality control, caching architecture,
+persistent data memoization, cost model across all tiers, city seeding
+strategy, international platform adapters, and the on-demand backfill
+pipeline. Written February 2026.
+
+  -------- ------------------------------------------------------------------
+  **01**   **Image Sourcing & Quality Control**
+
+  -------- ------------------------------------------------------------------
+
+Images are attached to ActivityNode records at ingestion time, validated
+once, stored permanently in GCS, and served via CDN. No image is fetched
+at query time. No LLM is called to find images.
+
+**Core Principle**
+
+Images are a property of the node --- resolved once at ingest, stored in
+GCS, served forever from CDN. Itinerary renders, explore feeds, and
+swipe decks are all just reading image_url off the record.
+
+**Source Waterfall**
+
+  ---------- ---------------------- ------------- -------------------------------------------
+  **Tier**   **Source**             **Quality**   **Notes**
+
+  1          Google Places ---      High          Venue controls what\'s shown. Rarely bad.
+             owner-uploaded photos                
+
+  1          Wikimedia Commons      High          CC-licensed, editorial quality. Landmarks
+                                                  only.
+
+  2          Curated community      Good          Editorial standards exist. \~85% pass rate.
+             (Atlas Obscura, Eater,               
+             Time Out)                            
+
+  3          Google Places ---      Variable      Volume source but noisy. \~60% pass rate.
+             user-submitted photos                
+
+  3          Reddit / community     Variable      Keep image attachments from scraped posts.
+             scrapes                              
+
+  4          Unsplash category      Clean but     source.unsplash.com/featured/?{category}.
+             fallback               generic       No key needed.
+  ---------- ---------------------- ------------- -------------------------------------------
+
+**Validation Pipeline --- Run Once at Ingest**
+
+Every image passes this pipeline before reaching GCS. Nothing skips it.
+
+  -----------------------------------------------------------------------
+  Step 1: Safe Search (Cloud Vision API)
+
+  → Reject anything LIKELY+ on: adult, violence, medical, racy
+
+  → Cost: \$1.50/1,000 images --- one-time per node
+
+  Step 2: Resolution + aspect ratio gate
+
+  → Hard reject: \< 800px short side
+
+  → Hard reject: aspect ratio outside 3:4 to 16:9
+
+  → Free --- pure pixel check
+
+  Step 3: Label relevance (Cloud Vision)
+
+  → If node is food/ramen and Vision returns zero food labels → reject
+
+  → Loose gate --- sanity check only
+
+  Step 4: Perceptual hash (pHash)
+
+  → Detect near-duplicates across nodes in same city
+
+  → Flag, don\'t auto-reject
+
+  Step 5: Human review queue (Tier 3 sources only)
+
+  → Tier 1/2 auto-approved
+
+  → Tier 3 = review_pending until city goes live
+
+  → Fast sweep before each city launch --- \~30 sec/image
+  -----------------------------------------------------------------------
+
+**ActivityNode Image Schema**
+
+  -----------------------------------------------------------------------
+  class ActivityNodeImage:
+
+  url: str \# GCS CDN URL --- always populated
+
+  source: str \# \'google_places_owner\' \| \'wikimedia\' \| \'unsplash\'
+  \| \...
+
+  source_tier: int \# 1--4
+
+  safe_search_passed: bool
+
+  quality_score: float \# 0--1 composite
+
+  review_status: str \# \'auto_approved\' \| \'review_pending\' \|
+  \'approved\' \| \'rejected\'
+
+  fetched_at: str
+
+  phash: str \# duplicate detection
+  -----------------------------------------------------------------------
+
+**Refresh Logic**
+
+Refresh is triggered by signal, not a fixed timer. Sudden spike in
+\'closed\' feedback, major new Reddit discussion about a venue, or
+quality score drop triggers a re-fetch. Otherwise: restaurants every 3
+months, landmarks every 12 months, nightlife every 2 months.
+
+**Client Fallback Hierarchy**
+
+If an image URL is missing or returns 404, the client falls through: (1)
+category-level hero image, (2) city-level hero image, (3) terracotta
+gradient placeholder from the design system. Never a broken image state.
+No network call needed for fallback.
+
+**Storage Math**
+
+50,000 ActivityNode records × 80KB avg = \~4GB in GCS = \~\$0.08/month.
+Negligible. CDN egress is the only variable cost.
+
++---+---------------------------------------------------------------------+
+|   | **Watch Item**                                                      |
+|   |                                                                     |
+|   | At 50K nodes: one-time Cloud Vision validation = \~\$75. This is    |
+|   | your only real image cost. After that, storage and serving are      |
+|   | effectively free at MVP scale.                                      |
++---+---------------------------------------------------------------------+
+
+  -------- ------------------------------------------------------------------
+  **02**   **Caching Architecture**
+
+  -------- ------------------------------------------------------------------
+
+The further upstream you cache, the more you save. A cached LLM
+narrative = zero tokens. A cached ranking = zero ML inference. A cached
+candidate set = zero vector search. Stack all layers.
+
+**The Six Cache Layers**
+
+**Layer 1 --- LLM Narrative Cache (Highest Value)**
+
+Narratives are cached per (activity_id, persona_archetype, day_part) ---
+NOT per user. After \~50 users visit a city, nearly every slot is
+cache-served. LLM cost for popular cities approaches zero.
+
+  -----------------------------------------------------------------------
+  def narrative_cache_key(activity_id, persona_archetype, day_part):
+
+  \# persona_archetype: \'city_boy\' \| \'slow_traveler\' \|
+  \'food_obsessed\' etc
+
+  \# day_part: morning \| afternoon \| evening
+
+  return f\'narrative:{activity_id}:{persona_archetype}:{day_part}\'
+
+  \# TTL: 30 days
+
+  \# Store: Redis
+
+  \# Size: \~600 chars per entry
+
+  \# Invalidate: only if ActivityNode data changes substantially
+  -----------------------------------------------------------------------
+
+**Layer 2 --- Ranking Cache**
+
+Keyed on (persona_archetype, sorted_candidate_ids, city, day_part,
+trip_day_capped_at_5). Proactively warm on trip creation --- pre-compute
+top 3 archetypes × 3 day parts × 5 days = 45 calls async. User opens
+itinerary and it\'s instant.
+
+  -----------------------------------------------------------------------
+  \# TTL: 6h for LLM rankings, 24h for ML model rankings
+
+  \# Invalidate: when ActivityNode closes or quality score drops
+  significantly
+
+  \# Cache hit rate at MVP (500 MAU): \~35--45%
+
+  \# Cost impact: \$2.40/mo → \$1.56/mo at 500 MAU
+  -----------------------------------------------------------------------
+
+**Layer 3 --- Candidate Retrieval Cache (Vector Search)**
+
+Candidate sets for a given city + persona + filters barely change hour
+to hour. Sit this in Redis in front of Qdrant queries.
+
+  ---------------------------------------------------------------------------------------
+  def candidate_cache_key(city, persona_archetype, context_filters):
+
+  return
+  f\'candidates:{city}:{persona_archetype}:{hash(frozenset(context_filters.items()))}\'
+
+  \# TTL: 1 hour
+
+  \# New ActivityNodes don\'t get added minute-to-minute --- this is safe
+  ---------------------------------------------------------------------------------------
+
+**Layer 4 --- Full Itinerary Skeleton Cache**
+
+For popular (city, persona_archetype, trip_duration, group_type)
+combinations, cache the entire generated itinerary skeleton. Store in
+GCS as JSON blobs --- too large for Redis. Cold read from GCS is still
+under 200ms.
+
+  -----------------------------------------------------------------------
+  \# TTL: 6 hours
+
+  \# Size: \~50KB per itinerary
+
+  \# Store: GCS JSON blobs (not Redis --- too large)
+
+  \# On read: pull skeleton, then lightweight personalization pass
+
+  \# → swap visited/dismissed activities
+
+  \# → apply dietary filters
+
+  \# → adjust timing
+  -----------------------------------------------------------------------
+
+**Layer 5 --- Explore / For You Feed Cache**
+
+Cache the ordered list of activity IDs per (city, persona_archetype,
+feed_type). IDs only --- cards assembled on read from ActivityNode
+store. Nightly pre-warm at 2am UTC so morning feed is always cache-hot.
+
+  -----------------------------------------------------------------------
+  \# TTL: 2h for \'for_you\', 30min for \'trending\'
+
+  \# Nightly pre-warm: regenerate all popular (city × archetype ×
+  feed_type) combos
+  -----------------------------------------------------------------------
+
+**Layer 6 --- Persona Score Cache**
+
+  -----------------------------------------------------------------------
+  \# TTL: 24 hours
+
+  \# Explicit invalidate: when behavioral signal pipeline detects
+
+  \# persona shift \> 0.15 on any dimension
+
+  \# Read on: every recommendation request
+  -----------------------------------------------------------------------
+
+**Cache Storage Reference**
+
+  ------------------ ------------- ------------- -------------------------
+  **Layer**          **Store**     **TTL**       **Approx Size**
+
+  Narratives         Redis         30 days       \~600 chars each
+
+  Rankings           Redis         6--24h        \~200 bytes (ID list)
+
+  Candidate sets     Redis         1h            \~2KB (ID list)
+
+  Itinerary          GCS JSON      6h            \~50KB
+  skeletons                                      
+
+  Explore feeds      Redis         30min--2h     \~500 bytes (ID list)
+
+  User persona       Redis         24h           \~300 bytes
+  ------------------ ------------- ------------- -------------------------
+
+**Invalidation Triggers**
+
+Event-driven invalidation via behavioral signal pipeline. Maintain
+inverted index in Redis: activity_to_caches:{activity_id} → set of cache
+keys. Trigger events:
+
+  -----------------------------------------------------------------------
+  ActivityNode closes / quality drops → invalidate rankings + feeds
+  containing that ID
+
+  User completes trip → invalidate persona cache, personalized feeds
+
+  User dismisses category → invalidate feed cache for that city
+
+  New ActivityNodes added to city → invalidate city candidate cache +
+  explore feeds
+  -----------------------------------------------------------------------
+
+  -------- ------------------------------------------------------------------
+  **03**   **Persistent DB Memoization**
+
+  -------- ------------------------------------------------------------------
+
+Distinct from caching: Redis has TTLs and evicts. The DB layer is
+permanent --- write once on first compute, read forever until explicit
+invalidation. You pay for compute once and amortize it across every
+future request.
+
+**What Gets Stored Permanently**
+
+**Google Places API Responses**
+
+  -----------------------------------------------------------------------
+  CREATE TABLE places_api_cache (
+
+  place_id VARCHAR(100) PRIMARY KEY,
+
+  raw_response JSONB NOT NULL,
+
+  name, address, lat, lng, rating, review_count,
+
+  price_level, hours, phone, website,
+
+  photo_references JSONB,
+
+  fetched_at TIMESTAMPTZ NOT NULL,
+
+  refresh_due_at TIMESTAMPTZ NOT NULL
+
+  );
+
+  \-- Refresh triggers (not time-based blindly):
+
+  \-- Restaurants: 3 months
+
+  \-- Landmarks: 12 months
+
+  \-- Nightlife: 2 months
+
+  \-- Behavioral signal spike (sudden \'closed\' feedback) → immediate
+  -----------------------------------------------------------------------
+
+**Vibe Tag Extraction Output**
+
+Store LLM extraction results keyed on content hash. Same Reddit post
+scraped again = free. Also preserves raw input text for retraining on
+new model versions.
+
+  -----------------------------------------------------------------------
+  CREATE TABLE vibe_extraction_cache (
+
+  content_hash VARCHAR(64) PRIMARY KEY, \-- SHA256 of input
+
+  source_url TEXT,
+
+  source_platform VARCHAR(50),
+
+  input_text TEXT NOT NULL, \-- kept for retraining
+
+  extracted_tags JSONB NOT NULL,
+
+  model_used VARCHAR(50),
+
+  model_version VARCHAR(20),
+
+  extracted_at TIMESTAMPTZ NOT NULL
+
+  );
+  -----------------------------------------------------------------------
+
+**ActivityNode Vibe Embeddings**
+
+  -----------------------------------------------------------------------
+  ALTER TABLE activity_nodes ADD COLUMN vibe_embedding VECTOR(64);
+
+  ALTER TABLE activity_nodes ADD COLUMN embedding_model_version
+  VARCHAR(20);
+
+  ALTER TABLE activity_nodes ADD COLUMN embedding_computed_at
+  TIMESTAMPTZ;
+
+  \-- Qdrant stores vectors for search
+
+  \-- Postgres stores them authoritatively
+
+  \-- Qdrant rebuilt from Postgres on schema changes
+  -----------------------------------------------------------------------
+
+**Source Authority Scores**
+
+  -----------------------------------------------------------------------
+  CREATE TABLE source_authority_scores (
+
+  activity_id UUID REFERENCES activity_nodes(id),
+
+  tourist_score REAL NOT NULL,
+
+  local_score REAL NOT NULL,
+
+  divergence_score REAL NOT NULL, \-- abs diff = \'overrated\' signal
+
+  local_review_count INT,
+
+  tourist_review_count INT,
+
+  source_breakdown JSONB,
+
+  computed_at TIMESTAMPTZ NOT NULL,
+
+  signal_window_days INT DEFAULT 90,
+
+  PRIMARY KEY (activity_id)
+
+  );
+
+  \-- Recompute: when new scrape batch arrives for venue, or rolling
+  30-day
+  -----------------------------------------------------------------------
+
+**Persona Snapshots**
+
+  -----------------------------------------------------------------------
+  CREATE TABLE persona_snapshots (
+
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  user_id UUID REFERENCES users(id),
+
+  persona_archetype VARCHAR(50),
+
+  dimension_scores JSONB,
+
+  model_version VARCHAR(20),
+
+  signal_count INT,
+
+  computed_at TIMESTAMPTZ NOT NULL,
+
+  is_current BOOLEAN DEFAULT true
+
+  );
+
+  CREATE INDEX idx_persona_current ON persona_snapshots(user_id) WHERE
+  is_current = true;
+
+  \-- History retained for debugging (\'why did recommendations
+  change?\')
+
+  \-- and model evaluation
+  -----------------------------------------------------------------------
+
+**Group Affinity Matrix**
+
+  -----------------------------------------------------------------------
+  CREATE TABLE group_affinity_cache (
+
+  group_id UUID REFERENCES trip_groups(id),
+
+  affinity_matrix JSONB NOT NULL,
+
+  compromise_profile JSONB NOT NULL,
+
+  computed_at TIMESTAMPTZ NOT NULL,
+
+  member_snapshot JSONB NOT NULL, \-- member IDs at compute time
+
+  PRIMARY KEY (group_id)
+
+  );
+
+  \-- Invalidate: member joins/leaves, or any member\'s persona snapshot
+  changes
+  -----------------------------------------------------------------------
+
+**What NOT to Store Permanently**
+
+Ranked itinerary outputs per individual user --- too personalized, too
+much complexity. Cache in Redis for the session, let expire, recompute
+cheaply from stored components. Raw scraped HTML/JSON --- keep
+extraction output, discard source after 30 days. LLM ranking outputs per
+individual user --- reconstruct from stored components instead.
+
+**The Three-Tier Mental Model**
+
+  ----------- --------------------------- ----------- -----------------------
+  **Tier**    **What**                    **Where**   **Why**
+
+  Permanent   Places API responses, LLM   Postgres    Expensive to produce,
+              extraction outputs,                     stable over time
+              computed scores, persona                
+              snapshots, group affinity               
+
+  TTL Cache   Rankings, narratives,       Redis       Derived from permanent
+              feeds, candidate sets,                  store, reconstructable
+              current persona                         if evicted
+
+  On-demand   Individual itinerary        None ---    Fast because it reads
+              assembly, real-time slot    compute     from layers above
+              adjustments, mid-trip       live        
+              pivots                                  
+  ----------- --------------------------- ----------- -----------------------
+
+  -------- ------------------------------------------------------------------
+  **04**   **Full Stack Cost Model**
+
+  -------- ------------------------------------------------------------------
+
++-----------------------+-----------------------+-----------------------+
+| **\~\$230**           | **\~\$65/mo**         | **\~\$109/mo**        |
+|                       |                       |                       |
+| **One-Time Setup**    | **Beta / 30 Users**   | **MVP / 500 MAU**     |
+|                       |                       |                       |
+| *11 cities, pay once* | *All infra live*      | *LLM still cheap*     |
++-----------------------+-----------------------+-----------------------+
+
+**One-Time Pre-Launch**
+
+  --------------------------- --------------------------- ----------------
+  **Item**                    **Detail**                  **Cost**
+
+  LLM batch extraction --- US 60K posts, Haiku batch API  \$24
+  6 cities                    (50% discount)              
+
+  LLM batch extraction ---    50K posts, Haiku batch API  \$20
+  International 5 cities                                  
+
+  Blog RSS feeds --- all 11   15K articles                \$7
+  cities                                                  
+
+  Cloud Vision --- US nodes   Safe search + quality       \$27
+  (\~18K)                     validation                  
+
+  Cloud Vision ---            Safe search + quality       \$19
+  International nodes         validation                  
+  (\~12.5K)                                               
+
+  Misc setup / tooling        GCS bucket, CDN config,     \~\$133
+                              Qdrant init                 
+
+  **TOTAL ONE-TIME**                                      **\~\$230**
+  --------------------------- --------------------------- ----------------
+
+**Monthly --- 30-User Beta**
+
+  --------------------------- --------------------------- -------------------
+  **Service**                 **Spec**                    **Monthly**
+
+  Cloud Run --- API server    Min 1 instance, 512MB       \$8
+
+  Cloud Run --- background    Scale to zero               \$3
+  workers                                                 
+
+  Cloud SQL --- Postgres      db-f1-micro, 10GB           \$10
+
+  Redis --- Memorystore       1GB basic                   \$15
+
+  Qdrant --- vector search    Self-hosted on Cloud Run    \$2
+
+  LLM ranking                 \~90 trips, 40% cache hit,  \$0.09
+                              Haiku                       
+
+  LLM narratives              Heavily cached by persona   \$0.20
+                              archetype                   
+
+  LLM scrape refresh          \~5K new posts/mo, batch    \$4
+
+  Cloud Vision --- new nodes  \~200/mo                    \$0.30
+  only                                                    
+
+  GCS + CDN egress            \~5GB at 30 users           \$0.56
+
+  Google Places API           Within free tier            \$0
+
+  **TOTAL --- BETA / 30                                   **\~\$44--65/mo**
+  USERS**                                                 
+  --------------------------- --------------------------- -------------------
+
+*LLM costs at beta = \~7% of total bill. Redis + Postgres + Cloud Run =
+\~85%. Infrastructure is always the dominant cost, not AI.*
+
+**Monthly --- 500 MAU (MVP)**
+
+  --------------------------- --------------------------- --------------------
+  **Service**                 **Spec**                    **Monthly**
+
+  Cloud Run --- API + workers 2 instances baseline,       \$28
+                              autoscale                   
+
+  Cloud SQL --- Postgres      db-g1-small + PgBouncer     \$25
+
+  Redis --- Memorystore       1GB standard (HA)           \$30
+
+  Qdrant                      Self-hosted, more memory    \$8
+
+  LLM ranking                 1,500 trips, 40% cache,     \$1.56
+                              Haiku                       
+
+  LLM narratives              Popular cities near \$0     \$2
+
+  LLM scrape refresh          \~15K posts/mo, batch       \$6
+
+  Cloud Vision --- new nodes  \~500/mo                    \$0.75
+
+  GCS + CDN egress            \~25GB                      \$2.50
+
+  Google Places API           Approaching free tier       \$0--10
+                              ceiling                     
+
+  **TOTAL --- MVP / 500 MAU**                             **\~\$90--115/mo**
+  --------------------------- --------------------------- --------------------
+
+**Growth Trajectory**
+
+  ------------------ ------------- ------------------ --------------------
+  **Phase**          **MAU**       **Monthly Cost**   **Driver**
+
+  Beta               30            \~\$44--65         Fixed infra
+                                                      regardless of users
+
+  MVP                500           \~\$90--115        Redis HA + Places
+                                                      API watch
+
+  Early Growth       2K            \~\$230--280       Postgres upgrade, ML
+                                                      serving begins
+
+  Scale              5K            \~\$350--450       LightGCN serving,
+                                                      LLM = narrative only
+  ------------------ ------------- ------------------ --------------------
+
+**Watch Items**
+
++---+---------------------------------------------------------------------+
+|   | **Google Places API --- Primary Risk**                              |
+|   |                                                                     |
+|   | Free tier = 28,500 map loads/month but Places Details has a         |
+|   | separate quota. At 500 MAU with naive refresh logic you can exceed  |
+|   | it. Always check DB cache first before any Places call. Naive =     |
+|   | \$20--50/mo unexpected overage.                                     |
++---+---------------------------------------------------------------------+
+
++---+---------------------------------------------------------------------+
+|   | **Cloud SQL --- Non-Linear Scaling**                                |
+|   |                                                                     |
+|   | db-f1-micro → db-g1-small is a 2.5x jump (\$10 → \$25). db-g1-small |
+|   | → db-n1-standard-1 is another 2x (\$50). Use PgBouncer as           |
+|   | connection pooler in front of Postgres --- buys 3--4 months before  |
+|   | each upgrade and costs nothing.                                     |
++---+---------------------------------------------------------------------+
+
++---+---------------------------------------------------------------------+
+|   | **LLM --- Not Your Problem**                                        |
+|   |                                                                     |
+|   | Sub-\$10/mo through 500 MAU with caching. Popular cities trend      |
+|   | toward \$0 after 6 weeks (narratives cached per archetype). Never a |
+|   | scaling concern until 5K+ MAU where it\'s still under \$25/mo.      |
++---+---------------------------------------------------------------------+
+
+  -------- ------------------------------------------------------------------
+  **05**   **City Coverage & Seeding Strategy**
+
+  -------- ------------------------------------------------------------------
+
+Don\'t pre-seed every city. Let user demand tell you which cities
+matter. Pre-seed only the cities you\'re confident will drive early
+traffic. Everything else is covered by on-demand fallback --- at
+near-zero cost.
+
+**Three-Tier City Model**
+
+  ------------ --------------------------- --------------- -----------------
+  **Tier**     **What it is**              **Coverage**    **Cost**
+
+  Tier 1 ---   Full LLM extraction, vibe   Your 11 launch  \$6--13 per city
+  Pre-seeded   embeddings, local/tourist   cities          one-time
+               divergence, persona scoring                 
+
+  Tier 2 ---   Live Places API +           Any city a user \~\$0.02 per city
+  On-demand    deterministic scoring +     requests        (API calls)
+               rule-based vibe tags.                       
+               Stored on first request.                    
+
+  Tier 3 ---   Pure Places fallback,       Rural areas,    \~\$0.01 per city
+  True unknown minimal scoring, fewer      tiny towns      
+               candidates                                  
+  ------------ --------------------------- --------------- -----------------
+
+**On-Demand Scoring --- No ML, No LLM**
+
+When a user requests an unseeded city, deterministic scoring from Places
+API fields gives a usable result instantly.
+
+  -----------------------------------------------------------------------
+  def score_from_places(place: dict, user_persona: dict) -\> float:
+
+  \# Rating × review count confidence
+
+  review_confidence = min(place\[\'user_ratings_total\'\] / 500, 1.0)
+
+  quality = place\[\'rating\'\] / 5.0 \* review_confidence
+
+  \# Price level alignment to persona budget
+
+  price_match = 1.0 - abs((place.get(\'price_level\', 2)
+
+  \- persona_budget_level(user_persona)) / 4)
+
+  \# Open right now bonus
+
+  open_now = 1.1 if place.get(\'opening_hours\', {}).get(\'open_now\')
+  else 0.85
+
+  \# Category match
+
+  category_match = category_overlap(place\[\'types\'\],
+
+  user_persona\[\'preferred_categories\'\])
+
+  return (quality \* 0.40 + price_match \* 0.25 + category_match \* 0.25)
+  \* open_now
+  -----------------------------------------------------------------------
+
+**Tier Routing Logic**
+
+  -----------------------------------------------------------------------
+  def get_activity_candidates(city: str, user_persona: dict) -\> list:
+
+  node_count = db.count_activity_nodes(city=city)
+
+  if node_count \>= 200:
+
+  return vector_search_candidates(city, user_persona) \# Tier 1
+
+  elif node_count \>= 50:
+
+  db_results = vector_search_candidates(city, user_persona)
+
+  places_results = live_places_fetch(city, user_persona, limit=20)
+
+  return merge_and_deduplicate(db_results, places_results) \# Hybrid
+
+  else:
+
+  return live_places_fetch_and_score(city, user_persona, limit=30) \#
+  Tier 2/3
+
+  \# Every live Places call stores results to DB.
+
+  \# Second user to visit an unseeded city gets 80% of Tier 1 experience.
+
+  \# Corpus builds itself from real user demand.
+  -----------------------------------------------------------------------
+
+**Google Maps / Places as a Source**
+
+Yes --- and especially strong for US food. Google Reviews are deep,
+recent, and signal-rich for US domestic markets. Places Details returns
+up to 5 \'most relevant\' reviews per venue --- run these through vibe
+extraction exactly like Reddit posts.
+
+Important caveat: Google Reviews cannot separate local vs. tourist
+reviewers. You can\'t compute divergence from Google alone. That\'s why
+Tabelog and Naver are valuable --- their user bases are structurally
+local. For US cities without a Tabelog equivalent, Google Reviews is
+your best available proxy and that\'s acceptable.
+
+  -------- ------------------------------------------------------------------
+  **06**   **International Platform Adapters**
+
+  -------- ------------------------------------------------------------------
+
+Every major market has a structured review platform with numerical
+signals (rating, review count, price tier, category). That\'s all you
+need for deterministic scoring. No LLM required at this layer.
+
+**Platform Map by Region**
+
+  ------------ ------------------ ------------------------- ------------------
+  **Market**   **Primary          **Key Signals**           **Complexity**
+               Platform**                                   
+
+  Japan        Tabelog            Score (1--5, harsh        High --- auth
+                                  scale), review count,     sessions, JP
+                                  price tier (¥--¥¥¥¥),     encoding
+                                  category                  
+
+  Korea        Naver Place +      Visitor count             Medium --- web
+               Kakao Map          (behavioral!), blog post  scrape
+                                  count, rating, category   
+                                  tags                      
+
+  China        Dianping (Meituan) Taste tags                High ---
+                                  (pre-structured vibe      rate-limited,
+                                  vocab), rating, visit     session required
+                                  count                     
+
+  Vietnam      Foody.vn + Google  Vietnamese cuisine tags,  Medium
+                                  rating. Google strong     
+                                  here too.                 
+
+  UK / Europe  Google +           TripAdvisor rank vs       Low
+               TripAdvisor        Google rank = tourist     
+               divergence         inflation signal          
+  ------------ ------------------ ------------------------- ------------------
+
+**Tabelog Scoring --- Scale Normalization**
+
+  -----------------------------------------------------------------------
+  def score_from_tabelog(venue: dict, user_persona: dict) -\> float:
+
+  \# Tabelog 3.5 ≈ Google 4.3 --- the scale is harsh by design
+
+  \# Normalize: 3.0--5.0 range → 0--1
+
+  normalized_rating = (venue\[\'tabelog_score\'\] - 3.0) / 2.0
+
+  \# Lower confidence threshold than Google (reviews are harder-earned)
+
+  review_confidence = min(venue\[\'review_count\'\] / 200, 1.0)
+
+  quality = normalized_rating \* review_confidence
+
+  price_match = 1.0 - abs(venue\[\'price_tier\'\]
+
+  \- persona_budget_level(user_persona)) / 4
+
+  return quality \* 0.55 + price_match \* 0.25 + category_match \* 0.20
+
+  \# Tabelog score is inherently local-weighted --- reviewer base is
+  overwhelmingly
+
+  \# Japanese. You get local signal without scraping any review text.
+  -----------------------------------------------------------------------
+
+**Naver --- Behavioral Signal**
+
+  -----------------------------------------------------------------------
+  def score_from_naver(venue: dict, user_persona: dict) -\> float:
+
+  \# Visitor count = people actually went, not just rated
+
+  buzz_score = min(venue\[\'visitor_count\'\] / 1000, 1.0)
+
+  \# Blog post count = organic local content (not tourist review
+  inflation)
+
+  organic_signal = min(venue\[\'blog_post_count\'\] / 50, 1.0)
+
+  rating_score = venue\[\'rating\'\] / 5.0 if venue.get(\'rating\') else
+  0.5
+
+  return buzz_score \* 0.40 + organic_signal \* 0.30 + rating_score \*
+  0.30
+  -----------------------------------------------------------------------
+
+**TripAdvisor / Google Divergence (Europe)**
+
+  -----------------------------------------------------------------------
+  def tourist_divergence_from_apis(google_data, tripadvisor_data) -\>
+  float:
+
+  \# High TripAdvisor rank + lower Google rank = tourist-inflated
+
+  \# This is the overrated detector running without any ML
+
+  g_rank = google_data\[\'local_result_rank\'\] / 100
+
+  ta_rank = tripadvisor_data\[\'city_rank\'\] / 100
+
+  return ta_rank - g_rank \# positive = tourist-heavy
+
+  \# No ML. No LLM. Just rank comparison from two API calls.
+  -----------------------------------------------------------------------
+
+**Rule-Based Vibe Inference (All Platforms)**
+
+Category + price tier → likely vibe tags. One-time lookup table per
+region. Covers \~70% of what the LLM would infer. Lower confidence but
+real signal, zero inference cost.
+
+  -----------------------------------------------------------------------
+  CATEGORY_VIBE_MAP = {
+
+  \'ramen\': \[\'casual\', \'locals-only\', \'lunch-spot\', \'quick\'\],
+
+  \'izakaya\': \[\'lively\', \'evening\', \'group-friendly\',
+  \'social-scene\'\],
+
+  \'kaiseki\': \[\'splurge\', \'date-night\', \'traditional\',
+  \'slow-burn\'\],
+
+  \'konbini\': \[\'budget\', \'quick\', \'any-time\',
+  \'solo-friendly\'\],
+
+  \'kissaten\': \[\'quiet\', \'work-from\', \'morning-best\',
+  \'traditional\'\],
+
+  \# \~40 more entries per region
+
+  }
+
+  PRICE_VIBE_MAP = {
+
+  1: \[\'budget\'\],
+
+  2: \[\'mid-range\'\],
+
+  3: \[\'splurge\'\],
+
+  4: \[\'splurge\', \'special-occasion\'\],
+
+  }
+
+  \# Written once per region. Runs at zero inference cost forever.
+  -----------------------------------------------------------------------
+
+**Adapter Pattern**
+
+  -----------------------------------------------------------------------
+  class PlatformAdapter:
+
+  def fetch_candidates(self, city, lat, lng, limit=30) -\>
+  list\[ActivityNode\]:
+
+  raise NotImplementedError
+
+  class TabelogAdapter(PlatformAdapter):
+
+  def fetch_candidates(self, city, lat, lng, limit=30):
+
+  raw = self.scrape_nearby(lat, lng, radius_km=1.5)
+
+  return \[self.\_normalize(v) for v in raw\]
+
+  def \_normalize(self, venue) -\> ActivityNode:
+
+  return ActivityNode(
+
+  source=\'tabelog\',
+
+  source_tier=1, \# local-weighted platform
+
+  vibe_tags=self.\_infer_vibe_from_category(
+
+  venue\[\'category\'\], venue\[\'price_tier\'\]
+
+  ),
+
+  vibe_confidence=0.4, \# lower than LLM-extracted, still real
+
+  )
+  -----------------------------------------------------------------------
+
+*Engineering cost per adapter: \~1 day. Infra cost: identical to
+domestic fallback. The complexity is auth sessions and encoding, not
+dollars.*
+
+  -------- ------------------------------------------------------------------
+  **07**   **On-Demand Backfill Pipeline**
+
+  -------- ------------------------------------------------------------------
+
+Adapter outputs are your training data. Every Tier 2/3 fetch, every
+rule-based vibe inference, every deterministic score gets logged. When
+volume accumulates on a city, you run the LLM batch pass retroactively
+and silently graduate it to Tier 1.
+
+**What to Log**
+
+  -----------------------------------------------------------------------
+  \@dataclass
+
+  class CityTierEvent:
+
+  city: str
+
+  country: str
+
+  source_platform: str \# \'tabelog\' \| \'naver\' \| \'google_places\'
+  \| \'foody\'
+
+  activity_node_id: str
+
+  tier: int \# 2 or 3
+
+  vibe_tags_source: str \# \'rule_based\' \| \'category_map\'
+
+  vibe_confidence: float \# always low at tier 2/3 --- this IS the
+  backfill signal
+
+  raw_platform_data: dict \# FULL response --- reuse without re-fetching
+  later
+
+  request_count: int \# how many users have hit this city
+
+  occurred_at: str
+
+  \# Written to: GCS append-only log
+
+  \# Query via: BigQuery on demand (cheap, no always-on infra needed)
+
+  \# Retained: forever --- early signals are training gold
+  -----------------------------------------------------------------------
+
+**Graduation Query --- Run Monthly**
+
+  -----------------------------------------------------------------------
+  \-- Cities ready for Tier 1 upgrade
+
+  SELECT city,
+
+  COUNT(DISTINCT activity_node_id) AS nodes,
+
+  COUNT(DISTINCT request_count) AS user_requests
+
+  FROM city_tier_events
+
+  WHERE tier IN (2, 3)
+
+  AND vibe_confidence \< 0.5 \-- still rule-based, not yet LLM-extracted
+
+  GROUP BY city
+
+  HAVING COUNT(DISTINCT activity_node_id) \>= 50 \-- enough nodes to
+  batch
+
+  AND COUNT(DISTINCT request_count) \>= 10 \-- enough demand to justify
+
+  ORDER BY user_requests DESC;
+
+  \-- Top results = backfill queue
+
+  \-- Submit batch job, pay \$4--8, nodes upgraded, city graduates
+
+  \-- Entirely mechanical. No decisions needed in the moment.
+  -----------------------------------------------------------------------
+
+**Graduation Process**
+
+  -----------------------------------------------------------------------
+  def graduate_city_to_tier1(city: str):
+
+  \# 1. Pull raw_platform_data from GCS logs (no re-fetch needed)
+
+  raw_records = gcs_query_city_events(city)
+
+  \# 2. Submit LLM batch extraction job (Haiku, batch pricing)
+
+  batch_id = submit_batch_extraction(raw_records) \# \~\$4--8
+
+  \# 3. On completion: upgrade ActivityNodes in-place
+
+  for result in poll_batch_results(batch_id):
+
+  update_activity_node(
+
+  id=result.activity_node_id,
+
+  vibe_tags=result.extracted_tags,
+
+  vibe_confidence=result.confidence,
+
+  vibe_source=\'llm_extracted\',
+
+  tier=1
+
+  )
+
+  \# 4. Invalidate Redis caches for this city
+
+  invalidate_city_caches(city)
+
+  \# 5. City silently graduates --- users never notice
+
+  \# Recommendations just get better
+  -----------------------------------------------------------------------
+
+**ML Graduation (Later --- When Volume Justifies)**
+
+Once you have enough behavioral data (Month 5+ per the bootstrap
+timeline), the vibe tagger MLP trained on LLM-extracted tags can replace
+LLM extraction entirely for new nodes. The city tier concept stays the
+same --- you\'re just upgrading the inference engine, not the
+architecture.
+
+  ------------------ ---------------------- ------------- ------------------
+  **Stage**          **Vibe Inference       **Cost**      **When**
+                     Method**                             
+
+  Tier 2/3 fallback  Rule-based category    \$0           Now, always
+                     map                                  
+
+  Tier 1 initial     LLM batch extraction   \$4--8/city   On graduation
+                     (Haiku)                              trigger
+
+  Tier 1 ongoing     Vibe tagger MLP        \~\$0         Month 5+, once
+                     (distilled from LLM)                 trained
+  ------------------ ---------------------- ------------- ------------------
+
++---+---------------------------------------------------------------------+
+|   | **Reminder logged**                                                 |
+|   |                                                                     |
+|   | Backfill pipeline: upgrade Tier 2/3 cities to Tier 1 via LLM batch  |
+|   | extraction. Run graduation query monthly starting Month 4. Trigger  |
+|   | at 50+ nodes and 10+ user requests per city. Raw platform data is   |
+|   | preserved in GCS logs --- no re-fetching required.                  |
++---+---------------------------------------------------------------------+
+
+The system is designed so that every layer has a cheap fallback and a
+better upgrade path. You start lean, log everything, and let user demand
+tell you where to invest. The corpus builds itself.
+
+Overplanned --- Internal Reference Document. February 2026.

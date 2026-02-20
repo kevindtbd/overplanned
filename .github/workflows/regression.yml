@@ -1,0 +1,153 @@
+name: Regression Gate
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: regression-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      schema_changed: ${{ steps.changes.outputs.schema }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            schema:
+              - 'prisma/schema.prisma'
+              - 'prisma/migrations/**'
+
+  codegen-check:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.schema_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Check generated files are committed
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Prisma generate produced uncommitted changes:"
+            git diff --name-only
+            exit 1
+          fi
+
+  track-tests:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        track:
+          - foundation
+          - pipeline
+          - admin
+          - solo
+          - group
+          - midtrip
+          - posttrip
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: overplanned
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: overplanned_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://overplanned:test@localhost:5432/overplanned_test
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npx prisma generate
+      - name: Run ${{ matrix.track }} tests
+        run: npm run test:${{ matrix.track }}
+
+  contract-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: overplanned
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: overplanned_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://overplanned:test@localhost:5432/overplanned_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npx prisma generate
+      - run: npm run test:contracts
+
+  regression-gate:
+    needs: [codegen-check, track-tests, contract-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        run: |
+          if [ "${{ needs.track-tests.result }}" != "success" ]; then
+            echo "Track tests failed. The track that broke another track's tests owns the fix."
+            exit 1
+          fi
+          if [ "${{ needs.contract-tests.result }}" != "success" ]; then
+            echo "Contract tests failed."
+            exit 1
+          fi
+          if [ "${{ needs.codegen-check.result }}" == "failure" ]; then
+            echo "Codegen check failed. Run 'npx prisma generate' and commit the output."
+            exit 1
+          fi
+          echo "All regression checks passed."

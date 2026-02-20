@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Travel that actually knows you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#FAF8F5;--bg-warm:#F5F0EA;--bg-card:#FFFFFF;--bg-raised:#EDE8E0;--bg-stone:#F0ECE5;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-muted:#D4886E;--accent-dark:#8C3A24;
+  --gold:#A07830;--gold-light:#F5EDD8;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;--ink-900:#F7F4EF;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08),0 1px 4px rgba(26,22,18,0.05);
+  --shadow-lg:0 16px 56px rgba(26,22,18,0.10),0 4px 12px rgba(26,22,18,0.06);
+}
+[data-theme="dark"]{
+  --bg:#0E0C09;--bg-warm:#141109;--bg-card:#171310;--bg-raised:#1F1A14;--bg-stone:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-muted:#8C402A;--accent-dark:#E8906E;
+  --gold:#C8A96E;--gold-light:rgba(200,169,110,0.12);
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;--ink-900:#1A1410;
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:0 16px 56px rgba(0,0,0,0.5);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);overflow-x:hidden;}
+::selection{background:var(--accent);color:#fff;}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;padding:0 56px;display:flex;align-items:center;justify-content:space-between;transition:all 0.3s;}
+nav.scrolled{background:var(--bg);border-bottom:1px solid var(--ink-700);backdrop-filter:blur(20px);}
+.nav-logo{font-family:'Sora',sans-serif;font-size:17px;font-weight:600;letter-spacing:-0.04em;color:var(--ink-100);text-decoration:none;}
+.nav-logo span{color:var(--accent);}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.theme-btn{width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);transition:all 0.2s;}
+.theme-btn:hover{border-color:var(--ink-500);color:var(--ink-100);}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+.nav-cta{font-family:'Sora',sans-serif;font-size:13px;font-weight:500;color:#fff;background:var(--ink-100);border:none;border-radius:100px;padding:8px 20px;cursor:pointer;transition:all 0.2s;text-decoration:none;}
+[data-theme="dark"] .nav-cta{color:var(--bg);}
+.nav-cta:hover{background:var(--accent);}
+@media(max-width:700px){nav{padding:0 20px;}.nav-cta{display:none;}}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 24px 80px;text-align:center;position:relative;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none;}
+.hero-bg::before{content:'';position:absolute;top:-20%;left:50%;transform:translateX(-50%);width:900px;height:900px;background:radial-gradient(ellipse at center,var(--accent-light) 0%,transparent 65%);opacity:0.45;}
+[data-theme="dark"] .hero-bg::before{opacity:0.18;}
+
+.hero-inner{position:relative;z-index:1;max-width:780px;}
+.hero-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:28px;display:inline-flex;align-items:center;gap:10px;animation:fadeUp 0.6s ease both 0.1s;}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';width:20px;height:1px;background:var(--accent);}
+
+h1{font-family:'Lora',serif;font-size:clamp(44px,6.5vw,88px);font-weight:500;line-height:1.04;letter-spacing:-0.02em;color:var(--ink-100);margin-bottom:28px;animation:fadeUp 0.6s ease both 0.18s;}
+h1 em{font-style:italic;color:var(--gold);}
+
+.hero-sub{font-size:17px;color:var(--ink-400);font-weight:300;line-height:1.72;max-width:520px;margin:0 auto 48px;animation:fadeUp 0.6s ease both 0.26s;}
+
+.hero-actions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;animation:fadeUp 0.6s ease both 0.34s;}
+.btn-primary{font-family:'Sora',sans-serif;font-size:15px;font-weight:500;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:15px 34px;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(184,92,63,0.28);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(184,92,63,0.40);}
+.btn-primary svg{transition:transform 0.2s;}
+.btn-primary:hover svg{transform:translateX(3px);}
+.btn-secondary{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-400);cursor:pointer;transition:color 0.2s;background:none;border:none;padding:0;display:inline-flex;align-items:center;gap:6px;}
+.btn-secondary:hover{color:var(--ink-100);}
+
+.hero-note{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em;color:var(--ink-600);margin-top:20px;animation:fadeUp 0.6s ease both 0.42s;}
+
+/* ── PROOF STRIP ── */
+.proof{padding:20px 0 0;display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap;animation:fadeUp 0.6s ease both 0.50s;}
+.proof-item{display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em;color:var(--ink-500);text-transform:uppercase;}
+.proof-dot{width:4px;height:4px;border-radius:50%;background:var(--ink-700);}
+
+/* ── FEATURES ── */
+.features{padding:120px 24px;max-width:1100px;margin:0 auto;}
+.section-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.section-label::before{content:'';width:16px;height:1px;background:var(--accent);}
+.section-title{font-family:'Lora',serif;font-size:clamp(32px,4vw,52px);font-weight:500;line-height:1.08;letter-spacing:-0.02em;color:var(--ink-100);margin-bottom:16px;}
+.section-title em{font-style:italic;color:var(--gold);}
+.section-sub{font-size:16px;color:var(--ink-400);font-weight:300;line-height:1.72;max-width:520px;margin-bottom:64px;}
+
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+@media(max-width:900px){.features-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:580px){.features-grid{grid-template-columns:1fr;}}
+
+.feat-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:16px;padding:28px;transition:all 0.3s;cursor:default;}
+.feat-card:hover{border-color:var(--ink-600);box-shadow:var(--shadow-md);transform:translateY(-3px);}
+.feat-icon{width:40px;height:40px;background:var(--accent-light);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
+[data-theme="dark"] .feat-icon{background:var(--accent-light);}
+.feat-icon svg{color:var(--accent);}
+.feat-title{font-size:15px;font-weight:500;color:var(--ink-100);margin-bottom:10px;letter-spacing:-0.01em;}
+.feat-body{font-size:13px;color:var(--ink-400);font-weight:300;line-height:1.7;}
+.feat-tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);background:var(--accent-light);padding:3px 8px;border-radius:100px;display:inline-block;margin-top:14px;}
+
+/* ── HOW ── */
+.how{padding:80px 24px 120px;background:var(--bg-warm);border-top:1px solid var(--ink-700);border-bottom:1px solid var(--ink-700);}
+[data-theme="dark"] .how{background:var(--bg-raised);}
+.how-inner{max-width:900px;margin:0 auto;}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:48px;margin-top:64px;}
+@media(max-width:700px){.steps{grid-template-columns:1fr;gap:36px;}}
+.step-num{font-family:'DM Mono',monospace;font-size:32px;font-weight:300;color:var(--ink-700);line-height:1;margin-bottom:16px;letter-spacing:-0.04em;}
+.step-title{font-size:16px;font-weight:500;color:var(--ink-100);margin-bottom:10px;letter-spacing:-0.01em;}
+.step-body{font-size:13px;color:var(--ink-400);font-weight:300;line-height:1.72;}
+
+/* ── PRICING ── */
+.pricing{padding:120px 24px;max-width:760px;margin:0 auto;text-align:center;}
+.price-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:20px;padding:52px 48px;position:relative;overflow:hidden;margin-top:56px;}
+.price-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-muted));}
+.price-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);background:var(--accent-light);padding:4px 12px;border-radius:100px;display:inline-block;margin-bottom:24px;}
+.price-amount{font-family:'Lora',serif;font-size:68px;font-weight:500;line-height:1;letter-spacing:-0.04em;color:var(--ink-100);margin-bottom:6px;}
+.price-amount sup{font-size:28px;vertical-align:super;margin-right:2px;}
+.price-period{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);margin-bottom:32px;}
+.price-divider{height:1px;background:var(--ink-700);margin:32px 0;}
+.price-perks{list-style:none;text-align:left;display:flex;flex-direction:column;gap:14px;margin-bottom:40px;}
+.price-perks li{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:var(--ink-300);font-weight:300;line-height:1.5;}
+.perk-check{width:18px;height:18px;background:var(--accent-light);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.perk-check svg{color:var(--accent);}
+.price-cta{display:block;width:100%;font-family:'Sora',sans-serif;font-size:15px;font-weight:500;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:17px 32px;cursor:pointer;transition:all 0.2s;text-decoration:none;box-shadow:0 4px 20px rgba(184,92,63,0.28);}
+.price-cta:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(184,92,63,0.40);}
+.price-guarantee{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em;color:var(--ink-600);margin-top:16px;text-align:center;}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--ink-700);padding:40px 56px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+.footer-logo{font-family:'Sora',sans-serif;font-size:15px;font-weight:600;letter-spacing:-0.04em;color:var(--ink-100);}
+.footer-logo span{color:var(--accent);}
+.footer-copy{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em;color:var(--ink-600);}
+@media(max-width:700px){footer{padding:32px 20px;flex-direction:column;align-items:flex-start;}}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+.reveal{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <a class="nav-logo" href="#">over<span>planned</span></a>
+  <div class="nav-right">
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <a href="https://buy.stripe.com/test_28EaEYceNgQy6eT6mu1Nu00" class="nav-cta">Get early access</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Early access now open</div>
+    <h1>Travel plans that<br><em>actually know</em> you</h1>
+    <p class="hero-sub">Overplanned builds itineraries from real local signals — not tourist aggregators. It learns how you travel and gets sharper every trip.</p>
+    <div class="hero-actions">
+      <a href="https://buy.stripe.com/test_28EaEYceNgQy6eT6mu1Nu00" class="btn-primary">
+        Get early access
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <button class="btn-secondary" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">See how it works</button>
+    </div>
+    <div class="hero-note">Founding member pricing — locked for life</div>
+    <div class="proof">
+      <div class="proof-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+        Local-first intel
+      </div>
+      <div class="proof-dot"></div>
+      <div class="proof-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+        Adapts mid-trip
+      </div>
+      <div class="proof-dot"></div>
+      <div class="proof-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+        No demographic guessing
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features reveal">
+  <div class="section-label">What makes it different</div>
+  <h2 class="section-title">Built on signals,<br>not <em>stereotypes</em></h2>
+  <p class="section-sub">Most travel apps recommend the same 50 places to everyone. Overplanned reads how you actually travel.</p>
+
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </div>
+      <div class="feat-title">Local signal intelligence</div>
+      <div class="feat-body">Pulls from Reddit threads, neighborhood forums, and regional review apps — not just TripAdvisor and Google Maps.</div>
+      <div class="feat-tag">Beyond tourist traps</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </div>
+      <div class="feat-title">Behavioral personalization</div>
+      <div class="feat-body">Learns from what you do, not what you say. Pace, food habits, mornings vs. nights — your patterns drive recommendations.</div>
+      <div class="feat-tag">No demographic profiling</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <div class="feat-title">Real-time adaptability</div>
+      <div class="feat-body">Rain at 2pm? Crowd at that spot you wanted? Overplanned pivots your itinerary in the moment without starting over.</div>
+      <div class="feat-tag">Mid-trip intelligence</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="feat-title">Group trip harmony</div>
+      <div class="feat-body">Plans that blend everyone's travel DNA without forcing a vote. Finds the intersection where different travelers actually agree.</div>
+      <div class="feat-tag">No compromises</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <div class="feat-title">Overrated detector</div>
+      <div class="feat-body">Cross-references tourist-heavy sources against local platforms. If it's only famous because it's on lists, we'll tell you.</div>
+      <div class="feat-tag">Authenticity scoring</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="feat-title">Gets smarter each trip</div>
+      <div class="feat-body">Every decision you make refines your travel profile. By your third trip, recommendations feel like a friend who knows you well.</div>
+      <div class="feat-tag">Persistent memory</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="how reveal" id="how">
+  <div class="how-inner">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">Three steps to a plan<br>that actually <em>fits</em></h2>
+    <div class="steps">
+      <div>
+        <div class="step-num">01</div>
+        <div class="step-title">Tell it how you travel</div>
+        <div class="step-body">Not your age or income — your pace, your mornings, what you'd skip, what you actually eat. Takes about two minutes.</div>
+      </div>
+      <div>
+        <div class="step-num">02</div>
+        <div class="step-title">Get a living itinerary</div>
+        <div class="step-body">Built from local forums, regional apps, and community signals. Structured around your style, not a generic tourist loop.</div>
+      </div>
+      <div>
+        <div class="step-num">03</div>
+        <div class="step-title">Travel. It learns.</div>
+        <div class="step-body">Every swap, every pivot, every decision shapes your next trip. The longer you use it, the less it feels like an app.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing reveal" id="pricing">
+  <div class="section-label">Founding membership</div>
+  <h2 class="section-title">One price,<br><em>locked forever</em></h2>
+  <p class="section-sub" style="margin:0 auto;">Early access members get founding pricing — never raised, regardless of what Overplanned becomes.</p>
+
+  <div class="price-card">
+    <div class="price-badge">Founding member</div>
+    <div class="price-amount"><sup>$</sup>9</div>
+    <div class="price-period">per month, billed monthly</div>
+    <div class="price-divider"></div>
+    <ul class="price-perks">
+      <li>
+        <span class="perk-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+        Full access to all itinerary features, group planning, and real-time pivots
+      </li>
+      <li>
+        <span class="perk-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+        Founding price locked for life — never increases as we add features
+      </li>
+      <li>
+        <span class="perk-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+        Direct feedback channel — shape what gets built next
+      </li>
+      <li>
+        <span class="perk-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+        Early access to new cities and features before general availability
+      </li>
+    </ul>
+    <a href="https://buy.stripe.com/test_28EaEYceNgQy6eT6mu1Nu00" class="price-cta">Claim founding access</a>
+    <div class="price-guarantee">Cancel anytime. No questions.</div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">over<span>planned</span></div>
+  <div class="footer-copy">overplanned.app &mdash; &copy; 2026</div>
+</footer>
+
+<script>
+// Theme toggle
+function toggleTheme(){
+  const html = document.documentElement;
+  html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
+
+// Nav scroll
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 20);
+});
+
+// Reveal on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

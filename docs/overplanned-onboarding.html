@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Get Started</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#FAFAF8;--bg-warm:#F5F1EB;--bg-card:#FFFFFF;--bg-stone:#EDE8E0;--bg-raised:#F0ECE5;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --gold:#A07830;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --info:#2E6A9C;--info-bg:#DCECf8;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);
+  --shadow-lg:0 16px 56px rgba(26,22,18,0.10);
+  --shadow-xl:0 32px 80px rgba(26,22,18,0.14);
+}
+[data-theme="dark"]{
+  --bg:#0E0C09;--bg-warm:#141109;--bg-card:#171310;--bg-stone:#1F1A14;--bg-raised:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --gold:#C8A96E;
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --info:#4A84A8;--info-bg:rgba(74,132,168,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:0 16px 56px rgba(0,0,0,0.5);
+  --shadow-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);}
+
+/* ── SHELL: phone centered on desktop ── */
+.shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;}
+.phone{width:390px;min-height:780px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:40px;overflow:hidden;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;position:relative;}
+[data-theme="dark"] .phone{background:var(--bg-stone);}
+@media(max-width:440px){.phone{width:100%;border-radius:0;border:none;min-height:100vh;}}
+
+/* Status bar */
+.status{padding:14px 26px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.status-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-100);}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;flex:1;}
+.screen.active{display:flex;}
+
+/* ── SCREEN 0: FORK ── */
+.fork-hero{flex:1;position:relative;overflow:hidden;}
+.fork-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+.fork-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,12,9,0.96) 0%,rgba(14,12,9,0.3) 55%,transparent 100%);}
+[data-theme="light"] .fork-hero-overlay{background:linear-gradient(to top,rgba(26,20,14,0.92) 0%,rgba(26,20,14,0.25) 55%,transparent 100%);}
+.fork-body{position:absolute;bottom:0;left:0;right:0;padding:28px 28px 36px;}
+.fork-logo{font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;letter-spacing:-0.04em;color:#fff;margin-bottom:20px;}
+.fork-logo span{color:var(--accent);}
+.fork-title{font-family:'Lora',serif;font-size:30px;font-weight:500;color:#fff;line-height:1.15;letter-spacing:-0.02em;margin-bottom:6px;}
+.fork-title em{font-style:italic;color:var(--gold);}
+.fork-sub{font-size:13px;color:rgba(255,255,255,0.55);font-weight:300;line-height:1.6;margin-bottom:28px;}
+.fork-cta-primary{width:100%;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:14px;padding:15px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;transition:all 0.2s;box-shadow:0 4px 20px rgba(184,92,63,0.35);}
+.fork-cta-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(184,92,63,0.45);}
+.fork-cta-primary-sub{font-size:11px;font-weight:300;opacity:0.75;margin-top:1px;}
+.fork-cta-secondary{width:100%;font-family:'Outfit',sans-serif;font-size:15px;font-weight:500;color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:14px;padding:15px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.2s;backdrop-filter:blur(8px);}
+.fork-cta-secondary:hover{background:rgba(255,255,255,0.13);}
+.fork-cta-secondary-sub{font-size:11px;font-weight:300;opacity:0.6;margin-top:1px;}
+.fork-cta-text{text-align:left;}
+
+/* ── PATH A: PLAN A TRIP ── */
+.plan-header{padding:18px 26px 14px;border-bottom:1px solid var(--ink-700);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.plan-back{background:none;border:none;cursor:pointer;color:var(--ink-400);display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;}
+.plan-back:hover{color:var(--ink-100);}
+.plan-step-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);}
+.plan-progress{height:2px;background:var(--ink-800);flex-shrink:0;}
+[data-theme="dark"] .plan-progress{background:var(--ink-700);}
+.plan-progress-fill{height:100%;background:var(--accent);transition:width 0.4s ease;}
+
+.plan-body{flex:1;padding:28px 26px 24px;display:flex;flex-direction:column;}
+.plan-title{font-family:'Lora',serif;font-size:26px;font-weight:500;line-height:1.2;letter-spacing:-0.02em;color:var(--ink-100);margin-bottom:6px;}
+.plan-title em{font-style:italic;color:var(--gold);}
+.plan-sub{font-size:13px;color:var(--ink-400);font-weight:300;line-height:1.65;margin-bottom:28px;}
+
+/* Destination input with autocomplete feel */
+.dest-input-wrap{position:relative;margin-bottom:14px;}
+.dest-input{width:100%;background:var(--bg-raised);border:1.5px solid var(--ink-700);border-radius:14px;padding:14px 16px 14px 44px;font-size:15px;font-family:'Sora',sans-serif;color:var(--ink-100);outline:none;transition:border-color 0.2s;}
+[data-theme="dark"] .dest-input{background:var(--bg-stone);}
+.dest-input::placeholder{color:var(--ink-500);}
+.dest-input:focus{border-color:var(--accent);}
+.dest-input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-500);}
+.dest-suggestions{display:flex;flex-direction:column;gap:6px;margin-bottom:20px;}
+.dest-sug{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:12px;cursor:pointer;transition:all 0.15s;}
+[data-theme="dark"] .dest-sug{background:var(--bg-stone);}
+.dest-sug:hover,.dest-sug.selected{border-color:var(--accent);background:var(--accent-light);}
+.dest-sug-img{width:40px;height:40px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.dest-sug-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.dest-sug-name{font-size:14px;font-weight:500;color:var(--ink-100);}
+.dest-sug-meta{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);margin-top:1px;}
+
+/* Date row */
+.date-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.date-field{display:flex;flex-direction:column;gap:5px;}
+.field-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);}
+.field-input{background:var(--bg-raised);border:1.5px solid var(--ink-700);border-radius:12px;padding:12px 14px;font-size:13px;font-family:'Sora',sans-serif;color:var(--ink-100);outline:none;transition:border-color 0.2s;cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
+[data-theme="dark"] .field-input{background:var(--bg-stone);}
+.field-input:focus,.field-input.filled{border-color:var(--accent);}
+.field-input.placeholder-text{color:var(--ink-500);}
+
+/* Who's coming */
+.who-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+.who-chip{font-family:'Sora',sans-serif;font-size:13px;color:var(--ink-300);background:var(--bg-raised);border:1.5px solid var(--ink-700);border-radius:100px;padding:8px 16px;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;gap:6px;}
+[data-theme="dark"] .who-chip{background:var(--bg-stone);}
+.who-chip:hover{border-color:var(--ink-400);}
+.who-chip.selected{background:var(--accent-light);border-color:var(--accent);color:var(--accent-dark);}
+[data-theme="dark"] .who-chip.selected{background:rgba(201,104,72,0.15);color:var(--accent-dark);}
+
+.plan-footer{padding:16px 26px 28px;flex-shrink:0;}
+.plan-next{width:100%;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:14px;padding:15px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(184,92,63,0.2);display:flex;align-items:center;justify-content:center;gap:8px;}
+.plan-next:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(184,92,63,0.32);}
+.plan-next:disabled{opacity:0.38;cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* ── TRIP DNA ── */
+.dna-section{margin-top:24px;}
+.dna-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.dna-header-left{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-500);display:flex;align-items:center;gap:8px;}
+.dna-header-left::before{content:'';width:14px;height:1px;background:var(--ink-700);}
+.dna-optional{font-family:'Lora',serif;font-size:10px;font-style:italic;color:var(--ink-600);text-transform:none;letter-spacing:0;}
+.dna-selected-count{font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:0.04em;}
+
+/* Category accordion */
+.dna-cat{border:1px solid var(--ink-700);border-radius:14px;margin-bottom:8px;overflow:hidden;transition:border-color 0.2s;}
+.dna-cat.has-selection{border-color:var(--accent);}
+.dna-cat-header{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;user-select:none;}
+.dna-cat-header:hover .dna-cat-name{color:var(--ink-100);}
+.dna-cat-left{display:flex;align-items:center;gap:10px;}
+.dna-cat-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dna-cat-name{font-size:13px;font-weight:500;color:var(--ink-200);transition:color 0.15s;}
+.dna-cat-pills-preview{display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden;max-width:140px;}
+.dna-preview-pill{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.04em;padding:2px 7px;border-radius:100px;background:var(--accent-light);color:var(--accent-dark);white-space:nowrap;}
+[data-theme="dark"] .dna-preview-pill{background:rgba(201,104,72,0.15);}
+.dna-cat-chevron{color:var(--ink-600);transition:transform 0.25s;flex-shrink:0;}
+.dna-cat.open .dna-cat-chevron{transform:rotate(180deg);}
+.dna-cat-body{display:none;padding:0 14px 14px;border-top:1px solid var(--ink-800);}
+[data-theme="dark"] .dna-cat-body{border-top-color:var(--ink-700);}
+.dna-cat.open .dna-cat-body{display:block;}
+.dna-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding-top:12px;}
+.dna-chip{font-family:'Sora',sans-serif;font-size:11px;font-weight:400;color:var(--ink-400);background:var(--bg-raised);border:1.5px solid var(--ink-700);border-radius:100px;padding:5px 13px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+[data-theme="dark"] .dna-chip{background:var(--bg-stone);}
+.dna-chip:hover{border-color:var(--ink-400);color:var(--ink-200);}
+.dna-chip.selected{background:var(--accent-light);border-color:var(--accent);color:var(--accent-dark);}
+[data-theme="dark"] .dna-chip.selected{background:rgba(201,104,72,0.15);color:var(--accent-dark);}
+.dna-add{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.04em;color:var(--ink-600);border:1.5px dashed var(--ink-700);border-radius:100px;padding:4px 10px;cursor:pointer;transition:all 0.15s;white-space:nowrap;background:none;}
+.dna-add:hover{border-color:var(--accent);color:var(--accent);}
+.dna-inline-input{display:none;background:transparent;border:none;border-bottom:1.5px solid var(--accent);outline:none;font-family:'Sora',sans-serif;font-size:11px;color:var(--ink-100);padding:2px 6px;min-width:80px;max-width:130px;}
+.dna-inline-input::placeholder{color:var(--ink-600);}
+.dna-inline-input.visible{display:inline-block;}
+
+/* Freeform */
+.dna-freeform{margin-top:12px;padding:12px 14px;background:var(--bg-raised);border-radius:14px;border:1px solid var(--ink-700);}
+[data-theme="dark"] .dna-freeform{background:var(--bg-stone);}
+.dna-freeform-label{font-size:11px;color:var(--ink-500);font-weight:300;margin-bottom:7px;}
+.dna-freeform-label span{color:var(--ink-600);}
+.dna-freeform-input{width:100%;background:transparent;border:none;outline:none;font-family:'Sora',sans-serif;font-size:12px;font-weight:300;color:var(--ink-100);font-style:italic;line-height:1.6;resize:none;min-height:36px;}
+.dna-freeform-input::placeholder{color:var(--ink-600);font-style:italic;}
+
+/* ── BUILDING STATE ── */
+.building-screen{flex:1;display:flex;flex-direction:column;}
+.building-hero{height:220px;position:relative;overflow:hidden;flex-shrink:0;}
+.building-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+.building-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,12,9,0.9),rgba(14,12,9,0.2));}
+[data-theme="light"] .building-hero-overlay{background:linear-gradient(to top,rgba(26,20,14,0.88),rgba(26,20,14,0.15));}
+.building-hero-text{position:absolute;bottom:18px;left:22px;right:22px;}
+.bh-city{font-family:'Lora',serif;font-size:22px;font-weight:500;color:#fff;letter-spacing:-0.02em;margin-bottom:2px;}
+.bh-dates{font-size:12px;color:rgba(255,255,255,0.55);font-weight:300;}
+.building-body{flex:1;padding:22px 24px;display:flex;flex-direction:column;}
+.building-steps{display:flex;flex-direction:column;gap:0;margin-bottom:20px;}
+.bs-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--ink-800);}
+[data-theme="dark"] .bs-row{border-bottom-color:var(--ink-700);}
+.bs-row:last-child{border-bottom:none;}
+.bs-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bs-icon.done{background:var(--success-bg);}
+.bs-icon.active{background:var(--accent-light);animation:pulse-bg 1.5s ease-in-out infinite;}
+.bs-icon.pending{background:var(--bg-raised);}
+[data-theme="dark"] .bs-icon.pending{background:var(--bg-stone);}
+@keyframes pulse-bg{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.bs-text{flex:1;}
+.bs-label{font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:1px;}
+.bs-sub{font-size:10px;color:var(--ink-500);font-weight:300;font-style:italic;}
+.bs-status{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.04em;}
+.bs-status.done{color:var(--success);}
+.bs-status.active{color:var(--accent);}
+.bs-status.pending{color:var(--ink-600);}
+
+/* Teaser slots while building */
+.teaser-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;}
+.teaser-slot{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-raised);border-radius:12px;margin-bottom:8px;border:1px solid var(--ink-700);}
+[data-theme="dark"] .teaser-slot{background:var(--bg-stone);}
+.teaser-slot.loading{opacity:0.4;}
+.ts-photo{width:44px;height:44px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.ts-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.ts-name{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:2px;}
+.ts-why{font-size:10px;color:var(--ink-400);font-style:italic;font-weight:300;}
+.skel{background:var(--ink-800);border-radius:4px;animation:shimmer 1.5s ease-in-out infinite;}
+[data-theme="dark"] .skel{background:var(--ink-700);}
+@keyframes shimmer{0%,100%{opacity:1;}50%{opacity:0.35;}}
+
+/* ── PATH B: INSPIRATION ── */
+.inspo-header{padding:18px 22px 14px;border-bottom:1px solid var(--ink-700);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.inspo-back{background:none;border:none;cursor:pointer;color:var(--ink-400);display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;}
+.inspo-back:hover{color:var(--ink-100);}
+.inspo-title{font-size:15px;font-weight:500;color:var(--ink-100);}
+
+/* Vibe filter pills */
+.inspo-filters{display:flex;gap:7px;padding:14px 22px;overflow-x:auto;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.inspo-filter{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-400);background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:100px;padding:5px 12px;cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0;}
+[data-theme="dark"] .inspo-filter{background:var(--bg-stone);}
+.inspo-filter:hover{border-color:var(--ink-400);color:var(--ink-100);}
+.inspo-filter.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent-dark);}
+[data-theme="dark"] .inspo-filter.active{background:rgba(201,104,72,0.15);}
+
+/* Inspiration cards feed */
+.inspo-feed{flex:1;overflow-y:auto;padding:16px;}
+.inspo-card{border-radius:18px;overflow:hidden;margin-bottom:14px;border:1px solid var(--ink-700);cursor:pointer;transition:all 0.2s;box-shadow:var(--shadow-md);}
+.inspo-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);}
+.inspo-card-photo{height:160px;position:relative;overflow:hidden;}
+.inspo-card-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.inspo-card:hover .inspo-card-photo img{transform:scale(1.04);}
+.inspo-card-photo-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(26,20,14,0.7) 0%,transparent 55%);}
+.inspo-card-badge{position:absolute;top:10px;left:12px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:100px;background:rgba(26,20,14,0.6);color:rgba(255,255,255,0.85);backdrop-filter:blur(4px);}
+.inspo-card-save{position:absolute;top:10px;right:12px;width:28px;height:28px;border-radius:50%;background:rgba(26,20,14,0.5);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;backdrop-filter:blur(4px);transition:all 0.2s;}
+.inspo-card-save:hover,.inspo-card-save.saved{background:var(--accent);}
+.inspo-card-city{position:absolute;bottom:10px;left:12px;font-family:'Lora',serif;font-size:18px;font-weight:500;color:#fff;letter-spacing:-0.01em;}
+.inspo-card-body{padding:12px 14px 14px;background:var(--bg-card);}
+[data-theme="dark"] .inspo-card-body{background:var(--bg-raised);}
+.icb-vibe{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent-dark);margin-bottom:5px;}
+.icb-desc{font-size:12px;color:var(--ink-400);font-weight:300;line-height:1.55;margin-bottom:10px;font-style:italic;}
+/* Teaser slot previews inside card */
+.icb-teaser{display:flex;gap:6px;margin-bottom:10px;}
+.icb-teaser-slot{flex:1;background:var(--bg-raised);border-radius:8px;padding:6px 8px;border:1px solid var(--ink-700);}
+[data-theme="dark"] .icb-teaser-slot{background:var(--bg-stone);}
+.icb-ts-name{font-size:10px;font-weight:500;color:var(--ink-200);margin-bottom:1px;}
+.icb-ts-src{font-family:'DM Mono',monospace;font-size:7px;color:var(--ink-500);}
+.icb-actions{display:flex;gap:7px;}
+.icb-btn{flex:1;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;border-radius:100px;padding:8px 12px;cursor:pointer;border:none;transition:all 0.15s;}
+.icb-btn.primary{background:var(--accent);color:#fff;}
+.icb-btn.primary:hover{box-shadow:0 4px 14px rgba(184,92,63,0.3);}
+.icb-btn.ghost{background:var(--bg-raised);color:var(--ink-400);border:1px solid var(--ink-700);}
+[data-theme="dark"] .icb-btn.ghost{background:var(--bg-stone);}
+
+/* Saved state */
+.inspo-saved-banner{display:none;position:absolute;bottom:80px;left:22px;right:22px;background:var(--ink-100);color:var(--bg);border-radius:12px;padding:12px 16px;font-size:13px;font-weight:500;text-align:center;z-index:50;animation:slideUp 0.3s ease;}
+[data-theme="dark"] .inspo-saved-banner{background:var(--ink-100);color:var(--bg);}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* Theme toggle */
+.theme-btn{position:fixed;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);z-index:200;box-shadow:var(--shadow-md);}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}}
+</style>
+</head>
+<body>
+
+<button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+  <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<div class="shell">
+<div class="phone">
+  <div class="status">
+    <span class="status-time">14:22</span>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="color:var(--ink-400);"><path d="M1.5 8.5c5.5-5.5 15.5-5.5 21 0l-2 2c-4.5-4.5-12.5-4.5-17 0l-2-2z"/><path d="M5.5 12.5c3.5-3.5 9.5-3.5 13 0l-2 2c-2.5-2.5-6.5-2.5-9 0l-2-2z"/><circle cx="12" cy="18" r="2"/></svg>
+      <svg width="12" height="10" viewBox="0 0 25 12" fill="currentColor" style="color:var(--ink-400);"><rect x="0" y="2" width="18" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="18.5" y="4" width="3" height="4" rx="1"/><rect x="1.5" y="3.5" width="12" height="5" rx="1"/></svg>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 0: FORK ── -->
+  <div class="screen active" id="s-fork" style="flex:1;">
+    <div class="fork-hero" style="flex:1;min-height:400px;">
+      <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80&auto=format&fit=crop" alt="Kyoto">
+      <div class="fork-hero-overlay"></div>
+      <div class="fork-body">
+        <div class="fork-logo">Way<span>mark</span></div>
+        <div class="fork-title">The trip that knows<br><em>you're already here.</em></div>
+        <div class="fork-sub">Local sources. Behavioral signals. A plan that changes when you do.</div>
+        <button class="fork-cta-primary" onclick="goScreen('s-plan-dest')">
+          <div class="fork-cta-text">
+            <div>Plan a trip</div>
+            <div class="fork-cta-primary-sub">I know where I'm going</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        </button>
+        <button class="fork-cta-secondary" onclick="goScreen('s-inspo')">
+          <div class="fork-cta-text">
+            <div>Show me something</div>
+            <div class="fork-cta-secondary-sub">Not sure yet — just browsing</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN A1: DESTINATION ── -->
+  <div class="screen" id="s-plan-dest">
+    <div class="plan-header">
+      <button class="plan-back" onclick="goScreen('s-fork')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Back
+      </button>
+      <div class="plan-step-label">1 of 2</div>
+    </div>
+    <div class="plan-progress"><div class="plan-progress-fill" style="width:50%"></div></div>
+    <div class="plan-body">
+      <div class="plan-title">Where are<br><em>you going?</em></div>
+      <div class="plan-sub">Rough idea is fine. We'll get specific once we start building.</div>
+      <div class="dest-input-wrap">
+        <svg class="dest-input-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="dest-input" id="destInput" type="text" placeholder="City or country…" oninput="filterDest(this.value)">
+      </div>
+      <div class="dest-suggestions" id="destSugs">
+        <div class="dest-sug" onclick="selectDest(this,'Tokyo, Japan')">
+          <div class="dest-sug-img"><img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=100&q=70&auto=format&fit=crop" alt=""></div>
+          <div><div class="dest-sug-name">Tokyo</div><div class="dest-sug-meta">Japan · 10–14 days popular</div></div>
+        </div>
+        <div class="dest-sug" onclick="selectDest(this,'Kyoto, Japan')">
+          <div class="dest-sug-img"><img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=100&q=70&auto=format&fit=crop" alt=""></div>
+          <div><div class="dest-sug-name">Kyoto</div><div class="dest-sug-meta">Japan · 3–5 days popular</div></div>
+        </div>
+        <div class="dest-sug" onclick="selectDest(this,'Seoul, South Korea')">
+          <div class="dest-sug-img"><img src="https://images.unsplash.com/photo-1534430480872-3498386e7856?w=100&q=70&auto=format&fit=crop" alt=""></div>
+          <div><div class="dest-sug-name">Seoul</div><div class="dest-sug-meta">South Korea · 5–7 days popular</div></div>
+        </div>
+        <div class="dest-sug" onclick="selectDest(this,'Barcelona, Spain')">
+          <div class="dest-sug-img"><img src="https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=100&q=70&auto=format&fit=crop" alt=""></div>
+          <div><div class="dest-sug-name">Barcelona</div><div class="dest-sug-meta">Spain · 4–6 days popular</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="plan-footer">
+      <button class="plan-next" id="destNext" onclick="goScreen('s-plan-details')" disabled>
+        Next
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN A2: DETAILS ── -->
+  <div class="screen" id="s-plan-details">
+    <div class="plan-header">
+      <button class="plan-back" onclick="goScreen('s-plan-dest')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Back
+      </button>
+      <div class="plan-step-label">2 of 2</div>
+    </div>
+    <div class="plan-progress"><div class="plan-progress-fill" style="width:100%"></div></div>
+    <div class="plan-body">
+      <div class="plan-title">When, and<br><em>who's coming?</em></div>
+      <div class="plan-sub">Rough dates work — nothing's locked until you say so.</div>
+
+      <div class="date-row" style="margin-bottom:20px;">
+        <div class="date-field">
+          <div class="field-label">Arriving</div>
+          <div class="field-input filled">Mar 14
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+        </div>
+        <div class="date-field">
+          <div class="field-label">Leaving</div>
+          <div class="field-input placeholder-text">Add date
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-label" style="margin-bottom:10px;">Traveling with</div>
+      <div class="who-chips">
+        <div class="who-chip selected" onclick="toggleWho(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+          Solo
+        </div>
+        <div class="who-chip" onclick="toggleWho(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          With someone
+        </div>
+        <div class="who-chip" onclick="toggleWho(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Group
+        </div>
+        <div class="who-chip" onclick="toggleWho(this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          Family
+        </div>
+      </div>
+    </div>
+
+      <!-- Trip DNA — full taxonomy -->
+      <div class="dna-section">
+        <div class="dna-header">
+          <div class="dna-header-left">Trip vibe <span class="dna-optional">&nbsp;· optional</span></div>
+          <div class="dna-selected-count" id="dnaCount" style="display:none;"></div>
+        </div>
+
+        <!-- 1. Pace & Structure -->
+        <div class="dna-cat" id="cat-pace">
+          <div class="dna-cat-header" onclick="toggleCat('cat-pace')">
+            <div class="dna-cat-left">
+              <div class="dna-cat-icon" style="background:var(--accent-light);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="dna-cat-name">Pace &amp; Structure</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="dna-cat-pills-preview" id="prev-cat-pace"></div>
+              <svg class="dna-cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="dna-cat-body">
+            <div class="dna-chips">
+              <div class="dna-chip" onclick="toggleChip(this,'cat-pace')">Slow it down</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-pace')">Balanced</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-pace')">Pack it in</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-pace')">One city deep</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-pace')">Multi-city</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-pace')">Day trips</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-pace')">Spontaneous</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-pace')">Planned</div>
+              <button class="dna-add" onclick="showInline(this)">+ own</button>
+              <input class="dna-inline-input" placeholder="e.g. one long walk a day" onblur="blurInline(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Mornings -->
+        <div class="dna-cat" id="cat-mornings">
+          <div class="dna-cat-header" onclick="toggleCat('cat-mornings')">
+            <div class="dna-cat-left">
+              <div class="dna-cat-icon" style="background:var(--warning-bg);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+              </div>
+              <div class="dna-cat-name">Mornings</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="dna-cat-pills-preview" id="prev-cat-mornings"></div>
+              <svg class="dna-cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="dna-cat-body">
+            <div class="dna-chips">
+              <div class="dna-chip" onclick="toggleChip(this,'cat-mornings')">Early — beat the crowds</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-mornings')">Slow start</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-mornings')">Coffee first, always</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-mornings')">Market mornings</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-mornings')">Skip breakfast out</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-mornings')">No preference</div>
+              <button class="dna-add" onclick="showInline(this)">+ own</button>
+              <input class="dna-inline-input" placeholder="e.g. run first, then eat" onblur="blurInline(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Food & Drink -->
+        <div class="dna-cat" id="cat-food">
+          <div class="dna-cat-header" onclick="toggleCat('cat-food')">
+            <div class="dna-cat-left">
+              <div class="dna-cat-icon" style="background:var(--accent-light);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </div>
+              <div class="dna-cat-name">Food &amp; Drink</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="dna-cat-pills-preview" id="prev-cat-food"></div>
+              <svg class="dna-cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="dna-cat-body">
+            <div class="dna-chips">
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Counter seats</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Street food first</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">One great meal a day</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Local only</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">No tourist menus</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Markets</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Long lunches</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Late dinners</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Natural wine</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Craft beer</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Sake bars</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Omakase</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Michelin indifferent</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Skip the hype spots</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-food')">Whatever's close</div>
+              <button class="dna-add" onclick="showInline(this)">+ own</button>
+              <input class="dna-inline-input" placeholder="e.g. ramen for breakfast" onblur="blurInline(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Nights -->
+        <div class="dna-cat" id="cat-nights">
+          <div class="dna-cat-header" onclick="toggleCat('cat-nights')">
+            <div class="dna-cat-left">
+              <div class="dna-cat-icon" style="background:var(--info-bg);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--info)" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              </div>
+              <div class="dna-cat-name">Nights</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="dna-cat-pills-preview" id="prev-cat-nights"></div>
+              <svg class="dna-cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="dna-cat-body">
+            <div class="dna-chips">
+              <div class="dna-chip" onclick="toggleChip(this,'cat-nights')">Early nights</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-nights')">Bar hopping</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-nights')">Jazz &amp; live music</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-nights')">Club nights</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-nights')">Night markets</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-nights')">Quiet drink somewhere good</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-nights')">Izakaya crawl</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-nights')">Rooftop bars</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-nights')">Back to the hotel by ten</div>
+              <button class="dna-add" onclick="showInline(this)">+ own</button>
+              <input class="dna-inline-input" placeholder="e.g. tiny jazz bar" onblur="blurInline(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Culture & Sightseeing -->
+        <div class="dna-cat" id="cat-culture">
+          <div class="dna-cat-header" onclick="toggleCat('cat-culture')">
+            <div class="dna-cat-left">
+              <div class="dna-cat-icon" style="background:var(--success-bg);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </div>
+              <div class="dna-cat-name">Culture &amp; Sightseeing</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="dna-cat-pills-preview" id="prev-cat-culture"></div>
+              <svg class="dna-cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="dna-cat-body">
+            <div class="dna-chips">
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Temples over museums</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Architecture first</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Galleries &amp; contemporary art</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Local history</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Skip the landmarks</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Hidden spots</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Neighbourhood walks</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Photography</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Street art</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Gardens &amp; parks</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Castles &amp; ruins</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">Religious sites</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-culture')">No tourist traps</div>
+              <button class="dna-add" onclick="showInline(this)">+ own</button>
+              <input class="dna-inline-input" placeholder="e.g. brutalist architecture" onblur="blurInline(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Shopping -->
+        <div class="dna-cat" id="cat-shopping">
+          <div class="dna-cat-header" onclick="toggleCat('cat-shopping')">
+            <div class="dna-cat-left">
+              <div class="dna-cat-icon" style="background:var(--warning-bg);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+              <div class="dna-cat-name">Shopping</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="dna-cat-pills-preview" id="prev-cat-shopping"></div>
+              <svg class="dna-cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="dna-cat-body">
+            <div class="dna-chips">
+              <div class="dna-chip" onclick="toggleChip(this,'cat-shopping')">Bookshops &amp; record stores</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-shopping')">Vintage &amp; thrift</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-shopping')">Local makers &amp; craft</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-shopping')">Farmers &amp; flea markets</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-shopping')">Department stores</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-shopping')">Ceramics &amp; homewares</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-shopping')">Fashion &amp; streetwear</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-shopping')">Skip shopping entirely</div>
+              <button class="dna-add" onclick="showInline(this)">+ own</button>
+              <input class="dna-inline-input" placeholder="e.g. knife shop in Kyoto" onblur="blurInline(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Energy & Movement -->
+        <div class="dna-cat" id="cat-energy">
+          <div class="dna-cat-header" onclick="toggleCat('cat-energy')">
+            <div class="dna-cat-left">
+              <div class="dna-cat-icon" style="background:var(--success-bg);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <div class="dna-cat-name">Energy &amp; Movement</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="dna-cat-pills-preview" id="prev-cat-energy"></div>
+              <svg class="dna-cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="dna-cat-body">
+            <div class="dna-chips">
+              <div class="dna-chip" onclick="toggleChip(this,'cat-energy')">Walk everywhere</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-energy')">Public transit only</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-energy')">Taxi when needed</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-energy')">Bike-friendly</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-energy')">Low physical intensity</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-energy')">High activity</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-energy')">Hiking</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-energy')">Running routes</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-energy')">Rest days built in</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-energy')">No rest days</div>
+              <button class="dna-add" onclick="showInline(this)">+ own</button>
+              <input class="dna-inline-input" placeholder="e.g. 20k steps a day fine" onblur="blurInline(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. Skip & Avoid -->
+        <div class="dna-cat" id="cat-avoid">
+          <div class="dna-cat-header" onclick="toggleCat('cat-avoid')">
+            <div class="dna-cat-left">
+              <div class="dna-cat-icon" style="background:rgba(140,42,36,0.1);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8C2A2A" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+              </div>
+              <div class="dna-cat-name">Skip &amp; Avoid</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="dna-cat-pills-preview" id="prev-cat-avoid"></div>
+              <svg class="dna-cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="dna-cat-body">
+            <div class="dna-chips">
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Tourist menus</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Packed queues</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Structured tours</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Michelin crowds</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Chain restaurants</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Noisy restaurants</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Early morning slots</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Late night slots</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Museums</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Souvenir areas</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-avoid')">Over-photographed spots</div>
+              <button class="dna-add" onclick="showInline(this)">+ own</button>
+              <input class="dna-inline-input" placeholder="e.g. no shared tables" onblur="blurInline(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- 9. Practical & Dietary -->
+        <div class="dna-cat" id="cat-practical">
+          <div class="dna-cat-header" onclick="toggleCat('cat-practical')">
+            <div class="dna-cat-left">
+              <div class="dna-cat-icon" style="background:var(--info-bg);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--info)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div class="dna-cat-name">Practical &amp; Dietary</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="dna-cat-pills-preview" id="prev-cat-practical"></div>
+              <svg class="dna-cat-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="dna-cat-body">
+            <div class="dna-chips">
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Vegetarian</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Vegan</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">No shellfish</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">No pork</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Halal</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Kosher</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Gluten free</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Nut allergy</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Budget-conscious</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Splurge-friendly</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Accessibility needs</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Kid-friendly</div>
+              <div class="dna-chip" onclick="toggleChip(this,'cat-practical')">Pet-friendly</div>
+              <button class="dna-add" onclick="showInline(this)">+ own</button>
+              <input class="dna-inline-input" placeholder="e.g. severe nut allergy" onblur="blurInline(this)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Freeform -->
+        <div class="dna-freeform">
+          <div class="dna-freeform-label">Anything else? <span>totally optional</span></div>
+          <textarea class="dna-freeform-input" rows="2" placeholder="e.g. I want at least one afternoon with nothing planned, skip anything that needs a reservation more than a week out…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="plan-footer">
+      <button class="plan-next" onclick="goScreen('s-building')">
+        Build my trip
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN A3: BUILDING ── -->
+  <div class="screen" id="s-building">
+    <div class="building-screen">
+      <div class="building-hero">
+        <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80&auto=format&fit=crop" alt="Tokyo">
+        <div class="building-hero-overlay"></div>
+        <div class="building-hero-text">
+          <div class="bh-city">Tokyo, Japan</div>
+          <div class="bh-dates">Mar 14 – 22 · Solo</div>
+        </div>
+      </div>
+      <div class="building-body">
+        <div class="building-steps">
+          <div class="bs-row">
+            <div class="bs-icon done"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="bs-text"><div class="bs-label">Pulling local sources</div><div class="bs-sub">Tabelog · 12,400 reviews indexed</div></div>
+            <div class="bs-status done">Done</div>
+          </div>
+          <div class="bs-row">
+            <div class="bs-icon active"><div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease-in-out infinite;"></div></div>
+            <div class="bs-text"><div class="bs-label">Building Day 1</div><div class="bs-sub">Scoring neighborhood options</div></div>
+            <div class="bs-status active">Building…</div>
+          </div>
+          <div class="bs-row">
+            <div class="bs-icon pending"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-600)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <div class="bs-text"><div class="bs-label">Days 2–9</div><div class="bs-sub">Up next</div></div>
+            <div class="bs-status pending">Waiting</div>
+          </div>
+        </div>
+        <div class="teaser-label">First look · Day 1</div>
+        <div class="teaser-slot">
+          <div class="ts-photo"><img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=100&q=70&auto=format&fit=crop" alt=""></div>
+          <div><div class="ts-name">Tsukiji outer market</div><div class="ts-why">locals-only counter · 06:00</div></div>
+        </div>
+        <div class="teaser-slot">
+          <div class="ts-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=100&q=70&auto=format&fit=crop" alt=""></div>
+          <div><div class="ts-name">Yanaka neighborhood</div><div class="ts-why">old Tokyo · no tourist menus</div></div>
+        </div>
+        <div class="teaser-slot loading">
+          <div class="ts-photo" style="background:var(--bg-raised);"></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px;justify-content:center;">
+            <div class="skel" style="height:9px;width:65%;border-radius:4px;"></div>
+            <div class="skel" style="height:8px;width:45%;border-radius:4px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN B: INSPIRATION ── -->
+  <div class="screen" id="s-inspo">
+    <div class="inspo-header">
+      <button class="inspo-back" onclick="goScreen('s-fork')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Back
+      </button>
+      <div class="inspo-title">Explore</div>
+      <div style="width:40px;"></div>
+    </div>
+    <div class="inspo-filters">
+      <div class="inspo-filter active" onclick="setFilter(this)">All</div>
+      <div class="inspo-filter" onclick="setFilter(this)">Food-first</div>
+      <div class="inspo-filter" onclick="setFilter(this)">Walking cities</div>
+      <div class="inspo-filter" onclick="setFilter(this)">Off-season</div>
+      <div class="inspo-filter" onclick="setFilter(this)">Short trip</div>
+      <div class="inspo-filter" onclick="setFilter(this)">Solo</div>
+    </div>
+    <div class="inspo-feed" style="position:relative;">
+
+      <!-- Card 1 -->
+      <div class="inspo-card">
+        <div class="inspo-card-photo">
+          <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=75&auto=format&fit=crop" alt="Tokyo">
+          <div class="inspo-card-photo-overlay"></div>
+          <div class="inspo-card-badge">Food-first · Solo-friendly</div>
+          <button class="inspo-card-save" onclick="saveCard(this,event)" title="Save">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+          <div class="inspo-card-city">Tokyo</div>
+        </div>
+        <div class="inspo-card-body">
+          <div class="icb-vibe">7 days · Counter seats · Market mornings</div>
+          <div class="icb-desc">"You could spend a week eating your way through neighborhoods most visitors never find."</div>
+          <div class="icb-teaser">
+            <div class="icb-teaser-slot"><div class="icb-ts-name">Tsukiji market</div><div class="icb-ts-src">Tabelog · 8.1k</div></div>
+            <div class="icb-teaser-slot"><div class="icb-ts-name">Yanaka walk</div><div class="icb-ts-src">Local forums</div></div>
+            <div class="icb-teaser-slot"><div class="icb-ts-name">Shibuya izakaya</div><div class="icb-ts-src">Tabelog · 3.2k</div></div>
+          </div>
+          <div class="icb-actions">
+            <button class="icb-btn primary" onclick="startFromInspo('Tokyo, Japan')">Start from this</button>
+            <button class="icb-btn ghost">Preview</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="inspo-card">
+        <div class="inspo-card-photo">
+          <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&q=75&auto=format&fit=crop" alt="Kyoto">
+          <div class="inspo-card-photo-overlay"></div>
+          <div class="inspo-card-badge">Walking city · Slow mornings</div>
+          <button class="inspo-card-save" onclick="saveCard(this,event)" title="Save">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+          <div class="inspo-card-city">Kyoto</div>
+        </div>
+        <div class="inspo-card-body">
+          <div class="icb-vibe">4 days · Temples before crowds · Local recs</div>
+          <div class="icb-desc">"The version of Kyoto tourists don't see. Counter seats, golden hour walks, no queues."</div>
+          <div class="icb-teaser">
+            <div class="icb-teaser-slot"><div class="icb-ts-name">Fushimi Inari</div><div class="icb-ts-src">06:30 entry</div></div>
+            <div class="icb-teaser-slot"><div class="icb-ts-name">Nishiki Market</div><div class="icb-ts-src">Tabelog · 5.4k</div></div>
+            <div class="icb-teaser-slot"><div class="icb-ts-name">Pontocho bar</div><div class="icb-ts-src">Locals only</div></div>
+          </div>
+          <div class="icb-actions">
+            <button class="icb-btn primary" onclick="startFromInspo('Kyoto, Japan')">Start from this</button>
+            <button class="icb-btn ghost">Preview</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="inspo-card">
+        <div class="inspo-card-photo">
+          <img src="https://images.unsplash.com/photo-1534430480872-3498386e7856?w=600&q=75&auto=format&fit=crop" alt="Seoul">
+          <div class="inspo-card-photo-overlay"></div>
+          <div class="inspo-card-badge">Off-season · Food-first</div>
+          <button class="inspo-card-save" onclick="saveCard(this,event)" title="Save">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+          <div class="inspo-card-city">Seoul</div>
+        </div>
+        <div class="inspo-card-body">
+          <div class="icb-vibe">5 days · Night markets · Neighbourhood walks</div>
+          <div class="icb-desc">"Cheaper in winter, emptier too. The food scene doesn't care what season it is."</div>
+          <div class="icb-teaser">
+            <div class="icb-teaser-slot"><div class="icb-ts-name">Gwangjang market</div><div class="icb-ts-src">Naver · 6.8k</div></div>
+            <div class="icb-teaser-slot"><div class="icb-ts-name">Ikseon-dong</div><div class="icb-ts-src">Local forums</div></div>
+            <div class="icb-teaser-slot"><div class="icb-ts-name">Mangwon market</div><div class="icb-ts-src">Naver · 4.1k</div></div>
+          </div>
+          <div class="icb-actions">
+            <button class="icb-btn primary" onclick="startFromInspo('Seoul, South Korea')">Start from this</button>
+            <button class="icb-btn ghost">Preview</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="savedBanner" class="inspo-saved-banner">Saved — find it in your trips anytime.</div>
+    </div>
+  </div>
+
+</div><!-- /phone -->
+</div><!-- /shell -->
+
+<script>
+var selectedDest='';
+
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+}
+
+function selectDest(el,dest){
+  document.querySelectorAll('.dest-sug').forEach(function(s){s.classList.remove('selected');});
+  el.classList.add('selected');
+  selectedDest=dest;
+  document.getElementById('destNext').disabled=false;
+  document.getElementById('destInput').value=dest;
+}
+
+function filterDest(val){
+  // just visual — all suggestions stay visible in this mock
+}
+
+function toggleWho(el){
+  document.querySelectorAll('.who-chip').forEach(function(c){c.classList.remove('selected');});
+  el.classList.add('selected');
+}
+
+function toggleCat(id){
+  var cat=document.getElementById(id);
+  cat.classList.toggle('open');
+}
+
+function toggleChip(el,catId){
+  el.classList.toggle('selected');
+  updateCatState(catId);
+  updateDnaCount();
+}
+
+function updateCatState(catId){
+  var cat=document.getElementById(catId);
+  var selected=cat.querySelectorAll('.dna-chip.selected');
+  cat.classList.toggle('has-selection', selected.length > 0);
+  // update preview pills in header
+  var preview=document.getElementById('prev-'+catId);
+  preview.innerHTML='';
+  var shown=0;
+  selected.forEach(function(c){
+    if(shown<2){
+      var p=document.createElement('div');
+      p.className='dna-preview-pill';
+      p.textContent=c.textContent;
+      preview.appendChild(p);
+      shown++;
+    }
+  });
+  if(selected.length>2){
+    var p=document.createElement('div');
+    p.className='dna-preview-pill';
+    p.textContent='+' + (selected.length-2);
+    preview.appendChild(p);
+  }
+}
+
+function updateDnaCount(){
+  var total=document.querySelectorAll('.dna-section .dna-chip.selected').length;
+  var el=document.getElementById('dnaCount');
+  if(total>0){
+    el.style.display='block';
+    el.textContent=total+' selected';
+  } else {
+    el.style.display='none';
+  }
+}
+
+function showInline(btn){
+  var chips=btn.closest('.dna-chips');
+  var input=chips.querySelector('.dna-inline-input');
+  btn.style.display='none';
+  input.classList.add('visible');
+  input.focus();
+}
+
+function blurInline(input){
+  if(!input.value.trim()){
+    input.classList.remove('visible');
+    var btn=input.closest('.dna-chips').querySelector('.dna-add');
+    if(btn) btn.style.display='';
+  }
+}
+
+function setFilter(el){
+  document.querySelectorAll('.inspo-filter').forEach(function(f){f.classList.remove('active');});
+  el.classList.add('active');
+}
+
+function saveCard(btn,e){
+  e.stopPropagation();
+  btn.classList.add('saved');
+  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+  var banner=document.getElementById('savedBanner');
+  banner.style.display='block';
+  setTimeout(function(){banner.style.display='none';},2200);
+}
+
+function startFromInspo(dest){
+  selectedDest=dest;
+  goScreen('s-plan-details');
+}
+</script>
+</body>
+</html>

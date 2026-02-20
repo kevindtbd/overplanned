@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Group Invite</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#F7F4EF;--bg-card:#FFFFFF;--bg-raised:#EDE8E0;--bg-stone:#EAE4DA;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);--shadow-xl:0 32px 80px rgba(26,22,18,0.16);
+}
+[data-theme="dark"]{
+  --bg:#0C0A08;--bg-card:#161210;--bg-raised:#1A1510;--bg-stone:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);--shadow-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);}
+.shell{display:flex;align-items:center;justify-content:center;gap:48px;min-height:100vh;padding:40px 24px;flex-wrap:wrap;}
+.panel-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);text-align:center;margin-bottom:10px;}
+.phone{width:390px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:40px;overflow:hidden;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;}
+[data-theme="dark"] .phone{background:var(--bg-stone);}
+.theme-btn{position:fixed;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);z-index:200;}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+.status{padding:14px 26px 0;display:flex;justify-content:space-between;}
+.status-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-100);}
+
+/* Invite landing */
+.inv-hero{height:200px;position:relative;overflow:hidden;}
+.inv-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+.inv-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.9) 0%,rgba(14,10,6,0.1) 60%);}
+.inv-hero-body{position:absolute;bottom:0;left:0;right:0;padding:20px 22px;}
+.inv-from{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:5px;}
+.inv-trip{font-family:'Lora',serif;font-size:20px;font-weight:500;color:#fff;letter-spacing:-0.02em;margin-bottom:2px;}
+.inv-meta{font-size:11px;color:rgba(255,255,255,0.55);font-weight:300;}
+
+.inv-body{flex:1;padding:20px 22px 32px;}
+.inv-headline{font-size:15px;font-weight:500;color:var(--ink-100);margin-bottom:4px;}
+.inv-sub{font-size:12px;color:var(--ink-500);font-weight:300;margin-bottom:22px;line-height:1.5;}
+
+/* Quick persona seed — 4 questions */
+.inv-q{margin-bottom:16px;}
+.inv-q-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:8px;}
+.inv-q-opts{display:flex;gap:7px;flex-wrap:wrap;}
+.inv-opt{font-family:'Sora',sans-serif;font-size:12px;color:var(--ink-400);background:var(--bg-raised);border:1.5px solid var(--ink-700);border-radius:100px;padding:7px 14px;cursor:pointer;transition:all 0.15s;}
+[data-theme="dark"] .inv-opt{background:var(--bg-stone);}
+.inv-opt:hover{border-color:var(--ink-400);}
+.inv-opt.selected{background:var(--accent-light);border-color:var(--accent);color:var(--accent-dark);}
+
+.inv-divider{border:none;border-top:1px solid var(--ink-700);margin:18px 0;}
+.inv-branch-note{display:flex;align-items:flex-start;gap:9px;padding:12px;background:var(--bg-raised);border-radius:12px;margin-bottom:18px;}
+[data-theme="dark"] .inv-branch-note{background:var(--bg-stone);}
+.inv-branch-icon{width:22px;height:22px;border-radius:6px;background:var(--success-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.inv-branch-text{font-size:11px;color:var(--ink-400);line-height:1.55;font-weight:300;}
+.inv-branch-text strong{color:var(--ink-200);font-weight:500;}
+
+.inv-suggestion{margin-bottom:16px;}
+.inv-suggestion-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:7px;}
+.inv-suggestion-input{width:100%;background:var(--bg-card);border:1.5px solid var(--ink-700);border-radius:12px;padding:11px 14px;font-size:12px;font-family:'Sora',sans-serif;color:var(--ink-100);outline:none;transition:border-color 0.2s;resize:none;height:64px;font-weight:300;}
+[data-theme="dark"] .inv-suggestion-input{background:var(--bg-raised);}
+.inv-suggestion-input::placeholder{color:var(--ink-500);font-style:italic;}
+.inv-suggestion-input:focus{border-color:var(--accent);}
+.inv-join-btn{width:100%;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:14px;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 14px rgba(184,92,63,0.2);}
+.inv-skip{width:100%;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);background:none;border:none;cursor:pointer;padding:6px;}
+
+/* Organizer view — member joined notification -->
+.org-joined{background:var(--success-bg);border:1px solid var(--success);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+[data-theme="dark"] .org-joined{background:rgba(90,158,106,0.1);}
+.org-joined-av{width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;}
+.org-joined-av img{width:100%;height:100%;object-fit:cover;}
+.org-joined-text{flex:1;}
+.org-joined-name{font-size:13px;font-weight:500;color:var(--success);margin-bottom:1px;}
+.org-joined-sub{font-size:11px;color:var(--ink-500);font-weight:300;}
+.org-override{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-500);cursor:pointer;text-decoration:underline;}
+.org-override:hover{color:var(--ink-300);}
+</style>
+</head>
+<body>
+
+<button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+  <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+  <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<div class="shell">
+
+<!-- Phone 1: New member invite landing -->
+<div>
+<div class="panel-label">New member · Invite link landing</div>
+<div class="phone">
+  <div class="status"><span class="status-time">11:03</span></div>
+  <div class="inv-hero">
+    <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=75&auto=format&fit=crop" alt="">
+    <div class="inv-hero-overlay"></div>
+    <div class="inv-hero-body">
+      <div class="inv-from">Kevin invited you to</div>
+      <div class="inv-trip">Japan 2025</div>
+      <div class="inv-meta">Mar 14 – 22 · Tokyo, Kyoto, Osaka · 4 people</div>
+    </div>
+  </div>
+  <div class="inv-body">
+    <div class="inv-headline">A few quick questions.</div>
+    <div class="inv-sub">Helps us build your slice of the itinerary. Takes 30 seconds — the trip generates right after.</div>
+
+    <div class="inv-q">
+      <div class="inv-q-label">Your pace</div>
+      <div class="inv-q-opts">
+        <div class="inv-opt selected" onclick="selectOpt(this, 'pace')">Slow it down</div>
+        <div class="inv-opt" onclick="selectOpt(this, 'pace')">Balanced</div>
+        <div class="inv-opt" onclick="selectOpt(this, 'pace')">Pack it in</div>
+      </div>
+    </div>
+
+    <div class="inv-q">
+      <div class="inv-q-label">Food</div>
+      <div class="inv-q-opts">
+        <div class="inv-opt selected" onclick="selectOpt(this, 'food')">Local only</div>
+        <div class="inv-opt" onclick="selectOpt(this, 'food')">One great meal</div>
+        <div class="inv-opt" onclick="selectOpt(this, 'food')">Street food</div>
+        <div class="inv-opt" onclick="selectOpt(this, 'food')">Whatever's close</div>
+      </div>
+    </div>
+
+    <div class="inv-q">
+      <div class="inv-q-label">Mornings</div>
+      <div class="inv-q-opts">
+        <div class="inv-opt" onclick="selectOpt(this, 'morning')">Early bird</div>
+        <div class="inv-opt selected" onclick="selectOpt(this, 'morning')">Slow start</div>
+        <div class="inv-opt" onclick="selectOpt(this, 'morning')">Coffee first</div>
+      </div>
+    </div>
+
+    <div class="inv-q">
+      <div class="inv-q-label">Anything to avoid</div>
+      <div class="inv-q-opts">
+        <div class="inv-opt selected" onclick="selectOpt(this, 'skip')">Tourist menus</div>
+        <div class="inv-opt" onclick="selectOpt(this, 'skip')">Packed queues</div>
+        <div class="inv-opt" onclick="selectOpt(this, 'skip')">Early slots</div>
+        <div class="inv-opt" onclick="selectOpt(this, 'skip')">Museums</div>
+      </div>
+    </div>
+
+    <div class="inv-divider"></div>
+
+    <div class="inv-suggestion">
+      <div class="inv-suggestion-label">Anything the group should know? <span style="color:var(--ink-600);font-size:7px;">(optional)</span></div>
+      <textarea class="inv-suggestion-input" placeholder="Dietary needs, hard stops, things you really want to do…"></textarea>
+    </div>
+
+    <div class="inv-branch-note">
+      <div class="inv-branch-icon">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="inv-branch-text"><strong>You're in for this trip.</strong> Kevin's covering the group plan — your answers shape your personal slice of the itinerary. No account needed to participate.</div>
+    </div>
+
+    <button class="inv-join-btn">Join the trip — generate my itinerary →</button>
+    <button class="inv-skip">Skip — add me with defaults</button>
+  </div>
+</div>
+</div>
+
+<!-- Phone 2: Organizer view — member joined -->
+<div>
+<div class="panel-label">Organizer view · Member joined</div>
+<div class="phone" style="min-height:auto;">
+  <div class="status"><span class="status-time">11:04</span></div>
+  <div style="padding:20px 22px 32px;">
+    <div style="font-size:14px;font-weight:500;color:var(--ink-100);margin-bottom:4px;">Japan 2025 · Group</div>
+    <div style="font-size:12px;color:var(--ink-500);font-weight:300;margin-bottom:18px;">Mar 14 – 22 · 4 people</div>
+
+    <div class="org-joined">
+      <div class="org-joined-av"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt=""></div>
+      <div class="org-joined-text">
+        <div class="org-joined-name">JR just joined</div>
+        <div class="org-joined-sub">Itinerary updated · slow start · local food · no tourist menus</div>
+      </div>
+    </div>
+
+    <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;">Members · 4 of 4 joined</div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--ink-800);">
+        <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt="" style="width:100%;height:100%;object-fit:cover;"></div>
+        <div style="flex:1;font-size:12px;color:var(--ink-100);">Kevin (you)</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--success);">Organizer</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--ink-800);">
+        <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt="" style="width:100%;height:100%;object-fit:cover;"></div>
+        <div style="flex:1;font-size:12px;color:var(--ink-100);">Mia</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);">Joined</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--ink-800);">
+        <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;"><img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=80&q=80&auto=format&fit=crop" alt="" style="width:100%;height:100%;object-fit:cover;"></div>
+        <div style="flex:1;font-size:12px;color:var(--ink-100);">SL</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);">Joined</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+        <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt="" style="width:100%;height:100%;object-fit:cover;"></div>
+        <div style="flex:1;font-size:12px;color:var(--ink-100);">JR</div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--success);">Just joined</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:var(--ink-500);font-weight:300;margin-bottom:6px;">As organizer you can override any slot or preference.</div>
+    <div class="org-override">Override a slot →</div>
+  </div>
+</div>
+</div>
+
+</div>
+
+<script>
+function selectOpt(el, group){
+  el.closest('.inv-q-opts').querySelectorAll('.inv-opt').forEach(function(o){
+    if(!o.classList.contains('selected')) return;
+    if(o!==el) o.classList.remove('selected');
+  });
+  el.classList.toggle('selected');
+}
+</script>
+</body>
+</html>

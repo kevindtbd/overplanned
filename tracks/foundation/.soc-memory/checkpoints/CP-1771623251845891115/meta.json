@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771623251845891115",
+  "timestamp": "2026-02-20T13:34:11.845892036-08:00",
+  "migration_id": "M-012",
+  "phase": "",
+  "file_hashes": {
+    "CONTRIBUTING.md": "DELETED"
+  },
+  "description": "Pre-batch"
+}

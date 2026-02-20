@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Mid-Trip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"] {
+  --bg-base:#FAF8F5; --bg-surface:#FFFFFF; --bg-raised:#F3EFE9; --bg-overlay:#EDE8E1;
+  --accent:#B85C3F; --accent-light:#F0E0D9; --accent-muted:#D4886E; --accent-on:#8C3A24;
+  --ink-100:#1C1713; --ink-200:#3A302A; --ink-300:#5C5048; --ink-400:#7A6E64;
+  --ink-500:#9C8E84; --ink-600:#BDB0A6; --ink-700:#D6CFC8; --ink-800:#EAE4DE; --ink-900:#F5F1EC;
+  --success:#4A8A5C; --success-bg:#E0EEE5; --warning:#A07830; --warning-bg:#F2EAD8;
+  --info:#3A6A8C; --info-bg:#D8E8F2;
+  --shadow-md:0 4px 16px rgba(28,23,19,0.08),0 1px 4px rgba(28,23,19,0.04);
+  --shadow-lg:0 12px 48px rgba(28,23,19,0.10),0 2px 8px rgba(28,23,19,0.05);
+  --shadow-drawer:0 -8px 40px rgba(28,23,19,0.12),0 -1px 8px rgba(28,23,19,0.06);
+}
+[data-theme="dark"] {
+  --bg-base:#100E0B; --bg-surface:#171310; --bg-raised:#1F1A15; --bg-overlay:#28211A;
+  --accent:#C96848; --accent-light:rgba(201,104,72,0.14); --accent-muted:#8C402A; --accent-on:#E8906E;
+  --ink-100:#F0EAE2; --ink-200:#D4C8BC; --ink-300:#A89484; --ink-400:#7A6A5C;
+  --ink-500:#5C4E42; --ink-600:#3D332A; --ink-700:#2E251E; --ink-800:#221C16; --ink-900:#1A1410;
+  --success:#5A9E6A; --success-bg:rgba(90,158,106,0.12); --warning:#B8943A; --warning-bg:rgba(184,148,58,0.12);
+  --info:#4A84A8; --info-bg:rgba(74,132,168,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4); --shadow-lg:0 16px 60px rgba(0,0,0,0.5);
+  --shadow-drawer:0 -12px 60px rgba(0,0,0,0.55),0 -1px 8px rgba(0,0,0,0.3);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg-base);color:var(--ink-100);min-height:100vh;transition:background 0.3s,color 0.3s;}
+button{font-family:'Sora',sans-serif;border:none;cursor:pointer;background:none;}
+
+.layout{display:grid;grid-template-columns:1fr 390px;gap:56px;max-width:1080px;margin:0 auto;padding:48px 32px 100px;align-items:start;}
+@media(max-width:760px){.layout{grid-template-columns:1fr;padding:80px 16px 60px;}.phone-wrap{position:static;}}
+
+.controls{position:fixed;top:20px;right:24px;z-index:300;display:flex;gap:8px;}
+.ctrl-pill{display:flex;align-items:center;gap:8px;background:var(--bg-surface);border:1px solid var(--ink-700);border-radius:100px;padding:6px 14px 6px 8px;box-shadow:var(--shadow-md);cursor:pointer;}
+.toggle-track{width:28px;height:16px;background:var(--ink-700);border-radius:100px;position:relative;transition:background 0.2s;flex-shrink:0;}
+[data-theme="dark"] .toggle-track{background:var(--accent);}
+.toggle-thumb{width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:transform 0.2s;}
+[data-theme="dark"] .toggle-thumb{transform:translateX(12px);}
+.ctrl-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-400);}
+
+.left-col{animation:fadeUp 0.4s ease both 0.05s;}
+.phone-wrap{animation:fadeUp 0.4s ease both 0.12s;position:sticky;top:48px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
+.page-title{font-size:26px;font-weight:500;color:var(--ink-100);letter-spacing:-0.025em;line-height:1.2;margin-bottom:6px;}
+.page-desc{font-size:13px;color:var(--ink-400);font-weight:300;line-height:1.7;margin-bottom:32px;max-width:400px;}
+
+.trigger-group{margin-bottom:28px;}
+.trigger-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;}
+.trigger-btn{width:100%;text-align:left;display:flex;align-items:flex-start;gap:12px;padding:13px 15px;margin-bottom:7px;background:var(--bg-surface);border:1.5px solid var(--ink-800);border-radius:14px;cursor:pointer;transition:all 0.18s;}
+.trigger-btn:hover{border-color:var(--ink-600);transform:translateX(2px);}
+.trigger-btn.active{border-color:var(--accent);background:var(--accent-light);}
+.trig-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.trig-icon.system{background:var(--info-bg);color:var(--info);}
+.trig-icon.weather{background:var(--warning-bg);color:var(--warning);}
+.trig-icon.user{background:var(--success-bg);color:var(--success);}
+.trig-icon.manual{background:var(--accent-light);color:var(--accent-on);}
+.trig-type{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;}
+.trig-type.system{color:var(--info);} .trig-type.weather{color:var(--warning);} .trig-type.user{color:var(--success);} .trig-type.manual{color:var(--accent-on);}
+.trig-title{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:2px;}
+.trig-desc{font-size:12px;color:var(--ink-400);font-weight:300;line-height:1.5;}
+.principle{padding:14px 16px;background:var(--bg-raised);border-radius:12px;border-left:3px solid var(--accent);margin-bottom:10px;}
+.principle-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:5px;}
+.principle-text{font-size:12px;color:var(--ink-300);font-weight:300;line-height:1.65;}
+
+/* PHONE */
+.phone{background:var(--bg-surface);border-radius:40px;border:1.5px solid var(--ink-700);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;height:780px;position:relative;overflow:clip;}
+[data-theme="dark"] .phone{border-color:var(--ink-600);}
+.phone-status{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;flex-shrink:0;}
+.status-time{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-400);}
+.status-trip{font-size:12px;font-weight:500;color:var(--ink-200);}
+.day-nav{display:flex;align-items:center;justify-content:space-between;padding:0 20px 12px;flex-shrink:0;border-bottom:1px solid var(--ink-800);}
+.day-nav-arrow{width:28px;height:28px;border-radius:50%;border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;color:var(--ink-400);cursor:pointer;transition:all 0.15s;}
+.day-nav-arrow:hover{border-color:var(--ink-500);color:var(--ink-200);}
+.day-nav-label{font-size:15px;font-weight:500;color:var(--ink-100);letter-spacing:-0.02em;text-align:center;}
+.day-nav-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);letter-spacing:0.08em;text-transform:uppercase;margin-top:1px;text-align:center;}
+
+/* MAP */
+.map-strip{position:relative;height:72px;flex-shrink:0;overflow:hidden;cursor:pointer;transition:height 0.4s cubic-bezier(0.4,0,0.2,1);}
+.map-strip.expanded{height:180px;}
+.map-img{width:100%;height:100%;object-fit:cover;filter:saturate(0.7) brightness(0.95);transition:filter 0.3s;}
+.map-strip:hover .map-img{filter:saturate(0.85) brightness(1);}
+.map-fade{position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(to top,var(--bg-surface),transparent);pointer-events:none;}
+.map-hint{position:absolute;bottom:7px;right:10px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-400);background:rgba(250,248,245,0.88);padding:2px 7px;border-radius:100px;backdrop-filter:blur(4px);}
+[data-theme="dark"] .map-hint{background:rgba(16,14,11,0.88);}
+.map-pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;}
+.map-pin-dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:8px;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.25);border:2px solid #fff;}
+.map-pin-dot.done{background:var(--ink-600);}
+.map-pin-dot.active{background:var(--accent);transform:scale(1.2);}
+.map-pin-dot.food{background:var(--accent);}
+.map-pin-dot.culture{background:var(--info);}
+.map-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+
+/* SPINE */
+.slot-scroll{flex:1;overflow-y:auto;padding:14px 16px 32px;scrollbar-width:none;}
+.slot-scroll::-webkit-scrollbar{display:none;}
+.time-axis{display:flex;gap:12px;}
+.time-col{display:flex;flex-direction:column;align-items:center;padding-top:16px;flex-shrink:0;width:34px;}
+.time-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-600);margin-bottom:5px;line-height:1;}
+.time-dot{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink-700);background:var(--bg-surface);flex-shrink:0;z-index:1;transition:all 0.3s;}
+.time-dot.done{background:var(--ink-700);border-color:var(--ink-700);}
+.time-dot.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);}
+.time-line{width:1.5px;flex:1;background:var(--ink-800);min-height:14px;margin-top:4px;}
+.time-line.done{background:var(--ink-700);}
+.slots-col{flex:1;display:flex;flex-direction:column;gap:8px;}
+
+/* SLOT CARD */
+.slot-card{background:var(--bg-surface);border:1.5px solid var(--ink-800);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color 0.2s,opacity 0.3s,transform 0.2s;box-shadow:0 1px 4px rgba(28,23,19,0.05);}
+.slot-card:hover{border-color:var(--ink-600);}
+.slot-card.done{opacity:0.5;}
+.slot-card.done:hover{opacity:0.7;}
+.slot-card.active{border-color:var(--accent-muted);}
+.slot-card.expanded{border-color:var(--accent-muted);}
+.slot-card.swap-pending{opacity:0.4;border-color:var(--ink-700);border-style:dashed;pointer-events:none;}
+.slot-card.just-accepted{animation:slotAccept 0.45s cubic-bezier(0.34,1.56,0.64,1) both;border-color:rgba(74,138,92,0.5);}
+@keyframes slotAccept{0%{transform:scale(0.96);opacity:0.5;}60%{transform:scale(1.02);}100%{transform:scale(1);opacity:1;}}
+
+.slot-photo{position:relative;height:90px;overflow:hidden;}
+.slot-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.slot-card:hover .slot-photo img{transform:scale(1.03);}
+.slot-photo-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(28,23,19,0.6) 0%,transparent 55%);}
+.slot-cat-icon{position:absolute;bottom:8px;left:10px;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);}
+.slot-cat-icon.food{background:rgba(184,92,63,0.85);color:#fff;}
+.slot-cat-icon.culture{background:rgba(58,106,140,0.85);color:#fff;}
+.slot-cat-icon.activity{background:rgba(122,106,58,0.85);color:#fff;}
+.slot-booking-badge{position:absolute;top:8px;right:10px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:100px;backdrop-filter:blur(8px);cursor:pointer;transition:all 0.2s;border:none;}
+.slot-booking-badge.booked{background:rgba(74,138,92,0.85);color:#fff;}
+.slot-booking-badge.bookable{background:rgba(28,23,19,0.65);color:rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.2);}
+.slot-booking-badge.bookable:hover{background:var(--accent);}
+.slot-booking-badge.needs-action{background:rgba(160,120,48,0.85);color:#fff;}
+
+.slot-body{padding:10px 12px 11px;}
+.slot-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;}
+.slot-name{font-size:13px;font-weight:500;color:var(--ink-100);letter-spacing:-0.01em;line-height:1.2;}
+.slot-duration{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);flex-shrink:0;margin-top:2px;}
+.slot-suggestion{font-size:11px;color:var(--ink-400);font-weight:300;line-height:1.45;font-style:italic;margin-bottom:7px;}
+.slot-signals{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.signal-chip{display:flex;align-items:center;gap:3px;padding:2px 7px;border-radius:100px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.04em;}
+.signal-chip.source{color:var(--info);background:var(--info-bg);}
+.signal-chip.local{color:var(--success);background:var(--success-bg);}
+.signal-chip.busy{color:var(--warning);background:var(--warning-bg);}
+.slot-swap-btn{display:inline-flex;align-items:center;gap:4px;margin-top:8px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-400);background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:100px;padding:4px 10px;cursor:pointer;transition:all 0.15s;}
+.slot-swap-btn:hover{border-color:var(--accent-muted);color:var(--accent-on);}
+.slot-detail{max-height:0;overflow:hidden;border-top:1px solid transparent;transition:max-height 0.3s ease,border-color 0.3s ease;}
+.slot-card.expanded .slot-detail{max-height:300px;border-top-color:var(--ink-800);}
+.slot-detail-inner{padding:10px 12px 12px;}
+.slot-detail-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.slot-detail-row:last-child{margin-bottom:0;}
+.detail-icon{color:var(--ink-500);flex-shrink:0;}
+.detail-text{font-size:12px;color:var(--ink-300);font-weight:300;line-height:1.4;flex:1;}
+.detail-action{margin-left:auto;flex-shrink:0;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-on);background:var(--accent-light);border:1px solid var(--accent-muted);border-radius:100px;padding:4px 10px;cursor:pointer;transition:all 0.15s;}
+.detail-action:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+.detail-action.booked-action{color:var(--success);background:var(--success-bg);border-color:transparent;cursor:default;}
+
+.slot-transit{display:flex;align-items:center;gap:10px;padding:9px 12px;}
+.transit-label{font-size:12px;color:var(--ink-400);font-weight:300;flex:1;}
+.transit-detail{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-600);}
+.transit-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-500);flex-shrink:0;}
+
+/* PROMPT */
+.prompt-bar{flex-shrink:0;border-top:1px solid var(--ink-800);padding:10px 14px 14px;display:flex;gap:8px;align-items:center;background:var(--bg-surface);}
+.prompt-input{flex:1;background:var(--bg-raised);border:1.5px solid var(--ink-700);border-radius:100px;padding:9px 16px;font-family:'Sora',sans-serif;font-size:12px;font-weight:300;color:var(--ink-100);outline:none;transition:border-color 0.18s;}
+.prompt-input:focus{border-color:var(--accent-muted);}
+.prompt-input::placeholder{color:var(--ink-500);}
+.prompt-send{width:34px;height:34px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:all 0.18s;flex-shrink:0;}
+.prompt-send:hover{opacity:0.85;transform:scale(1.05);}
+
+/* DRAWER */
+.pivot-drawer{position:absolute;bottom:0;left:0;right:0;background:var(--bg-surface);border-top:1px solid var(--ink-700);border-radius:22px 22px 0 0;box-shadow:var(--shadow-drawer);transform:translateY(100%);transition:transform 0.38s cubic-bezier(0.32,0.72,0,1);z-index:20;will-change:transform;}
+[data-theme="dark"] .pivot-drawer{background:var(--bg-raised);border-color:var(--ink-600);}
+.pivot-drawer.visible{transform:translateY(0);}
+.drawer-handle{width:36px;height:4px;background:var(--ink-700);border-radius:2px;margin:12px auto 0;cursor:grab;}
+.drawer-head{padding:14px 18px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.drawer-signal{display:flex;align-items:center;gap:8px;flex:1;}
+.signal-icon{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.signal-icon.system{background:var(--info-bg);color:var(--info);}
+.signal-icon.weather{background:var(--warning-bg);color:var(--warning);}
+.signal-icon.user{background:var(--success-bg);color:var(--success);}
+.signal-icon.manual{background:var(--accent-light);color:var(--accent-on);}
+.signal-source{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;}
+.signal-source.system{color:var(--info);} .signal-source.weather{color:var(--warning);} .signal-source.user{color:var(--success);} .signal-source.manual{color:var(--accent-on);}
+.drawer-dismiss{width:26px;height:26px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);flex-shrink:0;transition:all 0.15s;}
+.drawer-dismiss:hover{border-color:var(--ink-500);color:var(--ink-100);}
+.drawer-message{padding:10px 18px 0;font-size:14px;font-weight:400;color:var(--ink-100);letter-spacing:-0.01em;line-height:1.45;}
+
+.drawer-swap{margin:12px 14px 0;border-radius:14px;overflow:hidden;border:1.5px solid var(--ink-700);background:var(--bg-raised);transition:border-color 0.15s;}
+[data-theme="dark"] .drawer-swap{background:var(--bg-overlay);border-color:var(--ink-600);}
+.swap-photo{height:90px;position:relative;overflow:hidden;}
+.swap-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.drawer-swap:hover .swap-photo img{transform:scale(1.04);}
+.swap-photo-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(12,9,6,0.38) 100%);}
+.swap-source{position:absolute;top:8px;right:9px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(240,234,226,0.75);background:rgba(12,9,6,0.42);backdrop-filter:blur(6px);padding:2px 7px;border-radius:100px;}
+.swap-gem{position:absolute;bottom:7px;left:9px;display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace;font-size:8px;background:rgba(74,138,92,0.75);color:#E4F2E8;border:1px solid rgba(74,138,92,0.3);backdrop-filter:blur(8px);}
+.swap-body{padding:10px 13px 12px;}
+.swap-cat-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;}
+.swap-cat-badge{width:15px;height:15px;border-radius:4px;display:flex;align-items:center;justify-content:center;}
+.swap-cat-badge.food{background:rgba(184,92,63,0.12);color:var(--accent);}
+.swap-cat-badge.culture{background:var(--info-bg);color:var(--info);}
+.swap-cat-badge.activity{background:var(--warning-bg);color:var(--warning);}
+.swap-cat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);}
+.swap-name{font-size:13px;font-weight:500;color:var(--ink-100);letter-spacing:-0.01em;margin-bottom:2px;}
+.swap-suggestion{font-size:11px;color:var(--ink-400);font-weight:300;line-height:1.4;font-style:italic;margin-bottom:8px;}
+.swap-meta{display:flex;align-items:center;gap:10px;}
+.swap-meta-item{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-500);display:flex;align-items:center;gap:3px;}
+
+.drawer-actions{display:flex;gap:8px;padding:12px 14px 16px;}
+.btn-accept{flex:1;padding:11px 0;background:var(--accent);color:#fff;border:none;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-accept:hover{opacity:0.88;transform:translateY(-1px);}
+.btn-alt{padding:11px 14px;background:transparent;color:var(--ink-400);border:1.5px solid var(--ink-700);border-radius:100px;font-size:12px;font-weight:400;cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.btn-alt:hover{border-color:var(--ink-500);color:var(--ink-100);}
+
+.drawer-alts{max-height:0;overflow:hidden;transition:max-height 0.3s ease;border-top:1px solid transparent;}
+.drawer-alts.open{max-height:200px;border-top-color:var(--ink-800);}
+.alts-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);padding:10px 14px 6px;}
+.alt-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--ink-800);cursor:pointer;transition:all 0.15s;}
+.alt-row:last-child{border-bottom:none;}
+.alt-row:hover{background:var(--bg-raised);}
+.alt-thumb{width:38px;height:38px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.alt-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.alt-body{flex:1;}
+.alt-name{font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:1px;}
+.alt-why{font-size:11px;color:var(--ink-400);font-weight:300;font-style:italic;}
+.alt-cat-badge{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.alt-cat-badge.food{background:rgba(184,92,63,0.12);color:var(--accent);}
+
+.feedback-strip{display:none;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid var(--ink-800);background:var(--bg-raised);}
+.feedback-strip.visible{display:flex;}
+.feedback-q{font-size:12px;color:var(--ink-300);font-weight:300;}
+.feedback-opts{display:flex;gap:6px;}
+.fb-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--ink-700);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-400);transition:all 0.15s;}
+.fb-btn.up:hover{border-color:var(--success);color:var(--success);background:var(--success-bg);}
+.fb-btn.down:hover{border-color:var(--warning);color:var(--warning);background:var(--warning-bg);}
+.fb-btn.active-up{border-color:var(--success);color:var(--success);background:var(--success-bg);}
+
+.drawer-overlay{position:absolute;inset:0;background:rgba(28,23,19,0.18);opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:15;border-radius:40px;}
+.drawer-overlay.visible{opacity:1;pointer-events:auto;}
+
+.bottom-nav{flex-shrink:0;border-top:1px solid var(--ink-800);padding:10px 0 14px;display:flex;justify-content:space-around;background:var(--bg-surface);}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:3px 12px;}
+.nav-item svg{color:var(--ink-600);transition:color 0.15s;}
+.nav-item span{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-600);transition:color 0.15s;}
+.nav-item.active svg,.nav-item.active span{color:var(--accent);}
+
+@keyframes annoPulse{0%{box-shadow:0 0 0 0 rgba(184,92,63,0.5);}50%{box-shadow:0 0 0 6px rgba(184,92,63,0);}100%{box-shadow:0 0 0 0 rgba(184,92,63,0);}}
+.anno-pulse{animation:annoPulse 0.8s ease;border-color:var(--accent) !important;}
+@keyframes slotIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+.slot-card{animation:slotIn 0.3s ease both;}
+.slot-card:nth-child(1){animation-delay:0.04s;}.slot-card:nth-child(2){animation-delay:0.08s;}
+.slot-card:nth-child(3){animation-delay:0.12s;}.slot-card:nth-child(4){animation-delay:0.16s;}
+.slot-card:nth-child(5){animation-delay:0.20s;}.slot-card:nth-child(6){animation-delay:0.24s;}
+
+/* PROMPT CHIPS */
+.prompt-bar { flex-direction:column; align-items:stretch; padding:8px 14px 14px; gap:0; }
+.prompt-chips { display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+.prompt-chips::-webkit-scrollbar { display:none; }
+
+.pchip {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:6px 11px; border-radius:100px; white-space:nowrap;
+  font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.06em; text-transform:uppercase;
+  color:var(--ink-400); background:var(--bg-raised);
+  border:1px solid var(--ink-700); cursor:pointer;
+  transition:all 0.18s; flex-shrink:0;
+}
+.pchip:hover { border-color:var(--accent-muted); color:var(--accent-on); background:var(--accent-light); }
+.pchip.active { border-color:var(--accent); color:var(--accent-on); background:var(--accent-light); }
+.pchip-text { color:var(--ink-500); }
+
+.prompt-input-row {
+  display:none; align-items:center; gap:8px; margin-top:8px;
+}
+.prompt-input-row.visible { display:flex; }
+
+.prompt-back {
+  width:28px; height:28px; border-radius:50%; flex-shrink:0;
+  background:var(--bg-raised); border:1px solid var(--ink-700);
+  display:flex; align-items:center; justify-content:center;
+  color:var(--ink-400); cursor:pointer; transition:all 0.15s;
+}
+.prompt-back:hover { border-color:var(--ink-500); color:var(--ink-200); }
+</style>
+</head>
+<body>
+<div class="controls">
+  <div class="ctrl-pill" onclick="toggleTheme()">
+    <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    <span class="ctrl-label" id="themeLabel">Light</span>
+  </div>
+</div>
+<div class="layout">
+  <div class="left-col">
+    <div class="page-eyebrow">Mid-Trip · Unified</div>
+    <div class="page-title">Day view + pivot<br>wired together.</div>
+    <div class="page-desc">Triggers come from three places — the system detecting something, the user typing, or tapping "Swap this" on a card. All three produce the same drawer. The slot goes pending while it's open.</div>
+    <div class="trigger-group">
+      <div class="trigger-label">Trigger a pivot</div>
+      <button class="trigger-btn active" onclick="triggerScenario('closed',this)">
+        <div class="trig-icon system"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+        <div class="trig-body">
+          <div class="trig-type system">System · Venue closed</div>
+          <div class="trig-title">Restaurant went dark</div>
+          <div class="trig-desc">Detected via real-time source check. Drawer surfaces unprompted.</div>
+        </div>
+      </button>
+      <button class="trigger-btn" onclick="triggerScenario('rain',this)">
+        <div class="trig-icon weather"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg></div>
+        <div class="trig-body">
+          <div class="trig-type weather">System · Weather</div>
+          <div class="trig-title">Rain hits the outdoor plan</div>
+          <div class="trig-desc">Forecast flipped. Outdoor slot gets an indoor alternative queued.</div>
+        </div>
+      </button>
+      <button class="trigger-btn" onclick="triggerScenario('tired',this)">
+        <div class="trig-icon user"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <div class="trig-body">
+          <div class="trig-type user">User · Mood signal</div>
+          <div class="trig-title">"I'm exhausted"</div>
+          <div class="trig-desc">Type it in the bar below. Lower-energy afternoon without flattening the day.</div>
+        </div>
+      </button>
+      <button class="trigger-btn" onclick="triggerScenario('swap',this)">
+        <div class="trig-icon manual"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+        <div class="trig-body">
+          <div class="trig-type manual">User · Card action</div>
+          <div class="trig-title">Swap this slot</div>
+          <div class="trig-desc">Tap "Swap this" on the active slot. Pre-loaded with slot-specific alternatives.</div>
+        </div>
+      </button>
+    </div>
+    <div class="principle">
+      <div class="principle-label">Same drawer, every trigger</div>
+      <div class="principle-text">System, typed, or tapped — the user never knows which fired it. The slot goes dashed-pending while the drawer is open. Accept resolves with a pop. Dismiss snaps it back clean.</div>
+    </div>
+    <div class="principle" style="border-left-color:var(--success);margin-top:10px">
+      <div class="principle-label" style="color:var(--success)">Implicit feedback</div>
+      <div class="principle-text">Accept, dismiss, and ignore are all signals. Thumbs up/down appears once after accept — never again for that swap. Behavioral graph updates regardless.</div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-status">
+        <span class="status-time">14:22</span>
+        <span class="status-trip">Kyoto · Day 3</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-500)">7 days</span>
+      </div>
+      <div class="day-nav">
+        <div class="day-nav-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></div>
+        <div><div class="day-nav-label">Friday, March 14</div><div class="day-nav-sub">Day 3 of 7 · Kyoto</div></div>
+        <div class="day-nav-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+
+      <div class="map-strip" id="mapStrip" onclick="toggleMap()">
+        <img class="map-img" src="https://images.unsplash.com/photo-1623834232787-8c0b70ef6e5a?w=800&q=70&auto=format&fit=crop" alt="map" onerror="this.src='https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=70&auto=format&fit=crop'">
+        <svg class="map-svg" viewBox="0 0 390 72" preserveAspectRatio="none">
+          <polyline points="70,58 145,38 230,25 305,48 355,34" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>
+        </svg>
+        <div class="map-pin" style="left:18%;top:88%"><div class="map-pin-dot done">1</div></div>
+        <div class="map-pin" style="left:37%;top:62%"><div class="map-pin-dot done">2</div></div>
+        <div class="map-pin" style="left:59%;top:46%"><div class="map-pin-dot active">3</div></div>
+        <div class="map-pin" style="left:78%;top:74%"><div class="map-pin-dot food">4</div></div>
+        <div class="map-pin" style="left:92%;top:56%"><div class="map-pin-dot food">5</div></div>
+        <div class="map-fade"></div>
+        <div class="map-hint">tap to expand</div>
+      </div>
+
+      <div class="slot-scroll" id="slotScroll">
+        <div class="time-axis">
+          <div class="time-col">
+            <div class="time-label">09:00</div><div class="time-dot done"></div><div class="time-line done"></div>
+            <div class="time-label">12:30</div><div class="time-dot done"></div><div class="time-line done"></div>
+            <div class="time-label">14:00</div><div class="time-dot active"></div><div class="time-line"></div>
+            <div class="time-label">17:30</div><div class="time-dot"></div><div class="time-line"></div>
+            <div class="time-label">19:00</div><div class="time-dot"></div><div class="time-line"></div>
+            <div class="time-label">21:30</div><div class="time-dot"></div>
+          </div>
+          <div class="slots-col">
+
+            <!-- Slot 1 done -->
+            <div class="slot-card done" id="slot1">
+              <div class="slot-photo">
+                <img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=600&q=70&auto=format&fit=crop" alt="">
+                <div class="slot-photo-grad"></div>
+                <div class="slot-cat-icon culture"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+                <button class="slot-booking-badge booked" onclick="event.stopPropagation()">Visited</button>
+              </div>
+              <div class="slot-body">
+                <div class="slot-header"><div class="slot-name">Fushimi Inari</div><div class="slot-duration">2h 20m</div></div>
+                <div class="slot-suggestion">left before the crowds hit</div>
+                <div class="slot-signals"><div class="signal-chip local"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>local</div><div class="signal-chip source">Tabelog · 2.1k</div></div>
+              </div>
+              <div class="slot-detail"><div class="slot-detail-inner"><div class="slot-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="detail-text">Completed 11:18 — 42 min ahead</div></div></div></div>
+            </div>
+
+            <!-- Transit done -->
+            <div class="slot-card done" style="border-radius:10px;cursor:default;">
+              <div class="slot-transit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><div class="transit-label">Taxi to Nishiki</div><div class="transit-detail">18 min · ¥1,200</div><div class="transit-time">12:20</div></div>
+            </div>
+
+            <!-- Slot 2 done -->
+            <div class="slot-card done" id="slot2">
+              <div class="slot-photo">
+                <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=70&auto=format&fit=crop" alt="">
+                <div class="slot-photo-grad"></div>
+                <div class="slot-cat-icon food"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+                <button class="slot-booking-badge booked" onclick="event.stopPropagation()">Visited</button>
+              </div>
+              <div class="slot-body">
+                <div class="slot-header"><div class="slot-name">Nishiki Market</div><div class="slot-duration">1h 30m</div></div>
+                <div class="slot-suggestion">standing counters · your pace</div>
+                <div class="slot-signals"><div class="signal-chip local"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>local</div><div class="signal-chip source">Tabelog · 847</div></div>
+              </div>
+              <div class="slot-detail"><div class="slot-detail-inner"><div class="slot-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="detail-text">Completed 13:55</div></div></div></div>
+            </div>
+
+            <!-- Transit active -->
+            <div class="slot-card" style="border-radius:10px;border-color:var(--accent-muted);cursor:default;">
+              <div class="slot-transit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><div class="transit-label" style="color:var(--ink-200)">Taxi to Kinkaku-ji</div><div class="transit-detail">22 min · en route</div><div class="transit-time" style="color:var(--accent)">now</div></div>
+            </div>
+
+            <!-- Slot 3 ACTIVE — swap target -->
+            <div class="slot-card active" id="slot3">
+              <div class="slot-photo">
+                <img id="slot3Img" src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=70&auto=format&fit=crop" alt="">
+                <div class="slot-photo-grad"></div>
+                <div class="slot-cat-icon culture"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+                <button class="slot-booking-badge booked" onclick="event.stopPropagation()">Booked</button>
+              </div>
+              <div class="slot-body">
+                <div class="slot-header"><div class="slot-name" id="slot3Name">Kinkaku-ji</div><div class="slot-duration">3h 30m</div></div>
+                <div class="slot-suggestion" id="slot3Why">weekday afternoon · thins out by 15:00</div>
+                <div class="slot-signals"><div class="signal-chip local"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>local</div><div class="signal-chip source">Tabelog · 4.2k</div><div class="signal-chip busy">busy 10–14:00</div></div>
+                <button class="slot-swap-btn" onclick="event.stopPropagation();triggerManualSwap()"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Swap this</button>
+              </div>
+              <div class="slot-detail"><div class="slot-detail-inner">
+                <div class="slot-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="detail-text">Kinkakuji-cho, Kita-ku, Kyoto</div></div>
+                <div class="slot-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="detail-text">Open until 17:00 · ¥500 entry</div><button class="detail-action booked-action" disabled>Confirmed</button></div>
+              </div></div>
+            </div>
+
+            <!-- Slot 4 bookable -->
+            <div class="slot-card" id="slot4">
+              <div class="slot-photo">
+                <img src="https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=600&q=70&auto=format&fit=crop" alt="">
+                <div class="slot-photo-grad"></div>
+                <div class="slot-cat-icon food"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+                <button class="slot-booking-badge bookable" onclick="event.stopPropagation();expandAndBook('slot4')">Book now</button>
+              </div>
+              <div class="slot-body">
+                <div class="slot-header"><div class="slot-name">Pontocho izakaya</div><div class="slot-duration">2h</div></div>
+                <div class="slot-suggestion">locals-only counter · full by 20:00</div>
+                <div class="slot-signals"><div class="signal-chip local"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>local</div><div class="signal-chip source">Tabelog · 3.8k</div></div>
+              </div>
+              <div class="slot-detail"><div class="slot-detail-inner">
+                <div class="slot-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="detail-text">Pontocho-dori, Nakagyo-ku</div></div>
+                <div class="slot-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="detail-text">19:00 · 1 seat · ¥6,000 pp</div><button class="detail-action" id="slot4BookBtn" onclick="event.stopPropagation();bookSlot('slot4')">Book now</button></div>
+              </div></div>
+            </div>
+
+            <!-- Slot 5 call ahead -->
+            <div class="slot-card" id="slot5">
+              <div class="slot-body" style="padding:11px 12px">
+                <div class="slot-header">
+                  <div style="display:flex;align-items:center;gap:8px;flex:1"><div style="width:24px;height:24px;border-radius:7px;background:var(--bg-raised);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink-400);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="slot-name">Gion jazz bar</div></div>
+                  <div class="slot-duration">2h</div>
+                </div>
+                <div class="slot-suggestion">standing only · cash · worth it</div>
+                <div class="slot-signals" style="margin-top:6px"><div class="signal-chip source">Reddit · local rec</div><div class="signal-chip busy"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>call ahead</div></div>
+              </div>
+              <div class="slot-detail"><div class="slot-detail-inner">
+                <div class="slot-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="detail-text">No online booking — call to check</div><button class="detail-action" onclick="event.stopPropagation();this.textContent='Noted';this.className='detail-action booked-action'">Call</button></div>
+                <div class="slot-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="detail-text">Cash only · ¥2,500 cover</div></div>
+              </div></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="prompt-bar" id="promptBar">
+        <div class="prompt-chips" id="promptChips">
+          <button class="pchip" onclick="chipTap(this,'tired')">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            low energy
+          </button>
+          <button class="pchip" onclick="chipTap(this,'rain')">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+            weather
+          </button>
+          <button class="pchip" onclick="chipTap(this,'hungry')">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            hungry now
+          </button>
+          <button class="pchip" onclick="chipTap(this,'closed')">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            it's closed
+          </button>
+          <button class="pchip pchip-text" onclick="openPromptInput()">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            type
+          </button>
+        </div>
+        <div class="prompt-input-row" id="promptInputRow">
+          <button class="prompt-back" onclick="closePromptInput()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <input class="prompt-input" id="promptInput" type="text" placeholder="what's up...">
+          <button class="prompt-send" onclick="handlePrompt()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+        </div>
+      </div>
+
+      <div class="drawer-overlay" id="drawerOverlay" onclick="dismissDrawer()"></div>
+
+      <div class="pivot-drawer" id="pivotDrawer">
+        <div class="drawer-handle"></div>
+        <div class="drawer-head">
+          <div class="drawer-signal">
+            <div class="signal-icon system" id="drawerIcon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <span class="signal-source system" id="drawerSource">System · Venue closed</span>
+          </div>
+          <div class="drawer-dismiss" onclick="dismissDrawer()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+        </div>
+        <div class="drawer-message" id="drawerMessage">Ippudo is closed today — here's what we'd put in instead.</div>
+        <div class="drawer-swap">
+          <div class="swap-photo">
+            <img id="drawerImg" src="https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=600&q=70&auto=format&fit=crop" alt="">
+            <div class="swap-photo-overlay"></div>
+            <div class="swap-source" id="drawerSource2">Tabelog · 1.2k</div>
+            <div class="swap-gem"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>local pick</div>
+          </div>
+          <div class="swap-body">
+            <div class="swap-cat-row">
+              <div class="swap-cat-badge food" id="drawerCat"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg></div>
+              <span class="swap-cat-label" id="drawerCatLabel">Food</span>
+            </div>
+            <div class="swap-name" id="drawerName">Kyoto Ramen Koji</div>
+            <div class="swap-suggestion" id="drawerWhy">counter seating · same neighborhood · no wait at lunch</div>
+            <div class="swap-meta">
+              <div class="swap-meta-item"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span id="drawerTime">1h 30m</span></div>
+              <div class="swap-meta-item"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span id="drawerDist">8 min walk</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="drawer-actions">
+          <button class="btn-accept" id="btnAccept" onclick="acceptSwap()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Swap it in</button>
+          <button class="btn-alt" onclick="toggleAlts()">Other options</button>
+          <button class="btn-alt" onclick="dismissDrawer()">Keep it</button>
+        </div>
+        <div class="drawer-alts" id="drawerAlts">
+          <div class="alts-label">Other options</div>
+          <div class="alt-row" onclick="selectAlt(this,'Soba Kichi','quiet spot · 5 min away','https://images.unsplash.com/photo-1547592166-23ac45744acd?w=200&q=60&auto=format&fit=crop')">
+            <div class="alt-thumb"><img src="https://images.unsplash.com/photo-1547592166-23ac45744acd?w=200&q=60&auto=format&fit=crop" alt=""></div>
+            <div class="alt-body"><div class="alt-name">Soba Kichi</div><div class="alt-why">quiet spot · 5 min away</div></div>
+            <div class="alt-cat-badge food"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg></div>
+          </div>
+          <div class="alt-row" onclick="selectAlt(this,'Nishiki Tsukemen','local ramen counter · cash only','https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=200&q=60&auto=format&fit=crop')">
+            <div class="alt-thumb"><img src="https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=200&q=60&auto=format&fit=crop" alt=""></div>
+            <div class="alt-body"><div class="alt-name">Nishiki Tsukemen</div><div class="alt-why">local ramen counter · cash only</div></div>
+            <div class="alt-cat-badge food"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg></div>
+          </div>
+          <div class="alt-row" onclick="selectAlt(this,&quot;Philosopher&apos;s Path cafe&quot;,&quot;easy · close to next slot&quot;,'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&q=60&auto=format&fit=crop')">
+            <div class="alt-thumb"><img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&q=60&auto=format&fit=crop" alt=""></div>
+            <div class="alt-body"><div class="alt-name">Philosopher's Path cafe</div><div class="alt-why">easy · close to next slot</div></div>
+            <div class="alt-cat-badge food"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg></div>
+          </div>
+        </div>
+        <div class="feedback-strip" id="feedbackStrip">
+          <div class="feedback-q">Good swap?</div>
+          <div class="feedback-opts">
+            <button class="fb-btn up" onclick="giveFeedback('up',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></button>
+            <button class="fb-btn down" onclick="giveFeedback('down',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Home</span></div>
+        <div class="nav-item active"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Today</span></div>
+        <div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>Discover</span></div>
+        <div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Group</span></div>
+        <div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>You</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+var SCENARIOS = {
+  closed: {
+    cls:'system', label:'System · Venue closed',
+    msg:"Ippudo is closed today — here's what we'd put in instead.",
+    img:'https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=600&q=70&auto=format&fit=crop',
+    src:'Tabelog · 1.2k', cat:'food', catLabel:'Food',
+    name:'Kyoto Ramen Koji', why:'counter seating · same neighborhood · no wait at lunch',
+    time:'1h 30m', dist:'8 min walk'
+  },
+  rain: {
+    cls:'weather', label:'System · Weather',
+    msg:"Rain's coming at 14:00. Swapping Kinkaku-ji for something indoors.",
+    img:'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=70&auto=format&fit=crop',
+    src:'Tabelog · 890', cat:'culture', catLabel:'Culture',
+    name:'Nishiki Tenmangu', why:'covered walkways · same area · stays dry',
+    time:'2h', dist:'12 min walk'
+  },
+  tired: {
+    cls:'user', label:'User · Mood signal',
+    msg:"Lighter afternoon — here's something easier than a lot of walking.",
+    img:'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=70&auto=format&fit=crop',
+    src:'Google · 4.7', cat:'activity', catLabel:'Cafe',
+    name:'Urasenke Tea House', why:'seated · calm · 45 min · no rushing',
+    time:'1h', dist:'6 min walk'
+  },
+  hungry: {
+    cls:'user', label:'User · Hungry now',
+    msg:'Moving food earlier — you have time before Kinkaku-ji.',
+    img:'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=70&auto=format&fit=crop',
+    src:'Tabelog · 2.3k', cat:'food', catLabel:'Food',
+    name:'Nishiki Kappo', why:'quick counter lunch · 10 min away · no reservation needed',
+    time:'45m', dist:'10 min walk'
+  },
+  swap: {
+    cls:'manual', label:'User · Swap this slot',
+    msg:'Looking for something else for this afternoon?',
+    img:'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=70&auto=format&fit=crop',
+    src:'Tabelog · 3.1k', cat:'culture', catLabel:'Culture',
+    name:"Ryoan-ji Rock Garden", why:"quieter than Kinkaku-ji · same time window",
+    time:'2h', dist:'15 min walk'
+  }
+};
+
+var currentScenario = null;
+
+function triggerScenario(key, btn) {
+  document.querySelectorAll('.trigger-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  currentScenario = SCENARIOS[key];
+  var s = currentScenario;
+
+  // Populate drawer
+  var icon = document.getElementById('drawerIcon');
+  icon.className = 'signal-icon ' + s.cls;
+  var ICONS = {
+    system: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    weather: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>',
+    user: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    manual: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>'
+  };
+  icon.innerHTML = ICONS[s.cls];
+  var src = document.getElementById('drawerSource');
+  src.className = 'signal-source ' + s.cls;
+  src.textContent = s.label;
+  document.getElementById('drawerMessage').textContent = s.msg;
+  document.getElementById('drawerImg').src = s.img;
+  document.getElementById('drawerSource2').textContent = s.src;
+  document.getElementById('drawerName').textContent = s.name;
+  document.getElementById('drawerWhy').textContent = s.why;
+  document.getElementById('drawerTime').textContent = s.time;
+  document.getElementById('drawerDist').textContent = s.dist;
+  document.getElementById('drawerCatLabel').textContent = s.catLabel;
+
+  // Reset state
+  document.getElementById('drawerAlts').classList.remove('open');
+  document.getElementById('feedbackStrip').classList.remove('visible');
+  var acceptBtn = document.getElementById('btnAccept');
+  acceptBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Swap it in';
+  acceptBtn.style.background = '';
+  acceptBtn.disabled = false;
+
+  // Set slot 3 pending
+  var slot3 = document.getElementById('slot3');
+  slot3.classList.add('swap-pending');
+  var scroll = document.getElementById('slotScroll');
+  setTimeout(function(){ scroll.scrollTo({top: slot3.offsetTop - 40, behavior:'smooth'}); }, 100);
+
+  // Show drawer
+  document.getElementById('drawerOverlay').classList.add('visible');
+  setTimeout(function(){ document.getElementById('pivotDrawer').classList.add('visible'); }, 30);
+}
+
+function triggerManualSwap() {
+  triggerScenario('swap', null);
+  document.querySelectorAll('.trigger-btn').forEach(function(b,i){ b.classList.toggle('active', i===3); });
+}
+
+function dismissDrawer() {
+  document.getElementById('pivotDrawer').classList.remove('visible');
+  document.getElementById('drawerOverlay').classList.remove('visible');
+  document.getElementById('slot3').classList.remove('swap-pending');
+}
+
+function acceptSwap() {
+  if (!currentScenario) return;
+  var s = currentScenario;
+  var slot3 = document.getElementById('slot3');
+  var nameEl = document.getElementById('slot3Name');
+  var whyEl  = document.getElementById('slot3Why');
+  var imgEl  = document.getElementById('slot3Img');
+  if (nameEl) nameEl.textContent = s.name;
+  if (whyEl)  whyEl.textContent  = s.why;
+  if (imgEl)  imgEl.src = s.img;
+  slot3.classList.remove('swap-pending');
+  slot3.classList.add('just-accepted');
+  setTimeout(function(){ slot3.classList.remove('just-accepted'); }, 600);
+
+  var btn = document.getElementById('btnAccept');
+  btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Swapped in';
+  btn.style.background = 'var(--success)';
+  btn.disabled = true;
+  document.getElementById('drawerOverlay').classList.remove('visible');
+  setTimeout(function(){ document.getElementById('feedbackStrip').classList.add('visible'); }, 400);
+}
+
+function toggleAlts() {
+  document.getElementById('drawerAlts').classList.toggle('open');
+}
+
+function selectAlt(row, name, why, img) {
+  document.getElementById('drawerName').textContent = name;
+  document.getElementById('drawerWhy').textContent = why;
+  document.getElementById('drawerImg').src = img;
+  document.getElementById('drawerAlts').classList.remove('open');
+  row.style.background = 'var(--accent-light)';
+  setTimeout(function(){ row.style.background = ''; }, 500);
+}
+
+function giveFeedback(dir, btn) {
+  document.querySelectorAll('.fb-btn').forEach(function(b){ b.classList.remove('active-up'); });
+  if (dir === 'up') btn.classList.add('active-up');
+  setTimeout(function(){
+    document.getElementById('feedbackStrip').classList.remove('visible');
+    document.getElementById('pivotDrawer').classList.remove('visible');
+  }, 600);
+}
+
+function handlePrompt() {
+  var input = document.getElementById('promptInput');
+  var val = input.value.trim().toLowerCase();
+  if (!val) return;
+  var key = 'tired';
+  if (val.includes('rain') || val.includes('wet') || val.includes('indoor')) key = 'rain';
+  else if (val.includes('close') || val.includes('shut') || val.includes('cancel')) key = 'closed';
+  input.value = '';
+  triggerScenario(key, null);
+  var idx = {closed:0,rain:1,tired:2,swap:3}[key];
+  document.querySelectorAll('.trigger-btn').forEach(function(b,i){ b.classList.toggle('active', i===idx); });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('promptInput').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') handlePrompt();
+  });
+
+  document.querySelectorAll('.slot-card').forEach(function(card){
+    if (!card.querySelector('.slot-detail')) return;
+    card.addEventListener('click', function(e){
+      if (e.target.closest('.detail-action') ||
+          e.target.closest('.slot-swap-btn') ||
+          e.target.closest('.slot-booking-badge')) return;
+      var wasOpen = card.classList.contains('expanded');
+      document.querySelectorAll('.slot-card.expanded').forEach(function(c){ c.classList.remove('expanded'); });
+      if (!wasOpen) card.classList.add('expanded');
+    });
+  });
+});
+
+function bookSlot(slotId) {
+  var btn = document.getElementById(slotId + 'BookBtn');
+  var badge = document.querySelector('#' + slotId + ' .slot-booking-badge');
+  if (!btn) return;
+  btn.textContent = 'Confirming...';
+  btn.style.opacity = '0.6';
+  btn.disabled = true;
+  setTimeout(function(){
+    if (badge){ badge.textContent = 'Booked'; badge.className = 'slot-booking-badge booked'; }
+    btn.textContent = 'Confirmed';
+    btn.className = 'detail-action booked-action';
+    btn.style.opacity = '1';
+  }, 900);
+}
+
+function expandAndBook(slotId) {
+  var card = document.getElementById(slotId);
+  if (!card) return;
+  document.querySelectorAll('.slot-card.expanded').forEach(function(c){ c.classList.remove('expanded'); });
+  card.classList.add('expanded');
+  document.getElementById('slotScroll').scrollTo({top: card.offsetTop - 20, behavior:'smooth'});
+  setTimeout(function(){
+    var btn = document.getElementById(slotId + 'BookBtn');
+    if (btn){ btn.classList.add('anno-pulse'); setTimeout(function(){ btn.classList.remove('anno-pulse'); }, 900); }
+  }, 350);
+}
+
+function toggleMap() {
+  document.getElementById('mapStrip').classList.toggle('expanded');
+}
+
+function chipTap(btn, key) {
+  // Visual feedback on chip
+  document.querySelectorAll('.pchip').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  setTimeout(function(){ btn.classList.remove('active'); }, 1200);
+  // Fire the scenario
+  triggerScenario(key, null);
+  var keyMap = {closed:0, rain:1, tired:2, swap:3, hungry:2};
+  document.querySelectorAll('.trigger-btn').forEach(function(b,i){
+    b.classList.toggle('active', i === (keyMap[key] !== undefined ? keyMap[key] : 2));
+  });
+}
+
+function openPromptInput() {
+  document.getElementById('promptInputRow').classList.add('visible');
+  setTimeout(function(){ document.getElementById('promptInput').focus(); }, 50);
+}
+
+function closePromptInput() {
+  document.getElementById('promptInputRow').classList.remove('visible');
+  document.getElementById('promptInput').value = '';
+}
+
+function toggleTheme() {
+  var html = document.documentElement;
+  var dark = html.dataset.theme === 'dark';
+  html.dataset.theme = dark ? 'light' : 'dark';
+  document.getElementById('themeLabel').textContent = dark ? 'Light' : 'Dark';
+}
+</script>
+</body>
+</html>

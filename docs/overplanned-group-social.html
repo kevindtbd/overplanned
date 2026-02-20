@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Group Social Surface</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   TOKENS — exact v4 base
+   ============================================================ */
+
+
+[data-theme="light"] {
+  --bg-base:      #FAF8F5;
+  --bg-surface:   #FFFFFF;
+  --bg-raised:    #F3EFE9;
+  --bg-overlay:   #EDE8E1;
+  --bg-input:     #F3EFE9;
+  --accent:       #B85C3F;
+  --accent-light: #F0E0D9;
+  --accent-muted: #D4886E;
+  --accent-on:    #8C3A24;
+  --ink-100:      #1C1713;
+  --ink-200:      #3A302A;
+  --ink-300:      #5C5048;
+  --ink-400:      #7A6E64;
+  --ink-500:      #9C8E84;
+  --ink-600:      #BDB0A6;
+  --ink-700:      #D6CFC8;
+  --ink-800:      #EAE4DE;
+  --ink-900:      #F5F1EC;
+  --success:      #4A8A5C;  --success-bg: #E0EEE5;
+  --warning:      #A07830;  --warning-bg: #F2EAD8;
+  --info:         #3A6A8C;  --info-bg:    #D8E8F2;
+  --shadow-sm:    0 1px 3px rgba(28,23,19,0.06);
+  --shadow-md:    0 4px 16px rgba(28,23,19,0.08), 0 1px 4px rgba(28,23,19,0.04);
+  --shadow-lg:    0 12px 48px rgba(28,23,19,0.10), 0 2px 8px rgba(28,23,19,0.05);
+}
+
+[data-theme="dark"] {
+  --bg-base:      #100E0B;
+  --bg-surface:   #171310;
+  --bg-raised:    #1F1A15;
+  --bg-overlay:   #28211A;
+  --bg-input:     #1F1A15;
+  --accent:       #C96848;
+  --accent-light: rgba(201,104,72,0.14);
+  --accent-muted: #8C402A;
+  --accent-on:    #E8906E;
+  --ink-100:      #F0EAE2;
+  --ink-200:      #D4C8BC;
+  --ink-300:      #A89484;
+  --ink-400:      #7A6A5C;
+  --ink-500:      #5C4E42;
+  --ink-600:      #3D332A;
+  --ink-700:      #2E251E;
+  --ink-800:      #221C16;
+  --ink-900:      #1A1410;
+  --success:      #5A9E6A;  --success-bg: rgba(90,158,106,0.12);
+  --warning:      #B8943A;  --warning-bg: rgba(184,148,58,0.12);
+  --info:         #4A84A8;  --info-bg:    rgba(74,132,168,0.12);
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:    0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:    0 16px 60px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: 'Sora', sans-serif;
+  font-weight: 300;
+  background: var(--bg-base);
+  color: var(--ink-100);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 48px;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 48px 32px 80px;
+  align-items: start;
+}
+
+
+
+/* ============================================================
+   LEFT — annotations
+   ============================================================ */
+.page-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 10px;
+}
+.page-title {
+  font-size: 26px; font-weight: 500;
+  color: var(--ink-100); letter-spacing: -0.025em;
+  line-height: 1.2; margin-bottom: 6px;
+}
+.page-desc {
+  font-size: 13px; color: var(--ink-400);
+  font-weight: 300; line-height: 1.7;
+  margin-bottom: 36px; max-width: 400px;
+}
+
+/* State tabs */
+.state-tabs {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 32px;
+}
+
+.state-tab {
+  width: 100%;
+  text-align: left;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ink-800);
+  border-radius: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex; align-items: flex-start; gap: 12px;
+  font-family: 'Sora', sans-serif;
+  transition: all 0.18s;
+}
+.state-tab:hover { border-color: var(--ink-600); transform: translateX(2px); }
+.state-tab.active { border-color: var(--accent); background: var(--accent-light); }
+
+.tab-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.tab-icon.harmony  { background: var(--success-bg); color: var(--success); }
+.tab-icon.tension  { background: var(--warning-bg); color: var(--warning); }
+.tab-icon.split    { background: var(--info-bg); color: var(--info); }
+.tab-icon.solo     { background: var(--accent-light); color: var(--accent-on); }
+
+.tab-body {}
+.tab-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; margin-bottom: 2px;
+}
+.tab-label.harmony { color: var(--success); }
+.tab-label.tension { color: var(--warning); }
+.tab-label.split   { color: var(--info); }
+.tab-label.solo    { color: var(--accent-on); }
+
+.tab-title {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink-100); margin-bottom: 2px;
+}
+.tab-desc {
+  font-size: 12px; color: var(--ink-400);
+  font-weight: 300; line-height: 1.5;
+}
+
+/* Design principles */
+.principle {
+  margin-top: 10px;
+  padding: 15px 16px;
+  background: var(--bg-raised);
+  border-radius: 12px;
+  border-left: 3px solid var(--accent);
+}
+.principle-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 5px;
+}
+.principle-text {
+  font-size: 12px; color: var(--ink-300);
+  font-weight: 300; line-height: 1.65;
+}
+
+/* ============================================================
+   RIGHT — phone shell
+   ============================================================ */
+.phone-wrap { position: sticky; top: 48px; }
+
+.phone {
+  background: var(--bg-surface);
+  border-radius: 36px;
+  border: 1.5px solid var(--ink-700);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  position: relative;
+  display: flex; flex-direction: column;
+  min-height: 720px;
+}
+
+/* Top bar */
+.phone-bar {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--ink-800);
+  flex-shrink: 0;
+}
+.phone-back {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--ink-400);
+}
+.phone-title { font-size: 14px; font-weight: 500; color: var(--ink-100); }
+.phone-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--ink-400);
+  letter-spacing: 0.06em; text-align: right;
+}
+
+/* Scrollable content */
+.phone-scroll {
+  flex: 1; overflow-y: auto;
+  padding: 0 0 24px;
+  scrollbar-width: none;
+}
+.phone-scroll::-webkit-scrollbar { display: none; }
+
+/* ============================================================
+   GROUP PULSE — the "state in one line" section
+   ============================================================ */
+.pulse-section {
+  padding: 18px 18px 0;
+}
+
+.pulse-line {
+  font-size: 15px; font-weight: 400;
+  color: var(--ink-100); line-height: 1.45;
+  letter-spacing: -0.01em;
+  transition: opacity 0.3s;
+}
+
+.pulse-sub {
+  font-size: 12px; color: var(--ink-400);
+  font-weight: 300; margin-top: 3px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.03em;
+}
+
+/* ============================================================
+   MEMBER STRIPS — the warmest component
+   ============================================================ */
+.members-section {
+  padding: 20px 18px 0;
+}
+
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-500);
+  margin-bottom: 12px;
+}
+
+.member-row {
+  display: flex; align-items: flex-start;
+  gap: 11px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ink-800);
+  transition: all 0.2s;
+  cursor: default;
+}
+.member-row:last-child { border-bottom: none; }
+
+/* Avatar */
+.member-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  overflow: hidden; flex-shrink: 0;
+  position: relative;
+  margin-top: 1px;
+}
+.member-avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.avatar-initials {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 500;
+  color: #fff;
+}
+
+.member-body { flex: 1; min-width: 0; }
+
+/* Name row with trajectory dot */
+.member-name-row {
+  display: flex; align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.member-name {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink-100);
+}
+
+/* Trajectory dot — directional, not a score */
+.traj-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.traj-dot.stable   { background: var(--success); }
+.traj-dot.declining { background: var(--warning); }
+.traj-dot.low       { background: var(--accent); }
+
+.member-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px; border-radius: 100px;
+  margin-left: auto;
+}
+.member-tag.good  { background: var(--success-bg); color: var(--success); }
+.member-tag.tired { background: var(--warning-bg); color: var(--warning); }
+.member-tag.solo  { background: var(--accent-light); color: var(--accent-on); }
+.member-tag.quiet { background: var(--bg-raised); color: var(--ink-500); }
+
+/* Poll vote chips — today's votes */
+.member-votes {
+  display: flex; align-items: center; gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  min-height: 20px;
+}
+
+.vote-chip {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 8px 3px 4px;
+  background: var(--bg-raised);
+  border: 1px solid var(--ink-800);
+  border-radius: 100px;
+  transition: all 0.15s;
+}
+.vote-chip.matched {
+  background: var(--accent-light);
+  border-color: var(--accent-muted);
+}
+
+.vote-chip-thumb {
+  width: 14px; height: 14px; border-radius: 3px;
+  overflow: hidden; flex-shrink: 0;
+}
+.vote-chip-thumb img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.vote-chip-thumb.no-vote {
+  background: var(--ink-800);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.vote-chip-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--ink-400);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  max-width: 72px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.vote-chip.matched .vote-chip-label { color: var(--accent-on); }
+
+.vote-chip-pending {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--ink-600);
+  letter-spacing: 0.04em;
+  font-style: italic;
+}
+
+/* Energy bar — kept as quiet footer */
+.energy-track {
+  height: 2px;
+  background: var(--ink-800);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.energy-fill {
+  height: 100%; border-radius: 100px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  opacity: 0.7;
+}
+.energy-fill.high   { background: var(--success); }
+.energy-fill.mid    { background: var(--warning); }
+.energy-fill.low    { background: var(--accent); }
+
+/* Member action — the fairness moment */
+.member-action {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.action-btn {
+  font-family: 'Sora', sans-serif;
+  font-size: 11px; font-weight: 400;
+  color: var(--ink-300);
+  background: var(--bg-raised);
+  border: 1px solid var(--ink-700);
+  border-radius: 100px;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.action-btn:hover {
+  border-color: var(--accent-muted);
+  color: var(--accent-on);
+}
+.action-btn.primary {
+  background: var(--accent-light);
+  border-color: var(--accent-muted);
+  color: var(--accent-on);
+}
+
+/* ============================================================
+   MOMENT SURFACE — forward-facing agency moments
+   ============================================================ */
+.moment-section {
+  padding: 20px 18px 0;
+}
+
+.moment-card {
+  background: var(--bg-raised);
+  border-radius: 14px;
+  border: 1.5px solid var(--ink-700);
+  padding: 14px 15px;
+  margin-bottom: 10px;
+  transition: all 0.2s;
+  cursor: pointer;
+  animation: momentIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes momentIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+.moment-card:hover { border-color: var(--ink-500); }
+.moment-card.resolved {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* Moment types */
+.moment-card.agency { border-left: 3px solid var(--accent); }
+.moment-card.abilene { border-left: 3px solid var(--warning); }
+.moment-card.logistics { border-left: 3px solid var(--info); }
+.moment-card.nudge { border-left: 3px solid var(--success); }
+
+.moment-type {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; margin-bottom: 5px;
+}
+.moment-type.agency    { color: var(--accent-on); }
+.moment-type.abilene   { color: var(--warning); }
+.moment-type.logistics { color: var(--info); }
+.moment-type.nudge     { color: var(--success); }
+
+.moment-text {
+  font-size: 13px; font-weight: 400;
+  color: var(--ink-100); line-height: 1.45;
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+
+.moment-actions {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+
+.moment-btn {
+  font-family: 'Sora', sans-serif;
+  font-size: 11px; font-weight: 400;
+  padding: 6px 12px; border-radius: 100px;
+  cursor: pointer; transition: all 0.15s;
+  border: 1.5px solid transparent;
+}
+.moment-btn.yes {
+  background: var(--accent);
+  color: #fff; border-color: var(--accent);
+}
+.moment-btn.yes:hover { opacity: 0.85; }
+.moment-btn.maybe {
+  background: transparent;
+  color: var(--ink-300);
+  border-color: var(--ink-700);
+}
+.moment-btn.maybe:hover { border-color: var(--ink-500); color: var(--ink-100); }
+.moment-btn.nope {
+  background: transparent;
+  color: var(--ink-400);
+  border-color: var(--ink-700);
+}
+.moment-btn.nope:hover { border-color: var(--warning); color: var(--warning); }
+
+/* ============================================================
+   POLL SURFACE — feels like group chat, not a form
+   ============================================================ */
+.poll-card {
+  margin: 20px 18px 0;
+  background: var(--bg-raised);
+  border-radius: 16px;
+  border: 1.5px solid var(--ink-700);
+  overflow: hidden;
+}
+
+.poll-header {
+  padding: 14px 15px 12px;
+  border-bottom: 1px solid var(--ink-800);
+}
+
+.poll-question {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink-100); line-height: 1.4;
+  margin-bottom: 3px;
+}
+
+.poll-context {
+  font-size: 11px; color: var(--ink-400);
+  font-weight: 300;
+}
+
+/* Poll options */
+.poll-option {
+  display: flex; align-items: center;
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--ink-800);
+  cursor: pointer;
+  transition: background 0.15s;
+  gap: 10px;
+}
+.poll-option:last-child { border-bottom: none; }
+.poll-option:hover { background: var(--bg-overlay); }
+.poll-option.selected { background: var(--accent-light); }
+
+.poll-option-icon {
+  width: 26px; height: 26px; border-radius: 8px;
+  overflow: hidden; flex-shrink: 0;
+}
+.poll-option-icon img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+.poll-option-body { flex: 1; }
+.poll-option-name {
+  font-size: 12px; font-weight: 500; color: var(--ink-100);
+  margin-bottom: 1px;
+}
+.poll-option-sub {
+  font-size: 10px; color: var(--ink-400); font-weight: 300;
+}
+
+.poll-votes {
+  display: flex; gap: -4px;
+}
+.vote-pip {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--bg-raised);
+  overflow: hidden; margin-left: -5px;
+  transition: transform 0.2s;
+}
+.vote-pip:first-child { margin-left: 0; }
+.vote-pip img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.vote-pip.empty {
+  background: var(--bg-overlay);
+  border-color: var(--ink-700);
+}
+
+/* Dissent option — the Abilene fix */
+.poll-dissent {
+  padding: 9px 15px;
+  border-top: 1px solid var(--ink-800);
+  display: flex; align-items: center; gap: 8px;
+}
+.poll-dissent-text {
+  font-size: 11px; color: var(--ink-500);
+  font-weight: 300; flex: 1;
+}
+.poll-dissent-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  background: transparent;
+  border: 1px solid var(--ink-700);
+  border-radius: 100px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.poll-dissent-btn:hover {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+/* ============================================================
+   QUIET LOGISTICS — background, foreground only when needed
+   ============================================================ */
+.logistics-section {
+  padding: 20px 18px 0;
+}
+
+.logistics-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ink-800);
+}
+.logistics-row:last-child { border-bottom: none; }
+
+.logistics-icon {
+  width: 26px; height: 26px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logistics-icon.ok      { background: var(--success-bg); color: var(--success); }
+.logistics-icon.needs   { background: var(--warning-bg); color: var(--warning); }
+.logistics-icon.info    { background: var(--info-bg); color: var(--info); }
+
+.logistics-body { flex: 1; }
+.logistics-main {
+  font-size: 12px; font-weight: 400;
+  color: var(--ink-200); margin-bottom: 1px;
+}
+.logistics-sub {
+  font-size: 10px; color: var(--ink-500);
+  font-family: 'DM Mono', monospace;
+}
+
+.logistics-action {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  background: transparent;
+  border: 1px solid var(--ink-700);
+  border-radius: 100px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.logistics-action:hover { border-color: var(--ink-500); color: var(--ink-200); }
+.logistics-action.resolve {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+/* ============================================================
+   SPLIT TRIP SURFACE — subgroup view
+   ============================================================ */
+.split-section {
+  padding: 20px 18px 0;
+}
+
+.split-card {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1.5px solid var(--ink-700);
+  margin-bottom: 10px;
+}
+
+.split-track-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 11px 13px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--ink-700);
+}
+
+.split-track-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.split-track-label.a { color: var(--info); }
+.split-track-label.b { color: var(--success); }
+
+.split-track-members {
+  display: flex; gap: -4px;
+}
+.split-pip {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--bg-raised);
+  overflow: hidden; margin-left: -6px;
+}
+.split-pip:first-child { margin-left: 0; }
+.split-pip img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+.split-track-body {
+  padding: 11px 13px;
+}
+.split-current {
+  font-size: 12px; font-weight: 500;
+  color: var(--ink-100); margin-bottom: 2px;
+}
+.split-eta {
+  font-size: 10px; color: var(--ink-500);
+  font-family: 'DM Mono', monospace;
+}
+
+/* Reconvergence anchor */
+.reconvergence {
+  margin: 12px 18px 0;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 13px;
+  background: var(--accent-light);
+  border-radius: 10px;
+  border: 1px solid var(--accent-muted);
+}
+.reconverge-icon {
+  color: var(--accent-on); flex-shrink: 0;
+}
+.reconverge-body {}
+.reconverge-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--accent-on);
+  margin-bottom: 2px;
+}
+.reconverge-text {
+  font-size: 12px; color: var(--ink-200); font-weight: 400;
+}
+.reconverge-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; color: var(--ink-400); margin-top: 1px;
+}
+
+/* ============================================================
+   DARK MODE OVERRIDES
+   ============================================================ */
+
+
+
+
+
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.left-col  { animation: fadeUp 0.4s ease both 0.05s; }
+.phone-wrap { animation: fadeUp 0.4s ease both 0.12s; }
+
+/* Resolve animation */
+@keyframes resolveOut {
+  0%   { opacity: 1; transform: none; max-height: 80px; }
+  40%  { opacity: 0; transform: translateX(8px); }
+  100% { opacity: 0; max-height: 0; padding: 0; margin: 0; overflow: hidden; }
+}
+
+.moment-card.resolving {
+  animation: resolveOut 0.45s ease forwards;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; padding: 80px 16px 60px; }
+  .phone-wrap { position: static; }
+}
+
+
+[data-theme="dark"] .phone { background: var(--bg-surface); border-color: var(--ink-600); }
+[data-theme="dark"] .poll-card { background: var(--bg-raised); }
+[data-theme="dark"] .split-card { border-color: var(--ink-600); }
+[data-theme="dark"] .moment-card { background: var(--bg-raised); }
+[data-theme="dark"] .state-tab { background: var(--bg-raised); }
+[data-theme="dark"] .principle { background: var(--bg-raised); }
+
+.theme-toggle {
+  position: fixed; top: 20px; right: 24px; z-index: 200;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-surface); border: 1px solid var(--ink-700);
+  border-radius: 100px; padding: 6px 14px 6px 8px;
+  box-shadow: var(--shadow-md); cursor: pointer;
+  transition: background 0.3s, border-color 0.3s;
+}
+.toggle-track {
+  width: 32px; height: 18px; background: var(--ink-700);
+  border-radius: 100px; position: relative; transition: background 0.2s;
+}
+[data-theme="dark"] .toggle-track { background: var(--accent); }
+.toggle-thumb {
+  width: 12px; height: 12px; background: #fff; border-radius: 50%;
+  position: absolute; top: 3px; left: 3px; transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+[data-theme="dark"] .toggle-thumb { transform: translateX(14px); }
+.toggle-label {
+  font-family: "DM Mono", monospace; font-size: 11px;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-300);
+}
+</style>
+</head>
+<body>
+
+  <span class="toggle-label" id="themeLabel">Dark</span>
+</div>
+
+<div class="theme-toggle" onclick="toggleTheme()">
+  <div class="toggle-track"><div class="toggle-thumb"></div></div>
+  <span class="toggle-label" id="themeLabel">Dark</span>
+</div>
+
+<div class="layout">
+
+  <!-- ============================================================
+       LEFT — annotations
+       ============================================================ -->
+  <div class="left-col">
+    <div class="page-eyebrow">Group Social Surface</div>
+    <div class="page-title">The app is the glue.<br>They feel the cohesion.</div>
+    <div class="page-desc">The warmest screen in the app. The system tracks everything — fairness debt, energy asymmetry, silent members, logistics gaps — and surfaces none of the mechanics. What appears is forward motion, agency, and the right question at the right moment.</div>
+
+    <div class="state-tabs" id="stateTabs">
+
+      <button class="state-tab active" onclick="setState('harmony')">
+        <div class="tab-icon harmony">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div class="tab-body">
+          <div class="tab-label harmony">Harmony state</div>
+          <div class="tab-title">Everyone's clicking</div>
+          <div class="tab-desc">Day 3 of 7. Polls aligning, energy roughly matched. System quiet. One fairness moment surfaced naturally.</div>
+        </div>
+      </button>
+
+      <button class="state-tab" onclick="setState('tension')">
+        <div class="tab-icon tension">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="tab-body">
+          <div class="tab-label tension">Tension detected</div>
+          <div class="tab-title">Preferences diverging</div>
+          <div class="tab-desc">Abilene signal: group voted yes on a temple but nobody's enthusiastic. One member quieter than usual. System surfaces moments without naming dynamics.</div>
+        </div>
+      </button>
+
+      <button class="state-tab" onclick="setState('split')">
+        <div class="tab-icon split">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="17" y1="1" x2="17" y2="11"/><path d="M11 7l6-6 6 6"/><path d="M7 17H1"/><path d="M1 11l6 6-6 6"/><line x1="7" y1="17" x2="17" y2="17"/></svg>
+        </div>
+        <div class="tab-body">
+          <div class="tab-label split">Split active</div>
+          <div class="tab-title">Two tracks, one dinner</div>
+          <div class="tab-desc">Subgroup split in progress. Reconvergence anchor holds both threads. System quietly monitors for cascade.</div>
+        </div>
+      </button>
+
+      <button class="state-tab" onclick="setState('solo')">
+        <div class="tab-icon solo">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="tab-body">
+          <div class="tab-label solo">Solo time suggested</div>
+          <div class="tab-title">Chronic energy mismatch</div>
+          <div class="tab-desc">One member has run consistently lower-energy for 2 days. System suggests building in solo time — frames as enrichment, not deficit.</div>
+        </div>
+      </button>
+
+    </div>
+
+    <div class="principle" style="border-left-color:var(--accent)">
+      <div class="principle-label">The invisible hand</div>
+      <div class="principle-text">Fairness debt, passive member classification, and budget ceilings are tracked silently. The surface only ever shows forward action. "SL, what are you feeling for dinner?" contains fairness rebalancing logic. Nobody sees the math.</div>
+    </div>
+
+    <div class="principle" style="margin-top:10px; border-left-color:var(--warning)">
+      <div class="principle-label">The Abilene fix</div>
+      <div class="principle-text">Every poll includes a low-friction dissent path. Not "yes or abstain" — "yes / maybe / not for me." Two "not for me" votes trigger a quiet moment: "Nobody's strongly feeling this — want to rethink it together?" Group never has to name the awkwardness.</div>
+    </div>
+
+    <div class="principle" style="margin-top:10px; border-left-color:var(--success)">
+      <div class="principle-label">Follower vs. disengaged</div>
+      <div class="principle-text">Low poll participation + strong completion signals = content follower. Leave them alone. Low poll participation + declining completion = disengaged. Surface once: "JR, anything you want to add for tomorrow?" Never repeated. Never a form.</div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================
+       RIGHT — phone shell
+       ============================================================ -->
+  <div class="phone-wrap">
+    <div class="phone">
+
+      <div class="phone-bar">
+        <div class="phone-back">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Japan 2025
+        </div>
+        <div>
+          <div class="phone-title">Group · Kyoto</div>
+        </div>
+        <div class="phone-sub">4 people<br>Day 3 of 7</div>
+      </div>
+
+      <div class="phone-scroll" id="phoneScroll">
+        <!-- Content injected by JS per state -->
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+// ============================================================
+// MEMBER DATA
+// ============================================================
+const MEMBERS = {
+  sl: {
+    name: 'SL',
+    img: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=80&q=80&auto=format&fit=crop&face',
+    color: '#8B6B4A'
+  },
+  kevin: {
+    name: 'Kevin',
+    img: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&q=80&auto=format&fit=crop',
+    color: '#4A6B8B'
+  },
+  jr: {
+    name: 'JR',
+    img: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=80&q=80&auto=format&fit=crop',
+    color: '#5C7A4A'
+  },
+  mia: {
+    name: 'Mia',
+    img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80&auto=format&fit=crop',
+    color: '#7A4A6B'
+  }
+};
+
+// ============================================================
+// STATE DEFINITIONS
+// ============================================================
+const STATES = {
+
+  harmony: {
+    pulse: {
+      line: "Three days in, everyone's hitting their stride.",
+      sub: "Kyoto · Fri 14 · Day 3 of 7"
+    },
+    members: [
+      { id: 'sl',    energy: 0.82, level: 'high', traj: 'stable',   tag: 'good',  tagLabel: '', votes: [{img:'https://images.unsplash.com/photo-1576675784201-0e142b423952?w=40&q=60', label:'Arashiyama', matched:true}] },
+      { id: 'kevin', energy: 0.74, level: 'high', traj: 'stable',   tag: 'good',  tagLabel: '', votes: [{img:'https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=40&q=60', label:'Fushimi', matched:false}] },
+      { id: 'jr',    energy: 0.61, level: 'mid',  traj: 'stable',   tag: 'quiet', tagLabel: '', votes: [] },
+      { id: 'mia',   energy: 0.55, level: 'mid',  traj: 'stable',   tag: 'good',  tagLabel: '', votes: [{img:'https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=40&q=60', label:'Fushimi', matched:false}] },
+    ],
+    moments: [
+      {
+        id: 'm1', type: 'agency', typeLabel: 'Tonight',
+        text: "SL, what are you feeling for dinner tonight?",
+        btns: [
+          { label: 'Izakaya', cls: 'yes' },
+          { label: 'Ramen', cls: 'maybe' },
+          { label: 'Something else', cls: 'maybe' }
+        ]
+      }
+    ],
+    poll: {
+      question: "Fushimi Inari or Arashiyama tomorrow morning?",
+      context: "Anchor slot · 09:00 · Uncontested so far",
+      options: [
+        {
+          img: 'https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=100&q=70&auto=format&fit=crop',
+          name: 'Fushimi Inari',
+          sub: '2h · Crowds after 9am',
+          votes: ['sl', 'mia']
+        },
+        {
+          img: 'https://images.unsplash.com/photo-1576675784201-0e142b423952?w=100&q=70&auto=format&fit=crop',
+          name: 'Arashiyama',
+          sub: '1.5h · Bamboo + Tenryu-ji',
+          votes: ['kevin']
+        }
+      ]
+    },
+    logistics: []
+  },
+
+  tension: {
+    pulse: {
+      line: "Today's been a bit scattered. Tomorrow's more focused.",
+      sub: "Kyoto · Fri 14 · Day 3 of 7"
+    },
+    members: [
+      { id: 'sl',    energy: 0.58, level: 'mid', tag: 'good',  tagLabel: '' },
+      { id: 'kevin', energy: 0.72, level: 'high', tag: 'good', tagLabel: '' },
+      { id: 'jr',    energy: 0.38, level: 'low',  tag: 'tired', tagLabel: '' },
+      { id: 'mia',   energy: 0.65, level: 'mid',  tag: 'good', tagLabel: '' },
+    ],
+    moments: [
+      {
+        id: 'm2', type: 'abilene', typeLabel: 'Worth checking',
+        text: "Nobody's strongly feeling the Gion night walk — want to rethink tomorrow evening?",
+        btns: [
+          { label: 'Keep it', cls: 'maybe' },
+          { label: 'Rethink it', cls: 'yes' },
+          { label: 'Split it', cls: 'maybe' }
+        ]
+      },
+      {
+        id: 'm3', type: 'nudge', typeLabel: 'JR',
+        text: "JR, anything you want to add for tomorrow? Nothing's locked yet.",
+        btns: [
+          { label: 'All good', cls: 'maybe' },
+          { label: 'Actually yes', cls: 'yes' }
+        ]
+      }
+    ],
+    poll: {
+      question: "Gion night walk — still on for tomorrow?",
+      context: "Flex slot · 20:00 · Anchor not yet locked",
+      options: [
+        {
+          img: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=100&q=70&auto=format&fit=crop',
+          name: 'Yes, keep it',
+          sub: 'Lanterns · Maiko district · 1.5h',
+          votes: ['kevin']
+        },
+        {
+          img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100&q=70&auto=format&fit=crop',
+          name: 'Swap for dinner instead',
+          sub: 'Pontocho · More relaxed',
+          votes: []
+        }
+      ]
+    },
+    logistics: [
+      {
+        icon: 'needs', iconSvg: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+        main: 'Kevin has the group hotel key',
+        sub: 'Relevant if you split tomorrow · sort before 9am',
+        action: 'Sort this', actionCls: 'resolve'
+      }
+    ]
+  },
+
+  split: {
+    pulse: {
+      line: "Two tracks going. You're back together for dinner.",
+      sub: "Kyoto · Fri 14 · 14:30 now"
+    },
+    members: [
+      { id: 'sl',    energy: 0.78, level: 'high', tag: 'good',  tagLabel: 'Arashiyama' },
+      { id: 'kevin', energy: 0.78, level: 'high', tag: 'good',  tagLabel: 'Arashiyama' },
+      { id: 'jr',    energy: 0.52, level: 'mid',  tag: 'solo',  tagLabel: 'Tenryu-ji' },
+      { id: 'mia',   energy: 0.52, level: 'mid',  tag: 'solo',  tagLabel: 'Tenryu-ji' },
+    ],
+    split: {
+      trackA: {
+        members: ['sl', 'kevin'],
+        label: 'Track A',
+        current: 'Arashiyama bike loop',
+        eta: 'On track · back by 17:30'
+      },
+      trackB: {
+        members: ['jr', 'mia'],
+        label: 'Track B',
+        current: 'Tenryu-ji garden',
+        eta: 'Slower pace · back by 17:45'
+      },
+      reconverge: {
+        name: 'Pontocho izakaya',
+        time: 'Everyone · 19:00',
+        note: 'Anchor slot · held for both tracks'
+      }
+    },
+    moments: [
+      {
+        id: 'm4', type: 'logistics', typeLabel: 'Heads up',
+        text: "Track B is running 15 min behind. Pontocho reservation still holds — they're aware.",
+        btns: [
+          { label: 'Good to know', cls: 'maybe' }
+        ]
+      }
+    ],
+    poll: null,
+    logistics: [
+      {
+        icon: 'ok', iconSvg: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+        main: 'Pontocho reservation confirmed',
+        sub: '19:00 · 4 people · flexible ±20 min',
+        action: 'View', actionCls: ''
+      },
+      {
+        icon: 'info', iconSvg: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
+        main: 'SL has the shared Suica card',
+        sub: 'Track B will need it for transit back',
+        action: 'Noted', actionCls: ''
+      }
+    ]
+  },
+
+  solo: {
+    pulse: {
+      line: "Today's plan is a bit gentler — felt like the right call.",
+      sub: "Kyoto · Sat 15 · Day 4 of 7"
+    },
+    members: [
+      { id: 'sl',    energy: 0.80, level: 'high', traj: 'stable',   tag: 'good',  tagLabel: '', votes: [{img:'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=40&q=60', label:'Nishiki', matched:true}] },
+      { id: 'kevin', energy: 0.77, level: 'high', traj: 'stable',   tag: 'good',  tagLabel: '', votes: [{img:'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=40&q=60', label:'Sit-down', matched:false}] },
+      { id: 'jr',    energy: 0.31, level: 'low',  traj: 'declining', tag: 'solo',  tagLabel: 'Own pace', votes: [{img:'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=40&q=60', label:'Nishiki', matched:true}] },
+      { id: 'mia',   energy: 0.60, level: 'mid',  traj: 'stable',   tag: 'good',  tagLabel: '', votes: [{img:'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=40&q=60', label:'Nishiki', matched:true}] },
+    ],
+    moments: [
+      {
+        id: 'm5', type: 'agency', typeLabel: 'Tomorrow · JR',
+        text: "JR's been running at a different pace. Built in some solo time tomorrow morning — everyone back together for lunch.",
+        btns: [
+          { label: 'Looks good', cls: 'yes' },
+          { label: 'Adjust it', cls: 'maybe' }
+        ]
+      },
+      {
+        id: 'm6', type: 'agency', typeLabel: 'Tonight · Kevin',
+        text: "Kevin, there's still room to add something tonight — you've got energy the others might not. Want to?",
+        btns: [
+          { label: 'Yes, add something', cls: 'yes' },
+          { label: 'Stay with the group', cls: 'maybe' }
+        ]
+      }
+    ],
+    poll: {
+      question: "Lunch tomorrow — everyone back together",
+      context: "Reconvergence anchor · 12:30",
+      options: [
+        {
+          img: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=100&q=70&auto=format&fit=crop',
+          name: 'Nishiki Market',
+          sub: 'Graze at your own pace · flexible',
+          votes: ['sl', 'jr', 'mia']
+        },
+        {
+          img: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=100&q=70&auto=format&fit=crop',
+          name: 'Sit-down ramen',
+          sub: 'Full table · slower',
+          votes: ['kevin']
+        }
+      ]
+    },
+    logistics: [
+      {
+        icon: 'needs', iconSvg: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+        main: 'JR solo tomorrow — share a meetup point',
+        sub: 'Nishiki entrance · noon · confirm before bed',
+        action: 'Sort this', actionCls: 'resolve'
+      }
+    ]
+  }
+
+};
+
+// ============================================================
+// RENDER
+// ============================================================
+let currentState = 'harmony';
+let resolvedMoments = new Set();
+let pollVotes = {};
+
+function avatarHTML(memberId, size = 24) {
+  const m = MEMBERS[memberId];
+  return `<div class="vote-pip" style="width:${size}px;height:${size}px">
+    <img src="${m.img}" alt="${m.name}" onerror="this.parentNode.style.background='${m.color}'">
+  </div>`;
+}
+
+function renderState(key) {
+  const s = STATES[key];
+  const scroll = document.getElementById('phoneScroll');
+  const container = document.createElement('div');
+
+  // ── Pulse ──
+  container.innerHTML += `
+    <div class="pulse-section">
+      <div class="pulse-line">${s.pulse.line}</div>
+      <div class="pulse-sub">${s.pulse.sub}</div>
+    </div>`;
+
+  // ── Members ──
+  let membersHTML = `<div class="members-section"><div class="section-label">The group</div>`;
+  s.members.forEach(mem => {
+    const m = MEMBERS[mem.id];
+    const energyPct = Math.round(mem.energy * 100);
+
+    // Only show action button for the fairness/agency moment target
+    let actionBtn = '';
+    if (key === 'harmony' && mem.id === 'sl') {
+      actionBtn = `<div class="member-action"><button class="action-btn primary" onclick="triggerMoment('${mem.id}')">Pick dinner</button></div>`;
+    }
+
+    // Build vote chips
+    let votesHTML = '';
+    if (mem.votes && mem.votes.length > 0) {
+      votesHTML = mem.votes.map(v => `
+        <div class="vote-chip${v.matched ? ' matched' : ''}">
+          <div class="vote-chip-thumb"><img src="${v.img}" alt="" onerror="this.style.display='none'"></div>
+          <span class="vote-chip-label">${v.label}</span>
+        </div>`).join('');
+    } else {
+      votesHTML = `<span class="vote-chip-pending">hasn't voted yet</span>`;
+    }
+
+    const trajClass = mem.traj || 'stable';
+
+    membersHTML += `
+      <div class="member-row">
+        <div class="member-avatar">
+          <img src="${m.img}" alt="${m.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="avatar-initials" style="background:${m.color};display:none">${m.name[0]}</div>
+        </div>
+        <div class="member-body">
+          <div class="member-name-row">
+            <div class="member-name">${m.name}</div>
+            <div class="traj-dot ${trajClass}"></div>
+            <div class="member-tag ${mem.tag}"${!mem.tagLabel ? ' style="display:none"' : ''}>${mem.tagLabel}</div>
+          </div>
+          <div class="member-votes">${votesHTML}</div>
+          <div class="energy-track">
+            <div class="energy-fill ${mem.level}" style="width:${energyPct}%"></div>
+          </div>
+        </div>
+        ${actionBtn}
+      </div>`;
+  });
+  membersHTML += `</div>`;
+  container.innerHTML += membersHTML;
+
+  // ── Split tracks (if split state) ──
+  if (key === 'split' && s.split) {
+    const sp = s.split;
+    container.innerHTML += `
+      <div class="split-section">
+        <div class="section-label">Active tracks</div>
+        <div class="split-card">
+          <div class="split-track-header">
+            <div class="split-track-label a">${sp.trackA.label}</div>
+            <div class="split-track-members">
+              ${sp.trackA.members.map(id => `
+                <div class="split-pip">
+                  <img src="${MEMBERS[id].img}" alt="${MEMBERS[id].name}" onerror="this.parentNode.style.background='${MEMBERS[id].color}'">
+                </div>`).join('')}
+            </div>
+          </div>
+          <div class="split-track-body">
+            <div class="split-current">${sp.trackA.current}</div>
+            <div class="split-eta">${sp.trackA.eta}</div>
+          </div>
+        </div>
+        <div class="split-card">
+          <div class="split-track-header">
+            <div class="split-track-label b">${sp.trackB.label}</div>
+            <div class="split-track-members">
+              ${sp.trackB.members.map(id => `
+                <div class="split-pip">
+                  <img src="${MEMBERS[id].img}" alt="${MEMBERS[id].name}" onerror="this.parentNode.style.background='${MEMBERS[id].color}'">
+                </div>`).join('')}
+            </div>
+          </div>
+          <div class="split-track-body">
+            <div class="split-current">${sp.trackB.current}</div>
+            <div class="split-eta">${sp.trackB.eta}</div>
+          </div>
+        </div>
+        <div class="reconvergence">
+          <div class="reconverge-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="reconverge-body">
+            <div class="reconverge-label">Reconvergence</div>
+            <div class="reconverge-text">${sp.reconverge.name}</div>
+            <div class="reconverge-time">${sp.reconverge.time}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── Moments ──
+  if (s.moments && s.moments.length) {
+    let momentsHTML = `<div class="moment-section"><div class="section-label">Right now</div>`;
+    s.moments.forEach((mom, i) => {
+      if (resolvedMoments.has(mom.id)) return;
+      const delay = i * 0.08;
+      const btnsHTML = mom.btns.map(b =>
+        `<button class="moment-btn ${b.cls}" onclick="resolveMoment('${mom.id}', this)">${b.label}</button>`
+      ).join('');
+      momentsHTML += `
+        <div class="moment-card ${mom.type}" id="moment-${mom.id}" style="animation-delay:${delay}s">
+          <div class="moment-type ${mom.type}">${mom.typeLabel}</div>
+          <div class="moment-text">${mom.text}</div>
+          <div class="moment-actions">${btnsHTML}</div>
+        </div>`;
+    });
+    momentsHTML += `</div>`;
+    container.innerHTML += momentsHTML;
+  }
+
+  // ── Poll ──
+  if (s.poll) {
+    const currentVotes = pollVotes[key] || {};
+    let pollHTML = `
+      <div class="poll-card" style="margin-top:20px;margin-left:18px;margin-right:18px;">
+        <div class="poll-header">
+          <div class="poll-question">${s.poll.question}</div>
+          <div class="poll-context">${s.poll.context}</div>
+        </div>`;
+
+    s.poll.options.forEach((opt, idx) => {
+      const isSelected = currentVotes['you'] === idx;
+      const votes = [...opt.votes];
+      if (isSelected) votes.push('you_selected');
+
+      const pipsHTML = votes.slice(0, 3).map(vid => {
+        if (vid === 'you_selected') {
+          return `<div class="vote-pip" style="background:var(--accent);border-color:var(--bg-raised);display:flex;align-items:center;justify-content:center;">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>`;
+        }
+        const m = MEMBERS[vid];
+        return m ? `<div class="vote-pip"><img src="${m.img}" onerror="this.parentNode.style.background='${m.color}'"></div>` : '';
+      }).join('');
+
+      pollHTML += `
+        <div class="poll-option ${isSelected ? 'selected' : ''}" onclick="votePoll('${key}', ${idx})">
+          <div class="poll-option-icon"><img src="${opt.img}" alt="${opt.name}" onerror="this.style.display='none'"></div>
+          <div class="poll-option-body">
+            <div class="poll-option-name">${opt.name}</div>
+            <div class="poll-option-sub">${opt.sub}</div>
+          </div>
+          <div class="poll-votes">${pipsHTML}</div>
+        </div>`;
+    });
+
+    // Dissent option — Abilene antidote
+    pollHTML += `
+      <div class="poll-dissent">
+        <div class="poll-dissent-text">Not feeling either of these?</div>
+        <button class="poll-dissent-btn" onclick="triggerDissent()">Not for me</button>
+      </div>
+    </div>`;
+
+    container.innerHTML += pollHTML;
+  }
+
+  // ── Logistics ──
+  if (s.logistics && s.logistics.length) {
+    let logHTML = `<div class="logistics-section"><div class="section-label">Before tomorrow</div>`;
+    s.logistics.forEach(item => {
+      logHTML += `
+        <div class="logistics-row">
+          <div class="logistics-icon ${item.icon}">${item.iconSvg}</div>
+          <div class="logistics-body">
+            <div class="logistics-main">${item.main}</div>
+            <div class="logistics-sub">${item.sub}</div>
+          </div>
+          <button class="logistics-action ${item.actionCls}">${item.action}</button>
+        </div>`;
+    });
+    logHTML += `</div>`;
+    container.innerHTML += logHTML;
+  }
+
+  // Animate in
+  scroll.innerHTML = '';
+  container.style.animation = 'fadeUp 0.3s ease both';
+  scroll.appendChild(container);
+}
+
+// ============================================================
+// INTERACTIONS
+// ============================================================
+function setState(key) {
+  currentState = key;
+  document.querySelectorAll('.state-tab').forEach((t, i) => {
+    t.classList.toggle('active', ['harmony','tension','split','solo'][i] === key);
+  });
+  renderState(key);
+}
+
+function resolveMoment(id, btn) {
+  const card = document.getElementById(`moment-${id}`);
+  if (!card) return;
+
+  // Highlight chosen button briefly
+  btn.style.background = 'var(--success)';
+  btn.style.borderColor = 'var(--success)';
+  btn.style.color = '#fff';
+
+  setTimeout(() => {
+    card.classList.add('resolving');
+    setTimeout(() => {
+      resolvedMoments.add(id);
+      card.remove();
+    }, 450);
+  }, 280);
+}
+
+function votePoll(stateKey, optionIdx) {
+  if (!pollVotes[stateKey]) pollVotes[stateKey] = {};
+  if (pollVotes[stateKey]['you'] === optionIdx) {
+    delete pollVotes[stateKey]['you'];
+  } else {
+    pollVotes[stateKey]['you'] = optionIdx;
+  }
+  renderState(stateKey);
+}
+
+function triggerDissent() {
+  // Abilene antidote — surfaces as a moment
+  const scroll = document.getElementById('phoneScroll');
+  const existing = document.getElementById('moment-dissent');
+  if (existing) return;
+
+  const momentSection = scroll.querySelector('.moment-section');
+  const newCard = document.createElement('div');
+  newCard.className = 'moment-card abilene';
+  newCard.id = 'moment-dissent';
+  newCard.innerHTML = `
+    <div class="moment-type abilene">Worth checking</div>
+    <div class="moment-text">You flagged this — does the group actually want it? Nobody has to commit.</div>
+    <div class="moment-actions">
+      <button class="moment-btn yes" onclick="resolveMoment('dissent', this)">Ask the group</button>
+      <button class="moment-btn maybe" onclick="resolveMoment('dissent', this)">Never mind</button>
+    </div>`;
+
+  if (momentSection) {
+    momentSection.appendChild(newCard);
+  }
+}
+
+function triggerMoment(memberId) {
+  // No-op — fairness pick surfaced elsewhere
+}
+
+// ============================================================
+// THEME
+// ============================================================
+
+
+// ============================================================
+// BOOT
+// ============================================================
+renderState('harmony');
+
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const dark = html.dataset.theme === 'dark';
+  html.dataset.theme = dark ? 'light' : 'dark';
+  document.getElementById('themeLabel').textContent = dark ? 'Light' : 'Dark';
+}
+</script>
+</body>
+</html>

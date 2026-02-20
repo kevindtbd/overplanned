@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Map View</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#FAFAF8;--bg-warm:#F5F1EB;--bg-card:#FFFFFF;--bg-stone:#EDE8E0;--bg-raised:#F0ECE5;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --gold:#A07830;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --info:#2E6A9C;--info-bg:#DCECf8;
+  --warning:#956820;--warning-bg:#F5EDD8;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);
+  --shadow-lg:0 16px 56px rgba(26,22,18,0.10);
+  --shadow-xl:0 32px 80px rgba(26,22,18,0.12);
+}
+[data-theme="dark"]{
+  --bg:#0E0C09;--bg-warm:#141109;--bg-card:#171310;--bg-stone:#1F1A14;--bg-raised:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --gold:#C8A96E;
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --info:#4A84A8;--info-bg:rgba(74,132,168,0.12);
+  --warning:#B8943A;--warning-bg:rgba(184,148,58,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:0 16px 56px rgba(0,0,0,0.5);
+  --shadow-xl:0 32px 80px rgba(0,0,0,0.6);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);}
+
+/* ── DESKTOP LAYOUT ── */
+.app-shell{display:grid;grid-template-columns:380px 1fr;height:100vh;}
+@media(max-width:900px){.app-shell{grid-template-columns:1fr;grid-template-rows:1fr auto;}}
+
+/* ── LEFT PANEL ── */
+.left-panel{background:var(--bg);border-right:1px solid var(--ink-700);display:flex;flex-direction:column;overflow:hidden;z-index:10;}
+@media(max-width:900px){.left-panel{order:2;height:auto;border-right:none;border-top:1px solid var(--ink-700);}}
+
+.lp-header{padding:18px 20px 14px;border-bottom:1px solid var(--ink-700);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.lp-back{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-400);cursor:pointer;border:none;background:none;}
+.lp-back:hover{color:var(--ink-100);}
+.lp-title{font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;letter-spacing:-0.02em;color:var(--ink-100);}
+.lp-meta{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);}
+.theme-btn{width:30px;height:30px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+
+/* Day tabs */
+.day-tabs{display:flex;padding:0 20px;border-bottom:1px solid var(--ink-700);overflow-x:auto;flex-shrink:0;}
+.day-tab{padding:9px 10px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;}
+.day-tab.active{color:var(--ink-100);border-bottom-color:var(--accent);}
+
+/* Slot list */
+.slot-list{flex:1;overflow-y:auto;padding:0;}
+.slot-item{display:flex;align-items:stretch;border-bottom:1px solid var(--ink-700);cursor:pointer;transition:background 0.15s;position:relative;}
+.slot-item:hover{background:var(--bg-warm);}
+.slot-item.active{background:var(--accent-light);border-left:3px solid var(--accent);}
+[data-theme="dark"] .slot-item.active{background:rgba(201,104,72,0.08);}
+.slot-time-col{padding:14px 10px 14px 16px;display:flex;flex-direction:column;align-items:center;width:48px;flex-shrink:0;}
+.slot-time{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);letter-spacing:0.04em;margin-bottom:6px;}
+.slot-line{flex:1;width:1px;background:var(--ink-700);}
+.slot-dot{width:7px;height:7px;border-radius:50%;background:var(--ink-600);border:1.5px solid var(--bg);flex-shrink:0;}
+.slot-item.active .slot-dot{background:var(--accent);}
+.slot-item.visited .slot-dot{background:var(--success);}
+.slot-photo{width:64px;height:64px;flex-shrink:0;overflow:hidden;margin:10px 0;}
+.slot-photo img{width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;}
+.slot-body{flex:1;padding:12px 14px 12px 10px;}
+.slot-name{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:2px;}
+.slot-why{font-size:11px;color:var(--ink-400);font-style:italic;font-weight:300;margin-bottom:5px;}
+.slot-chips{display:flex;gap:4px;flex-wrap:wrap;}
+.chip{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.04em;padding:2px 6px;border-radius:100px;}
+.chip.local{color:var(--success);background:var(--success-bg);}
+.chip.source{color:var(--info);background:var(--info-bg);}
+.chip.busy{color:var(--warning);background:var(--warning-bg);}
+.chip.visited{color:var(--ink-500);background:var(--bg-raised);}
+.transit-row{display:flex;align-items:center;gap:6px;padding:5px 16px 5px 48px;background:var(--bg-raised);border-bottom:1px solid var(--ink-700);}
+.transit-txt{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);}
+
+/* ── MAP PANEL ── */
+.map-panel{position:relative;background:var(--bg-stone);overflow:hidden;}
+[data-theme="dark"] .map-panel{background:var(--bg-stone);}
+@media(max-width:900px){.map-panel{order:1;height:55vh;min-height:300px;}}
+#mapCanvas{display:block;width:100%;height:100%;}
+
+/* Map controls */
+.map-controls{position:absolute;top:16px;right:16px;display:flex;flex-direction:column;gap:6px;z-index:20;}
+.map-btn{width:36px;height:36px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);box-shadow:var(--shadow-md);transition:all 0.15s;}
+.map-btn:hover{color:var(--ink-100);border-color:var(--ink-500);}
+
+/* Active pin popup */
+.pin-popup{position:absolute;z-index:30;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:16px;box-shadow:var(--shadow-xl);width:260px;padding:0;overflow:hidden;transition:all 0.25s;}
+[data-theme="dark"] .pin-popup{background:var(--bg-stone);}
+.pp-photo{height:120px;overflow:hidden;position:relative;}
+.pp-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.pp-photo-badge{position:absolute;bottom:8px;left:10px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:100px;background:rgba(61,122,82,0.88);color:#fff;}
+.pp-body{padding:12px 14px;}
+.pp-time{font-family:'DM Mono',monospace;font-size:8px;color:var(--accent-dark);margin-bottom:3px;letter-spacing:0.06em;}
+.pp-name{font-size:14px;font-weight:500;color:var(--ink-100);margin-bottom:3px;}
+.pp-why{font-size:11px;color:var(--ink-400);font-style:italic;font-weight:300;margin-bottom:8px;}
+.pp-chips{display:flex;gap:4px;margin-bottom:10px;}
+.pp-actions{display:flex;gap:6px;}
+.pp-btn{flex:1;font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;border-radius:100px;padding:7px 12px;cursor:pointer;border:none;transition:all 0.15s;}
+.pp-btn.primary{background:var(--accent);color:#fff;}
+.pp-btn.ghost{background:var(--bg-raised);color:var(--ink-300);border:1px solid var(--ink-700);}
+
+/* Day legend */
+.map-legend{position:absolute;bottom:16px;left:16px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:10px;padding:10px 14px;z-index:20;}
+[data-theme="dark"] .map-legend{background:var(--bg-raised);}
+
+/* Exit / back to day view */
+.map-exit{position:absolute;top:16px;left:16px;z-index:30;display:flex;align-items:center;gap:7px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:100px;padding:7px 14px 7px 10px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-300);cursor:pointer;box-shadow:var(--shadow-md);transition:all 0.15s;}
+[data-theme="dark"] .map-exit{background:var(--bg-raised);}
+.map-exit:hover{color:var(--ink-100);border-color:var(--ink-500);}
+
+
+/* Micro-stop legend dot */
+.ml-dot.microstop{background:transparent;border:2px dashed var(--gold);width:8px;height:8px;}
+
+/* Alternatives strip inside popup */
+.pp-alts{border-top:1px solid var(--ink-700);padding:10px 14px;display:none;}
+.pp-alts.visible{display:block;}
+.pp-alts-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:8px;}
+.pp-alt-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--ink-800);cursor:pointer;transition:opacity 0.15s;}
+[data-theme="dark"] .pp-alt-row{border-bottom-color:var(--ink-700);}
+.pp-alt-row:last-child{border-bottom:none;}
+.pp-alt-row:hover{opacity:0.75;}
+.pp-alt-photo{width:32px;height:32px;border-radius:6px;overflow:hidden;flex-shrink:0;}
+.pp-alt-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.pp-alt-name{font-size:11px;font-weight:500;color:var(--ink-100);margin-bottom:1px;}
+.pp-alt-why{font-size:9px;color:var(--ink-400);font-style:italic;font-weight:300;}
+.pp-alt-dist{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-600);margin-left:auto;flex-shrink:0;}
+
+/* Add stop sheet — slides up from bottom */
+.add-stop-sheet{position:absolute;bottom:0;left:0;right:0;background:var(--bg-card);border-radius:16px 16px 0 0;border-top:1px solid var(--ink-700);padding:16px 20px 28px;z-index:40;transform:translateY(100%);transition:transform 0.3s ease;box-shadow:var(--shadow-xl);}
+[data-theme="dark"] .add-stop-sheet{background:var(--bg-stone);}
+.add-stop-sheet.open{transform:translateY(0);}
+.add-stop-handle{width:32px;height:3px;border-radius:100px;background:var(--ink-700);margin:0 auto 14px;}
+.add-stop-title{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:14px;}
+.add-stop-input{width:100%;background:var(--bg-raised);border:1.5px solid var(--ink-700);border-radius:12px;padding:11px 14px;font-size:13px;font-family:'Sora',sans-serif;color:var(--ink-100);outline:none;margin-bottom:10px;transition:border-color 0.2s;}
+[data-theme="dark"] .add-stop-input{background:var(--bg-stone);}
+.add-stop-input::placeholder{color:var(--ink-500);}
+.add-stop-input:focus{border-color:var(--accent);}
+.add-stop-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.add-stop-cat{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-400);background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:100px;padding:4px 10px;cursor:pointer;transition:all 0.15s;}
+[data-theme="dark"] .add-stop-cat{background:var(--bg-stone);}
+.add-stop-cat.selected{background:var(--accent-light);border-color:var(--accent);color:var(--accent-dark);}
+.add-stop-actions{display:flex;gap:8px;}
+.add-stop-btn{flex:1;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;border-radius:100px;padding:11px;cursor:pointer;border:none;transition:all 0.15s;}
+.add-stop-btn.primary{background:var(--accent);color:#fff;}
+.add-stop-btn.ghost{background:var(--bg-raised);color:var(--ink-400);border:1px solid var(--ink-700);}
+[data-theme="dark"] .add-stop-btn.ghost{background:var(--bg-stone);}
+.ml-title{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:7px;}
+.ml-row{display:flex;align-items:center;gap:7px;margin-bottom:4px;}
+.ml-row:last-child{margin-bottom:0;}
+.ml-dot{width:8px;height:8px;border-radius:50%;}
+.ml-dot.visited{background:var(--success);}
+.ml-dot.current{background:var(--accent);}
+.ml-dot.upcoming{background:var(--ink-600);}
+.ml-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-400);}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- Left: slot list -->
+  <div class="left-panel">
+    <div class="lp-header">
+      <div>
+        <div class="lp-title">Kyoto · Day 3</div>
+        <div class="lp-meta">Friday · 5 stops · 8.4 km</div>
+      </div>
+      <button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';redraw()">
+        <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+    <div class="day-tabs">
+      <div class="day-tab">Wed</div><div class="day-tab">Thu</div>
+      <div class="day-tab active">Fri</div>
+      <div class="day-tab">Sat</div><div class="day-tab">Sun</div>
+    </div>
+    <div class="slot-list">
+      <!-- Slot 1 visited -->
+      <div class="slot-item visited" onclick="selectSlot(0)">
+        <div class="slot-time-col"><div class="slot-time">06:30</div><div class="slot-line"></div><div class="slot-dot"></div></div>
+        <div class="slot-photo"><img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=200&q=70&auto=format&fit=crop" alt=""></div>
+        <div class="slot-body">
+          <div class="slot-name">Fushimi Inari</div>
+          <div class="slot-why">left before the crowds hit</div>
+          <div class="slot-chips"><span class="chip visited">Visited</span><span class="chip source">Tabelog · 2.1k</span></div>
+        </div>
+      </div>
+      <div class="transit-row">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <div class="transit-txt">22 min taxi · ¥1,400</div>
+      </div>
+      <!-- Slot 2 active -->
+      <div class="slot-item active" onclick="selectSlot(1)">
+        <div class="slot-time-col"><div class="slot-time">14:00</div><div class="slot-line"></div><div class="slot-dot"></div></div>
+        <div class="slot-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=200&q=70&auto=format&fit=crop" alt=""></div>
+        <div class="slot-body">
+          <div class="slot-name">Kinkaku-ji</div>
+          <div class="slot-why">weekday afternoon · thins out by 15:00</div>
+          <div class="slot-chips"><span class="chip local">Local</span><span class="chip source">Tabelog · 4.2k</span><span class="chip busy">Busy 10–14</span></div>
+        </div>
+      </div>
+      <div class="transit-row">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <div class="transit-txt">12 min walk · 900m</div>
+      </div>
+      <!-- Slot 3 -->
+      <div class="slot-item" onclick="selectSlot(2)">
+        <div class="slot-time-col"><div class="slot-time">16:00</div><div class="slot-line"></div><div class="slot-dot"></div></div>
+        <div class="slot-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=200&q=70&auto=format&fit=crop" alt=""></div>
+        <div class="slot-body">
+          <div class="slot-name">Ryoan-ji rock garden</div>
+          <div class="slot-why">golden hour light is worth it</div>
+          <div class="slot-chips"><span class="chip local">Local</span><span class="chip source">Tabelog · 1.8k</span></div>
+        </div>
+      </div>
+      <div class="transit-row">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <div class="transit-txt">28 min taxi · ¥1,800</div>
+      </div>
+      <!-- Slot 4 -->
+      <div class="slot-item" onclick="selectSlot(3)">
+        <div class="slot-time-col"><div class="slot-time">19:00</div><div class="slot-line"></div><div class="slot-dot"></div></div>
+        <div class="slot-photo"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&q=70&auto=format&fit=crop" alt=""></div>
+        <div class="slot-body">
+          <div class="slot-name">Pontocho izakaya</div>
+          <div class="slot-why">locals-only counter · full by 20:00</div>
+          <div class="slot-chips"><span class="chip local">Local</span><span class="chip source">Tabelog · 3.8k</span><span class="chip busy">Full by 20:00</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: map -->
+  <div class="map-panel">
+    <canvas id="mapCanvas"></canvas>
+
+    <!-- Exit back to day view -->
+    <div class="map-exit" onclick="window.history.back()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Day view
+    </div>
+
+
+    <div class="map-controls">
+      <div class="map-btn" title="Zoom in"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="map-btn" title="Zoom out"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="map-btn" style="margin-top:8px;" title="My location"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+    </div>
+
+    <!-- Pin popup -->
+    <div class="pin-popup" id="pinPopup" style="top:30%;left:50%;transform:translateX(-50%);">
+      <div class="pp-photo">
+        <img id="ppImg" src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=70&auto=format&fit=crop" alt="">
+        <div class="pp-photo-badge" id="ppBadge">Active Now</div>
+      </div>
+      <div class="pp-body">
+        <div class="pp-time" id="ppTime">14:00 · Day 3</div>
+        <div class="pp-name" id="ppName">Kinkaku-ji</div>
+        <div class="pp-why" id="ppWhy">weekday afternoon · thins out by 15:00</div>
+        <div class="pp-chips">
+          <span class="chip local">Local</span>
+          <span class="chip source">Tabelog · 4.2k</span>
+          <span class="chip busy">Busy 10–14</span>
+        </div>
+        <div class="pp-actions">
+          <button class="pp-btn primary">Directions</button>
+          <button class="pp-btn ghost" onclick="toggleAlts()">Nearby</button>
+        </div>
+        <div style="padding:6px 14px 10px;border-top:1px solid var(--ink-800);display:flex;align-items:center;justify-content:space-between;">
+          <button onclick="openAddStop()" style="background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-dark);display:flex;align-items:center;gap:5px;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add a stop nearby
+          </button>
+          <button onclick="document.getElementById('pinPopup').style.display='none'" style="background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);">dismiss</button>
+        </div>
+      </div>
+      <!-- Nearby alternatives -->
+      <div class="pp-alts" id="ppAlts">
+        <div class="pp-alts-label">Nearby alternatives</div>
+        <div class="pp-alt-row">
+          <div class="pp-alt-photo"><img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=80&q=70&auto=format&fit=crop" alt=""></div>
+          <div style="flex:1;">
+            <div class="pp-alt-name">Ryoan-ji garden</div>
+            <div class="pp-alt-why">quieter · same area · locals rate higher</div>
+          </div>
+          <div class="pp-alt-dist">8 min</div>
+        </div>
+        <div class="pp-alt-row">
+          <div class="pp-alt-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=80&q=70&auto=format&fit=crop" alt=""></div>
+          <div style="flex:1;">
+            <div class="pp-alt-name">Ninna-ji temple</div>
+            <div class="pp-alt-why">less visited · cherry blossoms if March</div>
+          </div>
+          <div class="pp-alt-dist">12 min</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add stop sheet -->
+    <div class="add-stop-sheet" id="addStopSheet">
+      <div class="add-stop-handle"></div>
+      <div class="add-stop-title">Add a stop near here</div>
+      <input class="add-stop-input" type="text" placeholder="What do you need? e.g. bug spray, ATM, ceramic shop…">
+      <div class="add-stop-cats">
+        <div class="add-stop-cat selected" onclick="selectCat(this)">Errand</div>
+        <div class="add-stop-cat" onclick="selectCat(this)">Shop</div>
+        <div class="add-stop-cat" onclick="selectCat(this)">Food</div>
+        <div class="add-stop-cat" onclick="selectCat(this)">ATM</div>
+        <div class="add-stop-cat" onclick="selectCat(this)">Photo</div>
+        <div class="add-stop-cat" onclick="selectCat(this)">Other</div>
+      </div>
+      <div class="add-stop-actions">
+        <button class="add-stop-btn primary" onclick="closeAddStop()">Save stop</button>
+        <button class="add-stop-btn ghost" onclick="closeAddStop()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="map-legend">
+      <div class="ml-title">Day 3 · Kyoto</div>
+      <div class="ml-row"><div class="ml-dot visited"></div><div class="ml-label">Visited</div></div>
+      <div class="ml-row"><div class="ml-dot current"></div><div class="ml-label">Current</div></div>
+      <div class="ml-row"><div class="ml-dot upcoming"></div><div class="ml-label">Upcoming</div></div>
+      <div class="ml-row" id="legendMicrostop"><div class="ml-dot microstop"></div><div class="ml-label">My stops</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var activeSlot=1;
+var SLOTS=[
+  {name:'Fushimi Inari',time:'06:30',why:'left before the crowds hit',state:'visited',
+   img:'https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=400&q=70&auto=format&fit=crop',badge:'Visited'},
+  {name:'Kinkaku-ji',time:'14:00',why:'weekday afternoon · thins out by 15:00',state:'active',
+   img:'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=70&auto=format&fit=crop',badge:'Active Now'},
+  {name:'Ryoan-ji rock garden',time:'16:00',why:'golden hour light is worth it',state:'upcoming',
+   img:'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=70&auto=format&fit=crop',badge:'Upcoming'},
+  {name:'Pontocho izakaya',time:'19:00',why:"locals-only counter · full by 20:00",state:'upcoming',
+   img:'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=70&auto=format&fit=crop',badge:'Book Now'},
+];
+
+// Micro-stops — fractional positions on the canvas
+var MICROSTOPS=[
+  {name:'Bug spray · 7-Eleven',cat:'errand',done:false, fx:0.38,fy:0.28},
+  {name:'Ceramic shop',cat:'shop',done:false, fx:0.62,fy:0.55},
+  {name:'ATM',cat:'atm',done:true, fx:0.25,fy:0.48},
+];
+
+
+function selectSlot(i){
+  activeSlot=i;
+  var s=SLOTS[i];
+  document.getElementById('ppImg').src=s.img;
+  document.getElementById('ppBadge').textContent=s.badge;
+  document.getElementById('ppTime').textContent=s.time+' · Day 3';
+  document.getElementById('ppName').textContent=s.name;
+  document.getElementById('ppWhy').textContent=s.why;
+  document.getElementById('ppAlts').classList.remove('visible');
+  document.getElementById('pinPopup').style.display='';
+  document.querySelectorAll('.slot-item').forEach(function(el,j){
+    el.classList.toggle('active',j===i&&s.state==='active');
+  });
+  redraw();
+}
+
+function toggleAlts(){
+  document.getElementById('ppAlts').classList.toggle('visible');
+}
+
+function openAddStop(){
+  document.getElementById('pinPopup').style.display='none';
+  document.getElementById('addStopSheet').classList.add('open');
+}
+
+function closeAddStop(){
+  document.getElementById('addStopSheet').classList.remove('open');
+}
+
+function selectCat(el){
+  document.querySelectorAll('.add-stop-cat').forEach(function(c){c.classList.remove('selected');});
+  el.classList.add('selected');
+}
+
+function redraw(){ drawMap(); }
+
+function drawMap(){
+  var canvas=document.getElementById('mapCanvas');
+  if(!canvas)return;
+  var dark=document.documentElement.dataset.theme==='dark';
+  canvas.width=canvas.parentElement.offsetWidth;
+  canvas.height=canvas.parentElement.offsetHeight;
+  var W=canvas.width,H=canvas.height;
+  var ctx=canvas.getContext('2d');
+
+  ctx.fillStyle=dark?'#1A1510':'#EAE4DA';ctx.fillRect(0,0,W,H);
+
+  // streets
+  ctx.strokeStyle=dark?'rgba(255,255,255,0.042)':'rgba(255,255,255,0.72)';ctx.lineWidth=6;
+  for(var x=0;x<W;x+=56){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(var y=0;y<H;y+=56){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.lineWidth=9;
+  ctx.beginPath();ctx.moveTo(0,H*.45);ctx.lineTo(W,H*.18);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(W*.18,0);ctx.lineTo(W*.7,H);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(W*.55,0);ctx.lineTo(W,H*.55);ctx.stroke();
+
+  // blocks
+  ctx.fillStyle=dark?'rgba(26,20,14,0.65)':'rgba(192,182,170,0.38)';
+  [[W*.06,H*.06,100,65],[W*.28,H*.24,110,72],[W*.52,H*.08,90,60],
+   [W*.72,H*.36,85,55],[W*.35,H*.60,80,58],[W*.62,H*.62,100,54],
+   [W*.82,H*.12,70,48],[W*.04,H*.55,75,50],[W*.46,H*.38,85,55]].forEach(function(b){
+    ctx.fillRect(b[0],b[1],b[2],b[3]);
+  });
+
+  // stop positions (fractional of canvas)
+  var stops=[
+    {fx:0.12,fy:0.72},{fx:0.38,fy:0.44},{fx:0.58,fy:0.30},{fx:0.80,fy:0.55}
+  ];
+  stops=stops.map(function(s){return{x:s.fx*W,y:s.fy*H};});
+
+  // route
+  ctx.beginPath();ctx.moveTo(stops[0].x,stops[0].y);
+  for(var i=1;i<stops.length;i++){
+    var mx=(stops[i-1].x+stops[i].x)/2,my=(stops[i-1].y+stops[i].y)/2-25;
+    ctx.quadraticCurveTo(stops[i-1].x,stops[i-1].y,mx,my);
+  }
+  ctx.lineTo(stops[stops.length-1].x,stops[stops.length-1].y);
+  ctx.strokeStyle=dark?'rgba(201,104,72,0.55)':'rgba(184,92,63,0.5)';
+  ctx.lineWidth=2.5;ctx.setLineDash([7,5]);ctx.stroke();ctx.setLineDash([]);
+
+  // pins — numbered by sequence
+  var states=['visited','active','upcoming','upcoming'];
+  stops.forEach(function(s,i){
+    var isActive=i===activeSlot;
+    var st=states[i];
+    var col=st==='visited'?(dark?'#5A9E6A':'#3D7A52'):
+             st==='active'?(dark?'#C96848':'#B85C3F'):
+             (dark?'#5C4E42':'#9E9286');
+    var r=isActive?15:11;
+
+    // glow for active
+    if(isActive){
+      var gl=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,r+16);
+      gl.addColorStop(0,dark?'rgba(201,104,72,0.28)':'rgba(184,92,63,0.18)');
+      gl.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath();ctx.arc(s.x,s.y,r+16,0,Math.PI*2);ctx.fillStyle=gl;ctx.fill();
+    }
+
+    // pin teardrop body
+    ctx.beginPath();
+    ctx.arc(s.x,s.y-r,r,0,Math.PI*2);
+    ctx.fillStyle=col;ctx.fill();
+    ctx.strokeStyle=dark?'rgba(14,12,9,0.9)':'#fff';ctx.lineWidth=2;ctx.stroke();
+
+    // pin tail
+    ctx.beginPath();
+    ctx.moveTo(s.x-r*.45,s.y-r*.7);
+    ctx.lineTo(s.x,s.y+3);
+    ctx.lineTo(s.x+r*.45,s.y-r*.7);
+    ctx.fillStyle=col;ctx.fill();
+
+    // sequence number inside pin
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillStyle='#fff';
+    ctx.font=(isActive?'600 11px':'600 9px')+' Outfit,sans-serif';
+    ctx.fillText(String(i+1),s.x,s.y-r);
+
+    // label beside active pin
+    if(isActive){
+      ctx.textAlign='left';
+      ctx.fillStyle=dark?'rgba(240,234,226,0.9)':'rgba(26,22,18,0.85)';
+      ctx.font='500 11px Sora,sans-serif';
+      ctx.textBaseline='middle';
+      ctx.fillText(SLOTS[i].name,s.x+r+8,s.y-r);
+      ctx.font='300 9px DM Mono,monospace';
+      ctx.fillStyle=dark?'rgba(201,104,72,0.85)':'rgba(184,92,63,0.8)';
+      ctx.fillText(SLOTS[i].time,s.x+r+8,s.y-r+13);
+    }
+
+    // position popup near active pin
+    if(isActive){
+      var popup=document.getElementById('pinPopup');
+      var px=Math.min(s.x+20,W-280),py=Math.max(s.y-220,10);
+      popup.style.left=px+'px';popup.style.top=py+'px';popup.style.transform='none';
+    }
+  });
+
+  // micro-stop pins — always visible
+  {
+    MICROSTOPS.forEach(function(ms){
+      var mx=ms.fx*W, my=ms.fy*H;
+      var r=9;
+      var col=ms.done?(dark?'#5C4E42':'#C2B8AE'):(dark?'#C8A96E':'#A07830');
+
+      // dashed ring
+      ctx.beginPath();
+      ctx.arc(mx,my-r,r+4,0,Math.PI*2);
+      ctx.strokeStyle=col;
+      ctx.lineWidth=1.5;
+      ctx.setLineDash([3,3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // solid inner circle
+      ctx.beginPath();
+      ctx.arc(mx,my-r,r,0,Math.PI*2);
+      ctx.fillStyle=ms.done?(dark?'#2E251E':'#EDE8E0'):col;
+      ctx.fill();
+      ctx.strokeStyle=dark?'rgba(14,12,9,0.8)':'#fff';
+      ctx.lineWidth=1.5;
+      ctx.stroke();
+
+      // icon — checkmark if done, small circle if pending
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      if(ms.done){
+        ctx.fillStyle=dark?'rgba(240,234,226,0.4)':'rgba(26,22,18,0.35)';
+        ctx.font='bold 9px sans-serif';
+        ctx.fillText('✓',mx,my-r);
+      } else {
+        ctx.fillStyle='#fff';
+        ctx.beginPath();
+        ctx.arc(mx,my-r,2.5,0,Math.PI*2);
+        ctx.fill();
+      }
+
+      // label
+      ctx.textAlign='left';
+      ctx.font='300 9px Sora,sans-serif';
+      ctx.fillStyle=ms.done
+        ?(dark?'rgba(240,234,226,0.3)':'rgba(26,22,18,0.3)')
+        :(dark?'rgba(200,169,110,0.9)':'rgba(160,120,48,0.9)');
+      ctx.textBaseline='middle';
+      ctx.fillText(ms.name,mx+r+6,my-r);
+    });
+  }
+
+  // current position dot (between slot 1 and 2)
+  var curr={x:(stops[1].x+stops[2].x)/2+10,y:(stops[1].y+stops[2].y)/2-15};
+  ctx.beginPath();ctx.arc(curr.x,curr.y,6,0,Math.PI*2);
+  ctx.fillStyle=dark?'#C96848':'#B85C3F';ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
+  ctx.beginPath();ctx.arc(curr.x,curr.y,12,0,Math.PI*2);
+  ctx.strokeStyle=dark?'rgba(201,104,72,0.4)':'rgba(184,92,63,0.3)';ctx.lineWidth=2;ctx.stroke();
+}
+
+window.addEventListener('load', drawMap);
+window.addEventListener('resize', drawMap);
+</script>
+</body>
+</html>

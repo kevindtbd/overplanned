@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Slot Card + Trust Recovery</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#F7F4EF;--bg-card:#FFFFFF;--bg-raised:#EDE8E0;--bg-stone:#EAE4DA;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --warning-bg:#F5EDD8;--warning:#8C6A1A;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);--shadow-xl:0 32px 80px rgba(26,22,18,0.16);
+}
+[data-theme="dark"]{
+  --bg:#0C0A08;--bg-card:#161210;--bg-raised:#1A1510;--bg-stone:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --warning-bg:rgba(200,169,110,0.1);--warning:#C8A96E;
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);--shadow-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);}
+.shell{display:flex;align-items:flex-start;justify-content:center;gap:40px;min-height:100vh;padding:40px 24px;flex-wrap:wrap;}
+.panel-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);text-align:center;margin-bottom:10px;}
+.phone{width:390px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:40px;overflow:hidden;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;}
+[data-theme="dark"] .phone{background:var(--bg-stone);}
+.theme-btn{position:fixed;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);z-index:200;}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+.status{padding:14px 26px 0;display:flex;justify-content:space-between;}
+.status-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-100);}
+
+/* Day header */
+.day-header{padding:12px 22px;border-bottom:1px solid var(--ink-700);display:flex;align-items:center;justify-content:space-between;}
+.dh-title{font-size:13px;font-weight:500;color:var(--ink-100);}
+.dh-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);}
+
+/* Slot spine */
+.slot-body{padding:16px 22px;display:flex;flex-direction:column;gap:0;}
+
+/* Trust recovery line — quiet, inline, above first slot */
+.trust-line{display:flex;align-items:center;gap:7px;padding:8px 12px;background:var(--bg-raised);border-radius:10px;margin-bottom:12px;border-left:2px solid var(--ink-600);}
+[data-theme="dark"] .trust-line{background:var(--bg-stone);}
+.trust-line-text{font-size:11px;color:var(--ink-400);font-weight:300;font-style:italic;}
+
+/* Slot row */
+.slot-row{display:flex;gap:0;margin-bottom:0;}
+.slot-spine{display:flex;flex-direction:column;align-items:center;width:22px;flex-shrink:0;}
+.slot-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--accent);background:var(--bg-card);flex-shrink:0;margin-top:14px;}
+[data-theme="dark"] .slot-dot{background:var(--bg-stone);}
+.slot-dot.visited{background:var(--accent);border-color:var(--accent);}
+.slot-dot.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);}
+.slot-line{width:2px;flex:1;background:var(--ink-700);margin:4px 0;}
+
+/* Slot card */
+.slot-card{flex:1;margin-bottom:10px;margin-left:10px;border-radius:16px;overflow:hidden;background:var(--bg-raised);border:1px solid var(--ink-700);cursor:pointer;transition:all 0.15s;position:relative;}
+[data-theme="dark"] .slot-card{background:var(--bg-stone);}
+.slot-card:hover{border-color:var(--ink-500);}
+.slot-card.active-card{border-color:var(--accent);box-shadow:0 4px 16px rgba(184,92,63,0.1);}
+.slot-photo{height:80px;overflow:hidden;position:relative;}
+.slot-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.slot-photo-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.6),transparent);}
+.slot-time-badge{position:absolute;top:8px;left:8px;font-family:'DM Mono',monospace;font-size:8px;background:rgba(14,10,6,0.65);color:rgba(255,255,255,0.85);padding:3px 8px;border-radius:100px;backdrop-filter:blur(4px);}
+.slot-inner{padding:10px 12px;}
+.slot-type{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);margin-bottom:3px;}
+.slot-name{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:2px;}
+.slot-why{font-size:10px;color:var(--ink-400);font-style:italic;font-weight:300;margin-bottom:8px;line-height:1.4;}
+.slot-footer{display:flex;align-items:center;justify-content:space-between;}
+.slot-chips{display:flex;gap:5px;}
+.slot-chip{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.05em;text-transform:uppercase;padding:3px 8px;border-radius:100px;}
+.slot-chip.local{background:var(--success-bg);color:var(--success);}
+.slot-chip.source{background:var(--bg-card);color:var(--ink-500);border:1px solid var(--ink-700);}
+[data-theme="dark"] .slot-chip.source{background:var(--bg-raised);}
+/* Flag — secondary, not prominent */
+.slot-flag{display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-600);cursor:pointer;padding:3px 6px;border-radius:6px;transition:all 0.15s;}
+.slot-flag:hover{color:var(--ink-400);background:var(--bg-card);}
+[data-theme="dark"] .slot-flag:hover{background:var(--bg-raised);}
+
+/* Flag sheet */
+.flag-sheet{position:absolute;bottom:0;left:0;right:0;background:var(--bg-card);border-radius:16px 16px 0 0;border-top:1px solid var(--ink-700);padding:16px 16px 24px;z-index:20;transform:translateY(100%);transition:transform 0.28s ease;box-shadow:var(--shadow-xl);}
+[data-theme="dark"] .flag-sheet{background:var(--bg-stone);}
+.flag-sheet.open{transform:translateY(0);}
+.flag-handle{width:28px;height:3px;border-radius:100px;background:var(--ink-700);margin:0 auto 14px;}
+.flag-title{font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:14px;}
+.flag-path{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:12px;border:1.5px solid var(--ink-700);cursor:pointer;margin-bottom:8px;transition:all 0.15s;}
+.flag-path:hover{border-color:var(--ink-500);}
+.flag-path-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.flag-path-body{}
+.flag-path-title{font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:2px;}
+.flag-path-sub{font-size:10px;color:var(--ink-500);font-weight:300;line-height:1.45;}
+.flag-cancel{width:100%;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);background:none;border:none;cursor:pointer;padding:8px;margin-top:4px;}
+
+/* Data failure confirmation */
+.flag-confirm{display:none;padding:8px 0;}
+.flag-confirm.visible{display:block;}
+.flag-confirm-text{font-size:12px;color:var(--success);margin-bottom:4px;font-weight:400;}
+.flag-confirm-sub{font-size:10px;color:var(--ink-500);font-weight:300;}
+
+/* Algo misread confirmation */
+.algo-confirm{display:none;padding:8px 0;}
+.algo-confirm.visible{display:block;}
+.algo-confirm-text{font-size:12px;color:var(--ink-200);margin-bottom:4px;font-weight:400;}
+.algo-confirm-sub{font-size:10px;color:var(--ink-500);font-weight:300;line-height:1.5;}
+
+/* Post-trip variant — flag more prominent */
+.slot-card-post .slot-flag{color:var(--ink-400);font-size:9px;}
+</style>
+</head>
+<body>
+
+<button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+  <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+  <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<div class="shell">
+
+<!-- Phone 1: Mid-trip slot card with flag (secondary) + trust recovery line -->
+<div>
+<div class="panel-label">Mid-trip · Flag secondary · Trust recovery</div>
+<div class="phone" style="min-height:680px;position:relative;">
+  <div class="status"><span class="status-time">14:22</span></div>
+  <div class="day-header">
+    <div class="dh-title">Day 3 · Kyoto</div>
+    <div class="dh-sub">Friday · 4 slots</div>
+  </div>
+  <div class="slot-body">
+
+    <!-- Trust recovery line — quiet, appears after threshold -->
+    <div class="trust-line">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <div class="trust-line-text">Noted — we'll adjust your recommendations.</div>
+    </div>
+
+    <!-- Slot 1 — visited -->
+    <div class="slot-row">
+      <div class="slot-spine">
+        <div class="slot-dot visited"></div>
+        <div class="slot-line"></div>
+      </div>
+      <div class="slot-card">
+        <div class="slot-photo">
+          <img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=400&q=70&auto=format&fit=crop" alt="">
+          <div class="slot-photo-overlay"></div>
+          <div class="slot-time-badge">06:30</div>
+        </div>
+        <div class="slot-inner">
+          <div class="slot-type">Anchor · Outdoor</div>
+          <div class="slot-name">Fushimi Inari</div>
+          <div class="slot-why">left before the crowds hit</div>
+          <div class="slot-footer">
+            <div class="slot-chips">
+              <div class="slot-chip local">Local</div>
+              <div class="slot-chip source">Tabelog · 2.1k</div>
+            </div>
+            <div class="slot-flag" onclick="openFlag('flag1')">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+              Flag
+            </div>
+          </div>
+        </div>
+        <!-- Flag sheet -->
+        <div class="flag-sheet" id="flag1">
+          <div class="flag-handle"></div>
+          <div class="flag-title">What happened?</div>
+          <div class="flag-path" onclick="dataFailure('flag1')">
+            <div class="flag-path-icon" style="background:var(--warning-bg);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="flag-path-body">
+              <div class="flag-path-title">This place was closed or wrong</div>
+              <div class="flag-path-sub">Hours were off, venue had moved, or something factual was incorrect.</div>
+            </div>
+          </div>
+          <div class="flag-path" onclick="algoMisread('flag1')">
+            <div class="flag-path-icon" style="background:var(--accent-light);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="1.8" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+            <div class="flag-path-body">
+              <div class="flag-path-title">This wasn't quite right for me</div>
+              <div class="flag-path-sub">Tell us what missed — we'll fix your next trip.</div>
+            </div>
+          </div>
+          <div class="flag-confirm" id="flag1-data">
+            <div class="flag-confirm-text">Got it — we've logged this. Account credit applied.</div>
+            <div class="flag-confirm-sub">We'll verify and update the listing within 24 hours.</div>
+          </div>
+          <div class="algo-confirm" id="flag1-algo">
+            <div class="algo-confirm-text">Noted. Helps us read you better.</div>
+            <div class="algo-confirm-sub">Your next recommendations will reflect this — no action needed on your end.</div>
+          </div>
+          <button class="flag-cancel" onclick="closeFlag('flag1')">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slot 2 — active now -->
+    <div class="slot-row">
+      <div class="slot-spine">
+        <div class="slot-dot active"></div>
+        <div class="slot-line"></div>
+      </div>
+      <div class="slot-card active-card">
+        <div class="slot-photo">
+          <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=70&auto=format&fit=crop" alt="">
+          <div class="slot-photo-overlay"></div>
+          <div class="slot-time-badge">14:00 · Now</div>
+        </div>
+        <div class="slot-inner">
+          <div class="slot-type">Flex · Sightseeing</div>
+          <div class="slot-name">Kinkaku-ji</div>
+          <div class="slot-why">weekday afternoon · thins out by 15:00</div>
+          <div class="slot-footer">
+            <div class="slot-chips">
+              <div class="slot-chip local">Local</div>
+              <div class="slot-chip source">Reddit · r/JapanTravel</div>
+            </div>
+            <div class="slot-flag" onclick="openFlag('flag2')">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+              Flag
+            </div>
+          </div>
+        </div>
+        <div class="flag-sheet" id="flag2">
+          <div class="flag-handle"></div>
+          <div class="flag-title">What happened?</div>
+          <div class="flag-path" onclick="dataFailure('flag2')">
+            <div class="flag-path-icon" style="background:var(--warning-bg);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="flag-path-body">
+              <div class="flag-path-title">This place was closed or wrong</div>
+              <div class="flag-path-sub">Hours were off, venue had moved, or something factual was incorrect.</div>
+            </div>
+          </div>
+          <div class="flag-path" onclick="algoMisread('flag2')">
+            <div class="flag-path-icon" style="background:var(--accent-light);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="1.8" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+            <div class="flag-path-body">
+              <div class="flag-path-title">This wasn't quite right for me</div>
+              <div class="flag-path-sub">Tell us what missed — we'll fix your next trip.</div>
+            </div>
+          </div>
+          <div class="flag-confirm" id="flag2-data">
+            <div class="flag-confirm-text">Got it — we've logged this. Account credit applied.</div>
+            <div class="flag-confirm-sub">We'll verify and update the listing within 24 hours.</div>
+          </div>
+          <div class="algo-confirm" id="flag2-algo">
+            <div class="algo-confirm-text">Noted. Helps us read you better.</div>
+            <div class="algo-confirm-sub">Your next recommendations will reflect this — no action needed on your end.</div>
+          </div>
+          <button class="flag-cancel" onclick="closeFlag('flag2')">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slot 3 — upcoming -->
+    <div class="slot-row">
+      <div class="slot-spine">
+        <div class="slot-dot"></div>
+        <div class="slot-line"></div>
+      </div>
+      <div class="slot-card">
+        <div class="slot-inner" style="padding:12px;">
+          <div class="slot-type">Anchor · Dinner</div>
+          <div class="slot-name">Pontocho izakaya</div>
+          <div class="slot-why">locals-only counter · full by 20:00</div>
+          <div class="slot-footer">
+            <div class="slot-chips">
+              <div class="slot-chip local">Local</div>
+              <div class="slot-chip source">Tabelog · 847</div>
+            </div>
+            <div class="slot-flag">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+              Flag
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+</div>
+
+<script>
+function openFlag(id){
+  document.getElementById(id).classList.add('open');
+}
+function closeFlag(id){
+  var sheet = document.getElementById(id);
+  sheet.classList.remove('open');
+  // reset confirmations
+  sheet.querySelectorAll('.flag-confirm,.algo-confirm').forEach(function(el){el.classList.remove('visible');});
+  sheet.querySelectorAll('.flag-path').forEach(function(el){el.style.display='';});
+}
+function dataFailure(id){
+  var sheet = document.getElementById(id);
+  sheet.querySelectorAll('.flag-path').forEach(function(el){el.style.display='none';});
+  document.getElementById(id+'-data').classList.add('visible');
+  setTimeout(function(){closeFlag(id);},3200);
+}
+function algoMisread(id){
+  var sheet = document.getElementById(id);
+  sheet.querySelectorAll('.flag-path').forEach(function(el){el.style.display='none';});
+  document.getElementById(id+'-algo').classList.add('visible');
+  setTimeout(function(){closeFlag(id);},3200);
+}
+</script>
+</body>
+</html>

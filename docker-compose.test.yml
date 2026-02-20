@@ -1,0 +1,66 @@
+# Test-only compose: ephemeral services on tmpfs for fast CI/local test runs.
+# Usage: docker compose -f docker-compose.test.yml up -d
+version: '3.9'
+
+services:
+  postgres-test:
+    image: postgis/postgis:16-3.4
+    container_name: overplanned-postgres-test
+    environment:
+      POSTGRES_DB: overplanned_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "127.0.0.1:25432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data:rw,size=256m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d overplanned_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+    networks:
+      - test-net
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: overplanned-redis-test
+    command: redis-server --save "" --appendonly no
+    ports:
+      - "127.0.0.1:26379:6379"
+    tmpfs:
+      - /data:rw,size=64m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+      start_period: 3s
+    networks:
+      - test-net
+
+  qdrant-test:
+    image: qdrant/qdrant:v1.7.4
+    container_name: overplanned-qdrant-test
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    ports:
+      - "127.0.0.1:26333:6333"
+      - "127.0.0.1:26334:6334"
+    tmpfs:
+      - /qdrant/storage:rw,size=128m
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:6333/health || exit 1"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+    networks:
+      - test-net
+
+networks:
+  test-net:
+    driver: bridge

@@ -1,0 +1,5 @@
+{
+  "_comment": "Generated Qdrant payload schema from ActivityNode JSON Schema",
+  "_comment2": "Run `npm run codegen` to regenerate",
+  "_comment3": "DO NOT EDIT MANUALLY"
+}

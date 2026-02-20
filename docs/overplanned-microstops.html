@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Micro-Stops</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#FAFAF8;--bg-warm:#F5F1EB;--bg-card:#FFFFFF;--bg-stone:#EDE8E0;--bg-raised:#F0ECE5;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --gold:#A07830;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --info:#2E6A9C;--info-bg:#DCECf8;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);
+  --shadow-lg:0 16px 56px rgba(26,22,18,0.10);
+  --shadow-xl:0 32px 80px rgba(26,22,18,0.14);
+}
+[data-theme="dark"]{
+  --bg:#0E0C09;--bg-warm:#141109;--bg-card:#171310;--bg-stone:#1F1A14;--bg-raised:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --gold:#C8A96E;
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --info:#4A84A8;--info-bg:rgba(74,132,168,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:0 16px 56px rgba(0,0,0,0.5);
+  --shadow-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);}
+.shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;gap:40px;flex-wrap:wrap;}
+.phone{width:390px;min-height:780px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:40px;overflow:hidden;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;position:relative;}
+[data-theme="dark"] .phone{background:var(--bg-stone);}
+
+/* Status bar */
+.status{padding:14px 26px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.status-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-100);}
+
+/* Header */
+.ms-header{padding:16px 22px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.ms-back{background:none;border:none;cursor:pointer;color:var(--ink-400);display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;}
+.ms-title{font-size:14px;font-weight:500;color:var(--ink-100);}
+.ms-add-btn{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent-dark);background:var(--accent-light);border:none;border-radius:100px;padding:5px 11px;cursor:pointer;}
+
+/* Day strip */
+.ms-day-strip{display:flex;gap:0;padding:0 22px;border-bottom:1px solid var(--ink-700);flex-shrink:0;overflow-x:auto;}
+.ms-day{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
+.ms-day.active{color:var(--accent-dark);border-bottom-color:var(--accent);}
+
+/* Context bar — where you are now */
+.ms-context{display:flex;align-items:center;gap:10px;padding:10px 22px;background:var(--accent-light);border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+[data-theme="dark"] .ms-context{background:rgba(201,104,72,0.08);}
+.ms-context-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.ms-context-text{font-size:11px;color:var(--accent-dark);font-weight:400;}
+.ms-context-text span{font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);}
+
+/* Stop list */
+.ms-body{flex:1;overflow-y:auto;padding:16px 22px;}
+.ms-section-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;margin-top:4px;}
+
+/* Itinerary slot reference (context, not editable) */
+.ms-slot-ref{display:flex;align-items:center;gap:10px;padding:8px 0;margin-bottom:4px;}
+.ms-slot-ref-time{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);width:36px;flex-shrink:0;}
+.ms-slot-ref-line{width:2px;height:28px;border-radius:1px;background:var(--ink-700);flex-shrink:0;}
+.ms-slot-ref-name{font-size:12px;font-weight:500;color:var(--ink-300);}
+
+/* Micro-stop row */
+.ms-stop{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg-raised);border:1.5px dashed var(--ink-700);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:all 0.15s;position:relative;}
+[data-theme="dark"] .ms-stop{background:var(--bg-stone);}
+.ms-stop:hover{border-color:var(--ink-500);}
+.ms-stop.done{opacity:0.45;}
+.ms-stop.done .ms-stop-name{text-decoration:line-through;}
+.ms-stop.nudge-active{border-color:var(--accent);background:var(--accent-light);}
+[data-theme="dark"] .ms-stop.nudge-active{background:rgba(201,104,72,0.1);}
+.ms-stop-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--ink-600);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;cursor:pointer;transition:all 0.15s;}
+.ms-stop-check:hover{border-color:var(--success);}
+.ms-stop.done .ms-stop-check{background:var(--success-bg);border-color:var(--success);}
+.ms-stop-body{flex:1;}
+.ms-stop-name{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:2px;}
+.ms-stop-note{font-size:11px;color:var(--ink-400);font-weight:300;font-style:italic;margin-bottom:5px;line-height:1.5;}
+.ms-stop-meta{display:flex;align-items:center;gap:8px;}
+.ms-stop-cat{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:100px;background:var(--bg-stone);color:var(--ink-500);}
+[data-theme="dark"] .ms-stop-cat{background:var(--bg-raised);}
+.ms-stop-area{font-size:10px;color:var(--ink-500);font-weight:300;}
+.ms-stop-nudge{font-size:10px;color:var(--accent-dark);font-weight:400;display:flex;align-items:center;gap:4px;}
+.ms-stop-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.ms-stop-action{background:none;border:none;cursor:pointer;color:var(--ink-600);padding:2px;}
+.ms-stop-action:hover{color:var(--ink-200);}
+
+/* Divider between slot and stop */
+.ms-between{display:flex;align-items:center;gap:8px;margin:4px 0 8px 46px;}
+.ms-between-line{flex:1;height:1px;background:var(--ink-800);}
+[data-theme="dark"] .ms-between-line{background:var(--ink-700);}
+.ms-between-add{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-600);cursor:pointer;white-space:nowrap;border:1px dashed var(--ink-700);border-radius:100px;padding:3px 9px;background:none;transition:all 0.15s;}
+.ms-between-add:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Empty state */
+.ms-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;text-align:center;}
+.ms-empty-icon{width:44px;height:44px;border-radius:14px;background:var(--bg-raised);display:flex;align-items:center;justify-content:center;margin-bottom:14px;color:var(--ink-600);}
+.ms-empty-title{font-size:14px;font-weight:500;color:var(--ink-200);margin-bottom:6px;}
+.ms-empty-sub{font-size:12px;color:var(--ink-500);font-weight:300;line-height:1.65;max-width:220px;}
+
+/* Add stop bottom sheet */
+.add-sheet{position:absolute;bottom:0;left:0;right:0;background:var(--bg-card);border-radius:18px 18px 0 0;border-top:1px solid var(--ink-700);padding:16px 22px 32px;z-index:50;transform:translateY(100%);transition:transform 0.3s ease;box-shadow:var(--shadow-xl);}
+[data-theme="dark"] .add-sheet{background:var(--bg-stone);}
+.add-sheet.open{transform:translateY(0);}
+.add-handle{width:32px;height:3px;border-radius:100px;background:var(--ink-700);margin:0 auto 16px;}
+.add-title{font-size:14px;font-weight:500;color:var(--ink-100);margin-bottom:16px;}
+.add-input{width:100%;background:var(--bg-raised);border:1.5px solid var(--ink-700);border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Sora',sans-serif;color:var(--ink-100);outline:none;margin-bottom:12px;transition:border-color 0.2s;}
+[data-theme="dark"] .add-input{background:var(--bg-stone);}
+.add-input::placeholder{color:var(--ink-500);}
+.add-input:focus{border-color:var(--accent);}
+.add-note-input{height:56px;resize:none;font-size:13px;font-style:italic;}
+.add-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.add-cat{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-400);background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:100px;padding:5px 11px;cursor:pointer;transition:all 0.15s;}
+[data-theme="dark"] .add-cat{background:var(--bg-stone);}
+.add-cat.selected{background:var(--accent-light);border-color:var(--accent);color:var(--accent-dark);}
+.add-nudge-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--ink-800);margin-bottom:14px;}
+[data-theme="dark"] .add-nudge-row{border-top-color:var(--ink-700);}
+.add-nudge-label{font-size:12px;color:var(--ink-300);}
+.add-nudge-sub{font-size:10px;color:var(--ink-500);font-weight:300;}
+.toggle{width:36px;height:20px;border-radius:100px;background:var(--success);position:relative;cursor:pointer;flex-shrink:0;}
+.toggle::after{content:'';width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;right:2px;transition:right 0.2s;}
+.toggle.off{background:var(--ink-700);}
+.toggle.off::after{right:auto;left:2px;}
+.add-actions{display:flex;gap:8px;}
+.add-btn{flex:1;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;border-radius:100px;padding:12px;cursor:pointer;border:none;transition:all 0.15s;}
+.add-btn.primary{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(184,92,63,0.25);}
+.add-btn.ghost{background:var(--bg-raised);color:var(--ink-400);border:1px solid var(--ink-700);}
+[data-theme="dark"] .add-btn.ghost{background:var(--bg-stone);}
+
+/* Theme toggle */
+.theme-btn{position:fixed;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);z-index:200;box-shadow:var(--shadow-md);}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+
+/* Panel label for multi-phone layout */
+.panel-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);text-align:center;margin-bottom:8px;}
+</style>
+</head>
+<body>
+
+<button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+  <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<div class="shell">
+
+<!-- Phone 1: Active day with stops -->
+<div>
+<div class="panel-label">Day view — stops active</div>
+<div class="phone">
+  <div class="status">
+    <span class="status-time">10:47</span>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="color:var(--ink-400);"><path d="M1.5 8.5c5.5-5.5 15.5-5.5 21 0l-2 2c-4.5-4.5-12.5-4.5-17 0l-2-2z"/><path d="M5.5 12.5c3.5-3.5 9.5-3.5 13 0l-2 2c-2.5-2.5-6.5-2.5-9 0l-2-2z"/><circle cx="12" cy="18" r="2"/></svg>
+      <svg width="12" height="10" viewBox="0 0 25 12" fill="currentColor" style="color:var(--ink-400);"><rect x="0" y="2" width="18" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="18.5" y="4" width="3" height="4" rx="1"/><rect x="1.5" y="3.5" width="14" height="5" rx="1"/></svg>
+    </div>
+  </div>
+
+  <div class="ms-header">
+    <button class="ms-back">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Day 3
+    </button>
+    <div class="ms-title">My stops</div>
+    <button class="ms-add-btn" onclick="openSheet()">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add
+    </button>
+  </div>
+
+  <div class="ms-day-strip">
+    <div class="ms-day">Wed</div>
+    <div class="ms-day">Thu</div>
+    <div class="ms-day active">Fri</div>
+    <div class="ms-day">Sat</div>
+    <div class="ms-day">Sun</div>
+  </div>
+
+  <!-- Proximity nudge — you're near something -->
+  <div class="ms-context">
+    <div class="ms-context-dot"></div>
+    <div class="ms-context-text">Near your flagged stop · <span>bug spray · 180m away</span></div>
+  </div>
+
+  <div class="ms-body">
+
+    <!-- Between slot 0 and 1 -->
+    <div class="ms-slot-ref">
+      <div class="ms-slot-ref-time">08:30</div>
+      <div class="ms-slot-ref-line"></div>
+      <div class="ms-slot-ref-name">Tsukiji outer market</div>
+    </div>
+    <div class="ms-between">
+      <div class="ms-between-line"></div>
+      <button class="ms-between-add" onclick="openSheet()">+ stop here</button>
+    </div>
+
+    <!-- Stop 1 — NUDGE ACTIVE (you're near it) -->
+    <div class="ms-stop nudge-active">
+      <div class="ms-stop-check" onclick="toggleDone(this)">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="ms-stop-body">
+        <div class="ms-stop-name">Bug spray — 7-Eleven</div>
+        <div class="ms-stop-note">Before the temple — gets buggy in the afternoon</div>
+        <div class="ms-stop-meta">
+          <div class="ms-stop-cat">Errand</div>
+          <div class="ms-stop-nudge">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+            180m away
+          </div>
+        </div>
+      </div>
+      <div class="ms-stop-actions">
+        <button class="ms-stop-action" title="Directions">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        </button>
+        <button class="ms-stop-action" title="Delete">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stop 2 — normal pending -->
+    <div class="ms-stop">
+      <div class="ms-stop-check" onclick="toggleDone(this)"></div>
+      <div class="ms-stop-body">
+        <div class="ms-stop-name">Ceramic shop on Teramachi</div>
+        <div class="ms-stop-note">Walked past yesterday — small blue sign, second floor</div>
+        <div class="ms-stop-meta">
+          <div class="ms-stop-cat">Shop</div>
+          <div class="ms-stop-area">Teramachi · near slot 3</div>
+        </div>
+      </div>
+      <div class="ms-stop-actions">
+        <button class="ms-stop-action">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        </button>
+        <button class="ms-stop-action">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="ms-slot-ref" style="margin-top:4px;">
+      <div class="ms-slot-ref-time">11:00</div>
+      <div class="ms-slot-ref-line"></div>
+      <div class="ms-slot-ref-name">Nishiki Market</div>
+    </div>
+    <div class="ms-between">
+      <div class="ms-between-line"></div>
+      <button class="ms-between-add" onclick="openSheet()">+ stop here</button>
+    </div>
+
+    <!-- Stop 3 — done -->
+    <div class="ms-stop done">
+      <div class="ms-stop-check" onclick="toggleDone(this)">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="ms-stop-body">
+        <div class="ms-stop-name">ATM — before lunch</div>
+        <div class="ms-stop-meta">
+          <div class="ms-stop-cat">ATM</div>
+          <div class="ms-stop-area">Done · 09:14</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ms-slot-ref" style="margin-top:4px;">
+      <div class="ms-slot-ref-time">14:00</div>
+      <div class="ms-slot-ref-line"></div>
+      <div class="ms-slot-ref-name">Philosopher's Path</div>
+    </div>
+    <div class="ms-between">
+      <div class="ms-between-line"></div>
+      <button class="ms-between-add" onclick="openSheet()">+ stop here</button>
+    </div>
+
+    <!-- Stop 4 — upcoming, no location yet -->
+    <div class="ms-stop">
+      <div class="ms-stop-check" onclick="toggleDone(this)"></div>
+      <div class="ms-stop-body">
+        <div class="ms-stop-name">Souvenir for Mika</div>
+        <div class="ms-stop-note">Something small — not tourist-y</div>
+        <div class="ms-stop-meta">
+          <div class="ms-stop-cat">Shop</div>
+          <div class="ms-stop-area" style="color:var(--ink-600);font-style:italic;">No location set</div>
+        </div>
+      </div>
+      <div class="ms-stop-actions">
+        <button class="ms-stop-action">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Add stop sheet -->
+  <div class="add-sheet" id="addSheet">
+    <div class="add-handle"></div>
+    <div class="add-title">Add a stop</div>
+    <input class="add-input" type="text" placeholder="What do you need? e.g. bug spray, ATM, souvenir…">
+    <textarea class="add-input add-note-input" placeholder="Any note… (optional)"></textarea>
+    <div class="add-cats">
+      <div class="add-cat selected" onclick="selectCat(this)">Errand</div>
+      <div class="add-cat" onclick="selectCat(this)">Shop</div>
+      <div class="add-cat" onclick="selectCat(this)">Food</div>
+      <div class="add-cat" onclick="selectCat(this)">ATM</div>
+      <div class="add-cat" onclick="selectCat(this)">Photo</div>
+      <div class="add-cat" onclick="selectCat(this)">Other</div>
+    </div>
+    <div class="add-nudge-row">
+      <div>
+        <div class="add-nudge-label">Nudge me nearby</div>
+        <div class="add-nudge-sub">Alert when you're within 300m</div>
+      </div>
+      <div class="toggle" id="nudgeToggle" onclick="this.classList.toggle('off')"></div>
+    </div>
+    <div class="add-actions">
+      <button class="add-btn primary" onclick="closeSheet()">Save stop</button>
+      <button class="add-btn ghost" onclick="closeSheet()">Cancel</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- Phone 2: Empty state for a day -->
+<div>
+<div class="panel-label">Day with no stops yet</div>
+<div class="phone" style="min-height:520px;">
+  <div class="status">
+    <span class="status-time">10:47</span>
+  </div>
+  <div class="ms-header">
+    <button class="ms-back">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Day 4
+    </button>
+    <div class="ms-title">My stops</div>
+    <button class="ms-add-btn">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add
+    </button>
+  </div>
+  <div class="ms-day-strip">
+    <div class="ms-day">Wed</div><div class="ms-day">Thu</div><div class="ms-day">Fri</div>
+    <div class="ms-day active">Sat</div><div class="ms-day">Sun</div>
+  </div>
+  <div class="ms-empty">
+    <div class="ms-empty-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    </div>
+    <div class="ms-empty-title">No stops for Saturday</div>
+    <div class="ms-empty-sub">Flag errands, shops, or anything you don't want to forget. They live here, not in your itinerary.</div>
+    <button onclick="openSheet()" style="margin-top:18px;background:var(--accent);color:#fff;border:none;border-radius:100px;padding:10px 22px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Add first stop</button>
+  </div>
+</div>
+</div>
+
+</div><!-- /shell -->
+
+<script>
+function openSheet(){document.getElementById('addSheet').classList.add('open');}
+function closeSheet(){document.getElementById('addSheet').classList.remove('open');}
+function selectCat(el){
+  document.querySelectorAll('.add-cat').forEach(function(c){c.classList.remove('selected');});
+  el.classList.add('selected');
+}
+function toggleDone(btn){
+  var stop=btn.closest('.ms-stop');
+  stop.classList.toggle('done');
+  if(stop.classList.contains('done')){
+    btn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    btn.style.background='var(--success-bg)';
+    btn.style.borderColor='var(--success)';
+  } else {
+    btn.innerHTML='';
+    btn.style.background='';
+    btn.style.borderColor='';
+  }
+}
+</script>
+</body>
+</html>

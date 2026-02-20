@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — App Shell</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#F7F4EF;--bg-card:#FFFFFF;--bg-raised:#EDE8E0;--bg-stone:#EAE4DA;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --gold:#A07830;--gold-light:#F5EDD8;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);--shadow-xl:0 32px 80px rgba(26,22,18,0.16);
+}
+[data-theme="dark"]{
+  --bg:#0C0A08;--bg-card:#161210;--bg-raised:#1A1510;--bg-stone:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --gold:#C8A96E;--gold-light:rgba(200,169,110,0.12);
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);--shadow-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);}
+
+.shell{display:flex;align-items:center;justify-content:center;gap:36px;min-height:100vh;padding:40px 20px 60px;flex-wrap:wrap;}
+.col{display:flex;flex-direction:column;align-items:center;gap:0;}
+.panel-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);text-align:center;margin-bottom:10px;}
+.phone{width:375px;height:780px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:44px;overflow:hidden;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;position:relative;}
+[data-theme="dark"] .phone{background:var(--bg-stone);}
+.theme-btn{position:fixed;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);z-index:200;}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+.sbar{padding:14px 24px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.sbar-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-100);}
+
+/* ── APP CONTENT AREA ── */
+.app-content{flex:1;overflow:hidden;position:relative;}
+.app-screen{position:absolute;inset:0;overflow-y:auto;display:none;flex-direction:column;}
+.app-screen.active{display:flex;}
+
+/* ── APP NAV ── */
+.app-nav{border-top:1px solid var(--ink-700);background:var(--bg-card);flex-shrink:0;display:flex;padding:6px 8px 16px;}
+[data-theme="dark"] .app-nav{background:var(--bg-stone);}
+.app-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:7px 4px;border-radius:10px;transition:background 0.15s;}
+.app-nav-item:hover{background:var(--bg-raised);}
+[data-theme="dark"] .app-nav-item:hover{background:var(--bg-stone);}
+.app-nav-item.active .nav-icon{color:var(--accent);}
+.app-nav-item.active .nav-label{color:var(--accent-dark);}
+.nav-icon{color:var(--ink-500);transition:color 0.15s;}
+.nav-label{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-500);transition:color 0.15s;}
+.nav-badge{position:absolute;top:0;right:2px;width:8px;height:8px;border-radius:50%;background:var(--accent);}
+.nav-item-wrap{position:relative;}
+
+/* ── HOME SCREEN ── */
+.home-topbar{padding:14px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.home-wordmark{font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.04em;color:var(--ink-100);}
+.home-wordmark span{color:var(--accent);}
+.home-avatar{width:28px;height:28px;border-radius:50%;overflow:hidden;}
+.home-avatar img{width:100%;height:100%;object-fit:cover;}
+
+.home-trip-hero{height:200px;position:relative;overflow:hidden;flex-shrink:0;margin:0;}
+.home-trip-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+.home-trip-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.92) 0%,rgba(14,10,6,0.1) 55%);}
+.home-trip-body{position:absolute;bottom:0;left:0;right:0;padding:18px 20px;}
+.home-trip-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:4px;}
+.home-trip-name{font-family:'Lora',serif;font-size:20px;font-weight:500;color:#fff;letter-spacing:-0.02em;margin-bottom:2px;}
+.home-trip-meta{font-size:11px;color:rgba(255,255,255,0.55);}
+.home-trip-btn{position:absolute;bottom:18px;right:20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;padding:6px 14px;border-radius:100px;background:rgba(255,255,255,0.15);color:#fff;cursor:pointer;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.2);transition:all 0.15s;}
+.home-trip-btn:hover{background:rgba(255,255,255,0.25);}
+
+.home-body{flex:1;overflow-y:auto;padding:16px 20px;}
+.home-section-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;margin-top:16px;}
+.home-section-label:first-child{margin-top:0;}
+
+/* Prep cards */
+.prep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+.prep-card{background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:14px;padding:12px;}
+[data-theme="dark"] .prep-card{background:var(--bg-stone);}
+.prep-card.urgent{border-color:var(--gold);}
+.prep-card-label{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);margin-bottom:4px;}
+.prep-card-val{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:1px;}
+.prep-card-sub{font-size:10px;color:var(--ink-500);font-weight:300;}
+
+/* Quick action row */
+.quick-actions{display:flex;gap:8px;margin-bottom:4px;}
+.quick-action{flex:1;display:flex;align-items:center;gap:6px;padding:10px 12px;background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:12px;cursor:pointer;transition:all 0.15s;}
+[data-theme="dark"] .quick-action{background:var(--bg-stone);}
+.quick-action:hover{border-color:var(--ink-500);}
+.quick-action-label{font-size:11px;color:var(--ink-300);font-weight:400;}
+
+/* ── TRIPS SCREEN ── */
+.trips-topbar{padding:14px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.trips-title{font-size:16px;font-weight:500;color:var(--ink-100);}
+.trips-new{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.trips-body{flex:1;overflow-y:auto;padding:16px 20px;}
+.trips-section-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;margin-top:14px;}
+.trips-section-label:first-child{margin-top:0;}
+.trip-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--ink-800);cursor:pointer;}
+[data-theme="dark"] .trip-row{border-bottom-color:var(--ink-700);}
+.trip-row:last-child{border-bottom:none;}
+.trip-row:hover .trip-row-name{color:var(--accent-dark);}
+.trip-thumb{width:48px;height:48px;border-radius:10px;overflow:hidden;flex-shrink:0;}
+.trip-thumb img{width:100%;height:100%;object-fit:cover;}
+.trip-row-body{flex:1;}
+.trip-row-name{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:2px;transition:color 0.15s;}
+.trip-row-meta{font-size:10px;color:var(--ink-500);font-weight:300;}
+.trip-row-badge{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:100px;}
+.trip-row-badge.active-badge{background:var(--success-bg);color:var(--success);}
+.trip-row-badge.upcoming{background:var(--accent-light);color:var(--accent-dark);}
+.trip-row-badge.past{background:var(--bg-raised);color:var(--ink-500);}
+[data-theme="dark"] .trip-row-badge.past{background:var(--bg-stone);}
+
+/* ── EXPLORE SCREEN ── */
+.explore-topbar{padding:14px 20px 12px;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.explore-title{font-size:16px;font-weight:500;color:var(--ink-100);margin-bottom:10px;}
+.explore-body{flex:1;overflow-y:auto;padding:16px 20px;}
+/* Returning user confident guess */
+.explore-hero-card{border-radius:18px;overflow:hidden;position:relative;height:220px;margin-bottom:14px;cursor:pointer;}
+.explore-hero-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.explore-hero-card:hover img{transform:scale(1.03);}
+.explore-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.9) 0%,rgba(14,10,6,0.15) 55%);}
+.explore-hero-body{position:absolute;bottom:0;left:0;right:0;padding:18px;}
+.explore-hero-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:4px;}
+.explore-hero-name{font-family:'Lora',serif;font-size:22px;font-weight:500;color:#fff;letter-spacing:-0.02em;margin-bottom:4px;}
+.explore-hero-why{font-size:11px;color:rgba(255,255,255,0.65);font-style:italic;max-width:240px;line-height:1.4;}
+.explore-hero-actions{display:flex;gap:8px;margin-top:10px;}
+.explore-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:6px 14px;border-radius:100px;cursor:pointer;border:none;}
+.explore-btn.primary{background:rgba(255,255,255,0.9);color:var(--ink-100);}
+.explore-btn.ghost{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.2);}
+.explore-signal-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.explore-signal{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 9px;border-radius:100px;background:var(--bg-raised);color:var(--ink-400);border:1px solid var(--ink-700);}
+[data-theme="dark"] .explore-signal{background:var(--bg-stone);}
+
+/* ── PROFILE SCREEN ── */
+.profile-topbar{padding:14px 20px 12px;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.profile-title{font-size:16px;font-weight:500;color:var(--ink-100);}
+.profile-body{flex:1;overflow-y:auto;}
+.profile-hero{padding:20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--ink-700);}
+.profile-av{width:52px;height:52px;border-radius:50%;overflow:hidden;flex-shrink:0;}
+.profile-av img{width:100%;height:100%;object-fit:cover;}
+.profile-name{font-size:16px;font-weight:500;color:var(--ink-100);}
+.profile-meta{font-size:11px;color:var(--ink-500);font-weight:300;margin-top:1px;}
+.profile-persona-card{margin:16px 20px;background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:14px;padding:14px;}
+[data-theme="dark"] .profile-persona-card{background:var(--bg-stone);}
+.profile-persona-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:6px;}
+.profile-persona-quote{font-family:'Lora',serif;font-size:14px;font-style:italic;color:var(--ink-100);margin-bottom:8px;line-height:1.4;}
+.profile-persona-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.profile-persona-chip{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 9px;border-radius:100px;background:var(--bg-card);color:var(--ink-400);border:1px solid var(--ink-700);}
+[data-theme="dark"] .profile-persona-chip{background:var(--bg-raised);}
+.profile-rows{padding:0 20px 20px;}
+.profile-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--ink-800);cursor:pointer;}
+[data-theme="dark"] .profile-row{border-bottom-color:var(--ink-700);}
+.profile-row:last-child{border-bottom:none;}
+.profile-row-label{font-size:13px;color:var(--ink-200);}
+.profile-row-val{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);display:flex;align-items:center;gap:4px;}
+.profile-section-gap{height:16px;}
+.profile-plan-card{margin:0 20px 16px;background:var(--accent-light);border:1px solid var(--ink-700);border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;}
+[data-theme="dark"] .profile-plan-card{background:rgba(201,104,72,0.1);}
+.profile-plan-label{font-size:12px;font-weight:500;color:var(--ink-100);}
+.profile-plan-sub{font-size:10px;color:var(--ink-500);font-weight:300;margin-top:1px;}
+.profile-plan-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:6px 12px;border-radius:100px;background:var(--accent);color:#fff;border:none;cursor:pointer;}
+</style>
+</head>
+<body>
+<button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+  <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>
+  <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<div class="shell">
+<div class="col">
+<div class="panel-label" id="shellLabel">App Shell · Home tab</div>
+<div class="phone">
+  <div class="sbar"><span class="sbar-time">10:41</span><div style="display:flex;gap:5px;color:var(--ink-400);"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M1.5 8.5c5.5-5.5 15.5-5.5 21 0l-2 2c-4.5-4.5-12.5-4.5-17 0l-2-2z"/><path d="M5.5 12.5c3.5-3.5 9.5-3.5 13 0l-2 2c-2.5-2.5-6.5-2.5-9 0l-2-2z"/><circle cx="12" cy="18" r="2"/></svg><svg width="16" height="11" viewBox="0 0 25 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="0" y="2" width="18" height="8" rx="2"/><rect x="18.5" y="4" width="3" height="4" rx="1"/><rect x="1.5" y="3.5" width="13" height="5" rx="1" fill="currentColor" stroke="none"/></svg></div></div>
+
+  <div class="app-content">
+
+    <!-- HOME -->
+    <div class="app-screen active" id="screen-home">
+      <div class="home-topbar">
+        <div class="home-wordmark">Over<span>planned</span></div>
+        <div class="home-avatar"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+      </div>
+      <div class="home-trip-hero">
+        <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=700&q=80&auto=format&fit=crop" alt="Japan">
+        <div class="home-trip-overlay"></div>
+        <div class="home-trip-body">
+          <div class="home-trip-eyebrow">Next trip · 23 days away</div>
+          <div class="home-trip-name">Japan 2025</div>
+          <div class="home-trip-meta">Mar 14 – 22 · Tokyo, Kyoto, Osaka</div>
+        </div>
+        <div class="home-trip-btn" onclick="showNav('trips')">Open trip →</div>
+      </div>
+      <div class="home-body">
+        <div class="home-section-label">Prep</div>
+        <div class="prep-grid">
+          <div class="prep-card urgent">
+            <div class="prep-card-label">Visa</div>
+            <div class="prep-card-val">Not needed</div>
+            <div class="prep-card-sub">US passport · 90 days</div>
+          </div>
+          <div class="prep-card">
+            <div class="prep-card-label">Weather</div>
+            <div class="prep-card-val">8–14°C</div>
+            <div class="prep-card-sub">Cherry blossom season</div>
+          </div>
+          <div class="prep-card">
+            <div class="prep-card-label">Packing</div>
+            <div class="prep-card-val">4 of 18</div>
+            <div class="prep-card-sub">Layers not done</div>
+          </div>
+          <div class="prep-card">
+            <div class="prep-card-label">Calendar</div>
+            <div class="prep-card-val">Export</div>
+            <div class="prep-card-sub">28 slots · .ics</div>
+          </div>
+        </div>
+        <div class="home-section-label">Quick actions</div>
+        <div class="quick-actions">
+          <div class="quick-action" onclick="showNav('explore')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <div class="quick-action-label">Explore</div>
+          </div>
+          <div class="quick-action">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div class="quick-action-label">Calendar</div>
+          </div>
+          <div class="quick-action">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div class="quick-action-label">Map</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRIPS -->
+    <div class="app-screen" id="screen-trips">
+      <div class="trips-topbar">
+        <div class="trips-title">Your trips</div>
+        <div class="trips-new"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      </div>
+      <div class="trips-body">
+        <div class="trips-section-label">Active</div>
+        <div class="trip-row">
+          <div class="trip-thumb"><img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=100&q=70&auto=format&fit=crop" alt=""></div>
+          <div class="trip-row-body">
+            <div class="trip-row-name">Japan 2025</div>
+            <div class="trip-row-meta">Mar 14 – 22 · Solo · 9 days</div>
+          </div>
+          <div class="trip-row-badge upcoming">23 days</div>
+        </div>
+        <div class="trips-section-label">Past trips</div>
+        <div class="trip-row">
+          <div class="trip-thumb"><img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100&q=70&auto=format&fit=crop" alt=""></div>
+          <div class="trip-row-body">
+            <div class="trip-row-name">Lisbon 2024</div>
+            <div class="trip-row-meta">Sep 4 – 10 · Solo · 6 days</div>
+          </div>
+          <div class="trip-row-badge past">Done</div>
+        </div>
+        <div class="trip-row">
+          <div class="trip-thumb"><img src="https://images.unsplash.com/photo-1534430480872-3498386e7856?w=100&q=70&auto=format&fit=crop" alt=""></div>
+          <div class="trip-row-body">
+            <div class="trip-row-name">Seoul 2024</div>
+            <div class="trip-row-meta">Apr 18 – 24 · Group · 4 people</div>
+          </div>
+          <div class="trip-row-badge past">Done</div>
+        </div>
+        <div class="trip-row">
+          <div class="trip-thumb"><img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=100&q=70&auto=format&fit=crop" alt=""></div>
+          <div class="trip-row-body">
+            <div class="trip-row-name">Kyoto 2023</div>
+            <div class="trip-row-meta">Nov 2 – 8 · Solo · 6 days</div>
+          </div>
+          <div class="trip-row-badge past">Done</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPLORE -->
+    <div class="app-screen" id="screen-explore">
+      <div class="explore-topbar">
+        <div class="explore-title">Where next?</div>
+      </div>
+      <div class="explore-body">
+        <div class="explore-hero-card">
+          <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=700&q=80&auto=format&fit=crop" alt="Osaka">
+          <div class="explore-hero-overlay"></div>
+          <div class="explore-hero-body">
+            <div class="explore-hero-eyebrow">For you · This spring</div>
+            <div class="explore-hero-name">Osaka</div>
+            <div class="explore-hero-why">Food-first, late nights, places locals still use. Osaka is that, dialed up.</div>
+            <div class="explore-hero-actions">
+              <div class="explore-btn primary">Plan this trip</div>
+              <div class="explore-btn ghost">Not feeling it</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:8px;">Why this</div>
+        <div class="explore-signal-chips">
+          <div class="explore-signal">counter seats</div>
+          <div class="explore-signal">late dinners</div>
+          <div class="explore-signal">local-first</div>
+          <div class="explore-signal">street food</div>
+          <div class="explore-signal">no tourist menus</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="app-screen" id="screen-profile">
+      <div class="profile-topbar"><div class="profile-title">Profile</div></div>
+      <div class="profile-body">
+        <div class="profile-hero">
+          <div class="profile-av"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+          <div>
+            <div class="profile-name">Kevin</div>
+            <div class="profile-meta">Member since 2023 · 4 trips</div>
+          </div>
+        </div>
+        <div class="profile-persona-card">
+          <div class="profile-persona-label">How you travel</div>
+          <div class="profile-persona-quote">"Will walk 40 min to avoid a tourist menu."</div>
+          <div class="profile-persona-chips">
+            <div class="profile-persona-chip">counter seats</div>
+            <div class="profile-persona-chip">local only</div>
+            <div class="profile-persona-chip">slow mornings</div>
+            <div class="profile-persona-chip">no queues</div>
+          </div>
+        </div>
+        <div class="profile-plan-card">
+          <div>
+            <div class="profile-plan-label">Free plan</div>
+            <div class="profile-plan-sub">2 trips remaining this year</div>
+          </div>
+          <button class="profile-plan-btn">Upgrade</button>
+        </div>
+        <div class="profile-rows">
+          <div class="profile-row"><div class="profile-row-label">Notifications</div><div class="profile-row-val">On <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+          <div class="profile-row"><div class="profile-row-label">Data &amp; privacy</div><div class="profile-row-val"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+          <div class="profile-row"><div class="profile-row-label">Behavior signals</div><div class="profile-row-val">On <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+          <div class="profile-section-gap"></div>
+          <div class="profile-row"><div class="profile-row-label">Past trips</div><div class="profile-row-val">4 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+          <div class="profile-row"><div class="profile-row-label">Credits</div><div class="profile-row-val">$0 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+          <div class="profile-section-gap"></div>
+          <div class="profile-row"><div class="profile-row-label" style="color:var(--ink-500);">Sign out</div><div class="profile-row-val"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app-content -->
+
+  <!-- APP NAV -->
+  <div class="app-nav">
+    <div class="app-nav-item active" id="nav-home" onclick="showNav('home')">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="nav-label">Home</div>
+    </div>
+    <div class="app-nav-item" id="nav-trips" onclick="showNav('trips')">
+      <div class="nav-icon nav-item-wrap">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      </div>
+      <div class="nav-label">Trips</div>
+    </div>
+    <div class="app-nav-item" id="nav-explore" onclick="showNav('explore')">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+      <div class="nav-label">Explore</div>
+    </div>
+    <div class="app-nav-item" id="nav-profile" onclick="showNav('profile')">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="nav-label">Profile</div>
+    </div>
+  </div>
+
+</div><!-- /phone -->
+</div><!-- /col -->
+</div>
+
+<script>
+var LABELS = {home:'App Shell · Home tab',trips:'App Shell · Trips tab',explore:'App Shell · Explore tab',profile:'App Shell · Profile tab'};
+function showNav(tab){
+  document.querySelectorAll('.app-screen').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.app-nav-item').forEach(function(n){n.classList.remove('active');});
+  document.getElementById('screen-'+tab).classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+  document.getElementById('shellLabel').textContent = LABELS[tab];
+}
+</script>
+</body>
+</html>

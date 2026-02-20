@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Real-Time Pivot UI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   TOKENS — exact v4 base
+   ============================================================ */
+[data-theme="light"] {
+  --bg-base:      #FAF8F5;
+  --bg-surface:   #FFFFFF;
+  --bg-raised:    #F3EFE9;
+  --bg-overlay:   #EDE8E1;
+  --bg-input:     #F3EFE9;
+  --accent:       #B85C3F;
+  --accent-light: #F0E0D9;
+  --accent-muted: #D4886E;
+  --accent-on:    #8C3A24;
+  --ink-100:      #1C1713;
+  --ink-200:      #3A302A;
+  --ink-300:      #5C5048;
+  --ink-400:      #7A6E64;
+  --ink-500:      #9C8E84;
+  --ink-600:      #BDB0A6;
+  --ink-700:      #D6CFC8;
+  --ink-800:      #EAE4DE;
+  --ink-900:      #F5F1EC;
+  --success:      #4A8A5C;  --success-bg: #E0EEE5;
+  --warning:      #A07830;  --warning-bg: #F2EAD8;
+  --info:         #3A6A8C;  --info-bg:    #D8E8F2;
+  --shadow-sm:    0 1px 3px rgba(28,23,19,0.06);
+  --shadow-md:    0 4px 16px rgba(28,23,19,0.08), 0 1px 4px rgba(28,23,19,0.04);
+  --shadow-lg:    0 12px 48px rgba(28,23,19,0.10), 0 2px 8px rgba(28,23,19,0.05);
+  --shadow-drawer:0 -8px 40px rgba(28,23,19,0.12), 0 -1px 8px rgba(28,23,19,0.06);
+}
+
+[data-theme="dark"] {
+  --bg-base:      #100E0B;
+  --bg-surface:   #171310;
+  --bg-raised:    #1F1A15;
+  --bg-overlay:   #28211A;
+  --bg-input:     #1F1A15;
+  --accent:       #C96848;
+  --accent-light: rgba(201,104,72,0.14);
+  --accent-muted: #8C402A;
+  --accent-on:    #E8906E;
+  --ink-100:      #F0EAE2;
+  --ink-200:      #D4C8BC;
+  --ink-300:      #A89484;
+  --ink-400:      #7A6A5C;
+  --ink-500:      #5C4E42;
+  --ink-600:      #3D332A;
+  --ink-700:      #2E251E;
+  --ink-800:      #221C16;
+  --ink-900:      #1A1410;
+  --success:      #5A9E6A;  --success-bg: rgba(90,158,106,0.12);
+  --warning:      #B8943A;  --warning-bg: rgba(184,148,58,0.12);
+  --info:         #4A84A8;  --info-bg:    rgba(74,132,168,0.12);
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:    0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:    0 16px 60px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-drawer:0 -12px 60px rgba(0,0,0,0.55), 0 -1px 8px rgba(0,0,0,0.3);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: 'Sora', sans-serif;
+  font-weight: 300;
+  background: var(--bg-base);
+  color: var(--ink-100);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   LAYOUT — phone shell centered, desktop sidebar
+   ============================================================ */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 48px;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 48px 32px 80px;
+  align-items: start;
+}
+
+/* ============================================================
+   THEME TOGGLE
+   ============================================================ */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--ink-700);
+  border-radius: 100px;
+  padding: 6px 14px 6px 8px;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+}
+
+.toggle-track {
+  width: 32px; height: 18px;
+  background: var(--ink-700);
+  border-radius: 100px;
+  position: relative;
+  transition: background 0.2s;
+}
+[data-theme="dark"] .toggle-track { background: var(--accent); }
+
+.toggle-thumb {
+  width: 12px; height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px; left: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+[data-theme="dark"] .toggle-thumb { transform: translateX(14px); }
+
+.toggle-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-300);
+}
+
+/* ============================================================
+   LEFT — annotated scenario cards
+   ============================================================ */
+.scenarios { display: flex; flex-direction: column; gap: 12px; padding-top: 8px; }
+
+.page-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.page-desc {
+  font-size: 13px;
+  color: var(--ink-400);
+  font-weight: 300;
+  line-height: 1.7;
+  margin-bottom: 32px;
+  max-width: 400px;
+}
+
+/* Scenario trigger button */
+.scenario-btn {
+  width: 100%;
+  text-align: left;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ink-800);
+  border-radius: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  font-family: 'Sora', sans-serif;
+}
+
+.scenario-btn:hover { border-color: var(--ink-600); transform: translateX(2px); }
+.scenario-btn.active { border-color: var(--accent); background: var(--accent-light); }
+
+.scenario-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.scenario-icon.system { background: var(--info-bg); color: var(--info); }
+.scenario-icon.user   { background: var(--success-bg); color: var(--success); }
+.scenario-icon.weather{ background: var(--warning-bg); color: var(--warning); }
+.scenario-icon.cancel { background: var(--accent-light); color: var(--accent); }
+
+.scenario-body {}
+.scenario-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.scenario-label.system  { color: var(--info); }
+.scenario-label.user    { color: var(--success); }
+.scenario-label.weather { color: var(--warning); }
+.scenario-label.cancel  { color: var(--accent-on); }
+
+.scenario-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-100);
+  margin-bottom: 3px;
+  letter-spacing: -0.01em;
+}
+
+.scenario-desc {
+  font-size: 12px;
+  color: var(--ink-400);
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+/* Design principle callouts */
+.principle {
+  margin-top: 28px;
+  padding: 16px 18px;
+  background: var(--bg-raised);
+  border-radius: 12px;
+  border-left: 3px solid var(--accent);
+}
+
+.principle-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.principle-text {
+  font-size: 12px;
+  color: var(--ink-300);
+  font-weight: 300;
+  line-height: 1.65;
+}
+
+/* ============================================================
+   RIGHT — phone frame with live itinerary + pivot drawer
+   ============================================================ */
+.phone-wrap {
+  position: sticky;
+  top: 48px;
+}
+
+.phone {
+  background: var(--bg-surface);
+  border-radius: 36px;
+  border: 1.5px solid var(--ink-700);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  position: relative;
+  min-height: 680px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Phone top bar */
+.phone-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--ink-800);
+  flex-shrink: 0;
+}
+
+.phone-back {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--ink-400);
+}
+
+.phone-title { font-size: 14px; font-weight: 500; color: var(--ink-100); }
+.phone-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--ink-400);
+  letter-spacing: 0.06em; text-align: right;
+}
+
+/* Day progress strip */
+.day-strip {
+  display: flex;
+  padding: 10px 20px;
+  gap: 0;
+  border-bottom: 1px solid var(--ink-800);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.day-strip::-webkit-scrollbar { display: none; }
+
+.dstrip-tab {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-500);
+  padding: 4px 14px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dstrip-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 500;
+}
+
+/* Itinerary scroll area */
+.itin-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 16px 20px;
+  scrollbar-width: none;
+}
+.itin-scroll::-webkit-scrollbar { display: none; }
+
+/* Mini slot rows */
+.mslot { display: flex; gap: 10px; }
+
+.mslot-time {
+  width: 38px; flex-shrink: 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--ink-500);
+  text-align: right;
+  padding-top: 14px;
+}
+
+.mslot-spine {
+  display: flex; flex-direction: column; align-items: center;
+  width: 14px; flex-shrink: 0;
+}
+
+.mslot-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 14px; position: relative; z-index: 2;
+}
+.mslot-dot.anchor { background: var(--accent); }
+.mslot-dot.flex   { background: transparent; border: 2px solid var(--ink-500); }
+.mslot-dot.meal   { background: var(--warning); }
+.mslot-dot.rest   { background: var(--success); }
+
+.mslot-line {
+  width: 1px; flex: 1; min-height: 10px;
+  background: var(--ink-800);
+}
+
+.mslot-card {
+  flex: 1;
+  margin: 6px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid var(--ink-800);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.mslot-card:hover { border-color: var(--ink-600); }
+
+/* Slot with photo thumbnail */
+.mslot-card.has-photo {
+  padding: 0;
+  overflow: hidden;
+}
+
+.mslot-card.has-photo .mslot-photo {
+  height: 72px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mslot-card.has-photo .mslot-photo img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transition: transform 0.4s;
+}
+
+.mslot-card.has-photo:hover .mslot-photo img { transform: scale(1.04); }
+
+.mslot-photo-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(12,9,6,0.32) 100%);
+}
+
+.mslot-card.has-photo .mslot-inner { padding: 9px 12px 10px; }
+.mslot-inner { padding: 0; }
+
+.mslot-type {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.mslot-type.anchor-t { color: var(--accent); }
+.mslot-type.flex-t   { color: var(--info); }
+.mslot-type.meal-t   { color: var(--warning); }
+.mslot-type.rest-t   { color: var(--success); }
+
+.mslot-name {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink-100); letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.mslot-why {
+  font-size: 11px; color: var(--ink-400);
+  font-weight: 300; line-height: 1.4;
+}
+
+/* Dimmed / affected slot */
+.mslot-card.dimmed {
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+/* Struck through — slot being replaced */
+.mslot-card.struck {
+  border-color: rgba(160,120,48,0.4);
+  background: var(--warning-bg);
+}
+
+.mslot-card.struck .mslot-name {
+  text-decoration: line-through;
+  color: var(--ink-400);
+}
+
+/* Transit micro row */
+.mtransit {
+  display: flex; gap: 10px; padding: 1px 0;
+}
+.mt-spacer { width: 38px; flex-shrink: 0; }
+.mt-spine  { width: 14px; flex-shrink: 0; display: flex; justify-content: center; }
+.mt-line   { width: 1px; height: 20px; background: var(--ink-800); }
+.mt-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--ink-500);
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 0;
+}
+
+/* ============================================================
+   PIVOT DRAWER — the whole point
+   ============================================================ */
+.pivot-drawer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--ink-700);
+  border-radius: 22px 22px 0 0;
+  box-shadow: var(--shadow-drawer);
+  transform: translateY(100%);
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+  z-index: 10;
+  will-change: transform;
+}
+
+.pivot-drawer.visible { transform: translateY(0); }
+
+/* Drag handle */
+.drawer-handle {
+  width: 36px; height: 4px;
+  background: var(--ink-700);
+  border-radius: 2px;
+  margin: 12px auto 0;
+  cursor: grab;
+}
+
+/* Drawer header — minimal, calm */
+.drawer-head {
+  padding: 14px 20px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.drawer-signal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.signal-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.signal-icon.system  { background: var(--info-bg); color: var(--info); }
+.signal-icon.user    { background: var(--success-bg); color: var(--success); }
+.signal-icon.weather { background: var(--warning-bg); color: var(--warning); }
+.signal-icon.cancel  { background: var(--accent-light); color: var(--accent-on); }
+
+.signal-source {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.signal-source.system  { color: var(--info); }
+.signal-source.user    { color: var(--success); }
+.signal-source.weather { color: var(--warning); }
+.signal-source.cancel  { color: var(--accent-on); }
+
+.drawer-dismiss {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  border: 1px solid var(--ink-700);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--ink-400);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.drawer-dismiss:hover { border-color: var(--ink-500); color: var(--ink-100); }
+
+/* The message — this is the core UX moment */
+.drawer-message {
+  padding: 10px 20px 0;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ink-100);
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+}
+
+/* Swap card — what's being suggested */
+.drawer-swap {
+  margin: 14px 16px 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1.5px solid var(--ink-700);
+  background: var(--bg-raised);
+  transition: border-color 0.15s;
+}
+
+.drawer-swap:hover { border-color: var(--ink-500); }
+
+.swap-photo {
+  height: 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+.swap-photo img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transition: transform 0.4s;
+}
+
+.drawer-swap:hover .swap-photo img { transform: scale(1.04); }
+
+.swap-photo-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(12,9,6,0.38) 100%);
+}
+
+.swap-source {
+  position: absolute; top: 9px; right: 10px;
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: rgba(240,234,226,0.7);
+  background: rgba(12,9,6,0.42);
+  backdrop-filter: blur(6px);
+  padding: 2px 8px; border-radius: 100px;
+}
+
+.swap-signal-badge {
+  position: absolute; bottom: 8px; left: 10px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 100px;
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  backdrop-filter: blur(8px);
+}
+.swap-signal-badge.gem {
+  background: rgba(74,138,92,0.72); color: #E4F2E8;
+  border: 1px solid rgba(74,138,92,0.3);
+}
+
+.swap-body { padding: 11px 14px 13px; }
+
+.swap-cat-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+
+.swap-cat-badge {
+  width: 16px; height: 16px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+}
+.swap-cat-badge.food { background: rgba(184,92,63,0.12); color: var(--accent); }
+.swap-cat-badge.cult { background: var(--info-bg); color: var(--info); }
+.swap-cat-badge.pace { background: var(--success-bg); color: var(--success); }
+
+.swap-cat-label {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-500);
+}
+
+.swap-name {
+  font-size: 14px; font-weight: 500;
+  color: var(--ink-100); letter-spacing: -0.01em;
+  margin-bottom: 3px;
+}
+
+/* One line. Specific. Stops. */
+.swap-why {
+  font-size: 11px; color: var(--ink-400);
+  font-weight: 300; line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+.swap-meta { display: flex; align-items: center; gap: 10px; }
+
+.swap-meta-item {
+  font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink-500);
+  display: flex; align-items: center; gap: 3px;
+}
+
+/* PRIMARY ACTION + secondary */
+.drawer-actions {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px 20px;
+}
+
+.btn-accept {
+  flex: 1;
+  padding: 12px 0;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 100px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.btn-accept:hover { opacity: 0.88; transform: translateY(-1px); }
+
+.btn-alt {
+  padding: 12px 18px;
+  background: transparent;
+  color: var(--ink-400);
+  border: 1.5px solid var(--ink-700);
+  border-radius: 100px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.btn-alt:hover { border-color: var(--ink-500); color: var(--ink-100); }
+
+/* ============================================================
+   EXPANDED DRAWER — alternatives + feedback
+   ============================================================ */
+.drawer-expanded {
+  display: none;
+  padding: 0 16px 4px;
+  border-top: 1px solid var(--ink-800);
+  margin-top: 4px;
+}
+
+.drawer-expanded.open { display: block; }
+
+.exp-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-500);
+  padding: 12px 0 8px;
+}
+
+/* Alt swap rows */
+.alt-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--ink-800);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.alt-row:last-child { border-bottom: none; }
+.alt-row:hover { padding-left: 4px; }
+
+.alt-thumb {
+  width: 44px; height: 44px; border-radius: 9px;
+  overflow: hidden; flex-shrink: 0;
+}
+.alt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.alt-body { flex: 1; }
+.alt-name { font-size: 12px; font-weight: 500; color: var(--ink-100); margin-bottom: 2px; }
+.alt-why  { font-size: 11px; color: var(--ink-400); font-weight: 300; }
+
+.alt-cat-badge {
+  width: 22px; height: 22px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.alt-cat-badge.food { background: rgba(184,92,63,0.12); color: var(--accent); }
+.alt-cat-badge.cult { background: var(--info-bg); color: var(--info); }
+.alt-cat-badge.actv { background: var(--warning-bg); color: var(--warning); }
+
+/* ============================================================
+   IMPLICIT FEEDBACK STRIP — appears after accept
+   ============================================================ */
+.feedback-strip {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 20px;
+  border-top: 1px solid var(--ink-800);
+  background: var(--bg-raised);
+}
+
+.feedback-strip.visible { display: flex; }
+
+.feedback-q {
+  font-size: 12px; color: var(--ink-300); font-weight: 300;
+}
+
+.feedback-opts { display: flex; gap: 6px; }
+
+.fb-btn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-700);
+  background: transparent;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-400);
+  transition: all 0.15s;
+}
+
+.fb-btn:hover { transform: scale(1.1); }
+.fb-btn.up:hover   { border-color: var(--success); color: var(--success); background: var(--success-bg); }
+.fb-btn.down:hover { border-color: var(--warning); color: var(--warning); background: var(--warning-bg); }
+.fb-btn.active-up  { border-color: var(--success); color: var(--success); background: var(--success-bg); }
+
+/* ============================================================
+   ACCEPTED STATE — slot resolves in itinerary
+   ============================================================ */
+.mslot-card.accepted {
+  border-color: rgba(90,158,106,0.4);
+  background: var(--success-bg);
+  animation: slotResolve 0.4s ease both;
+}
+
+.mslot-card.accepted .mslot-type { color: var(--success); }
+
+@keyframes slotResolve {
+  0%   { transform: scale(0.97); opacity: 0.6; }
+  60%  { transform: scale(1.01); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ============================================================
+   INPUT PROMPT BAR — user-initiated pivot
+   ============================================================ */
+.prompt-bar {
+  flex-shrink: 0;
+  border-top: 1px solid var(--ink-800);
+  padding: 10px 14px 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--bg-surface);
+}
+
+.prompt-input {
+  flex: 1;
+  background: var(--bg-raised);
+  border: 1.5px solid var(--ink-700);
+  border-radius: 100px;
+  padding: 9px 16px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--ink-100);
+  outline: none;
+  transition: border-color 0.18s;
+}
+.prompt-input:focus { border-color: var(--accent-muted); }
+.prompt-input::placeholder { color: var(--ink-500); }
+
+.prompt-send {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+.prompt-send:hover { opacity: 0.85; transform: scale(1.05); }
+
+/* ============================================================
+   DARK MODE SPECIFICS
+   ============================================================ */
+[data-theme="dark"] .phone { background: var(--bg-surface); border-color: var(--ink-600); }
+[data-theme="dark"] .pivot-drawer { background: var(--bg-raised); border-color: var(--ink-600); }
+[data-theme="dark"] .drawer-swap { background: var(--bg-overlay); border-color: var(--ink-600); }
+[data-theme="dark"] .mslot-card { background: var(--bg-raised); border-color: var(--ink-700); }
+[data-theme="dark"] .scenario-btn { background: var(--bg-raised); border-color: var(--ink-700); }
+[data-theme="dark"] .prompt-bar { background: var(--bg-raised); }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.scenarios { animation: fadeUp 0.4s ease both 0.05s; }
+.phone     { animation: fadeUp 0.4s ease both 0.12s; }
+
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; padding: 80px 16px 60px; }
+  .phone-wrap { position: static; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="theme-toggle" onclick="toggleTheme()">
+  <div class="toggle-track"><div class="toggle-thumb"></div></div>
+  <span class="toggle-label" id="themeLabel">Dark</span>
+</div>
+
+<div class="layout">
+
+  <!-- ============================================================
+       LEFT — scenarios + design principles
+       ============================================================ -->
+  <div>
+    <div class="page-eyebrow">Real-Time Pivot UI</div>
+    <div class="page-title">Tap on the shoulder,<br>not a system alert.</div>
+    <div class="page-desc">The same drawer handles both user-initiated and system-initiated changes. The user never knows which triggered it. It just feels like the app noticed something.</div>
+
+    <div class="scenarios">
+
+      <!-- System-initiated -->
+      <button class="scenario-btn active" onclick="showScenario('closed')">
+        <div class="scenario-icon system">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="scenario-body">
+          <div class="scenario-label system">System · Venue closed</div>
+          <div class="scenario-title">Restaurant went dark mid-trip</div>
+          <div class="scenario-desc">Detected via real-time source check. System suggests a swap without being asked.</div>
+        </div>
+      </button>
+
+      <!-- Weather -->
+      <button class="scenario-btn" onclick="showScenario('rain')">
+        <div class="scenario-icon weather">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+        </div>
+        <div class="scenario-body">
+          <div class="scenario-label weather">System · Weather</div>
+          <div class="scenario-title">Rain kills the outdoor plan</div>
+          <div class="scenario-desc">Forecast flipped since trip was planned. Outdoor slots get indoor alternatives queued.</div>
+        </div>
+      </button>
+
+      <!-- User-initiated: exhausted -->
+      <button class="scenario-btn" onclick="showScenario('tired')">
+        <div class="scenario-icon user">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="scenario-body">
+          <div class="scenario-label user">User · Mood signal</div>
+          <div class="scenario-title">"I'm exhausted"</div>
+          <div class="scenario-desc">Typed or tapped. System re-routes the afternoon toward lower-energy options without flattening the day.</div>
+        </div>
+      </button>
+
+      <!-- User-initiated: energy -->
+      <button class="scenario-btn" onclick="showScenario('energy')">
+        <div class="scenario-icon user">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="scenario-body">
+          <div class="scenario-label user">User · Polar opposite</div>
+          <div class="scenario-title">"Let's do something wild"</div>
+          <div class="scenario-desc">High-energy swap. Vibe vector swings from calm to active. Adjacent moves, not a full rebuild.</div>
+        </div>
+      </button>
+
+      <!-- Cascade -->
+      <button class="scenario-btn" onclick="showScenario('cascade')">
+        <div class="scenario-icon cancel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="scenario-body">
+          <div class="scenario-label cancel">System · Cascade</div>
+          <div class="scenario-title">Transit delay, two slots affected</div>
+          <div class="scenario-desc">One delay cascades downstream. System re-sequences quietly — only surfaces what changed.</div>
+        </div>
+      </button>
+
+    </div>
+
+    <!-- Design principles -->
+    <div class="principle">
+      <div class="principle-label">The thin line</div>
+      <div class="principle-text">Both paths — user typing "I'm tired" and the system detecting a closed restaurant — produce the same drawer. The user never knows which triggered it. The language stays casual and specific either way. The accept button is always the same size. There is no undo unless they go looking for it.</div>
+    </div>
+
+    <div class="principle" style="margin-top:10px;border-left-color:var(--success)">
+      <div class="principle-label" style="color:var(--success)">Implicit feedback</div>
+      <div class="principle-text">Accepting a swap is a signal. Dismissing is a signal. Ignoring for 30 seconds is a signal. The thumbs up/down after accept is optional — offered once, never again for that swap. The behavioral graph updates regardless.</div>
+    </div>
+
+    <div class="principle" style="margin-top:10px;border-left-color:var(--info)">
+      <div class="principle-label" style="color:var(--info)">Context drift guard</div>
+      <div class="principle-text">Pivots are adjacent moves by default. A full day re-solve is always opt-in, never automatic. The system proposes one slot at a time to avoid the itinerary becoming unrecognizable after a single mood signal.</div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================
+       RIGHT — phone shell
+       ============================================================ -->
+  <div class="phone-wrap">
+    <div class="phone">
+
+      <!-- Top bar -->
+      <div class="phone-bar">
+        <div class="phone-back">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Japan 2025
+        </div>
+        <div>
+          <div class="phone-title">Kyoto · Fri 14</div>
+        </div>
+        <div class="phone-sub">4 people<br>Day 3 of 7</div>
+      </div>
+
+      <!-- Day tabs -->
+      <div class="day-strip">
+        <div class="dstrip-tab">Wed</div>
+        <div class="dstrip-tab">Thu</div>
+        <div class="dstrip-tab active">Fri</div>
+        <div class="dstrip-tab">Sat</div>
+        <div class="dstrip-tab">Sun</div>
+      </div>
+
+      <!-- Itinerary -->
+      <div class="itin-scroll" id="itinScroll">
+
+        <div class="mslot">
+          <div class="mslot-time">08:30</div>
+          <div class="mslot-spine"><div class="mslot-dot anchor"></div><div class="mslot-line"></div></div>
+          <div class="mslot-card has-photo">
+            <div class="mslot-photo">
+              <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=80&auto=format&fit=crop" alt="Coffee">
+              <div class="mslot-photo-overlay"></div>
+            </div>
+            <div class="mslot-inner">
+              <div class="mslot-type anchor-t">Anchor · Breakfast</div>
+              <div class="mslot-name">% Arabica Arashiyama</div>
+              <div class="mslot-why">Quieter than the station. Better light.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mtransit">
+          <div class="mt-spacer"></div>
+          <div class="mt-spine"><div class="mt-line"></div></div>
+          <div class="mt-text">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="4" r="2"/><path d="M14 8l-2 7-3-3-2 5"/></svg>
+            12 min walk
+          </div>
+        </div>
+
+        <div class="mslot">
+          <div class="mslot-time">09:15</div>
+          <div class="mslot-spine"><div class="mslot-dot anchor"></div><div class="mslot-line"></div></div>
+          <div class="mslot-card has-photo">
+            <div class="mslot-photo">
+              <img src="https://images.unsplash.com/photo-1576675784201-0e142b423952?w=400&q=80&auto=format&fit=crop" alt="Bamboo">
+              <div class="mslot-photo-overlay"></div>
+            </div>
+            <div class="mslot-inner">
+              <div class="mslot-type anchor-t">Anchor · Outdoor</div>
+              <div class="mslot-name">Sagano Bamboo Grove</div>
+              <div class="mslot-why">Packed by 10am. You're here first.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mtransit">
+          <div class="mt-spacer"></div>
+          <div class="mt-spine"><div class="mt-line"></div></div>
+          <div class="mt-text">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16M12 3v8"/></svg>
+            18 min transit
+          </div>
+        </div>
+
+        <!-- This is the slot being swapped — changes per scenario -->
+        <div class="mslot">
+          <div class="mslot-time">11:00</div>
+          <div class="mslot-spine"><div class="mslot-dot flex"></div><div class="mslot-line"></div></div>
+          <div class="mslot-card" id="swapSlot">
+            <div class="mslot-inner">
+              <div class="mslot-type flex-t">Flex · Lunch</div>
+              <div class="mslot-name" id="swapSlotName">Ippudo Ramen Kyoto</div>
+              <div class="mslot-why" id="swapSlotWhy">SL pushed for this. 3 voted yes.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mtransit">
+          <div class="mt-spacer"></div>
+          <div class="mt-spine"><div class="mt-line"></div></div>
+          <div class="mt-text">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="4" r="2"/><path d="M14 8l-2 7-3-3-2 5"/></svg>
+            20 min walk
+          </div>
+        </div>
+
+        <div class="mslot">
+          <div class="mslot-time">14:00</div>
+          <div class="mslot-spine"><div class="mslot-dot anchor"></div><div class="mslot-line"></div></div>
+          <div class="mslot-card" id="slot4">
+            <div class="mslot-inner">
+              <div class="mslot-type anchor-t">Anchor · Culture</div>
+              <div class="mslot-name">Gion district walk</div>
+              <div class="mslot-why">Dusk hits here around 5. Arrive early.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mtransit">
+          <div class="mt-spacer"></div>
+          <div class="mt-spine"><div class="mt-line"></div></div>
+          <div class="mt-text">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="4" r="2"/><path d="M14 8l-2 7-3-3-2 5"/></svg>
+            5 min walk
+          </div>
+        </div>
+
+        <div class="mslot">
+          <div class="mslot-time">19:00</div>
+          <div class="mslot-spine"><div class="mslot-dot meal"></div></div>
+          <div class="mslot-card" id="slot5">
+            <div class="mslot-inner">
+              <div class="mslot-type meal-t">Anchor · Dinner</div>
+              <div class="mslot-name">Pontocho izakaya</div>
+              <div class="mslot-why">Late nights tag, everyone voted it in.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- User prompt bar -->
+      <div class="prompt-bar">
+        <input class="prompt-input" id="promptInput" type="text" placeholder="I'm tired, change something up...">
+        <button class="prompt-send" onclick="handlePrompt()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+
+      <!-- PIVOT DRAWER -->
+      <div class="pivot-drawer" id="pivotDrawer">
+        <div class="drawer-handle"></div>
+
+        <div class="drawer-head">
+          <div class="drawer-signal">
+            <div class="signal-icon system" id="signalIcon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <span class="signal-source system" id="signalSource">Tabelog</span>
+          </div>
+          <div class="drawer-dismiss" onclick="dismissDrawer()">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+        </div>
+
+        <div class="drawer-message" id="drawerMessage">
+          Ippudo closed for a private event this afternoon. Moved your lunch — Nishiki Warai is around the corner, same vibe, no wait right now.
+        </div>
+
+        <div class="drawer-swap" id="drawerSwap">
+          <div class="swap-photo">
+            <img id="swapImg" src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80&auto=format&fit=crop" alt="Swap">
+            <div class="swap-photo-overlay"></div>
+            <div class="swap-source" id="swapSrc">Tabelog · 3.8</div>
+            <div class="swap-signal-badge gem" id="swapBadge">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>
+              Local pick
+            </div>
+          </div>
+          <div class="swap-body">
+            <div class="swap-cat-row">
+              <div class="swap-cat-badge food" id="swapCatBadge">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </div>
+              <span class="swap-cat-label" id="swapCatLabel">Lunch</span>
+            </div>
+            <div class="swap-name" id="swapName">Nishiki Warai</div>
+            <div class="swap-why" id="swapWhy">Same neighborhood, 2 min closer. Locals rate it higher.</div>
+            <div class="swap-meta">
+              <div class="swap-meta-item">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span id="swapTime">45 min</span>
+              </div>
+              <div class="swap-meta-item" id="swapCost">¥1.2k</div>
+              <div class="swap-meta-item" id="swapDist">2 min walk</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expanded: alternatives -->
+        <div class="drawer-expanded" id="drawerExpanded">
+          <div class="exp-label">Other options</div>
+
+          <div class="alt-row" onclick="selectAlt(this, 'Kinse Ryokan Lunch', 'Quieter. Worth it if you have 90 min.')">
+            <div class="alt-thumb">
+              <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&q=80&auto=format&fit=crop" alt="Alt 1">
+            </div>
+            <div class="alt-body">
+              <div class="alt-name">Kinse Ryokan Lunch</div>
+              <div class="alt-why">Quieter. Worth it if you have 90 min.</div>
+            </div>
+            <div class="alt-cat-badge cult">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+            </div>
+          </div>
+
+          <div class="alt-row" onclick="selectAlt(this, 'Nishiki Market graze', 'Skip the sit-down. Just wander and eat.')">
+            <div class="alt-thumb">
+              <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=200&q=80&auto=format&fit=crop" alt="Alt 2">
+            </div>
+            <div class="alt-body">
+              <div class="alt-name">Nishiki Market graze</div>
+              <div class="alt-why">Skip the sit-down. Just wander and eat.</div>
+            </div>
+            <div class="alt-cat-badge food">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Actions -->
+        <div class="drawer-actions">
+          <button class="btn-accept" id="acceptBtn" onclick="acceptSwap()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Swap it in
+          </button>
+          <button class="btn-alt" onclick="toggleAlts()">See options</button>
+        </div>
+
+        <!-- Implicit feedback — shown after accept -->
+        <div class="feedback-strip" id="feedbackStrip">
+          <div class="feedback-q">How'd it land?</div>
+          <div class="feedback-opts">
+            <button class="fb-btn up" onclick="giveFeedback(this, 'up')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+            </button>
+            <button class="fb-btn down" onclick="giveFeedback(this, 'down')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+      <!-- end pivot-drawer -->
+
+    </div>
+    <!-- end phone -->
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// SCENARIO DATA
+// ============================================================
+const SCENARIOS = {
+  closed: {
+    signalClass: 'system',
+    signalIcon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+    signalSrc: 'Tabelog',
+    message: 'Ippudo closed for a private event this afternoon. Moved your lunch — Nishiki Warai is around the corner, same vibe, no wait right now.',
+    swapImg: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80&auto=format&fit=crop',
+    swapSrc: 'Tabelog · 3.8',
+    swapBadge: 'Local pick',
+    swapCat: 'food',
+    swapCatLabel: 'Lunch',
+    swapName: 'Nishiki Warai',
+    swapWhy: 'Same neighborhood, 2 min closer. Locals rate it higher.',
+    swapTime: '45 min', swapCost: '¥1.2k', swapDist: '2 min walk',
+    slotName: 'Ippudo Ramen Kyoto',
+    slotWhy: 'SL pushed for this. 3 voted yes.',
+    acceptedName: 'Nishiki Warai',
+    acceptedWhy: 'Swapped in — Tabelog 3.8, local pick.',
+    btnLabel: 'Swap it in',
+    struck: true,
+  },
+  rain: {
+    signalClass: 'weather',
+    signalIcon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>`,
+    signalSrc: 'Weather',
+    message: 'Rain from 2pm. Moved the Gion walk to tomorrow morning — it\'s better dry anyway. Subbing in Nishiki Market for this afternoon.',
+    swapImg: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80&auto=format&fit=crop',
+    swapSrc: 'Reddit · r/JapanTravel',
+    swapBadge: 'Indoor',
+    swapCat: 'food',
+    swapCatLabel: 'Market',
+    swapName: 'Nishiki Market',
+    swapWhy: 'Fully covered. Locals eat here, tourists overlook it.',
+    swapTime: '1–2 hrs', swapCost: '¥800–2k', swapDist: '12 min walk',
+    slotName: 'Gion district walk',
+    slotWhy: 'Dusk hits here around 5. Arrive early.',
+    acceptedName: 'Nishiki Market',
+    acceptedWhy: 'Rain swap — moved Gion to tomorrow.',
+    btnLabel: 'Works for me',
+    struck: false,
+  },
+  tired: {
+    signalClass: 'user',
+    signalIcon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+    signalSrc: 'You said',
+    message: 'Swapped the afternoon for something lower-energy — Tenryu-ji garden instead of the full Gion walk. You can still hit Pontocho tonight.',
+    swapImg: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80&auto=format&fit=crop',
+    swapSrc: 'Jalan · 4.1',
+    swapBadge: 'Low energy',
+    swapCat: 'pace',
+    swapCatLabel: 'Garden',
+    swapName: 'Tenryu-ji Garden',
+    swapWhy: 'Quiet walk, no rush. Locals rate it better than tourists do.',
+    swapTime: '60–90 min', swapCost: '¥500', swapDist: '8 min walk',
+    slotName: 'Gion district walk',
+    slotWhy: 'Dusk hits here around 5. Arrive early.',
+    acceptedName: 'Tenryu-ji Garden',
+    acceptedWhy: 'Low-energy swap. Back in full force tomorrow.',
+    btnLabel: 'That works',
+    struck: false,
+  },
+  energy: {
+    signalClass: 'user',
+    signalIcon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+    signalSrc: 'You said',
+    message: 'Swapped the garden for a 90-min bike loop through Arashiyama. You\'ve got the energy — it\'s the right call.',
+    swapImg: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80&auto=format&fit=crop',
+    swapSrc: 'Reddit · r/Kyoto',
+    swapBadge: 'High energy',
+    swapCat: 'actv',
+    swapCatLabel: 'Activity',
+    swapName: 'Arashiyama Bike Loop',
+    swapWhy: 'Covers ground fast, hits 4 spots in 90 min.',
+    swapTime: '90 min', swapCost: '¥1.5k rental', swapDist: '10 min transit',
+    slotName: 'Tenryu-ji Garden',
+    slotWhy: 'Quiet walk, sit-down pace.',
+    acceptedName: 'Arashiyama Bike Loop',
+    acceptedWhy: 'High-energy swap. Burning daylight.',
+    btnLabel: 'Let\'s go',
+    struck: false,
+  },
+  cascade: {
+    signalClass: 'system',
+    signalIcon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+    signalSrc: 'Transit delay',
+    message: '22-min delay on the Sagano line. Lunch pushes to 12:30 — still fine. Moved Tenryu-ji to tomorrow when you\'re near Arashiyama anyway.',
+    swapImg: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80&auto=format&fit=crop',
+    swapSrc: 'Re-sequenced',
+    swapBadge: 'Same day',
+    swapCat: 'cult',
+    swapCatLabel: 'Re-sequenced',
+    swapName: 'Lunch at 12:30',
+    swapWhy: '22 min later than planned. Everything else holds.',
+    swapTime: 'Same', swapCost: 'No change', swapDist: '—',
+    slotName: 'Ippudo Ramen Kyoto',
+    slotWhy: 'SL pushed for this. 3 voted yes.',
+    acceptedName: 'Ippudo Ramen · 12:30',
+    acceptedWhy: 'Delay absorbed. Tenryu-ji moved to Sat.',
+    btnLabel: 'Looks good',
+    struck: false,
+  }
+};
+
+let currentScenario = 'closed';
+let expanded = false;
+let accepted = false;
+
+function showScenario(key) {
+  currentScenario = key;
+  accepted = false;
+  expanded = false;
+
+  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  const s = SCENARIOS[key];
+
+  // Update signal
+  const si = document.getElementById('signalIcon');
+  si.className = `signal-icon ${s.signalClass}`;
+  si.innerHTML = s.signalIcon;
+
+  const ss = document.getElementById('signalSource');
+  ss.className = `signal-source ${s.signalClass}`;
+  ss.textContent = s.signalSrc;
+
+  // Message
+  document.getElementById('drawerMessage').textContent = s.message;
+
+  // Swap card
+  document.getElementById('swapImg').src = s.swapImg;
+  document.getElementById('swapSrc').textContent = s.swapSrc;
+  document.getElementById('swapBadge').lastChild.textContent = ' ' + s.swapBadge;
+
+  const catBadge = document.getElementById('swapCatBadge');
+  catBadge.className = `swap-cat-badge ${s.swapCat}`;
+  const catIcons = {
+    food: `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`,
+    cult: `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 21V9l9-6 9 6v12H3z"/><path d="M9 21V12h6v9"/></svg>`,
+    pace: `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="2" x2="12" y2="9"/></svg>`,
+    actv: `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 17L9 11 13 15 21 7"/><path d="M14 7h7v7"/></svg>`,
+  };
+  catBadge.innerHTML = catIcons[s.swapCat] || catIcons.food;
+
+  document.getElementById('swapCatLabel').textContent = s.swapCatLabel;
+  document.getElementById('swapName').textContent = s.swapName;
+  document.getElementById('swapWhy').textContent = s.swapWhy;
+  document.getElementById('swapTime').textContent = s.swapTime;
+  document.getElementById('swapCost').textContent = s.swapCost;
+  document.getElementById('swapDist').textContent = s.swapDist;
+
+  // Accept button label
+  document.getElementById('acceptBtn').innerHTML = `
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+    ${s.btnLabel}`;
+
+  // Slot in itinerary
+  const slot = document.getElementById('swapSlot');
+  slot.className = 'mslot-card' + (s.struck ? ' struck' : '');
+  document.getElementById('swapSlotName').textContent = s.slotName;
+  document.getElementById('swapSlotWhy').textContent = s.slotWhy;
+
+  // Reset states
+  document.getElementById('drawerExpanded').classList.remove('open');
+  document.getElementById('feedbackStrip').classList.remove('visible');
+  document.getElementById('slot4').classList.remove('dimmed', 'accepted');
+  document.getElementById('slot5').classList.remove('dimmed');
+
+  // Show drawer
+  showDrawer();
+}
+
+function showDrawer() {
+  document.getElementById('pivotDrawer').classList.add('visible');
+}
+
+function dismissDrawer() {
+  document.getElementById('pivotDrawer').classList.remove('visible');
+  document.getElementById('swapSlot').classList.remove('struck', 'dimmed');
+}
+
+function toggleAlts() {
+  expanded = !expanded;
+  document.getElementById('drawerExpanded').classList.toggle('open', expanded);
+}
+
+function selectAlt(row, name, why) {
+  document.getElementById('swapName').textContent = name;
+  document.getElementById('swapWhy').textContent = why;
+  document.getElementById('drawerExpanded').classList.remove('open');
+  expanded = false;
+}
+
+function acceptSwap() {
+  accepted = true;
+  const s = SCENARIOS[currentScenario];
+
+  // Update the slot in the itinerary
+  const slot = document.getElementById('swapSlot');
+  slot.className = 'mslot-card accepted';
+  document.getElementById('swapSlotName').textContent = s.acceptedName;
+  document.getElementById('swapSlotWhy').textContent = s.acceptedWhy;
+
+  // Dim downstream slots for cascade scenario
+  if (currentScenario === 'cascade') {
+    document.getElementById('slot4').classList.add('dimmed');
+  }
+
+  // Show feedback strip
+  document.getElementById('feedbackStrip').classList.add('visible');
+
+  // Hide actions
+  document.querySelector('.drawer-actions').style.display = 'none';
+  document.getElementById('drawerExpanded').classList.remove('open');
+
+  // Auto-dismiss after feedback window
+  setTimeout(() => {
+    document.getElementById('pivotDrawer').classList.remove('visible');
+    document.querySelector('.drawer-actions').style.display = '';
+    document.getElementById('feedbackStrip').classList.remove('visible');
+  }, 4000);
+}
+
+function giveFeedback(btn, dir) {
+  document.querySelectorAll('.fb-btn').forEach(b => b.classList.remove('active-up'));
+  if (dir === 'up') btn.classList.add('active-up');
+  setTimeout(() => {
+    document.getElementById('pivotDrawer').classList.remove('visible');
+    document.querySelector('.drawer-actions').style.display = '';
+    document.getElementById('feedbackStrip').classList.remove('visible');
+  }, 600);
+}
+
+// User-typed pivot
+function handlePrompt() {
+  const val = document.getElementById('promptInput').value.toLowerCase().trim();
+  if (!val) return;
+
+  document.getElementById('promptInput').value = '';
+
+  if (val.includes('tired') || val.includes('exhausted') || val.includes('rest') || val.includes('slow')) {
+    showScenario('tired');
+    document.querySelectorAll('.scenario-btn').forEach((b,i) => {
+      b.classList.remove('active');
+      if(i === 2) b.classList.add('active');
+    });
+  } else if (val.includes('wild') || val.includes('energy') || val.includes('active') || val.includes('fun')) {
+    showScenario('energy');
+    document.querySelectorAll('.scenario-btn').forEach((b,i) => {
+      b.classList.remove('active');
+      if(i === 3) b.classList.add('active');
+    });
+  } else {
+    // Generic — treat as mood signal
+    showScenario('tired');
+  }
+}
+
+document.getElementById('promptInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handlePrompt();
+});
+
+// Theme
+function toggleTheme() {
+  const html = document.documentElement;
+  const dark = html.dataset.theme === 'dark';
+  html.dataset.theme = dark ? 'light' : 'dark';
+  document.getElementById('themeLabel').textContent = dark ? 'Light' : 'Dark';
+}
+
+// Boot — show first scenario
+setTimeout(() => showScenario('closed'), 400);
+</script>
+</body>
+</html>

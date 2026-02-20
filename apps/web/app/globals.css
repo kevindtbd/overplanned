@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Core brand */
+  --color-terracotta: #C4694F;
+
+  /* Warm palette */
+  --color-warm-background: #FAF7F2;
+  --color-warm-surface: #F5EFE6;
+  --color-warm-border: #E8DFD3;
+  --color-warm-text-primary: #2D2A26;
+  --color-warm-text-secondary: #6B6560;
+
+  /* Semantic aliases */
+  --color-accent: var(--color-terracotta);
+  --color-bg: var(--color-warm-background);
+  --color-surface: var(--color-warm-surface);
+  --color-border: var(--color-warm-border);
+  --color-text: var(--color-warm-text-primary);
+  --color-text-muted: var(--color-warm-text-secondary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-warm-background: #1A1816;
+    --color-warm-surface: #242220;
+    --color-warm-border: #3A3632;
+    --color-warm-text-primary: #F5EFE6;
+    --color-warm-text-secondary: #A09A94;
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-app text-primary;
+    font-family: var(--font-sora), system-ui, sans-serif;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sora), system-ui, sans-serif;
+    font-weight: 600;
+    line-height: 1.2;
+    @apply text-primary;
+  }
+
+  code, pre, [data-mono] {
+    font-family: var(--font-dm-mono), monospace;
+  }
+
+  /* Remove default focus outline, replace with terracotta ring */
+  *:focus-visible {
+    outline: 2px solid var(--color-terracotta);
+    outline-offset: 2px;
+  }
+
+  /* Smooth scrolling for reduced-motion respecting users */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+@layer components {
+  .label-mono {
+    font-family: var(--font-dm-mono), monospace;
+    @apply text-xs uppercase tracking-wider text-secondary;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2
+           bg-terracotta text-white font-medium rounded-lg
+           transition-colors duration-150
+           hover:bg-terracotta-600
+           focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-4 py-2
+           bg-warm-surface text-primary font-medium rounded-lg
+           border border-warm
+           transition-colors duration-150
+           hover:bg-warm-border
+           focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2;
+  }
+
+  .card {
+    @apply bg-warm-surface border border-warm rounded-xl p-4;
+  }
+}

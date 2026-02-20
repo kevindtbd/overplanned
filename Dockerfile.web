@@ -1,0 +1,64 @@
+# ── Overplanned Web (Next.js) ─────────────────────────────────────────
+# Multi-stage build: deps → build → production
+# Base: node:20-alpine (pinned digest for reproducibility)
+# ──────────────────────────────────────────────────────────────────────
+
+# --- Stage 1: Dependencies ---
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install workspace root deps (needed for npm workspaces resolution)
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/db/package.json ./packages/db/
+COPY packages/schemas/package.json ./packages/schemas/
+COPY packages/shared-types/package.json ./packages/shared-types/
+
+RUN npm ci --ignore-scripts
+# Generate Prisma client inside node_modules
+COPY packages/db/prisma ./packages/db/prisma
+RUN npx prisma generate --schema=packages/db/prisma/schema.prisma
+
+# --- Stage 2: Build ---
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules 2>/dev/null || true
+COPY --from=deps /app/packages ./packages
+
+# Copy source
+COPY apps/web ./apps/web
+COPY package.json package-lock.json ./
+
+# next.config.js must enable standalone output for Docker
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build --workspace=@overplanned/web
+
+# --- Stage 3: Production ---
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy standalone build output
+COPY --from=builder /app/apps/web/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+CMD ["node", "apps/web/server.js"]

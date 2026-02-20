@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-mode="group">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#F7F4EF;--bg-warm:#F2EDE5;--bg-card:#FFFFFF;--bg-stone:#EAE4DA;--bg-raised:#EDE8E0;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --gold:#A07830;--gold-light:#F5EDD8;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --warning:#8C6A1A;--warning-bg:#F5EDD8;
+  --info:#2E6A9C;--info-bg:#DCECf8;
+  --shadow-sm:0 2px 8px rgba(26,22,18,0.06);
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);
+  --shadow-lg:0 16px 56px rgba(26,22,18,0.10);
+  --shadow-xl:0 32px 80px rgba(26,22,18,0.14);
+}
+[data-theme="dark"]{
+  --bg:#0C0A08;--bg-warm:#111009;--bg-card:#161210;--bg-stone:#1C1813;--bg-raised:#1A1510;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --gold:#C8A96E;--gold-light:rgba(200,169,110,0.12);
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --warning:#C8A96E;--warning-bg:rgba(200,169,110,0.12);
+  --info:#4A84A8;--info-bg:rgba(74,132,168,0.12);
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:0 16px 56px rgba(0,0,0,0.5);
+  --shadow-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);overflow:hidden;}
+
+/* ── SHELL ── */
+.shell{display:grid;grid-template-columns:220px 1fr;height:100vh;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--bg-warm);border-right:1px solid var(--ink-700);display:flex;flex-direction:column;overflow:hidden;}
+[data-theme="dark"] .sidebar{background:var(--bg-raised);}
+
+.sb-logo{padding:22px 20px 16px;display:flex;align-items:center;gap:8px;}
+.sb-logo-mark{width:24px;height:24px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.sb-logo-text{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;letter-spacing:-0.04em;color:var(--ink-100);}
+.sb-logo-text span{color:var(--accent);}
+
+.sb-section{padding:0 12px;margin-bottom:4px;}
+.sb-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-600);padding:10px 8px 6px;}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;cursor:pointer;font-size:13px;color:var(--ink-400);transition:all 0.15s;margin-bottom:1px;}
+.sb-item:hover{background:var(--bg-raised);color:var(--ink-200);}
+[data-theme="dark"] .sb-item:hover{background:var(--bg-stone);}
+.sb-item.active{background:var(--accent-light);color:var(--accent-dark);font-weight:500;}
+[data-theme="dark"] .sb-item.active{background:rgba(201,104,72,0.15);}
+
+.sb-divider{border:none;border-top:1px solid var(--ink-700);margin:10px 16px;}
+
+.sb-trip{margin:0 12px 8px;border-radius:12px;overflow:hidden;position:relative;height:80px;cursor:pointer;}
+.sb-trip-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.sb-trip:hover .sb-trip-img{transform:scale(1.05);}
+.sb-trip-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.88),rgba(14,10,6,0.1));display:flex;flex-direction:column;justify-content:flex-end;padding:10px 12px;}
+.sb-trip-name{font-family:'Lora',serif;font-size:13px;font-weight:500;color:#fff;letter-spacing:-0.01em;}
+.sb-trip-meta{font-family:'DM Mono',monospace;font-size:8px;color:rgba(255,255,255,0.55);margin-top:1px;}
+
+.sb-new{margin:0 12px 4px;display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:10px;border:1.5px dashed var(--ink-700);cursor:pointer;font-size:12px;color:var(--ink-500);transition:all 0.15s;}
+.sb-new:hover{border-color:var(--accent);color:var(--accent-dark);}
+
+.sb-bottom{margin-top:auto;padding:12px;border-top:1px solid var(--ink-700);}
+.sb-user{display:flex;align-items:center;gap:9px;}
+.sb-avatar{width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;}
+.sb-avatar img{width:100%;height:100%;object-fit:cover;}
+.sb-user-name{font-size:12px;font-weight:500;color:var(--ink-200);}
+.sb-user-plan{font-family:'DM Mono',monospace;font-size:8px;color:var(--accent-dark);}
+.sb-theme{margin-left:auto;width:28px;height:28px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+
+/* ── MAIN ── */
+.main{overflow-y:auto;display:flex;flex-direction:column;}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 32px 0;flex-shrink:0;}
+.topbar-left{display:flex;flex-direction:column;gap:2px;}
+.topbar-greeting{font-family:'Lora',serif;font-size:20px;font-weight:500;letter-spacing:-0.02em;color:var(--ink-100);}
+.topbar-greeting em{font-style:italic;color:var(--gold);}
+.topbar-sub{font-size:12px;color:var(--ink-500);font-weight:300;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.mode-toggle{display:flex;background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:100px;overflow:hidden;}
+[data-theme="dark"] .mode-toggle{background:var(--bg-stone);}
+.mode-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);padding:6px 14px;cursor:pointer;border:none;background:none;transition:all 0.15s;white-space:nowrap;}
+.mode-btn.active{background:var(--accent-light);color:var(--accent-dark);}
+[data-theme="dark"] .mode-btn.active{background:rgba(201,104,72,0.18);}
+
+/* ── HERO ── */
+.hero-wrap{padding:18px 32px 0;flex-shrink:0;}
+.trip-hero{border-radius:20px;overflow:hidden;position:relative;height:200px;cursor:pointer;}
+.trip-hero-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.5s ease;}
+.trip-hero:hover .trip-hero-img{transform:scale(1.03);}
+.trip-hero-overlay{position:absolute;inset:0;background:linear-gradient(105deg,rgba(14,10,6,0.82) 0%,rgba(14,10,6,0.35) 55%,rgba(14,10,6,0.05) 100%);}
+.trip-hero-body{position:absolute;inset:0;padding:24px 28px;display:flex;flex-direction:column;justify-content:space-between;}
+.trip-hero-top{}
+.trip-hero-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:6px;}
+.trip-hero-title{font-family:'Lora',serif;font-size:26px;font-weight:500;color:#fff;letter-spacing:-0.02em;line-height:1.1;margin-bottom:3px;}
+.trip-hero-meta{font-size:12px;color:rgba(255,255,255,0.6);font-weight:300;}
+.trip-hero-bottom{display:flex;align-items:center;justify-content:space-between;}
+.trip-hero-stats{display:flex;gap:18px;}
+.ths{display:flex;flex-direction:column;}
+.ths-val{font-family:'Outfit',monospace;font-size:18px;font-weight:600;color:#fff;line-height:1;}
+.ths-label{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-top:2px;}
+.trip-hero-cta{display:flex;gap:8px;}
+.hero-btn{font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;border-radius:100px;padding:8px 16px;cursor:pointer;border:none;transition:all 0.15s;}
+.hero-btn.primary{background:#fff;color:var(--ink-100);}
+.hero-btn.ghost{background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2);backdrop-filter:blur(4px);}
+
+/* ── WEATHER + PREP STRIP ── */
+.context-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 32px 0;flex-shrink:0;}
+.ctx-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.15s;}
+[data-theme="dark"] .ctx-card{background:var(--bg-stone);}
+.ctx-card:hover{border-color:var(--ink-500);transform:translateY(-1px);box-shadow:var(--shadow-sm);}
+.ctx-card.urgent{border-color:var(--warning);background:var(--warning-bg);}
+[data-theme="dark"] .ctx-card.urgent{background:var(--warning-bg);}
+.ctx-card.done{opacity:0.5;}
+.ctx-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ctx-body{}
+.ctx-label{font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:1px;}
+.ctx-sub{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);letter-spacing:0.04em;}
+.ctx-card.urgent .ctx-label{color:var(--warning);}
+[data-theme="dark"] .ctx-card.urgent .ctx-label{color:var(--gold);}
+
+/* ── MAIN GRID ── */
+.dash-body{padding:16px 32px 32px;display:flex;flex-direction:column;gap:14px;flex:1;}
+
+/* Stat row */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;flex-shrink:0;}
+.stat-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:14px;padding:16px 18px;}
+[data-theme="dark"] .stat-card{background:var(--bg-stone);}
+.sc-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);margin-bottom:8px;}
+.sc-val{font-family:'Outfit',sans-serif;font-size:22px;font-weight:600;color:var(--ink-100);line-height:1;margin-bottom:3px;}
+.sc-sub{font-size:11px;color:var(--ink-500);font-weight:300;}
+.sc-val.warn{color:var(--accent);}
+.sc-val.good{color:var(--success);}
+
+/* Two column */
+.two-col{display:grid;grid-template-columns:1fr 320px;gap:14px;}
+
+/* Day strip */
+.day-strip{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:14px;overflow:hidden;}
+[data-theme="dark"] .day-strip{background:var(--bg-stone);}
+.ds-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--ink-700);}
+.ds-title{font-size:13px;font-weight:500;color:var(--ink-100);}
+.ds-link{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-dark);cursor:pointer;}
+.ds-slot{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--ink-800);}
+[data-theme="dark"] .ds-slot{border-bottom-color:var(--ink-700);}
+.ds-slot:last-child{border-bottom:none;}
+.ds-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-500);width:34px;flex-shrink:0;}
+.ds-photo{width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.ds-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.ds-name{font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:1px;}
+.ds-why{font-size:10px;color:var(--ink-500);font-weight:300;font-style:italic;}
+.ds-chip{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:100px;flex-shrink:0;}
+.ds-chip.booked{background:var(--success-bg);color:var(--success);}
+.ds-chip.upcoming{background:var(--bg-raised);color:var(--ink-500);}
+[data-theme="dark"] .ds-chip.upcoming{background:var(--bg-raised);}
+.ds-chip.action{background:var(--accent-light);color:var(--accent-dark);}
+
+/* Right column */
+.right-col{display:flex;flex-direction:column;gap:12px;}
+
+/* Group card */
+.group-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:14px;padding:16px 18px;}
+[data-theme="dark"] .group-card{background:var(--bg-stone);}
+.gc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.gc-title{font-size:12px;font-weight:500;color:var(--ink-100);}
+.gc-action{font-family:'DM Mono',monospace;font-size:8px;color:var(--accent-dark);cursor:pointer;}
+.gc-members{display:flex;flex-direction:column;gap:8px;}
+.gc-member{display:flex;align-items:center;gap:9px;}
+.gc-av{width:26px;height:26px;border-radius:50%;overflow:hidden;flex-shrink:0;}
+.gc-av img{width:100%;height:100%;object-fit:cover;}
+.gc-name{font-size:12px;color:var(--ink-200);flex:1;}
+.gc-status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.gc-status-dot.online{background:var(--success);}
+.gc-status-dot.away{background:var(--gold);}
+.gc-status-dot.offline{background:var(--ink-700);}
+.gc-vote-chip{font-family:'DM Mono',monospace;font-size:7px;padding:2px 7px;border-radius:100px;background:var(--accent-light);color:var(--accent-dark);}
+.gc-nudge{margin-top:10px;padding-top:10px;border-top:1px solid var(--ink-800);font-size:11px;color:var(--ink-500);font-style:italic;font-weight:300;}
+[data-theme="dark"] .gc-nudge{border-top-color:var(--ink-700);}
+.gc-nudge span{color:var(--accent);cursor:pointer;font-style:normal;}
+
+/* Persona — softened */
+.persona-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:14px;padding:16px 18px;}
+[data-theme="dark"] .persona-card{background:var(--bg-stone);}
+.pc-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);margin-bottom:7px;}
+.pc-quote{font-family:'Lora',serif;font-size:14px;font-style:italic;color:var(--ink-100);line-height:1.45;margin-bottom:10px;}
+.pc-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.pc-tag{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;padding:3px 9px;border-radius:100px;background:var(--bg-raised);color:var(--ink-400);border:1px solid var(--ink-700);}
+[data-theme="dark"] .pc-tag{background:var(--bg-stone);}
+
+/* Solo right column — visible in solo mode */
+.solo-col{display:none;flex-direction:column;gap:12px;}
+[data-mode="solo"] .solo-col{display:flex;}
+[data-mode="solo"] .group-col{display:none;}
+.group-col{display:flex;flex-direction:column;gap:12px;}
+
+/* Packing card */
+.pack-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:14px;padding:16px 18px;}
+[data-theme="dark"] .pack-card{background:var(--bg-stone);}
+.pack-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.pack-title{font-size:12px;font-weight:500;color:var(--ink-100);}
+.pack-count{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);}
+.pack-progress{height:4px;background:var(--ink-800);border-radius:100px;margin-bottom:12px;overflow:hidden;}
+[data-theme="dark"] .pack-progress{background:var(--ink-700);}
+.pack-progress-fill{height:100%;border-radius:100px;background:var(--success);transition:width 0.4s ease;}
+.pack-items{display:flex;flex-direction:column;gap:7px;}
+.pack-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-300);}
+.pack-item.done{color:var(--ink-600);text-decoration:line-through;}
+.pack-check{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--ink-600);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;}
+.pack-item.done .pack-check{background:var(--success-bg);border-color:var(--success);}
+.pack-essential{font-family:'DM Mono',monospace;font-size:7px;color:var(--accent-dark);background:var(--accent-light);padding:1px 5px;border-radius:4px;margin-left:auto;flex-shrink:0;}
+.pack-see-all{margin-top:10px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-dark);cursor:pointer;text-align:center;}
+
+/* Micro-stops summary card */
+.stops-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:14px;padding:16px 18px;}
+[data-theme="dark"] .stops-card{background:var(--bg-stone);}
+.stops-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.stops-title{font-size:12px;font-weight:500;color:var(--ink-100);}
+.stops-items{display:flex;flex-direction:column;gap:7px;}
+.stops-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--ink-800);}
+[data-theme="dark"] .stops-item{border-bottom-color:var(--ink-700);}
+.stops-item:last-child{border-bottom:none;}
+.stops-dot{width:6px;height:6px;border-radius:50%;border:1.5px dashed var(--gold);flex-shrink:0;}
+.stops-name{font-size:11px;color:var(--ink-300);flex:1;}
+.stops-day{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-600);}
+
+/* Past trips */
+.past-section{flex-shrink:0;}
+.past-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;}
+.past-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;}
+.past-card{flex-shrink:0;width:140px;height:90px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;}
+.past-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.past-card:hover img{transform:scale(1.06);}
+.past-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.82),rgba(14,10,6,0.05));}
+.past-card-body{position:absolute;bottom:0;left:0;right:0;padding:8px 10px;}
+.pc-city{font-family:'Lora',serif;font-size:13px;font-weight:500;color:#fff;letter-spacing:-0.01em;}
+.pc-date{font-family:'DM Mono',monospace;font-size:7px;color:rgba(255,255,255,0.55);}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      </div>
+      <div class="sb-logo-text">Way<span>mark</span></div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Menu</div>
+      <div class="sb-item active">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="sb-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        Trips
+      </div>
+      <div class="sb-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Group Trips
+      </div>
+      <div class="sb-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Explore
+      </div>
+      <div class="sb-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Packing
+      </div>
+    </div>
+
+    <hr class="sb-divider">
+
+    <div class="sb-section">
+      <div class="sb-label">Next trip</div>
+    </div>
+    <div class="sb-trip">
+      <img class="sb-trip-img" src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=70&auto=format&fit=crop" alt="Tokyo">
+      <div class="sb-trip-overlay">
+        <div class="sb-trip-name">Japan · March</div>
+        <div class="sb-trip-meta">Mar 14 – 22 · 9 days</div>
+      </div>
+    </div>
+    <div class="sb-new">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Plan a new trip
+    </div>
+
+    <div class="sb-bottom">
+      <div class="sb-user">
+        <div class="sb-avatar"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+        <div>
+          <div class="sb-user-name">Kevin</div>
+          <div class="sb-user-plan">Overplanned Pro</div>
+        </div>
+        <button class="sb-theme" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+          <svg class="icon-sun" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+          <svg class="icon-moon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-greeting">Good morning, <em>Kevin.</em></div>
+        <div class="topbar-sub">Japan is 23 days away — here's where things stand.</div>
+      </div>
+      <div class="topbar-right">
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="btnGroup" onclick="setMode('group')">Group trip</button>
+          <button class="mode-btn" id="btnSolo" onclick="setMode('solo')">Solo trip</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero-wrap">
+      <div class="trip-hero">
+        <img class="trip-hero-img" src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1400&q=80&auto=format&fit=crop" alt="Tokyo">
+        <div class="trip-hero-overlay"></div>
+        <div class="trip-hero-body">
+          <div class="trip-hero-top">
+            <div class="trip-hero-eyebrow">Next trip · Mar 14 – 22</div>
+            <div class="trip-hero-title">Japan 2025</div>
+            <div class="trip-hero-meta">Tokyo · Kyoto · Osaka · 9 days · 4 people</div>
+          </div>
+          <div class="trip-hero-bottom">
+            <div class="trip-hero-stats">
+              <div class="ths"><div class="ths-val">28</div><div class="ths-label">Slots built</div></div>
+              <div class="ths"><div class="ths-val">6</div><div class="ths-label">Need votes</div></div>
+              <div class="ths"><div class="ths-val">3</div><div class="ths-label">Book soon</div></div>
+            </div>
+            <div class="trip-hero-cta">
+              <button class="hero-btn primary">Open trip</button>
+              <button class="hero-btn ghost">Share</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Context strip — weather + prep cards -->
+    <div class="context-strip">
+
+      <!-- Weather -->
+      <div class="ctx-card">
+        <div class="ctx-icon" style="background:var(--info-bg);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--info)" stroke-width="1.8" stroke-linecap="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>
+        </div>
+        <div class="ctx-body">
+          <div class="ctx-label">Kyoto in March</div>
+          <div class="ctx-sub">8–14°C · Cherry blossom season · Pack layers</div>
+        </div>
+      </div>
+
+      <!-- Visa — urgent -->
+      <div class="ctx-card urgent">
+        <div class="ctx-icon" style="background:rgba(140,106,26,0.15);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div class="ctx-body">
+          <div class="ctx-label">Japan visa — check required</div>
+          <div class="ctx-sub">US citizens: visa-free up to 90 days · Confirm passport expiry</div>
+        </div>
+      </div>
+
+      <!-- Packing -->
+      <div class="ctx-card">
+        <div class="ctx-icon" style="background:var(--success-bg);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.8" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </div>
+        <div class="ctx-body">
+          <div class="ctx-label">Packing list · 4 of 18 done</div>
+          <div class="ctx-sub">Rain jacket, IC card, adapter still needed</div>
+        </div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="ctx-card">
+        <div class="ctx-icon" style="background:var(--accent-light);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="ctx-body">
+          <div class="ctx-label">Export to calendar</div>
+          <div class="ctx-sub">Download .ics · All 28 slots</div>
+        </div>
+      </div>
+
+      <!-- Offline sync -->
+      <div class="ctx-card done">
+        <div class="ctx-icon" style="background:var(--success-bg);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.8" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="ctx-body">
+          <div class="ctx-label">Offline ready</div>
+          <div class="ctx-sub">Trip data synced · Last updated 2h ago</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Dash body -->
+    <div class="dash-body">
+
+      <!-- Stat row -->
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="sc-eyebrow">Needs attention</div>
+          <div class="sc-val warn">6</div>
+          <div class="sc-sub">Slots waiting on group votes</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-eyebrow">Book soon</div>
+          <div class="sc-val warn">3</div>
+          <div class="sc-sub">Booking windows opening this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-eyebrow">Days planned</div>
+          <div class="sc-val good">7 <span style="font-size:14px;font-weight:400;color:var(--ink-500);">/ 9</span></div>
+          <div class="sc-sub">2 days still need slots</div>
+        </div>
+      </div>
+
+      <!-- Two col -->
+      <div class="two-col">
+
+        <!-- Day strip -->
+        <div class="day-strip">
+          <div class="ds-head">
+            <div class="ds-title">Day 3 · Kyoto · Friday</div>
+            <div class="ds-link">Edit day →</div>
+          </div>
+          <div class="ds-slot">
+            <div class="ds-time">06:30</div>
+            <div class="ds-photo"><img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=200&q=70&auto=format&fit=crop" alt=""></div>
+            <div style="flex:1;">
+              <div class="ds-name">Fushimi Inari</div>
+              <div class="ds-why">left before the crowds</div>
+            </div>
+            <div class="ds-chip booked">Booked</div>
+          </div>
+          <div class="ds-slot">
+            <div class="ds-time">14:00</div>
+            <div class="ds-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=200&q=70&auto=format&fit=crop" alt=""></div>
+            <div style="flex:1;">
+              <div class="ds-name">Kinkaku-ji</div>
+              <div class="ds-why">weekday · thins out by 15:00</div>
+            </div>
+            <div class="ds-chip upcoming">Upcoming</div>
+          </div>
+          <div class="ds-slot">
+            <div class="ds-time">19:00</div>
+            <div class="ds-photo"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&q=70&auto=format&fit=crop" alt=""></div>
+            <div style="flex:1;">
+              <div class="ds-name">Pontocho izakaya</div>
+              <div class="ds-why">book before the trip</div>
+            </div>
+            <div class="ds-chip action">Book soon</div>
+          </div>
+        </div>
+
+        <!-- Right col — group mode -->
+        <div class="right-col group-col">
+
+          <!-- Group card -->
+          <div class="group-card">
+            <div class="gc-head">
+              <div class="gc-title">Japan 2025 · Group</div>
+              <div class="gc-action">Manage →</div>
+            </div>
+            <div class="gc-members">
+              <div class="gc-member">
+                <div class="gc-av"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                <div class="gc-name">You</div>
+                <div class="gc-status-dot online"></div>
+              </div>
+              <div class="gc-member">
+                <div class="gc-av"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                <div class="gc-name">Mia</div>
+                <div class="gc-status-dot online"></div>
+              </div>
+              <div class="gc-member">
+                <div class="gc-av"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                <div class="gc-name">SL</div>
+                <div class="gc-status-dot away"></div>
+                <div class="gc-vote-chip">2 votes pending</div>
+              </div>
+              <div class="gc-member">
+                <div class="gc-av"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                <div class="gc-name">JR</div>
+                <div class="gc-status-dot offline"></div>
+                <div class="gc-vote-chip">4 votes pending</div>
+              </div>
+            </div>
+            <div class="gc-nudge">JR hasn't voted on 4 slots — <span>send a nudge</span></div>
+          </div>
+
+          <!-- Persona — softened -->
+          <div class="persona-card">
+            <div class="pc-eyebrow">How you travel</div>
+            <div class="pc-quote">"Will walk 40 min to avoid a tourist menu."</div>
+            <div class="pc-tags">
+              <div class="pc-tag">counter seats</div>
+              <div class="pc-tag">local only</div>
+              <div class="pc-tag">slow mornings</div>
+              <div class="pc-tag">no queues</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right col — solo mode -->
+        <div class="right-col solo-col">
+
+          <!-- Packing card -->
+          <div class="pack-card">
+            <div class="pack-head">
+              <div class="pack-title">Packing list</div>
+              <div class="pack-count">4 of 18 done</div>
+            </div>
+            <div class="pack-progress">
+              <div class="pack-progress-fill" style="width:22%;"></div>
+            </div>
+            <div class="pack-items">
+              <div class="pack-item done">
+                <div class="pack-check"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                Passport
+              </div>
+              <div class="pack-item done">
+                <div class="pack-check"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                Travel insurance
+              </div>
+              <div class="pack-item">
+                <div class="pack-check"></div>
+                Rain jacket — Kyoto gets wet in March
+                <div class="pack-essential">Essential</div>
+              </div>
+              <div class="pack-item">
+                <div class="pack-check"></div>
+                IC card (Suica) — pre-load before landing
+                <div class="pack-essential">Essential</div>
+              </div>
+              <div class="pack-item">
+                <div class="pack-check"></div>
+                Universal adapter (Japan uses Type A)
+              </div>
+            </div>
+            <div class="pack-see-all">See all 18 items →</div>
+          </div>
+
+          <!-- Micro-stops summary -->
+          <div class="stops-card">
+            <div class="stops-head">
+              <div class="stops-title">My stops · 5 flagged</div>
+              <div class="gc-action" style="font-family:'DM Mono',monospace;font-size:8px;color:var(--accent-dark);cursor:pointer;">See all →</div>
+            </div>
+            <div class="stops-items">
+              <div class="stops-item">
+                <div class="stops-dot"></div>
+                <div class="stops-name">Ceramic shop on Teramachi</div>
+                <div class="stops-day">Day 3</div>
+              </div>
+              <div class="stops-item">
+                <div class="stops-dot"></div>
+                <div class="stops-name">Bug spray before temple</div>
+                <div class="stops-day">Day 3</div>
+              </div>
+              <div class="stops-item">
+                <div class="stops-dot"></div>
+                <div class="stops-name">Souvenir for Mika</div>
+                <div class="stops-day">Day 5</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Persona — softened -->
+          <div class="persona-card">
+            <div class="pc-eyebrow">How you travel</div>
+            <div class="pc-quote">"Will walk 40 min to avoid a tourist menu."</div>
+            <div class="pc-tags">
+              <div class="pc-tag">counter seats</div>
+              <div class="pc-tag">local only</div>
+              <div class="pc-tag">slow mornings</div>
+              <div class="pc-tag">no queues</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Past trips -->
+      <div class="past-section">
+        <div class="past-label">Past trips</div>
+        <div class="past-row">
+          <div class="past-card"><img src="https://images.unsplash.com/photo-1534430480872-3498386e7856?w=400&q=70&auto=format&fit=crop" alt="Seoul"><div class="past-card-overlay"></div><div class="past-card-body"><div class="pc-city">Seoul</div><div class="pc-date">Nov 2024 · 6 days</div></div></div>
+          <div class="past-card"><img src="https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=400&q=70&auto=format&fit=crop" alt="Barcelona"><div class="past-card-overlay"></div><div class="past-card-body"><div class="pc-city">Barcelona</div><div class="pc-date">Aug 2024 · 5 days</div></div></div>
+          <div class="past-card"><img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&q=70&auto=format&fit=crop" alt="Kyoto"><div class="past-card-overlay"></div><div class="past-card-body"><div class="pc-city">Kyoto</div><div class="pc-date">Apr 2024 · 4 days</div></div></div>
+          <div class="past-card"><img src="https://images.unsplash.com/photo-1548013146-72479768bada?w=400&q=70&auto=format&fit=crop" alt="Lisbon"><div class="past-card-overlay"></div><div class="past-card-body"><div class="pc-city">Lisbon</div><div class="pc-date">Jan 2024 · 7 days</div></div></div>
+          <div class="past-card"><img src="https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400&q=70&auto=format&fit=crop" alt="Paris"><div class="past-card-overlay"></div><div class="past-card-body"><div class="pc-city">Paris</div><div class="pc-date">Oct 2023 · 5 days</div></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function setMode(mode){
+  document.documentElement.dataset.mode = mode;
+  document.getElementById('btnGroup').classList.toggle('active', mode==='group');
+  document.getElementById('btnSolo').classList.toggle('active', mode==='solo');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-tab="itinerary">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Solo View</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#F7F4EF;--bg-card:#FFFFFF;--bg-raised:#EDE8E0;--bg-stone:#EAE4DA;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --gold:#A07830;--gold-light:#F5EDD8;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --info:#2E6A9C;--info-bg:#DCEEF8;
+  --warning:#8C6A1A;--warning-bg:#F5EDD8;
+  --shadow-sm:0 2px 8px rgba(26,22,18,0.06);
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);
+  --shadow-xl:0 32px 80px rgba(26,22,18,0.14);
+}
+[data-theme="dark"]{
+  --bg:#0C0A08;--bg-card:#161210;--bg-raised:#1A1510;--bg-stone:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --gold:#C8A96E;--gold-light:rgba(200,169,110,0.12);
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --info:#4A84A8;--info-bg:rgba(74,132,168,0.12);
+  --warning:#C8A96E;--warning-bg:rgba(200,169,110,0.12);
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);}
+
+/* ── LAYOUT ── */
+.shell{display:flex;align-items:flex-start;justify-content:center;gap:28px;min-height:100vh;padding:40px 20px 60px;flex-wrap:wrap;}
+.col{display:flex;flex-direction:column;gap:0;align-items:center;}
+.panel-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);text-align:center;margin-bottom:10px;}
+
+/* ── PHONE ── */
+.phone{width:375px;height:760px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:44px;overflow:hidden;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;position:relative;flex-shrink:0;}
+[data-theme="dark"] .phone{background:var(--bg-stone);}
+
+/* Status bar */
+.sbar{padding:14px 24px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.sbar-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-100);}
+.sbar-icons{display:flex;gap:5px;align-items:center;color:var(--ink-400);}
+
+/* ── HERO ── */
+.hero{height:190px;position:relative;overflow:hidden;flex-shrink:0;}
+.hero img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.5s;}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.92) 0%,rgba(14,10,6,0.15) 55%);}
+.hero-body{position:absolute;bottom:0;left:0;right:0;padding:14px 20px 0;}
+.hero-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:4px;}
+.hero-city{font-family:'Lora',serif;font-size:20px;font-weight:500;color:#fff;letter-spacing:-0.02em;line-height:1.1;margin-bottom:1px;}
+.hero-meta{font-size:11px;color:rgba(255,255,255,0.55);font-weight:300;margin-bottom:10px;}
+
+/* Day strip */
+.day-strip{display:flex;gap:0;overflow-x:auto;padding:0 16px;}
+.day-strip::-webkit-scrollbar{display:none;}
+.day-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.4);padding:7px 9px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0;}
+.day-btn:hover{color:rgba(255,255,255,0.7);}
+.day-btn.active{color:rgba(255,255,255,0.9);border-bottom-color:rgba(255,255,255,0.7);}
+
+/* ── ENERGY STRIP ── */
+.energy{padding:10px 20px;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.energy-label{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-600);margin-bottom:5px;}
+.energy-track{height:3px;background:var(--ink-800);border-radius:100px;overflow:hidden;position:relative;}
+[data-theme="dark"] .energy-track{background:var(--ink-700);}
+.energy-fill{height:100%;width:100%;border-radius:100px;background:linear-gradient(to right,var(--success),var(--accent),var(--warning));}
+.energy-marker{position:absolute;top:50%;left:68%;width:8px;height:8px;border-radius:50%;background:var(--ink-100);border:1.5px solid var(--bg-card);transform:translate(-50%,-50%);}
+.energy-note{font-size:10px;color:var(--ink-500);font-style:italic;margin-top:5px;font-weight:300;}
+
+/* ── SCROLLABLE CONTENT ── */
+.scroll-body{flex:1;overflow-y:auto;overflow-x:hidden;}
+.scroll-body::-webkit-scrollbar{width:3px;}
+.scroll-body::-webkit-scrollbar-thumb{background:var(--ink-700);border-radius:100px;}
+
+/* ── SLOTS ── */
+.slot{border-bottom:1px solid var(--ink-800);cursor:pointer;transition:background 0.15s;}
+[data-theme="dark"] .slot{border-bottom-color:var(--ink-700);}
+.slot.done{opacity:0.55;}
+.slot.now .slot-accent{display:block;}
+.slot-accent{display:none;height:2px;background:var(--accent);}
+.slot-time-row{display:flex;align-items:center;gap:8px;padding:10px 20px 0;}
+.slot-time{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);}
+.slot-time-line{flex:1;height:1px;background:var(--ink-800);}
+[data-theme="dark"] .slot-time-line{background:var(--ink-700);}
+.slot-body{padding:7px 20px 12px;}
+.slot-card-inner{border-radius:14px;overflow:hidden;}
+.slot-photo{height:100px;overflow:hidden;position:relative;}
+.slot-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.slot:hover .slot-photo img{transform:scale(1.04);}
+.slot-photo-badge{position:absolute;top:8px;right:8px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:100px;backdrop-filter:blur(4px);}
+.slot-photo-badge.booked{background:rgba(61,122,82,0.9);color:#fff;}
+.slot-photo-badge.book{background:rgba(26,22,18,0.65);color:rgba(255,255,255,0.9);}
+.slot-photo-badge.done-badge{background:rgba(26,22,18,0.5);color:rgba(255,255,255,0.65);}
+.slot-content{background:var(--bg-raised);padding:10px 12px;border-radius:0 0 14px 14px;}
+[data-theme="dark"] .slot-content{background:var(--bg-stone);}
+.slot.now .slot-content{background:var(--accent-light);}
+[data-theme="dark"] .slot.now .slot-content{background:rgba(201,104,72,0.1);}
+.slot-name{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:2px;letter-spacing:-0.01em;}
+.slot-why{font-size:11px;color:var(--ink-400);font-style:italic;font-weight:300;margin-bottom:7px;line-height:1.45;}
+.slot-why strong{font-style:normal;font-weight:500;color:var(--ink-300);}
+.slot-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.slot-chips{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+.chip{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.04em;padding:2px 7px;border-radius:100px;}
+.chip.local{color:var(--success);background:var(--success-bg);}
+.chip.src{color:var(--info);background:var(--info-bg);}
+.chip.busy{color:var(--warning);background:var(--warning-bg);}
+.slot-actions{display:flex;gap:5px;flex-shrink:0;}
+.slot-action-btn{width:26px;height:26px;border-radius:50%;background:var(--bg-card);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-500);transition:all 0.15s;flex-shrink:0;}
+[data-theme="dark"] .slot-action-btn{background:var(--bg-raised);}
+.slot-action-btn:hover{border-color:var(--ink-400);color:var(--ink-200);}
+.slot-nudge{font-size:10px;color:var(--ink-500);font-weight:300;display:flex;align-items:center;gap:4px;margin-top:6px;font-style:italic;}
+.slot-nudge.warn{color:var(--accent-dark);}
+
+/* Micro-stop in spine */
+.microstop-row{display:flex;align-items:center;gap:10px;padding:6px 20px;}
+.ms-dot{width:8px;height:8px;border-radius:50%;border:1.5px dashed var(--gold);flex-shrink:0;margin-left:6px;}
+.ms-label{font-size:10px;color:var(--ink-500);font-style:italic;flex:1;}
+.ms-done-check{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--ink-600);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+
+/* Transit */
+.transit{display:flex;align-items:center;gap:6px;padding:4px 20px;opacity:0.6;}
+.transit-txt{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{border-top:1px solid var(--ink-700);background:var(--bg-card);flex-shrink:0;display:flex;flex-direction:column;}
+[data-theme="dark"] .bottom-nav{background:var(--bg-stone);}
+
+/* Trip tab strip — text only, below hero */
+.trip-tabs{display:flex;border-bottom:1px solid var(--ink-700);background:var(--bg-card);flex-shrink:0;}
+[data-theme="dark"] .trip-tabs{background:var(--bg-stone);}
+.trip-tab{flex:1;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);padding:9px 4px;text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;}
+.trip-tab:hover{color:var(--ink-300);}
+.trip-tab.active{color:var(--accent-dark);border-bottom-color:var(--accent);}
+
+/* Back header */
+.trip-header{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.trip-back{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-400);cursor:pointer;transition:color 0.15s;}
+.trip-back:hover{color:var(--ink-100);}
+.trip-back-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;}
+.trip-overflow{width:26px;height:26px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-500);}
+[data-theme="dark"] .trip-overflow{background:var(--bg-stone);}
+
+/* ── MAP VIEW ── */
+.map-view{flex:1;position:relative;overflow:hidden;display:none;flex-direction:column;}
+.map-canvas{flex:1;position:relative;background:#E8E4DC;}
+[data-theme="dark"] .map-canvas{background:#1A1612;}
+.map-base{width:100%;height:100%;object-fit:cover;display:block;opacity:0.85;}
+[data-theme="dark"] .map-base{opacity:0.4;filter:invert(1) hue-rotate(180deg);}
+
+/* Pins */
+.map-pin{position:absolute;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:translate(-50%,-100%);}
+.pin-bubble{width:28px;height:28px;border-radius:50% 50% 50% 4px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'DM Mono',monospace;font-size:10px;font-weight:400;box-shadow:var(--shadow-md);transform:rotate(-45deg);}
+.pin-bubble span{transform:rotate(45deg);display:block;}
+.pin-bubble.done{background:var(--ink-500);}
+.pin-bubble.now-pin{background:var(--accent);box-shadow:0 0 0 4px var(--accent-light),var(--shadow-md);}
+.pin-bubble.micro{width:20px;height:20px;border-radius:50%;background:transparent;border:2px dashed var(--gold);box-shadow:none;}
+
+/* Map popup */
+.map-popup{position:absolute;bottom:16px;left:12px;right:12px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow-lg);z-index:20;display:none;}
+[data-theme="dark"] .map-popup{background:var(--bg-stone);}
+.map-popup.visible{display:block;}
+.mp-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.mp-name{font-size:13px;font-weight:500;color:var(--ink-100);}
+.mp-close{width:20px;height:20px;border-radius:50%;background:var(--bg-raised);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-500);}
+.mp-why{font-size:11px;color:var(--ink-400);font-style:italic;margin-bottom:10px;}
+.mp-actions{display:flex;gap:7px;}
+.mp-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:6px 12px;border-radius:100px;cursor:pointer;border:1px solid var(--ink-700);background:var(--bg-raised);color:var(--ink-400);transition:all 0.15s;}
+[data-theme="dark"] .mp-btn{background:var(--bg-stone);}
+.mp-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.mp-btn:hover{border-color:var(--ink-400);}
+
+/* ── CALENDAR VIEW ── */
+.cal-view{flex:1;display:none;flex-direction:column;overflow:hidden;}
+.cal-header{padding:14px 20px 10px;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.cal-month{font-family:'Lora',serif;font-size:16px;font-weight:500;color:var(--ink-100);margin-bottom:8px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
+.cal-dow{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-600);text-align:center;padding:3px 0;}
+.cal-day{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-400);text-align:center;padding:5px 2px;border-radius:8px;cursor:pointer;position:relative;}
+.cal-day:hover{background:var(--bg-raised);}
+[data-theme="dark"] .cal-day:hover{background:var(--bg-stone);}
+.cal-day.today{color:var(--ink-100);font-weight:500;}
+.cal-day.in-trip{background:var(--accent-light);color:var(--accent-dark);}
+[data-theme="dark"] .cal-day.in-trip{background:rgba(201,104,72,0.15);}
+.cal-day.today.in-trip{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(184,92,63,0.3);}
+.cal-day-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);margin:1px auto 0;}
+.cal-scroll{flex:1;overflow-y:auto;padding:14px 20px;}
+.cal-day-header{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:8px;margin-top:14px;}
+.cal-day-header:first-child{margin-top:0;}
+.cal-slot-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--ink-800);}
+[data-theme="dark"] .cal-slot-row{border-bottom-color:var(--ink-700);}
+.cal-slot-row:last-child{border-bottom:none;}
+.cal-time{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);width:34px;flex-shrink:0;}
+.cal-slot-photo{width:32px;height:32px;border-radius:7px;overflow:hidden;flex-shrink:0;}
+.cal-slot-photo img{width:100%;height:100%;object-fit:cover;}
+.cal-slot-name{font-size:12px;color:var(--ink-200);flex:1;}
+.cal-slot-chip{font-family:'DM Mono',monospace;font-size:7px;padding:2px 7px;border-radius:100px;}
+.cal-slot-chip.booked{background:var(--success-bg);color:var(--success);}
+.cal-slot-chip.book{background:var(--accent-light);color:var(--accent-dark);}
+.cal-slot-chip.free{background:var(--bg-raised);color:var(--ink-500);}
+[data-theme="dark"] .cal-slot-chip.free{background:var(--bg-stone);}
+.cal-export{margin:14px 0 0;display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-raised);border-radius:12px;cursor:pointer;}
+[data-theme="dark"] .cal-export{background:var(--bg-stone);}
+.cal-export-label{font-size:12px;color:var(--ink-300);}
+.cal-export-sub{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);}
+
+/* ── CHAT VIEW ── */
+.chat-view{flex:1;display:none;flex-direction:column;overflow:hidden;}
+.chat-header{padding:12px 20px;border-bottom:1px solid var(--ink-700);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.chat-header-icon{width:30px;height:30px;border-radius:8px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;}
+.chat-header-title{font-size:13px;font-weight:500;color:var(--ink-100);}
+.chat-header-sub{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);}
+.chat-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
+.chat-msg{display:flex;flex-direction:column;max-width:88%;}
+.chat-msg.user{align-self:flex-end;align-items:flex-end;}
+.chat-msg.bot{align-self:flex-start;align-items:flex-start;}
+.chat-bubble{border-radius:16px;padding:10px 13px;font-size:12px;line-height:1.5;}
+.chat-msg.user .chat-bubble{background:var(--accent);color:#fff;border-radius:16px 16px 4px 16px;}
+.chat-msg.bot .chat-bubble{background:var(--bg-raised);color:var(--ink-200);border-radius:16px 16px 16px 4px;}
+[data-theme="dark"] .chat-msg.bot .chat-bubble{background:var(--bg-stone);}
+
+/* Bot renders — special message types */
+.bot-render{background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:14px;overflow:hidden;max-width:100%;margin-top:4px;}
+[data-theme="dark"] .bot-render{background:var(--bg-stone);}
+.bot-render-header{padding:10px 12px 8px;border-bottom:1px solid var(--ink-700);}
+.bot-render-type{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-600);margin-bottom:3px;}
+.bot-render-title{font-size:12px;font-weight:500;color:var(--ink-100);}
+.bot-render-body{padding:10px 12px;}
+
+/* Swap suggestion render */
+.swap-option{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--ink-800);}
+[data-theme="dark"] .swap-option{border-bottom-color:var(--ink-700);}
+.swap-option:last-child{border-bottom:none;}
+.swap-photo{width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.swap-photo img{width:100%;height:100%;object-fit:cover;}
+.swap-body{flex:1;}
+.swap-name{font-size:11px;font-weight:500;color:var(--ink-200);}
+.swap-why{font-size:9px;color:var(--ink-500);font-style:italic;}
+.swap-accept{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;padding:4px 9px;border-radius:100px;background:var(--accent-light);color:var(--accent-dark);cursor:pointer;flex-shrink:0;border:none;}
+
+/* Nearby render */
+.nearby-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--ink-800);}
+[data-theme="dark"] .nearby-row{border-bottom-color:var(--ink-700);}
+.nearby-row:last-child{border-bottom:none;}
+.nearby-dist{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);width:28px;flex-shrink:0;}
+.nearby-name{font-size:11px;color:var(--ink-200);flex:1;}
+.nearby-type{font-family:'DM Mono',monospace;font-size:7px;color:var(--ink-600);}
+
+/* Replan render */
+.replan-day{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ink-800);}
+[data-theme="dark"] .replan-day{border-bottom-color:var(--ink-700);}
+.replan-day:last-child{border-bottom:none;}
+.replan-day-name{font-size:11px;color:var(--ink-200);}
+.replan-day-change{font-size:10px;color:var(--success);font-style:italic;}
+.replan-accept-row{display:flex;gap:7px;margin-top:10px;}
+.replan-btn{flex:1;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:8px;border-radius:100px;cursor:pointer;border:1px solid var(--ink-700);text-align:center;}
+.replan-btn.accept{background:var(--accent);border-color:var(--accent);color:#fff;}
+.replan-btn.reject{background:var(--bg-raised);color:var(--ink-400);}
+
+/* Chat input bar */
+.chat-input-bar{padding:10px 16px 16px;border-top:1px solid var(--ink-700);display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.chat-input-field{flex:1;background:var(--bg-raised);border:1.5px solid var(--ink-700);border-radius:100px;padding:10px 14px;font-size:12px;font-family:'Sora',sans-serif;color:var(--ink-100);outline:none;transition:border-color 0.2s;}
+[data-theme="dark"] .chat-input-field{background:var(--bg-stone);}
+.chat-input-field::placeholder{color:var(--ink-500);}
+.chat-input-field:focus{border-color:var(--accent);}
+.chat-send{width:34px;height:34px;border-radius:50%;background:var(--accent);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+
+/* Quick chips above chat */
+.chat-chips{padding:8px 16px 0;display:flex;gap:6px;overflow-x:auto;flex-shrink:0;}
+.chat-chips::-webkit-scrollbar{display:none;}
+.chat-chip{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;white-space:nowrap;padding:5px 11px;border-radius:100px;background:var(--bg-raised);border:1px solid var(--ink-700);color:var(--ink-400);cursor:pointer;flex-shrink:0;transition:all 0.15s;}
+[data-theme="dark"] .chat-chip{background:var(--bg-stone);}
+.chat-chip:hover{border-color:var(--accent);color:var(--accent-dark);}
+
+/* ── VISIBILITY LOGIC ── */
+[data-tab="itinerary"] .itinerary-view{display:flex;}
+[data-tab="map"] .map-view{display:flex;}
+[data-tab="calendar"] .cal-view{display:flex;}
+[data-tab="chat"] .chat-view{display:flex;}
+.itinerary-view{flex:1;display:none;flex-direction:column;overflow:hidden;}
+
+/* Theme toggle */
+.theme-fab{position:fixed;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);z-index:200;}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+</style>
+</head>
+<body>
+
+<button class="theme-fab" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+  <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+  <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<div class="shell">
+
+<!-- ═══════════════════════════════════════════
+     SINGLE INTERACTIVE PHONE — all 4 tabs
+════════════════════════════════════════════ -->
+<div class="col">
+<div class="panel-label" id="tabLabel">Itinerary · Day view</div>
+<div class="phone" id="mainPhone">
+  <div class="sbar">
+    <span class="sbar-time">14:22</span>
+    <div class="sbar-icons">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M1.5 8.5c5.5-5.5 15.5-5.5 21 0l-2 2c-4.5-4.5-12.5-4.5-17 0l-2-2z"/><path d="M5.5 12.5c3.5-3.5 9.5-3.5 13 0l-2 2c-2.5-2.5-6.5-2.5-9 0l-2-2z"/><circle cx="12" cy="18" r="2"/></svg>
+      <svg width="16" height="11" viewBox="0 0 25 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="0" y="2" width="18" height="8" rx="2"/><rect x="18.5" y="4" width="3" height="4" rx="1"/><rect x="1.5" y="3.5" width="13" height="5" rx="1" fill="currentColor" stroke="none"/></svg>
+    </div>
+  </div>
+
+  <!-- HERO — shared across tabs -->
+  <div class="hero">
+    <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=700&q=80&auto=format&fit=crop" alt="Kyoto">
+    <div class="hero-overlay"></div>
+    <div class="hero-body">
+      <div class="hero-eyebrow">Solo · Day 4 of 7</div>
+      <div class="hero-city">Kyoto</div>
+      <div class="hero-meta">Friday, March 15 · 4 stops · 2 micro-stops</div>
+
+    </div>
+  </div>
+
+  <!-- Trip header: back arrow + overflow -->
+  <div class="trip-header">
+    <div class="trip-back">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <span class="trip-back-label">Japan 2025</span>
+    </div>
+    <div class="trip-overflow">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    </div>
+  </div>
+
+  <!-- Trip tabs: text strip -->
+  <div class="trip-tabs">
+    <div class="trip-tab active" id="tab-itinerary" onclick="setTab('itinerary')">Day</div>
+    <div class="trip-tab" id="tab-map" onclick="setTab('map')">Map</div>
+    <div class="trip-tab" id="tab-calendar" onclick="setTab('calendar')">Calendar</div>
+    <div class="trip-tab" id="tab-chat" onclick="setTab('chat')">Chat</div>
+  </div>
+
+  <!-- Day strip — below tabs, inside itinerary tab only -->
+  <div class="day-strip" id="dayStrip" style="background:var(--bg-raised);border-bottom:1px solid var(--ink-700);padding:6px 16px;">
+    <div class="day-btn" style="color:var(--ink-500);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:4px 8px;cursor:pointer;">Tue</div>
+    <div class="day-btn" style="color:var(--ink-500);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:4px 8px;cursor:pointer;">Wed</div>
+    <div class="day-btn" style="color:var(--ink-500);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:4px 8px;cursor:pointer;">Thu</div>
+    <div class="day-btn" style="color:var(--ink-100);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:4px 8px;cursor:pointer;border-bottom:2px solid var(--accent);">Fri ·</div>
+    <div class="day-btn" style="color:var(--ink-500);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:4px 8px;cursor:pointer;">Sat</div>
+    <div class="day-btn" style="color:var(--ink-500);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:4px 8px;cursor:pointer;">Sun</div>
+    <div class="day-btn" style="color:var(--ink-500);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:4px 8px;cursor:pointer;">Mon</div>
+  </div>
+
+  <!-- ── ITINERARY TAB ── -->
+  <div class="itinerary-view">
+    <div class="energy">
+      <div class="energy-label">Energy · Today</div>
+      <div class="energy-track">
+        <div class="energy-fill"></div>
+        <div class="energy-marker"></div>
+      </div>
+      <div class="energy-note">Slower afternoon built in — you ran hard the last two days.</div>
+    </div>
+
+    <div class="scroll-body">
+
+      <!-- Slot 1 — done -->
+      <div class="slot done">
+        <div class="slot-accent"></div>
+        <div class="slot-time-row"><div class="slot-time">06:30</div><div class="slot-time-line"></div></div>
+        <div class="slot-body">
+          <div class="slot-card-inner">
+            <div class="slot-photo" style="height:70px;">
+              <img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=400&q=70&auto=format&fit=crop" alt="">
+              <div class="slot-photo-badge done-badge">Visited</div>
+            </div>
+            <div class="slot-content" style="padding:8px 12px;">
+              <div class="slot-name">Fushimi Inari</div>
+              <div class="slot-footer">
+                <div class="slot-chips"><span class="chip local">Local</span></div>
+                <div class="slot-actions">
+                  <div class="slot-action-btn" title="Flag">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Micro-stop -->
+      <div class="microstop-row">
+        <div class="ms-dot"></div>
+        <div class="ms-label">Grab bug spray — 7-Eleven on Tofukuji</div>
+        <div class="ms-done-check">
+          <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+
+      <div class="transit">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <div class="transit-txt">22 min walk · nice neighborhood</div>
+      </div>
+
+      <!-- Slot 2 — now active -->
+      <div class="slot now">
+        <div class="slot-accent"></div>
+        <div class="slot-time-row"><div class="slot-time">10:00 · Now</div><div class="slot-time-line"></div></div>
+        <div class="slot-body">
+          <div class="slot-card-inner">
+            <div class="slot-photo">
+              <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=70&auto=format&fit=crop" alt="">
+              <div class="slot-photo-badge booked">Booked</div>
+            </div>
+            <div class="slot-content">
+              <div class="slot-name">Kinkaku-ji</div>
+              <div class="slot-why">you prefer <strong>early entry</strong> — this is when it breathes</div>
+              <div class="slot-footer">
+                <div class="slot-chips">
+                  <span class="chip local">Local</span>
+                  <span class="chip src">Tabelog · 4.2k</span>
+                  <span class="chip busy">Busy 11–14</span>
+                </div>
+                <div class="slot-actions">
+                  <div class="slot-action-btn" title="Swap" onclick="setTab('chat')">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                  </div>
+                  <div class="slot-action-btn" title="Map" onclick="setTab('map')">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <div class="slot-action-btn" title="Flag">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div class="slot-nudge">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Worth 90 minutes — no need to rush
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="transit">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <div class="transit-txt">18 min taxi · ¥1,200</div>
+      </div>
+
+      <!-- Slot 3 -->
+      <div class="slot">
+        <div class="slot-accent"></div>
+        <div class="slot-time-row"><div class="slot-time">14:00</div><div class="slot-time-line"></div></div>
+        <div class="slot-body">
+          <div class="slot-card-inner">
+            <div class="slot-photo" style="height:80px;">
+              <img src="https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=400&q=70&auto=format&fit=crop" alt="">
+            </div>
+            <div class="slot-content">
+              <div class="slot-name">Philosopher's Path</div>
+              <div class="slot-why">open deliberately — no slot after, just time to walk</div>
+              <div class="slot-footer">
+                <div class="slot-chips"><span class="chip local">Local</span></div>
+                <div class="slot-actions">
+                  <div class="slot-action-btn" title="Swap" onclick="setTab('chat')">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                  </div>
+                  <div class="slot-action-btn" title="Flag">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Micro-stop 2 -->
+      <div class="microstop-row">
+        <div class="ms-dot"></div>
+        <div class="ms-label">Ceramic shop on Teramachi · browse only</div>
+        <div class="ms-done-check"></div>
+      </div>
+
+      <div class="transit">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <div class="transit-txt">28 min taxi · ¥1,800</div>
+      </div>
+
+      <!-- Slot 4 -->
+      <div class="slot">
+        <div class="slot-accent"></div>
+        <div class="slot-time-row"><div class="slot-time">19:00</div><div class="slot-time-line"></div></div>
+        <div class="slot-body">
+          <div class="slot-card-inner">
+            <div class="slot-photo">
+              <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=70&auto=format&fit=crop" alt="">
+              <div class="slot-photo-badge book">Book ahead</div>
+            </div>
+            <div class="slot-content">
+              <div class="slot-name">Pontocho izakaya</div>
+              <div class="slot-why">you always pick the <strong>counter</strong> — 6-seat bar, perfect solo</div>
+              <div class="slot-footer">
+                <div class="slot-chips">
+                  <span class="chip local">Local</span>
+                  <span class="chip src">Tabelog · 3.8k</span>
+                  <span class="chip busy">Full by 20:00</span>
+                </div>
+                <div class="slot-actions">
+                  <div class="slot-action-btn" title="Swap" onclick="setTab('chat')">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                  </div>
+                  <div class="slot-action-btn" title="Flag">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div class="slot-nudge warn">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                Worth booking today — fills early on weekends
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="height:16px;"></div>
+    </div>
+  </div>
+
+  <!-- ── MAP TAB ── -->
+  <div class="map-view">
+    <div class="map-canvas" onclick="closePopup()">
+      <!-- Faux map background -->
+      <svg width="100%" height="100%" style="position:absolute;inset:0;" viewBox="0 0 375 400" preserveAspectRatio="xMidYMid slice">
+        <rect width="375" height="400" fill="#EAE6DC"/>
+        <!-- Roads -->
+        <line x1="0" y1="140" x2="375" y2="140" stroke="#D4CFC5" stroke-width="18"/>
+        <line x1="0" y1="240" x2="375" y2="240" stroke="#D4CFC5" stroke-width="12"/>
+        <line x1="120" y1="0" x2="120" y2="400" stroke="#D4CFC5" stroke-width="18"/>
+        <line x1="260" y1="0" x2="260" y2="400" stroke="#D4CFC5" stroke-width="12"/>
+        <line x1="0" y1="310" x2="375" y2="310" stroke="#D4CFC5" stroke-width="8"/>
+        <line x1="190" y1="0" x2="190" y2="400" stroke="#D4CFC5" stroke-width="8"/>
+        <!-- Blocks -->
+        <rect x="130" y="150" width="120" height="80" rx="4" fill="#DDD8CC" opacity="0.7"/>
+        <rect x="20" y="155" width="90" height="75" rx="4" fill="#DDD8CC" opacity="0.6"/>
+        <rect x="270" y="150" width="90" height="80" rx="4" fill="#DDD8CC" opacity="0.6"/>
+        <rect x="130" y="250" width="50" height="50" rx="4" fill="#DDD8CC" opacity="0.5"/>
+        <rect x="200" y="250" width="50" height="50" rx="4" fill="#DDD8CC" opacity="0.5"/>
+        <!-- Labels -->
+        <text x="190" y="200" font-family="monospace" font-size="8" fill="#B0AAA0" text-anchor="middle">KAWARAMACHI</text>
+        <text x="55" y="200" font-family="monospace" font-size="8" fill="#B0AAA0" text-anchor="middle">NISHIKI</text>
+      </svg>
+
+      <!-- Pins -->
+      <div class="map-pin" style="left:30%;top:32%;" onclick="showPopup(event,'Fushimi Inari','left before the crowds','done')">
+        <div class="pin-bubble done"><span>1</span></div>
+      </div>
+      <div class="map-pin" style="left:55%;top:24%;" onclick="showPopup(event,'Kinkaku-ji','weekday · thins out by 15:00','now')">
+        <div class="pin-bubble now-pin"><span>2</span></div>
+      </div>
+      <div class="map-pin" style="left:42%;top:55%;" onclick="showPopup(event,'Philosopher\'s Path','left open deliberately','upcoming')">
+        <div class="pin-bubble"><span>3</span></div>
+      </div>
+      <div class="map-pin" style="left:68%;top:65%;" onclick="showPopup(event,'Pontocho izakaya','6-seat bar — perfect solo','upcoming')">
+        <div class="pin-bubble"><span>4</span></div>
+      </div>
+      <!-- Micro-stop -->
+      <div class="map-pin" style="left:36%;top:42%;" onclick="showPopup(event,'Ceramic shop · Teramachi','micro-stop · browse only','micro')">
+        <div class="pin-bubble micro"></div>
+      </div>
+    </div>
+
+    <!-- Popup -->
+    <div class="map-popup" id="mapPopup">
+      <div class="mp-header">
+        <div>
+          <div class="mp-name" id="popupName">Kinkaku-ji</div>
+          <div class="mp-why" id="popupWhy">weekday · thins out by 15:00</div>
+        </div>
+        <div class="mp-close" onclick="closePopup()">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+      </div>
+      <div class="mp-actions">
+        <div class="mp-btn">Directions</div>
+        <div class="mp-btn">Nearby alts</div>
+        <div class="mp-btn primary" onclick="setTab('chat')">Swap this</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CALENDAR TAB ── -->
+  <div class="cal-view">
+    <div class="cal-header">
+      <div class="cal-month">March 2025</div>
+      <div class="cal-grid">
+        <div class="cal-dow">M</div><div class="cal-dow">T</div><div class="cal-dow">W</div><div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div><div class="cal-dow">S</div>
+        <!-- Week 1 -->
+        <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day">1</div><div class="cal-day">2</div><div class="cal-day">3</div>
+        <!-- Week 2 -->
+        <div class="cal-day">4</div><div class="cal-day">5</div><div class="cal-day">6</div><div class="cal-day">7</div><div class="cal-day">8</div><div class="cal-day">9</div><div class="cal-day">10</div>
+        <!-- Week 3 -->
+        <div class="cal-day">11</div><div class="cal-day">12</div><div class="cal-day">13</div><div class="cal-day in-trip">14<div class="cal-day-dot"></div></div><div class="cal-day in-trip">15<div class="cal-day-dot"></div></div><div class="cal-day in-trip">16<div class="cal-day-dot"></div></div><div class="cal-day in-trip">17<div class="cal-day-dot"></div></div>
+        <!-- Week 4 -->
+        <div class="cal-day in-trip">18<div class="cal-day-dot"></div></div><div class="cal-day in-trip">19<div class="cal-day-dot"></div></div><div class="cal-day in-trip">20<div class="cal-day-dot"></div></div><div class="cal-day in-trip">21<div class="cal-day-dot"></div></div><div class="cal-day today in-trip">22<div class="cal-day-dot"></div></div><div class="cal-day">23</div><div class="cal-day">24</div>
+        <!-- Week 5 -->
+        <div class="cal-day">25</div><div class="cal-day">26</div><div class="cal-day">27</div><div class="cal-day">28</div><div class="cal-day">29</div><div class="cal-day">30</div><div class="cal-day">31</div>
+      </div>
+    </div>
+    <div class="cal-scroll">
+      <div class="cal-day-header">Thu · Mar 14 · Tokyo · Day 1</div>
+      <div class="cal-slot-row">
+        <div class="cal-time">09:00</div>
+        <div class="cal-slot-photo"><img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=100&q=60&auto=format&fit=crop" alt=""></div>
+        <div class="cal-slot-name">Shibuya crossing</div>
+        <div class="cal-slot-chip free">Free</div>
+      </div>
+      <div class="cal-slot-row">
+        <div class="cal-time">13:00</div>
+        <div class="cal-slot-photo"><img src="https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=100&q=60&auto=format&fit=crop" alt=""></div>
+        <div class="cal-slot-name">Omoide Yokocho lunch</div>
+        <div class="cal-slot-chip free">Free</div>
+      </div>
+      <div class="cal-slot-row">
+        <div class="cal-time">20:00</div>
+        <div class="cal-slot-photo"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=100&q=60&auto=format&fit=crop" alt=""></div>
+        <div class="cal-slot-name">Shinjuku standing bar</div>
+        <div class="cal-slot-chip booked">Booked</div>
+      </div>
+
+      <div class="cal-day-header">Fri · Mar 15 · Kyoto · Day 4 · Today</div>
+      <div class="cal-slot-row">
+        <div class="cal-time">06:30</div>
+        <div class="cal-slot-photo"><img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=100&q=60&auto=format&fit=crop" alt=""></div>
+        <div class="cal-slot-name">Fushimi Inari</div>
+        <div class="cal-slot-chip free">Free</div>
+      </div>
+      <div class="cal-slot-row">
+        <div class="cal-time">10:00</div>
+        <div class="cal-slot-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=100&q=60&auto=format&fit=crop" alt=""></div>
+        <div class="cal-slot-name">Kinkaku-ji</div>
+        <div class="cal-slot-chip booked">Booked</div>
+      </div>
+      <div class="cal-slot-row">
+        <div class="cal-time">19:00</div>
+        <div class="cal-slot-photo"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=100&q=60&auto=format&fit=crop" alt=""></div>
+        <div class="cal-slot-name">Pontocho izakaya</div>
+        <div class="cal-slot-chip book">Book</div>
+      </div>
+
+      <div class="cal-day-header">Sat · Mar 16 · Kyoto · Day 5</div>
+      <div class="cal-slot-row">
+        <div class="cal-time">08:00</div>
+        <div class="cal-slot-photo"><img src="https://images.unsplash.com/photo-1534430480872-3498386e7856?w=100&q=60&auto=format&fit=crop" alt=""></div>
+        <div class="cal-slot-name">Arashiyama bamboo</div>
+        <div class="cal-slot-chip free">Free</div>
+      </div>
+
+      <div class="cal-export">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <div>
+          <div class="cal-export-label">Export to calendar</div>
+          <div class="cal-export-sub">Download .ics · All 28 slots</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHAT TAB ── -->
+  <div class="chat-view">
+    <div class="chat-header">
+      <div class="chat-header-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="1.8" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </div>
+      <div>
+        <div class="chat-header-title">Overplanned</div>
+        <div class="chat-header-sub">Kyoto · Day 4 of 7</div>
+      </div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+
+      <!-- Bot briefing — rendered as structured card -->
+      <div class="chat-msg bot">
+        <div class="chat-bubble">Good morning. You're in Kyoto today — Fushimi at 6:30 was the right call. Kinkaku-ji is next at 10.</div>
+      </div>
+
+      <!-- User message -->
+      <div class="chat-msg user">
+        <div class="chat-bubble">I'm pretty tired, can we swap the afternoon?</div>
+      </div>
+
+      <!-- Bot → renders swap options as a card -->
+      <div class="chat-msg bot">
+        <div class="chat-bubble">Sure — here are two lighter options for the Philosopher's Path slot.</div>
+        <div class="bot-render">
+          <div class="bot-render-header">
+            <div class="bot-render-type">Swap · 14:00 slot · Lighter pace</div>
+            <div class="bot-render-title">2 alternatives</div>
+          </div>
+          <div class="bot-render-body">
+            <div class="swap-option">
+              <div class="swap-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=100&q=60&auto=format&fit=crop" alt=""></div>
+              <div class="swap-body">
+                <div class="swap-name">Nishiki Market wander</div>
+                <div class="swap-why">indoor · slow · no agenda · 45 min</div>
+              </div>
+              <button class="swap-accept">Swap</button>
+            </div>
+            <div class="swap-option">
+              <div class="swap-photo"><img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100&q=60&auto=format&fit=crop" alt=""></div>
+              <div class="swap-body">
+                <div class="swap-name">Coffee + rest · Kiyomachi</div>
+                <div class="swap-why">quiet side street · good for solo</div>
+              </div>
+              <button class="swap-accept">Swap</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User asks about nearby -->
+      <div class="chat-msg user">
+        <div class="chat-bubble">What's good to eat near Kinkaku-ji right now?</div>
+      </div>
+
+      <!-- Bot → renders nearby list -->
+      <div class="chat-msg bot">
+        <div class="chat-bubble">A few places within 10 min walk:</div>
+        <div class="bot-render">
+          <div class="bot-render-header">
+            <div class="bot-render-type">Nearby · Food · Now open</div>
+            <div class="bot-render-title">Near Kinkaku-ji · lunch</div>
+          </div>
+          <div class="bot-render-body">
+            <div class="nearby-row">
+              <div class="nearby-dist">4 min</div>
+              <div class="nearby-name">Unlicensed ramen counter</div>
+              <div class="nearby-type">Local · Cash only</div>
+            </div>
+            <div class="nearby-row">
+              <div class="nearby-dist">7 min</div>
+              <div class="nearby-name">Tofu kaiseki · Aritsugu</div>
+              <div class="nearby-type">Tabelog 4.1 · ¥¥</div>
+            </div>
+            <div class="nearby-row">
+              <div class="nearby-dist">9 min</div>
+              <div class="nearby-name">Yudofu lunch set</div>
+              <div class="nearby-type">Local · No queue noon</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User asks for full replan -->
+      <div class="chat-msg user">
+        <div class="chat-bubble">Actually just replan the whole afternoon, I want something slower</div>
+      </div>
+
+      <!-- Bot → renders replan proposal -->
+      <div class="chat-msg bot">
+        <div class="chat-bubble">Done — here's a lighter afternoon. Dinner slot stays as is.</div>
+        <div class="bot-render">
+          <div class="bot-render-header">
+            <div class="bot-render-type">Replan · Today · Afternoon</div>
+            <div class="bot-render-title">Slower pace · 3 changes</div>
+          </div>
+          <div class="bot-render-body">
+            <div class="replan-day">
+              <div class="replan-day-name">14:00 · Philosopher's Path</div>
+              <div class="replan-day-change">→ Nishiki Market wander</div>
+            </div>
+            <div class="replan-day">
+              <div class="replan-day-name">16:00 · (new)</div>
+              <div class="replan-day-change">Coffee break · Kiyomachi</div>
+            </div>
+            <div class="replan-day">
+              <div class="replan-day-name">19:00 · Pontocho</div>
+              <div class="replan-day-change">Unchanged</div>
+            </div>
+            <div class="replan-accept-row">
+              <div class="replan-btn accept">Apply changes</div>
+              <div class="replan-btn reject" onclick="setTab('itinerary')">Keep original</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Quick chips -->
+    <div class="chat-chips">
+      <div class="chat-chip" onclick="addMessage('What should I do right now?')">Right now?</div>
+      <div class="chat-chip" onclick="addMessage('Swap the next slot')">Swap next slot</div>
+      <div class="chat-chip" onclick="addMessage('I\\'m feeling tired')">I'm tired</div>
+      <div class="chat-chip" onclick="addMessage('Food near me')">Food nearby</div>
+      <div class="chat-chip" onclick="addMessage('Remind me to book tonight')">Remind me</div>
+    </div>
+
+    <!-- Chat input -->
+    <div class="chat-input-bar">
+      <input class="chat-input-field" id="chatField2" placeholder="What's on your mind?" onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="chat-send" onclick="sendMsg()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── PERSISTENT BOTTOM: chat input always visible ── -->
+  <div class="bottom-nav">
+    <div class="chat-chips" id="globalChips">
+      <div class="chat-chip" onclick="addMessage('What should I do right now?')">Right now?</div>
+      <div class="chat-chip" onclick="addMessage('Swap the next slot')">Swap next</div>
+      <div class="chat-chip" onclick="addMessage('I\'m feeling tired')">I'm tired</div>
+      <div class="chat-chip" onclick="addMessage('Food near me')">Food nearby</div>
+      <div class="chat-chip" onclick="addMessage('Remind me to book tonight')">Remind me</div>
+    </div>
+    <div class="chat-input-bar">
+      <input class="chat-input-field" id="chatField" placeholder="What's on your mind?" onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="chat-send" onclick="sendMsg()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div><!-- /phone -->
+</div><!-- /col -->
+</div><!-- /shell -->
+
+<script>
+var LABELS = {
+  itinerary: 'Itinerary · Day view',
+  map: 'Map · Numbered pins + micro-stops',
+  calendar: 'Calendar · Full trip + export',
+  chat: 'Chat · Bot renders structured cards'
+};
+
+function setTab(tab) {
+  document.documentElement.dataset.tab = tab;
+  ['itinerary','map','calendar','chat'].forEach(function(t){
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+  document.getElementById('tabLabel').textContent = LABELS[tab];
+  // Show day strip only on itinerary tab
+  var ds = document.getElementById('dayStrip');
+  if(ds) ds.style.display = tab==='itinerary' ? 'flex' : 'none';
+}
+
+function showPopup(e, name, why, state) {
+  e.stopPropagation();
+  document.getElementById('popupName').textContent = name;
+  document.getElementById('popupWhy').textContent = why;
+  document.getElementById('mapPopup').classList.add('visible');
+}
+function closePopup() {
+  document.getElementById('mapPopup').classList.remove('visible');
+}
+
+function addMessage(text) {
+  setTab('chat');
+  document.getElementById('chatField').value = text;
+  setTimeout(sendMsg, 100);
+}
+
+function sendMsg() {
+  var field = document.getElementById('chatField');
+  var text = field.value.trim();
+  if (!text) return;
+  var msgs = document.getElementById('chatMessages');
+  var el = document.createElement('div');
+  el.className = 'chat-msg user';
+  el.innerHTML = '<div class="chat-bubble">'+text+'</div>';
+  msgs.appendChild(el);
+  field.value = '';
+  msgs.scrollTop = msgs.scrollHeight;
+  // Simple bot reply
+  setTimeout(function(){
+    var bot = document.createElement('div');
+    bot.className = 'chat-msg bot';
+    bot.innerHTML = '<div class="chat-bubble">Got it — let me look at what fits your pace right now.</div>';
+    msgs.appendChild(bot);
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 600);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "id": "CP-1771622186557834148",
+  "timestamp": "2026-02-20T13:16:26.557834969-08:00",
+  "migration_id": "M-003",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/app/api/auth/[...nextauth]/route.ts": "DELETED",
+    "scripts/prisma-to-jsonschema.ts": "DELETED"
+  },
+  "description": "Pre-batch"
+}

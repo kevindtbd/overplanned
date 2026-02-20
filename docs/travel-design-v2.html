@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Design v2 Light</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   DESIGN TOKENS — LIGHT INVERSE
+   ============================================================ */
+:root {
+  /* Backgrounds */
+  --bg-base:       #FAF8F5;   /* warm off-white, not paper-white */
+  --bg-surface:    #FFFFFF;
+  --bg-raised:     #F3EFE9;   /* warm tinted card */
+  --bg-overlay:    #EDE8E1;
+
+  /* Accent — same dusty terracotta, reads differently on light */
+  --accent:        #B85C3F;
+  --accent-light:  #F0E0D9;   /* tint for selected states */
+  --accent-muted:  #D4886E;   /* softer version */
+  --accent-text:   #8C3A24;   /* darker for text on light */
+
+  /* Neutrals — warm not cool */
+  --ink-100:       #1C1713;   /* primary text */
+  --ink-300:       #5C5048;   /* secondary */
+  --ink-500:       #9C8E84;   /* tertiary */
+  --ink-600:       #BDB0A6;   /* placeholder */
+  --ink-700:       #D6CFC8;   /* borders */
+  --ink-800:       #EAE4DE;   /* dividers */
+  --ink-900:       #F3EFE9;   /* subtle bg */
+
+  /* Semantic */
+  --success:       #4A8A5C;
+  --success-light: #E0EEE5;
+  --warning:       #A07830;
+  --warning-light: #F2EAD8;
+  --info:          #3A6A8C;
+  --info-light:    #D8E8F2;
+
+  /* Type */
+  --font-body:  'Sora', sans-serif;
+  --font-mono:  'DM Mono', monospace;
+
+  /* Spacing */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --sp-12: 48px; --sp-16: 64px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-xl: 32px;
+
+  --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dur: 200ms;
+}
+
+/* ============================================================
+   RESET
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  background: var(--bg-base);
+  color: var(--ink-100);
+  font-family: var(--font-body);
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   PAGE
+   ============================================================ */
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--sp-12) var(--sp-8);
+}
+
+.page-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: var(--sp-2);
+}
+
+.page-title {
+  font-size: 36px;
+  font-weight: 400;
+  color: var(--ink-100);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--sp-3);
+  line-height: 1.15;
+}
+
+.page-desc {
+  font-size: 14px;
+  color: var(--ink-300);
+  font-weight: 300;
+  margin-bottom: var(--sp-12);
+  max-width: 460px;
+  line-height: 1.65;
+}
+
+.section {
+  margin-bottom: var(--sp-16);
+  padding-bottom: var(--sp-16);
+  border-bottom: 1px solid var(--ink-800);
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: var(--sp-6);
+}
+
+/* ============================================================
+   TOKEN DISPLAY
+   ============================================================ */
+.token-row {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-6);
+}
+
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--ink-800);
+  border-radius: var(--r-sm);
+  min-width: 180px;
+}
+
+.swatch-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+
+.swatch-info {}
+
+.swatch-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-100);
+  display: block;
+}
+
+.swatch-val {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-500);
+}
+
+.type-rows { display: flex; flex-direction: column; gap: 0; }
+
+.type-row-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-6);
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--ink-800);
+}
+
+.type-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-500);
+  min-width: 140px;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   TRIP CREATION FLOW — HERO SCREEN
+   ============================================================ */
+.creation-shell {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--ink-800);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+/* Top bar */
+.creation-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--sp-6);
+  border-bottom: 1px solid var(--ink-800);
+  background: var(--bg-surface);
+}
+
+.wordmark {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink-100);
+  letter-spacing: -0.03em;
+}
+
+.wordmark span { color: var(--accent); }
+
+.topbar-steps {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.step-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-700);
+  transition: all var(--dur) var(--ease);
+}
+
+.step-dot.done { background: var(--accent); }
+.step-dot.active { width: 20px; border-radius: 3px; background: var(--accent); }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.btn-ghost {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-300);
+  background: transparent;
+  border: 1px solid var(--ink-700);
+  border-radius: 100px;
+  padding: var(--sp-2) var(--sp-4);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+
+.btn-ghost:hover { border-color: var(--ink-500); color: var(--ink-100); }
+
+.btn-primary {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 100px;
+  padding: var(--sp-2) var(--sp-5);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+
+.btn-primary:hover { background: var(--accent-text); }
+
+/* Main creation layout */
+.creation-body {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  min-height: 600px;
+}
+
+/* Left: form panel */
+.creation-left {
+  padding: var(--sp-8);
+  border-right: 1px solid var(--ink-800);
+  background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.creation-step-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: var(--sp-2);
+}
+
+.creation-heading {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: var(--sp-1);
+}
+
+.creation-sub {
+  font-size: 13px;
+  color: var(--ink-400, var(--ink-300));
+  font-weight: 300;
+  line-height: 1.55;
+}
+
+/* Destination input */
+.dest-input-wrap {
+  position: relative;
+}
+
+.dest-input {
+  width: 100%;
+  padding: var(--sp-4) var(--sp-4) var(--sp-4) 40px;
+  background: var(--bg-raised);
+  border: 1.5px solid var(--ink-800);
+  border-radius: var(--r-md);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ink-100);
+  outline: none;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.dest-input:focus {
+  border-color: var(--accent-muted);
+  box-shadow: 0 0 0 3px var(--accent-light);
+  background: var(--bg-surface);
+}
+
+.dest-input::placeholder { color: var(--ink-600); }
+
+.dest-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-500);
+  font-size: 15px;
+}
+
+/* Date row */
+.date-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.field-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.date-input {
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-raised);
+  border: 1.5px solid var(--ink-800);
+  border-radius: var(--r-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-100);
+  outline: none;
+  transition: border-color var(--dur) var(--ease);
+  cursor: pointer;
+}
+
+.date-input:focus { border-color: var(--accent-muted); }
+
+/* Traveler count */
+.traveler-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4);
+  background: var(--bg-raised);
+  border: 1.5px solid var(--ink-800);
+  border-radius: var(--r-md);
+}
+
+.traveler-label {
+  font-size: 14px;
+  color: var(--ink-100);
+  font-weight: 400;
+}
+
+.traveler-sub {
+  font-size: 11px;
+  color: var(--ink-500);
+  font-weight: 300;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.counter-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-700);
+  background: var(--bg-surface);
+  color: var(--ink-300);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dur) var(--ease);
+  line-height: 1;
+}
+
+.counter-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.counter-val {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink-100);
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ============================================================
+   RIGHT PANEL: TAG DRAG FLOW
+   ============================================================ */
+.creation-right {
+  padding: var(--sp-8);
+  background: var(--bg-raised);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.tag-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.tag-panel-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.01em;
+}
+
+.tag-panel-hint {
+  font-size: 12px;
+  color: var(--ink-500);
+  font-weight: 300;
+  margin-top: var(--sp-1);
+}
+
+.tag-count-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 10px;
+  background: var(--accent-light);
+  color: var(--accent-text);
+  border-radius: 100px;
+  border: 1px solid rgba(184,92,63,0.2);
+  white-space: nowrap;
+}
+
+/* Drop zone */
+.dropzone {
+  min-height: 100px;
+  background: var(--bg-surface);
+  border: 2px dashed var(--ink-700);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-content: flex-start;
+  transition: all var(--dur) var(--ease);
+  position: relative;
+}
+
+.dropzone.drag-over {
+  border-color: var(--accent-muted);
+  background: var(--accent-light);
+}
+
+.dropzone-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.dropzone-placeholder-text {
+  font-size: 13px;
+  color: var(--ink-600);
+  font-weight: 300;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Selected tags inside dropzone */
+.selected-tag {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  animation: tagPop 0.2s var(--ease) both;
+  user-select: none;
+}
+
+.selected-tag:hover { background: var(--accent-text); }
+
+.selected-tag-remove {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+@keyframes tagPop {
+  from { transform: scale(0.85); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* Available tags pool */
+.tag-pool-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: var(--sp-3);
+}
+
+.tag-categories { display: flex; flex-direction: column; gap: var(--sp-5); }
+
+.tag-category-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-300);
+  margin-bottom: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.tag-category-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* The draggable source chip */
+.tag-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ink-700);
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-200, var(--ink-300));
+  cursor: grab;
+  transition: all var(--dur) var(--ease);
+  user-select: none;
+  position: relative;
+}
+
+.tag-chip:hover {
+  border-color: var(--accent-muted);
+  color: var(--accent-text);
+  background: var(--accent-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.tag-chip.used {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+.tag-chip-emoji { font-size: 14px; }
+
+/* Intensity dots on some tags */
+.tag-chip-intensity {
+  display: flex;
+  gap: 2px;
+  margin-left: 2px;
+}
+
+.intensity-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink-700);
+}
+
+.intensity-dot.filled { background: var(--accent); }
+
+/* ============================================================
+   VIBES STRIP (below tags, mood-based)
+   ============================================================ */
+.vibes-strip {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  background: var(--bg-surface);
+  border-radius: var(--r-md);
+  border: 1px solid var(--ink-800);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.vibe-card {
+  flex-shrink: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-sm);
+  background: var(--bg-raised);
+  border: 1.5px solid var(--ink-800);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  min-width: 110px;
+  text-align: center;
+}
+
+.vibe-card:hover {
+  border-color: var(--accent-muted);
+  background: var(--accent-light);
+}
+
+.vibe-card.selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.vibe-emoji { font-size: 22px; margin-bottom: var(--sp-2); }
+
+.vibe-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-100);
+  display: block;
+}
+
+.vibe-desc {
+  font-size: 10px;
+  color: var(--ink-500);
+  font-weight: 300;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   SCREEN 2: ITINERARY (LIGHT)
+   ============================================================ */
+.itinerary-shell {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--ink-800);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.itin-topbar {
+  padding: var(--sp-4) var(--sp-6);
+  border-bottom: 1px solid var(--ink-800);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface);
+}
+
+.itin-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.back-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 13px;
+  color: var(--ink-300);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+
+.back-pill:hover { color: var(--ink-100); }
+
+.trip-title-bar {
+  display: flex;
+  flex-direction: column;
+}
+
+.trip-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.01em;
+}
+
+.trip-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-500);
+  letter-spacing: 0.04em;
+}
+
+.itin-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.avatar-stack { display: flex; }
+
+.av {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-surface);
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -7px;
+}
+
+.av:first-child { margin-left: 0; }
+.av-a { background: #D4C5B0; color: var(--ink-100); }
+.av-b { background: #B0C8D4; color: var(--ink-100); }
+.av-c { background: var(--accent); color: #fff; }
+.av-d { background: #C4D4B0; color: var(--ink-100); }
+
+/* Day tabs */
+.day-tabs {
+  display: flex;
+  padding: 0 var(--sp-6);
+  border-bottom: 1px solid var(--ink-800);
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.day-tab {
+  padding: var(--sp-3) var(--sp-5);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-500);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: all var(--dur) var(--ease);
+}
+
+.day-tab:hover { color: var(--ink-100); }
+
+.day-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 500;
+}
+
+/* Main layout */
+.itin-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+}
+
+.itin-main {
+  padding: var(--sp-6);
+}
+
+.itin-day-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--sp-5);
+}
+
+.itin-day-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.02em;
+}
+
+.itin-day-sub {
+  font-size: 12px;
+  color: var(--ink-500);
+  font-weight: 300;
+  margin-top: var(--sp-1);
+}
+
+/* Energy bar */
+.energy-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+
+.energy-label-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  white-space: nowrap;
+}
+
+.energy-track-light {
+  flex: 1;
+  height: 4px;
+  background: var(--ink-800);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.energy-fill-light {
+  height: 100%;
+  width: 55%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--success) 0%, var(--warning) 80%);
+}
+
+.energy-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--success);
+  white-space: nowrap;
+}
+
+/* Slots */
+.slots { display: flex; flex-direction: column; }
+
+.slot-item {
+  display: flex;
+  gap: var(--sp-3);
+  position: relative;
+}
+
+.slot-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 48px;
+  flex-shrink: 0;
+}
+
+.slot-time-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-500);
+  padding-top: 14px;
+  text-align: center;
+}
+
+.slot-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.slot-circle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 14px;
+  position: relative;
+  z-index: 2;
+}
+
+.slot-line-v {
+  width: 1px;
+  flex: 1;
+  min-height: 16px;
+  background: var(--ink-800);
+}
+
+.slot-circle.anchor { background: var(--accent); }
+.slot-circle.flex-node { background: transparent; border: 2px solid var(--ink-600); }
+.slot-circle.break-node { background: var(--success); }
+.slot-circle.meal-node { background: var(--warning); }
+.slot-circle.transit-node { background: transparent; border: 2px solid var(--ink-700); }
+
+.slot-card {
+  flex: 1;
+  margin: var(--sp-2) 0 var(--sp-2) 0;
+  padding: var(--sp-4);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ink-800);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+
+.slot-card:hover {
+  border-color: var(--ink-600);
+  box-shadow: var(--shadow-sm);
+}
+
+.slot-card.slot-active {
+  border-color: var(--accent-muted);
+  background: var(--accent-light);
+}
+
+.slot-card-type {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: var(--sp-1);
+}
+
+.slot-card-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--sp-1);
+}
+
+.slot-card-why {
+  font-size: 12px;
+  color: var(--ink-300);
+  font-weight: 300;
+  line-height: 1.5;
+  margin-bottom: var(--sp-3);
+}
+
+.slot-card-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.mini-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: var(--bg-raised);
+  border: 1px solid var(--ink-800);
+  color: var(--ink-400, var(--ink-500));
+}
+
+.mini-tag.accent { background: var(--accent-light); border-color: rgba(184,92,63,0.2); color: var(--accent-text); }
+.mini-tag.success { background: var(--success-light); border-color: rgba(74,138,92,0.2); color: var(--success); }
+.mini-tag.warn { background: var(--warning-light); border-color: rgba(160,120,48,0.2); color: var(--warning); }
+
+/* Transit mini row */
+.transit-row {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-1) 0;
+}
+
+.transit-spacer { width: 48px; flex-shrink: 0; }
+
+.transit-line-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 10px;
+  flex-shrink: 0;
+}
+
+.transit-line-segment {
+  width: 1px;
+  height: 28px;
+  background: var(--ink-800);
+}
+
+.transit-content {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.transit-text {
+  font-size: 11px;
+  color: var(--ink-500);
+  font-family: var(--font-mono);
+}
+
+/* Sidebar */
+.itin-sidebar {
+  border-left: 1px solid var(--ink-800);
+  background: var(--bg-raised);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.sidebar-section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  margin-bottom: var(--sp-3);
+}
+
+/* Route mini */
+.route-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+.route-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.route-item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.route-item-info {}
+
+.route-item-name { font-size: 12px; color: var(--ink-100); font-weight: 400; }
+.route-item-area { font-size: 10px; color: var(--ink-500); font-family: var(--font-mono); }
+
+.route-item-connector {
+  width: 1px;
+  height: 16px;
+  background: var(--ink-800);
+  margin-left: 3px;
+}
+
+/* Stats */
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.stat-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--ink-800);
+  border-radius: var(--r-sm);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.stat-val {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.02em;
+  display: block;
+  font-family: var(--font-mono);
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+/* Poll */
+.poll-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.poll-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ink-800);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  color: var(--ink-300);
+  transition: all var(--dur) var(--ease);
+  cursor: pointer;
+}
+
+.poll-option-row.winning {
+  border-color: rgba(74,138,92,0.4);
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.poll-vote-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.creation-shell { animation: fadeUp 0.4s var(--ease) both 0.1s; }
+.itinerary-shell { animation: fadeUp 0.4s var(--ease) both 0.15s; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 860px) {
+  .creation-body { grid-template-columns: 1fr; }
+  .creation-left { border-right: none; border-bottom: 1px solid var(--ink-800); }
+  .itin-layout { grid-template-columns: 1fr; }
+  .itin-sidebar { border-left: none; border-top: 1px solid var(--ink-800); }
+}
+
+@media (max-width: 600px) {
+  .page { padding: var(--sp-8) var(--sp-4); }
+  .page-title { font-size: 26px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- INTRO -->
+  <div style="margin-bottom:var(--sp-16);padding-bottom:var(--sp-12);border-bottom:1px solid var(--ink-800)">
+    <div class="page-label">Overplanned — Design v2</div>
+    <div class="page-title">Light system. Sora typeface.<br>Warm off-white, not clinical white.</div>
+    <div class="page-desc">Same dusty terracotta accent. Completely different reading on a warm light base. Sora replaces the serif — clean, rounded, modern without being generic.</div>
+  </div>
+
+  <!-- TOKENS -->
+  <div class="section">
+    <div class="section-label">Tokens — Color</div>
+    <div class="token-row">
+      <div class="swatch"><div class="swatch-dot" style="background:#FAF8F5;border:1px solid #D6CFC8"></div><div class="swatch-info"><span class="swatch-name">bg-base</span><span class="swatch-val">#FAF8F5 — warm off-white</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#F3EFE9;border:1px solid #D6CFC8"></div><div class="swatch-info"><span class="swatch-name">bg-raised</span><span class="swatch-val">#F3EFE9</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#B85C3F"></div><div class="swatch-info"><span class="swatch-name">accent</span><span class="swatch-val">#B85C3F — dusty terracotta</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#F0E0D9;border:1px solid #D4886E"></div><div class="swatch-info"><span class="swatch-name">accent-light</span><span class="swatch-val">#F0E0D9</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#4A8A5C"></div><div class="swatch-info"><span class="swatch-name">success</span><span class="swatch-val">#4A8A5C</span></div></div>
+      <div class="swatch"><div class="swatch-dot" style="background:#A07830"></div><div class="swatch-info"><span class="swatch-name">warning</span><span class="swatch-val">#A07830</span></div></div>
+    </div>
+
+    <div class="section-label" style="margin-top:var(--sp-6)">Tokens — Typography</div>
+    <div class="type-rows">
+      <div class="type-row-item">
+        <span class="type-meta">display<br>32px · 500<br>Sora</span>
+        <span style="font-family:'Sora',sans-serif;font-size:32px;font-weight:500;color:var(--ink-100);letter-spacing:-0.025em">Two days in Kyoto</span>
+      </div>
+      <div class="type-row-item">
+        <span class="type-meta">heading<br>22px · 500<br>Sora</span>
+        <span style="font-family:'Sora',sans-serif;font-size:22px;font-weight:500;color:var(--ink-100);letter-spacing:-0.02em">Arashiyama & Gion</span>
+      </div>
+      <div class="type-row-item">
+        <span class="type-meta">body<br>14px · 300<br>Sora</span>
+        <span style="font-size:14px;font-weight:300;color:var(--ink-300)">Quieter than the famous spots, better coffee, 10 minutes from your hotel.</span>
+      </div>
+      <div class="type-row-item">
+        <span class="type-meta">label<br>10px · 400<br>DM Mono</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:var(--ink-500);letter-spacing:0.12em;text-transform:uppercase">TABELOG · 09:30 · ANCHOR</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TRIP CREATION FLOW ==================== -->
+  <div class="section">
+    <div class="section-label">01 — Trip creation flow</div>
+    <div class="page-title" style="font-size:28px;margin-bottom:var(--sp-3)">Plan your trip</div>
+    <div class="page-desc" style="margin-bottom:var(--sp-8)">The drag-and-drop tag system is the cold start mechanic. Every chip selected seeds persona dimensions silently. No quiz feel — just planning feel.</div>
+
+    <div class="creation-shell">
+
+      <!-- Topbar -->
+      <div class="creation-topbar">
+        <div class="wordmark">Way<span>mark</span></div>
+        <div class="topbar-steps">
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+        </div>
+        <div class="topbar-right">
+          <button class="btn-ghost">Save draft</button>
+          <button class="btn-primary" id="nextBtn">Continue →</button>
+        </div>
+      </div>
+
+      <div class="creation-body">
+
+        <!-- Left: trip details -->
+        <div class="creation-left">
+          <div>
+            <div class="creation-step-label">Step 2 of 4</div>
+            <div class="creation-heading">Where and when?</div>
+            <div class="creation-sub">Start with the basics. We'll build around your preferences next.</div>
+          </div>
+
+          <!-- Destination -->
+          <div class="dest-input-wrap">
+            <span class="dest-icon">✈</span>
+            <input class="dest-input" type="text" placeholder="City, region or country" value="Kyoto, Japan">
+          </div>
+
+          <!-- Dates -->
+          <div class="date-row">
+            <div class="date-field">
+              <span class="field-label">From</span>
+              <input class="date-input" type="text" value="Mar 12, 2025">
+            </div>
+            <div class="date-field">
+              <span class="field-label">To</span>
+              <input class="date-input" type="text" value="Mar 19, 2025">
+            </div>
+          </div>
+
+          <!-- Travelers -->
+          <div class="traveler-row">
+            <div>
+              <div class="traveler-label">Travelers</div>
+              <div class="traveler-sub">We'll handle group dynamics</div>
+            </div>
+            <div class="counter">
+              <button class="counter-btn">−</button>
+              <span class="counter-val">4</span>
+              <button class="counter-btn">+</button>
+            </div>
+          </div>
+
+          <!-- Trip vibe selector -->
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:var(--sp-2)">Overall vibe</div>
+            <div style="font-size:12px;color:var(--ink-500);font-weight:300;margin-bottom:var(--sp-3)">Pick one — you can mix later.</div>
+            <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">
+              <div class="vibe-card" style="min-width:unset;padding:var(--sp-2) var(--sp-3);text-align:left;display:flex;align-items:center;gap:var(--sp-2)">
+                <span>🌿</span><span class="vibe-name" style="font-size:12px">Slow travel</span>
+              </div>
+              <div class="vibe-card selected" style="min-width:unset;padding:var(--sp-2) var(--sp-3);text-align:left;display:flex;align-items:center;gap:var(--sp-2)">
+                <span>🍜</span><span class="vibe-name" style="font-size:12px">Food-first</span>
+              </div>
+              <div class="vibe-card" style="min-width:unset;padding:var(--sp-2) var(--sp-3);text-align:left;display:flex;align-items:center;gap:var(--sp-2)">
+                <span>🏔</span><span class="vibe-name" style="font-size:12px">Active</span>
+              </div>
+              <div class="vibe-card" style="min-width:unset;padding:var(--sp-2) var(--sp-3);text-align:left;display:flex;align-items:center;gap:var(--sp-2)">
+                <span>🎭</span><span class="vibe-name" style="font-size:12px">Culture</span>
+              </div>
+              <div class="vibe-card" style="min-width:unset;padding:var(--sp-2) var(--sp-3);text-align:left;display:flex;align-items:center;gap:var(--sp-2)">
+                <span>🌙</span><span class="vibe-name" style="font-size:12px">Nightlife</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: tag drag panel -->
+        <div class="creation-right">
+          <div class="tag-panel-heading">
+            <div>
+              <div class="tag-panel-title">What matters on this trip?</div>
+              <div class="tag-panel-hint">Tap to add. The more you pick, the better your itinerary.</div>
+            </div>
+            <span class="tag-count-badge" id="tagCount">5 selected</span>
+          </div>
+
+          <!-- Drop zone / selected tags -->
+          <div class="dropzone" id="dropzone">
+            <div class="selected-tag" data-tag="street food">
+              <span>🍢</span> Street food
+              <span class="selected-tag-remove" onclick="removeTag(this)">×</span>
+            </div>
+            <div class="selected-tag" data-tag="local bars">
+              <span>🍺</span> Local bars
+              <span class="selected-tag-remove" onclick="removeTag(this)">×</span>
+            </div>
+            <div class="selected-tag" data-tag="morning coffee">
+              <span>☕</span> Morning coffee
+              <span class="selected-tag-remove" onclick="removeTag(this)">×</span>
+            </div>
+            <div class="selected-tag" data-tag="hidden gems">
+              <span>💎</span> Hidden gems
+              <span class="selected-tag-remove" onclick="removeTag(this)">×</span>
+            </div>
+            <div class="selected-tag" data-tag="late nights">
+              <span>🌙</span> Late nights
+              <span class="selected-tag-remove" onclick="removeTag(this)">×</span>
+            </div>
+          </div>
+
+          <!-- Available tags -->
+          <div class="tag-pool-label">Add more</div>
+          <div class="tag-categories" id="tagPool">
+
+            <div>
+              <div class="tag-category-name">
+                <span class="tag-category-icon" style="background:#F0E0D9">🍽</span>
+                Food & drink
+              </div>
+              <div class="tag-chips">
+                <div class="tag-chip used" data-tag="street food"><span class="tag-chip-emoji">🍢</span> Street food</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="fine dining"><span class="tag-chip-emoji">🥩</span> Fine dining</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="markets"><span class="tag-chip-emoji">🥬</span> Markets</div>
+                <div class="tag-chip used" data-tag="local bars"><span class="tag-chip-emoji">🍺</span> Local bars</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="sake & wine"><span class="tag-chip-emoji">🍶</span> Sake & wine</div>
+                <div class="tag-chip used" data-tag="morning coffee"><span class="tag-chip-emoji">☕</span> Morning coffee</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="cooking class"><span class="tag-chip-emoji">👨‍🍳</span> Cooking class</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="izakayas"><span class="tag-chip-emoji">🏮</span> Izakayas</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="tag-category-name">
+                <span class="tag-category-icon" style="background:#D8E8F2">🏛</span>
+                Sightseeing
+              </div>
+              <div class="tag-chips">
+                <div class="tag-chip" onclick="addTag(this)" data-tag="temples & shrines"><span class="tag-chip-emoji">⛩</span> Temples & shrines</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="museums"><span class="tag-chip-emoji">🖼</span> Museums</div>
+                <div class="tag-chip used" data-tag="hidden gems"><span class="tag-chip-emoji">💎</span> Hidden gems</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="photography spots"><span class="tag-chip-emoji">📷</span> Photography spots</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="gardens"><span class="tag-chip-emoji">🌸</span> Gardens</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="skip the crowds"><span class="tag-chip-emoji">🚶</span> Skip the crowds</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="tag-category-name">
+                <span class="tag-category-icon" style="background:#E0EEE5">🏃</span>
+                Pace & style
+              </div>
+              <div class="tag-chips">
+                <div class="tag-chip" onclick="addTag(this)" data-tag="slow mornings"><span class="tag-chip-emoji">🌅</span> Slow mornings</div>
+                <div class="tag-chip used" data-tag="late nights"><span class="tag-chip-emoji">🌙</span> Late nights</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="packed days"><span class="tag-chip-emoji">⚡</span> Packed days</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="rest days built in"><span class="tag-chip-emoji">🛋</span> Rest days built in</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="spontaneous"><span class="tag-chip-emoji">🎲</span> Spontaneous</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="planned to the hour"><span class="tag-chip-emoji">🗓</span> Planned to the hour</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="tag-category-name">
+                <span class="tag-category-icon" style="background:#F2EAD8">🎒</span>
+                Activities
+              </div>
+              <div class="tag-chips">
+                <div class="tag-chip" onclick="addTag(this)" data-tag="hiking"><span class="tag-chip-emoji">🥾</span> Hiking</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="cycling"><span class="tag-chip-emoji">🚴</span> Cycling</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="live music"><span class="tag-chip-emoji">🎵</span> Live music</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="shopping"><span class="tag-chip-emoji">🛍</span> Shopping</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="onsen"><span class="tag-chip-emoji">♨️</span> Onsen</div>
+                <div class="tag-chip" onclick="addTag(this)" data-tag="day trips"><span class="tag-chip-emoji">🚄</span> Day trips</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ITINERARY VIEW (LIGHT) ==================== -->
+  <div class="section">
+    <div class="section-label">02 — Itinerary day view</div>
+    <div class="page-title" style="font-size:28px;margin-bottom:var(--sp-3)">The day view</div>
+    <div class="page-desc" style="margin-bottom:var(--sp-8)">Same architecture as v1, now in the light system. The "why this" line does all the work. Slots stay minimal until you tap.</div>
+
+    <div class="itinerary-shell">
+
+      <div class="itin-topbar">
+        <div class="itin-topbar-left">
+          <div class="back-pill">← Japan 2025</div>
+          <div style="width:1px;height:20px;background:var(--ink-800)"></div>
+          <div class="trip-title-bar">
+            <span class="trip-name">Kyoto</span>
+            <span class="trip-meta">Mar 14–17 · 4 people</span>
+          </div>
+        </div>
+        <div class="itin-topbar-right">
+          <div class="avatar-stack">
+            <div class="av av-a">KM</div>
+            <div class="av av-b">SL</div>
+            <div class="av av-c">JR</div>
+            <div class="av av-d">+1</div>
+          </div>
+          <button class="btn-primary" style="font-size:12px;padding:var(--sp-2) var(--sp-4)">Edit day</button>
+        </div>
+      </div>
+
+      <div class="day-tabs">
+        <div class="day-tab">Wed 12</div>
+        <div class="day-tab">Thu 13</div>
+        <div class="day-tab active">Fri 14</div>
+        <div class="day-tab">Sat 15</div>
+        <div class="day-tab">Sun 16</div>
+        <div class="day-tab" style="color:var(--ink-600);cursor:pointer">+ Add day</div>
+      </div>
+
+      <div class="itin-layout">
+        <div class="itin-main">
+
+          <div class="itin-day-header">
+            <div>
+              <div class="itin-day-title">Arashiyama & Gion</div>
+              <div class="itin-day-sub">Friday, March 14 · 5 stops · 4 people</div>
+            </div>
+            <button class="btn-ghost" style="font-size:12px">Shuffle day</button>
+          </div>
+
+          <div class="energy-row">
+            <span class="energy-label-text">Energy</span>
+            <div class="energy-track-light"><div class="energy-fill-light"></div></div>
+            <span class="energy-status">Good pace</span>
+          </div>
+
+          <div class="slots">
+
+            <!-- Slot 1 -->
+            <div class="slot-item">
+              <div class="slot-timeline">
+                <span class="slot-time-text">08:30</span>
+              </div>
+              <div class="slot-node">
+                <div class="slot-circle anchor"></div>
+                <div class="slot-line-v"></div>
+              </div>
+              <div class="slot-card slot-active">
+                <div class="slot-card-type">Anchor · Breakfast</div>
+                <div class="slot-card-name">% Arabica Arashiyama</div>
+                <div class="slot-card-why">Less crowded than the Kyoto station location. Same coffee, better light in the morning.</div>
+                <div class="slot-card-footer">
+                  <span class="mini-tag accent">Hidden gem</span>
+                  <span class="mini-tag">¥800</span>
+                  <span class="mini-tag">30 min</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transit -->
+            <div class="transit-row">
+              <div class="transit-spacer"></div>
+              <div class="transit-line-wrap"><div class="transit-line-segment"></div></div>
+              <div class="transit-content">
+                <span class="transit-text">12 min walk toward bamboo grove</span>
+              </div>
+            </div>
+
+            <!-- Slot 2 -->
+            <div class="slot-item">
+              <div class="slot-timeline">
+                <span class="slot-time-text">09:15</span>
+              </div>
+              <div class="slot-node">
+                <div class="slot-circle anchor"></div>
+                <div class="slot-line-v"></div>
+              </div>
+              <div class="slot-card">
+                <div class="slot-card-type">Anchor · Outdoor</div>
+                <div class="slot-card-name">Sagano Bamboo Grove</div>
+                <div class="slot-card-why">Gets packed by 10am. Going now means you'll actually have space to walk.</div>
+                <div class="slot-card-footer">
+                  <span class="mini-tag success">Free</span>
+                  <span class="mini-tag">45 min</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transit -->
+            <div class="transit-row">
+              <div class="transit-spacer"></div>
+              <div class="transit-line-wrap"><div class="transit-line-segment"></div></div>
+              <div class="transit-content">
+                <span class="transit-text">8 min walk</span>
+              </div>
+            </div>
+
+            <!-- Slot 3 -->
+            <div class="slot-item">
+              <div class="slot-timeline">
+                <span class="slot-time-text">10:30</span>
+              </div>
+              <div class="slot-node">
+                <div class="slot-circle flex-node"></div>
+                <div class="slot-line-v"></div>
+              </div>
+              <div class="slot-card">
+                <div class="slot-card-type">Flex · Culture</div>
+                <div class="slot-card-name">Tenryu-ji Garden</div>
+                <div class="slot-card-why">Locals rate it higher than tourists do — which is usually a good sign. 2 alternatives queued if you'd rather keep moving.</div>
+                <div class="slot-card-footer">
+                  <span class="mini-tag">¥500</span>
+                  <span class="mini-tag">1 hr</span>
+                  <span class="mini-tag">2 alts</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 4: lunch with poll -->
+            <div class="transit-row">
+              <div class="transit-spacer"></div>
+              <div class="transit-line-wrap"><div class="transit-line-segment"></div></div>
+              <div class="transit-content">
+                <span class="transit-text">18 min transit to Nishiki</span>
+              </div>
+            </div>
+
+            <div class="slot-item">
+              <div class="slot-timeline">
+                <span class="slot-time-text">12:00</span>
+              </div>
+              <div class="slot-node">
+                <div class="slot-circle meal-node"></div>
+                <div class="slot-line-v"></div>
+              </div>
+              <div class="slot-card">
+                <div class="slot-card-type">Break · Lunch</div>
+                <div class="slot-card-name">Lunch — group voted</div>
+                <div class="slot-card-why">3 options based on everyone's tags. SL added "ramen" — it's winning.</div>
+                <div class="slot-card-footer">
+                  <span class="mini-tag warn">Vote in progress</span>
+                  <span class="mini-tag">3 options</span>
+                </div>
+                <!-- Inline poll -->
+                <div style="margin-top:var(--sp-4);padding-top:var(--sp-3);border-top:1px solid var(--ink-800)">
+                  <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:var(--sp-2)">Group poll</div>
+                  <div class="poll-item">
+                    <div class="poll-option-row winning">
+                      <span>Ippudo Ramen</span>
+                      <span class="poll-vote-count">3 votes</span>
+                    </div>
+                    <div class="poll-option-row">
+                      <span>Kaiseki lunch set</span>
+                      <span class="poll-vote-count">1 vote</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 5 -->
+            <div class="transit-row">
+              <div class="transit-spacer"></div>
+              <div class="transit-line-wrap"><div class="transit-line-segment"></div></div>
+              <div class="transit-content">
+                <span class="transit-text">20 min walk to Gion</span>
+              </div>
+            </div>
+
+            <div class="slot-item">
+              <div class="slot-timeline">
+                <span class="slot-time-text">15:00</span>
+              </div>
+              <div class="slot-node">
+                <div class="slot-circle anchor"></div>
+                <div class="slot-line-v" style="flex:0;min-height:0"></div>
+              </div>
+              <div class="slot-card">
+                <div class="slot-card-type">Anchor · Evening</div>
+                <div class="slot-card-name">Gion twilight walk + izakaya</div>
+                <div class="slot-card-why">Hanamikoji at dusk is worth it. Izakaya queued for after — matches the "late nights" tag you all added.</div>
+                <div class="slot-card-footer">
+                  <span class="mini-tag success">Free to walk</span>
+                  <span class="mini-tag">2 hrs+</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="itin-sidebar">
+
+          <div>
+            <div class="sidebar-section-label">Route</div>
+            <div class="route-list">
+              <div class="route-item">
+                <div class="route-item-dot" style="background:var(--accent)"></div>
+                <div class="route-item-info">
+                  <div class="route-item-name">% Arabica</div>
+                  <div class="route-item-area">Arashiyama</div>
+                </div>
+              </div>
+              <div class="route-item-connector"></div>
+              <div class="route-item">
+                <div class="route-item-dot" style="background:var(--accent)"></div>
+                <div class="route-item-info">
+                  <div class="route-item-name">Bamboo Grove</div>
+                  <div class="route-item-area">Sagano</div>
+                </div>
+              </div>
+              <div class="route-item-connector"></div>
+              <div class="route-item">
+                <div class="route-item-dot" style="background:var(--ink-600)"></div>
+                <div class="route-item-info">
+                  <div class="route-item-name">Tenryu-ji</div>
+                  <div class="route-item-area">Arashiyama</div>
+                </div>
+              </div>
+              <div class="route-item-connector"></div>
+              <div class="route-item">
+                <div class="route-item-dot" style="background:var(--warning)"></div>
+                <div class="route-item-info">
+                  <div class="route-item-name">Lunch TBD</div>
+                  <div class="route-item-area">Nishiki</div>
+                </div>
+              </div>
+              <div class="route-item-connector"></div>
+              <div class="route-item">
+                <div class="route-item-dot" style="background:var(--ink-600)"></div>
+                <div class="route-item-info">
+                  <div class="route-item-name">Gion</div>
+                  <div class="route-item-area">Gion district</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="sidebar-section-label">Day stats</div>
+            <div class="stats-row">
+              <div class="stat-box">
+                <span class="stat-val">14.2</span>
+                <span class="stat-label">km total</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-val">18k</span>
+                <span class="stat-label">steps est.</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-val">¥4.1k</span>
+                <span class="stat-label">est. spend</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-val">5</span>
+                <span class="stat-label">stops</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="sidebar-section-label">Tags driving today</div>
+            <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">
+              <span class="mini-tag accent">Street food</span>
+              <span class="mini-tag accent">Hidden gems</span>
+              <span class="mini-tag accent">Morning coffee</span>
+              <span class="mini-tag">Slow mornings</span>
+              <span class="mini-tag">Late nights</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function addTag(el) {
+  if (el.classList.contains('used')) return;
+
+  const tag = el.dataset.tag;
+  const emoji = el.querySelector('.tag-chip-emoji').textContent;
+  const label = el.textContent.trim();
+
+  // Mark source as used
+  el.classList.add('used');
+
+  // Create selected tag in dropzone
+  const dropzone = document.getElementById('dropzone');
+  const placeholder = dropzone.querySelector('.dropzone-placeholder');
+  if (placeholder) placeholder.style.display = 'none';
+
+  const selected = document.createElement('div');
+  selected.className = 'selected-tag';
+  selected.dataset.tag = tag;
+  selected.innerHTML = `<span>${emoji}</span> ${tag} <span class="selected-tag-remove" onclick="removeTag(this)">×</span>`;
+  dropzone.appendChild(selected);
+
+  updateCount();
+}
+
+function removeTag(btn) {
+  const selectedTag = btn.closest('.selected-tag');
+  const tagName = selectedTag.dataset.tag;
+
+  // Re-enable source chip
+  const chips = document.querySelectorAll('.tag-chip');
+  chips.forEach(c => {
+    if (c.dataset.tag === tagName) {
+      c.classList.remove('used');
+      c.setAttribute('onclick', 'addTag(this)');
+    }
+  });
+
+  selectedTag.remove();
+  updateCount();
+}
+
+function updateCount() {
+  const count = document.querySelectorAll('.selected-tag').length;
+  document.getElementById('tagCount').textContent = `${count} selected`;
+}
+
+// Vibe card toggle
+document.querySelectorAll('.vibe-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.vibe-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  });
+});
+
+// Counter buttons
+const counterVal = document.querySelector('.counter-val');
+document.querySelectorAll('.counter-btn').forEach((btn, i) => {
+  btn.addEventListener('click', () => {
+    let v = parseInt(counterVal.textContent);
+    if (i === 0 && v > 1) v--;
+    if (i === 1 && v < 12) v++;
+    counterVal.textContent = v;
+  });
+});
+</script>
+
+</body>
+</html>

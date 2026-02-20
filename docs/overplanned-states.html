@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Empty / Loading / Error States</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#FAFAF8;--bg-warm:#F5F1EB;--bg-card:#FFFFFF;--bg-stone:#EDE8E0;--bg-raised:#F0ECE5;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --gold:#A07830;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --info:#2E6A9C;--info-bg:#DCECf8;
+  --warning:#956820;--warning-bg:#F5EDD8;
+  --error:#8C2A2A;--error-bg:#F5E0E0;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);
+  --shadow-lg:0 16px 56px rgba(26,22,18,0.10);
+}
+[data-theme="dark"]{
+  --bg:#0E0C09;--bg-warm:#141109;--bg-card:#171310;--bg-stone:#1F1A14;--bg-raised:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --gold:#C8A96E;
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --info:#4A84A8;--info-bg:rgba(74,132,168,0.12);
+  --warning:#B8943A;--warning-bg:rgba(184,148,58,0.12);
+  --error:#C25555;--error-bg:rgba(194,85,85,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:0 16px 56px rgba(0,0,0,0.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);padding:48px 32px;}
+@media(max-width:600px){body{padding:24px 16px;}}
+
+/* Nav */
+.page-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:52px;}
+.page-logo{font-family:'Outfit',sans-serif;font-size:17px;font-weight:700;letter-spacing:-0.04em;color:var(--ink-100);}
+.page-logo span{color:var(--accent);}
+.theme-btn{width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+
+/* Section header */
+.section-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.section-label::before{content:'';width:18px;height:1px;background:var(--accent);}
+.section-divider{border:none;border-top:1px solid var(--ink-700);margin:52px 0;}
+
+/* Phone frame */
+.phone-row{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;}
+.phone-wrap{display:flex;flex-direction:column;gap:10px;width:280px;}
+.phone-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);text-align:center;}
+.phone{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:28px;overflow:hidden;box-shadow:var(--shadow-lg);min-height:480px;display:flex;flex-direction:column;}
+[data-theme="dark"] .phone{background:var(--bg-stone);}
+.phone-status{padding:14px 20px 8px;display:flex;justify-content:space-between;align-items:center;}
+.phone-time{font-family:'DM Mono',monospace;font-size:11px;font-weight:400;color:var(--ink-100);}
+.phone-icons{display:flex;gap:4px;align-items:center;}
+.phone-header{padding:8px 20px 14px;border-bottom:1px solid var(--ink-700);}
+.phone-title{font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;letter-spacing:-0.02em;color:var(--ink-100);margin-bottom:2px;}
+.phone-sub{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);}
+.phone-body{flex:1;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+
+/* Skeleton loading */
+.skel{background:var(--ink-800);border-radius:6px;animation:shimmer 1.6s ease-in-out infinite;}
+[data-theme="dark"] .skel{background:var(--ink-700);}
+@keyframes shimmer{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.skel-slot{display:flex;gap:10px;padding:12px 20px;border-bottom:1px solid var(--ink-700);}
+.skel-photo{width:60px;height:60px;border-radius:8px;flex-shrink:0;}
+.skel-lines{flex:1;display:flex;flex-direction:column;gap:7px;justify-content:center;}
+.skel-line{height:9px;border-radius:100px;}
+.skel-loading-msg{font-size:11px;color:var(--ink-400);font-weight:300;font-style:italic;text-align:center;padding:14px 20px 0;line-height:1.6;}
+
+/* Empty states */
+.empty-icon{width:56px;height:56px;border-radius:16px;background:var(--bg-raised);display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
+[data-theme="dark"] .empty-icon{background:var(--bg-stone);}
+.empty-title{font-family:'Lora',serif;font-size:17px;font-weight:500;font-style:italic;color:var(--ink-200);margin-bottom:8px;text-align:center;line-height:1.3;}
+.empty-sub{font-size:12px;color:var(--ink-500);font-weight:300;line-height:1.65;text-align:center;max-width:200px;margin-bottom:20px;}
+.empty-cta{font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:9px 20px;cursor:pointer;}
+
+/* Error states */
+.error-icon{width:44px;height:44px;border-radius:12px;background:var(--error-bg);display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.error-title{font-size:14px;font-weight:500;color:var(--ink-100);margin-bottom:6px;text-align:center;}
+.error-sub{font-size:11px;color:var(--ink-400);font-weight:300;line-height:1.65;text-align:center;max-width:200px;margin-bottom:16px;}
+.error-swap{background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:12px;padding:10px 12px;width:100%;margin-top:4px;}
+[data-theme="dark"] .error-swap{background:var(--bg-raised);}
+.error-swap-label{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:6px;}
+.error-swap-name{font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:3px;}
+.error-swap-why{font-size:10px;color:var(--ink-400);font-style:italic;font-weight:300;margin-bottom:7px;}
+.error-swap-btns{display:flex;gap:6px;}
+.esb{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.04em;text-transform:uppercase;border-radius:100px;padding:4px 10px;cursor:pointer;border:none;}
+.esb.primary{background:var(--accent);color:#fff;}
+.esb.ghost{background:transparent;color:var(--ink-400);border:1px solid var(--ink-700);}
+
+/* Notification states */
+.notif-row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;}
+.notif-phone{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:24px;overflow:hidden;box-shadow:var(--shadow-lg);width:300px;}
+[data-theme="dark"] .notif-phone{background:var(--bg-stone);}
+.notif-lock{padding:40px 24px 24px;background:linear-gradient(to bottom,var(--bg-stone),var(--bg-card));text-align:center;border-bottom:1px solid var(--ink-700);}
+[data-theme="dark"] .notif-lock{background:linear-gradient(to bottom,var(--bg-raised),var(--bg-stone));}
+.notif-lock-time{font-family:'Lora',serif;font-size:48px;font-weight:500;color:var(--ink-100);letter-spacing:-0.03em;margin-bottom:2px;}
+.notif-lock-date{font-size:13px;color:var(--ink-400);font-weight:300;margin-bottom:24px;}
+.notif-card{background:rgba(255,255,255,0.7);backdrop-filter:blur(12px);border-radius:14px;padding:12px 14px;text-align:left;border:1px solid rgba(255,255,255,0.5);margin-bottom:8px;}
+[data-theme="dark"] .notif-card{background:rgba(30,24,18,0.75);border-color:rgba(255,255,255,0.08);}
+.notif-card:last-child{margin-bottom:0;}
+.notif-app{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.notif-app-icon{width:18px;height:18px;border-radius:5px;background:var(--accent);display:flex;align-items:center;justify-content:center;}
+.notif-app-name{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-400);}
+.notif-app-time{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);margin-left:auto;}
+.notif-msg{font-size:12px;color:var(--ink-100);font-weight:400;line-height:1.45;margin-bottom:8px;}
+.notif-actions{display:flex;gap:6px;}
+.na{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.04em;text-transform:uppercase;border-radius:100px;padding:4px 10px;cursor:pointer;border:none;}
+.na.primary{background:var(--accent);color:#fff;}
+.na.ghost{background:var(--bg-raised);color:var(--ink-400);}
+[data-theme="dark"] .na.ghost{background:rgba(255,255,255,0.1);color:var(--ink-300);}
+
+/* In-app ambient banner */
+.ambient-row{display:flex;gap:16px;flex-wrap:wrap;}
+.ambient-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-md);width:300px;}
+[data-theme="dark"] .ambient-card{background:var(--bg-stone);}
+.amb-inner{padding:14px 16px;}
+.amb-sig{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent-dark);margin-bottom:5px;}
+.amb-msg{font-size:13px;color:var(--ink-100);font-weight:400;line-height:1.5;margin-bottom:10px;}
+.amb-btns{display:flex;gap:6px;}
+.ab{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.04em;text-transform:uppercase;border-radius:100px;padding:5px 12px;cursor:pointer;border:none;}
+.ab.primary{background:var(--accent);color:#fff;}
+.ab.ghost{background:transparent;color:var(--ink-400);border:1px solid var(--ink-700);}
+.amb-weather-strip{background:var(--info-bg);padding:8px 16px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--ink-700);}
+.amb-weather-txt{font-size:11px;color:var(--info);font-weight:300;}
+.amb-accent-strip{background:var(--accent-light);padding:8px 16px;display:flex;align-items:center;gap:8px;border-top:1px dashed rgba(184,92,63,0.3);}
+[data-theme="dark"] .amb-accent-strip{background:rgba(201,104,72,0.08);}
+.amb-accent-txt{font-size:11px;color:var(--accent-dark);font-weight:300;}
+</style>
+</head>
+<body>
+<div class="page-nav">
+  <div class="page-logo">Way<span>mark</span> <span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:300;color:var(--ink-500);letter-spacing:0.08em;">States</span></div>
+  <button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+    <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</div>
+
+<!-- LOADING STATES -->
+<div class="section-label">Loading States</div>
+<div class="phone-row">
+  <!-- Skeleton: itinerary loading -->
+  <div class="phone-wrap">
+    <div class="phone-label">Itinerary Computing</div>
+    <div class="phone">
+      <div class="phone-status"><span class="phone-time">14:22</span></div>
+      <div class="phone-header"><div class="phone-title">Kyoto · Day 3</div><div class="phone-sub">Building your day…</div></div>
+      <div class="skel-slot">
+        <div class="skel skel-photo"></div>
+        <div class="skel-lines"><div class="skel skel-line" style="width:70%"></div><div class="skel skel-line" style="width:50%"></div><div class="skel skel-line" style="width:35%"></div></div>
+      </div>
+      <div class="skel-slot">
+        <div class="skel skel-photo"></div>
+        <div class="skel-lines"><div class="skel skel-line" style="width:80%"></div><div class="skel skel-line" style="width:55%"></div><div class="skel skel-line" style="width:40%"></div></div>
+      </div>
+      <div class="skel-slot">
+        <div class="skel skel-photo"></div>
+        <div class="skel-lines"><div class="skel skel-line" style="width:60%"></div><div class="skel skel-line" style="width:45%"></div></div>
+      </div>
+      <div class="skel-loading-msg">Checking what's open tonight<br>on Tabelog · 3,200 local reviews</div>
+    </div>
+  </div>
+
+  <!-- Skeleton: post-pivot recompute -->
+  <div class="phone-wrap">
+    <div class="phone-label">Post-Pivot Recompute</div>
+    <div class="phone">
+      <div class="phone-status"><span class="phone-time">14:22</span></div>
+      <div class="phone-header"><div class="phone-title">Adjusting Day 3</div><div class="phone-sub">One swap coming…</div></div>
+      <!-- visited slot (solid) -->
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--ink-700);opacity:0.5;">
+        <div style="width:60px;height:60px;border-radius:8px;background:var(--bg-stone);flex-shrink:0;overflow:hidden;"><img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=200&q=70&auto=format&fit=crop" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+        <div><div style="font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:3px;">Fushimi Inari</div><div style="font-size:10px;color:var(--ink-500);font-style:italic;">visited · 06:30</div></div>
+      </div>
+      <!-- computing slot -->
+      <div style="padding:12px 20px;border-bottom:1px solid var(--ink-700);background:var(--accent-light);">
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-dark);margin-bottom:6px;">Finding replacement…</div>
+        <div class="skel-slot" style="padding:0;"><div class="skel skel-photo"></div><div class="skel-lines"><div class="skel skel-line" style="width:65%"></div><div class="skel skel-line" style="width:48%"></div></div></div>
+      </div>
+      <div class="skel-slot"><div class="skel skel-photo"></div><div class="skel-lines"><div class="skel skel-line" style="width:72%"></div><div class="skel skel-line" style="width:52%"></div></div></div>
+      <div class="skel-loading-msg">Staying in the same area<br>checking indoor options nearby</div>
+    </div>
+  </div>
+
+  <!-- Skeleton: first open -->
+  <div class="phone-wrap">
+    <div class="phone-label">First Open / Cold Start</div>
+    <div class="phone">
+      <div class="phone-status"><span class="phone-time">14:22</span></div>
+      <div style="padding:32px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;margin-bottom:16px;animation:pulse 2s ease-in-out infinite;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div style="font-family:'Lora',serif;font-size:17px;font-weight:500;font-style:italic;color:var(--ink-200);margin-bottom:8px;line-height:1.3;">Finding spots that fit<br>how you travel.</div>
+        <div style="font-size:12px;color:var(--ink-500);font-weight:300;line-height:1.65;max-width:200px;margin-bottom:24px;">Pulling local reviews.<br>Cross-referencing your signals.</div>
+        <div style="display:flex;gap:6px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 1.4s ease-in-out infinite;"></div><div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 1.4s ease-in-out infinite 0.2s;"></div><div style="width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 1.4s ease-in-out infinite 0.4s;"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- EMPTY STATES -->
+<div class="section-label">Empty States</div>
+<div class="phone-row">
+  <!-- No trips yet -->
+  <div class="phone-wrap">
+    <div class="phone-label">No Trips Yet</div>
+    <div class="phone">
+      <div class="phone-status"><span class="phone-time">14:22</span></div>
+      <div class="phone-header"><div class="phone-title">Overplanned</div><div class="phone-sub">Your trips</div></div>
+      <div class="phone-body">
+        <div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div class="empty-title">Nowhere planned yet.</div>
+        <div class="empty-sub">Tell us where you're thinking. We'll handle the rest.</div>
+        <button class="empty-cta">Plan a trip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day with no slots yet -->
+  <div class="phone-wrap">
+    <div class="phone-label">Day Not Yet Built</div>
+    <div class="phone">
+      <div class="phone-status"><span class="phone-time">14:22</span></div>
+      <div class="phone-header"><div class="phone-title">Seoul · Day 2</div><div class="phone-sub">Tuesday</div></div>
+      <div class="phone-body">
+        <div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+        <div class="empty-title">This day is open.</div>
+        <div class="empty-sub">We can fill it in — or leave it deliberately free. Your call.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+          <button class="empty-cta">Build this day</button>
+          <button style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-400);background:none;border:none;cursor:pointer;padding:9px 16px;letter-spacing:0.06em;">Keep it free</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Group trip — waiting for votes -->
+  <div class="phone-wrap">
+    <div class="phone-label">Waiting on Group</div>
+    <div class="phone">
+      <div class="phone-status"><span class="phone-time">14:22</span></div>
+      <div class="phone-header"><div class="phone-title">Japan 2025</div><div class="phone-sub">Planning · 3 of 4 voted</div></div>
+      <div class="phone-body">
+        <div style="display:flex;margin-bottom:14px;">
+          <div style="width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid var(--bg-card);"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+          <div style="width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid var(--bg-card);margin-left:-8px;"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+          <div style="width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid var(--bg-card);margin-left:-8px;"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+          <div style="width:28px;height:28px;border-radius:50%;border:2px dashed var(--ink-600);margin-left:-8px;display:flex;align-items:center;justify-content:center;background:var(--bg-raised);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg></div>
+        </div>
+        <div class="empty-title">JR hasn't voted yet.</div>
+        <div class="empty-sub">3 slots need their input before you can lock Day 3.</div>
+        <button class="empty-cta" style="background:var(--bg-raised);color:var(--ink-400);border:1px solid var(--ink-700);">Send a nudge</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ERROR STATES -->
+<div class="section-label">Error States</div>
+<div class="phone-row">
+  <!-- Venue closed -->
+  <div class="phone-wrap">
+    <div class="phone-label">Venue Closed</div>
+    <div class="phone">
+      <div class="phone-status"><span class="phone-time">14:22</span></div>
+      <div class="phone-header"><div class="phone-title">Kyoto · Day 3</div><div class="phone-sub">One slot needs attention</div></div>
+      <div style="padding:16px 20px;background:var(--warning-bg);border-bottom:1px solid var(--ink-700);">
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--warning);margin-bottom:5px;">Slot Update</div>
+        <div style="font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:3px;">Nishiki Market — closed today</div>
+        <div style="font-size:11px;color:var(--ink-400);font-style:italic;font-weight:300;margin-bottom:10px;">Private event until 17:00. Not worth waiting.</div>
+        <div class="error-swap">
+          <div class="error-swap-label">We'd swap in</div>
+          <div class="error-swap-name">Kyoto Flea Market</div>
+          <div class="error-swap-why">same area · open now · locals only</div>
+          <div class="error-swap-btns">
+            <button class="esb primary">Swap It In</button>
+            <button class="esb ghost">Skip This Slot</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-body" style="justify-content:flex-start;padding-top:16px;">
+        <div style="font-size:11px;color:var(--ink-500);font-style:italic;text-align:center;">Rest of the day is unaffected.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- No signal -->
+  <div class="phone-wrap">
+    <div class="phone-label">No Signal</div>
+    <div class="phone">
+      <div class="phone-status"><span class="phone-time">14:22</span></div>
+      <div class="phone-header"><div class="phone-title">Kyoto · Day 3</div><div class="phone-sub">Offline mode</div></div>
+      <div class="phone-body">
+        <div class="empty-icon" style="background:var(--bg-raised);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        </div>
+        <div class="empty-title">No signal right now.</div>
+        <div class="empty-sub">Your itinerary is saved. You can still see everything for today — we'll sync when you're back online.</div>
+        <button class="empty-cta" style="background:var(--bg-raised);color:var(--ink-300);border:1px solid var(--ink-700);">View saved day</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transit disruption -->
+  <div class="phone-wrap">
+    <div class="phone-label">Transit Disrupted</div>
+    <div class="phone">
+      <div class="phone-status"><span class="phone-time">14:22</span></div>
+      <div class="phone-header"><div class="phone-title">Getting to Kinkaku-ji</div><div class="phone-sub">Route update</div></div>
+      <div style="padding:16px 20px;background:var(--info-bg);border-bottom:1px solid var(--ink-700);">
+        <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--info);margin-bottom:5px;">Transit Update</div>
+        <div style="font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:3px;">Line 11 suspended until 16:00</div>
+        <div style="font-size:11px;color:var(--ink-400);font-style:italic;font-weight:300;">We've re-routed via taxi. About 8 min longer, ¥400 more.</div>
+      </div>
+      <div style="padding:14px 20px;border-bottom:1px solid var(--ink-700);">
+        <div style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-500);margin-bottom:8px;">Revised route</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <span style="font-size:12px;color:var(--ink-200);">Taxi from Fushimi — 28 min · ¥1,800</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="esb primary">Got It</button>
+          <button class="esb ghost">See Alternatives</button>
+        </div>
+      </div>
+      <div class="phone-body" style="justify-content:flex-start;padding-top:12px;">
+        <div style="font-size:11px;color:var(--ink-500);font-style:italic;text-align:center;">Your 14:00 slot arrival is still on track.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- NOTIFICATIONS -->
+<div class="section-label">Notifications · Lock Screen</div>
+<div class="notif-row">
+  <div class="phone-wrap">
+    <div class="phone-label">Push Notifications</div>
+    <div class="notif-phone">
+      <div class="notif-lock">
+        <div class="notif-lock-time">14:22</div>
+        <div class="notif-lock-date">Friday, March 14</div>
+        <!-- Weather pivot -->
+        <div class="notif-card">
+          <div class="notif-app">
+            <div class="notif-app-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/></svg></div>
+            <span class="notif-app-name">Overplanned</span>
+            <span class="notif-app-time">now</span>
+          </div>
+          <div class="notif-msg">Rain at 15:00 near Arashiyama. We have a covered alternative ready — same neighborhood.</div>
+          <div class="notif-actions">
+            <button class="na primary">See Swap</button>
+            <button class="na ghost">Keep Original</button>
+          </div>
+        </div>
+        <!-- Booking window -->
+        <div class="notif-card">
+          <div class="notif-app">
+            <div class="notif-app-icon" style="background:var(--success);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg></div>
+            <span class="notif-app-name">Overplanned</span>
+            <span class="notif-app-time">2h ago</span>
+          </div>
+          <div class="notif-msg">Pontocho izakaya opens bookings at 16:00. You're next in line if you want it.</div>
+          <div class="notif-actions">
+            <button class="na primary">Book Now</button>
+            <button class="na ghost">Remind Later</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-app ambient banners -->
+  <div class="phone-wrap" style="width:320px;">
+    <div class="phone-label">In-App Ambient Banners</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="ambient-card">
+        <div class="amb-inner">
+          <div class="amb-sig">System · Weather</div>
+          <div class="amb-msg">Rain starting at 15:00. Arashiyama is outdoor — want us to find something covered nearby?</div>
+          <div class="amb-btns">
+            <button class="ab primary">Find Alternative</button>
+            <button class="ab ghost">Keep It</button>
+          </div>
+        </div>
+        <div class="amb-weather-strip">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--info)" stroke-width="1.8" stroke-linecap="round"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="8" y1="20" x2="8.01" y2="20"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="12" y1="22" x2="12.01" y2="22"/><line x1="16" y1="16" x2="16.01" y2="16"/><line x1="16" y1="20" x2="16.01" y2="20"/></svg>
+          <div class="amb-weather-txt">Rain · 15:00–18:00 · Arashiyama area</div>
+        </div>
+      </div>
+
+      <div class="ambient-card">
+        <div class="amb-inner">
+          <div class="amb-sig">System · Booking</div>
+          <div class="amb-msg">Pontocho starts taking walk-ins at 18:30. You're 12 min away — good timing to head over now.</div>
+          <div class="amb-btns">
+            <button class="ab primary">Head There Now</button>
+            <button class="ab ghost">Later</button>
+          </div>
+        </div>
+        <div class="amb-accent-strip">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div class="amb-accent-txt" style="color:var(--accent-dark);">Full by 20:00 — worth leaving soon</div>
+        </div>
+      </div>
+
+      <div class="ambient-card">
+        <div class="amb-inner">
+          <div class="amb-sig">Group · SL</div>
+          <div class="amb-msg">SL voted on the Arashiyama slot. You're the last one — takes 10 seconds.</div>
+          <div class="amb-btns">
+            <button class="ab primary">Vote Now</button>
+            <button class="ab ghost">View Votes</button>
+          </div>
+        </div>
+        <div class="amb-accent-strip">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <div class="amb-accent-txt" style="color:var(--accent-dark);">3 of 4 voted · waiting on you</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.6;transform:scale(0.85);}}</style>
+</body>
+</html>

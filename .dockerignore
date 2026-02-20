@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Version control
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+tests/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/*_test.py
+**/test_*.py
+pytest.ini
+jest.config.*
+coverage/
+.coverage
+htmlcov/
+
+# Build artifacts
+.next/
+dist/
+build/
+*.egg-info/
+
+# Documentation
+docs/
+*.md
+!README.md
+LICENSE
+
+# Docker (avoid recursive copies)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# SOC / planning
+.soc-memory/
+tracks/
+
+# OS
+.DS_Store
+Thumbs.db

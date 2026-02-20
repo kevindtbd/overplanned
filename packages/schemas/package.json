@@ -1,0 +1,6 @@
+{
+  "name": "@overplanned/schemas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Generated JSON Schemas from Prisma models. Do not edit manually."
+}

@@ -1,0 +1,35 @@
+{
+  "name": "overplanned",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "db:migrate": "npm run migrate --workspace=@overplanned/db",
+    "db:seed": "npm run seed --workspace=@overplanned/db",
+    "db:studio": "npm run studio --workspace=@overplanned/db",
+    "db:generate": "npm run generate --workspace=@overplanned/db",
+    "codegen": "npm run codegen:jsonschema && npm run codegen:typescript && npm run codegen:pydantic && npm run codegen:qdrant",
+    "codegen:jsonschema": "tsx scripts/prisma-to-jsonschema.ts",
+    "codegen:typescript": "json2ts -i packages/schemas/ -o packages/shared-types/generated/",
+    "codegen:pydantic": "datamodel-codegen --input-file-type jsonschema --input packages/schemas/ --output services/ml/app/schemas/generated/",
+    "codegen:qdrant": "tsx scripts/jsonschema-to-qdrant.ts",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@mrleebo/prisma-ast": "^0.13.0",
+    "@types/node": "^20.11.0",
+    "eslint": "^8.56.0",
+    "json-schema-to-typescript": "^15.0.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

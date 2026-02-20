@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-state="cold">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Inspiration</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#F7F4EF;--bg-card:#FFFFFF;--bg-raised:#EDE8E0;--bg-stone:#EAE4DA;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);
+  --shadow-lg:0 16px 56px rgba(26,22,18,0.12);
+  --shadow-xl:0 32px 80px rgba(26,22,18,0.16);
+}
+[data-theme="dark"]{
+  --bg:#0C0A08;--bg-card:#161210;--bg-raised:#1A1510;--bg-stone:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:0 16px 56px rgba(0,0,0,0.5);
+  --shadow-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);}
+
+.shell{display:flex;align-items:center;justify-content:center;gap:48px;min-height:100vh;padding:40px 24px;flex-wrap:wrap;}
+.panel-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);text-align:center;margin-bottom:10px;}
+.phone{width:390px;min-height:720px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:40px;overflow:hidden;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;position:relative;}
+[data-theme="dark"] .phone{background:var(--bg-stone);}
+
+.theme-btn{position:fixed;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);z-index:200;box-shadow:var(--shadow-md);}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+
+/* Status */
+.status{padding:14px 26px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.status-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-100);}
+
+/* Nav */
+.inspire-nav{padding:16px 22px 8px;display:flex;align-items:center;justify-content:space-between;}
+.inspire-wordmark{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;letter-spacing:-0.04em;color:var(--ink-100);}
+.inspire-wordmark span{color:var(--accent);}
+.inspire-account{width:28px;height:28px;border-radius:50%;overflow:hidden;}
+.inspire-account img{width:100%;height:100%;object-fit:cover;}
+
+/* ── COLD START STATE ── */
+.cold-body{flex:1;display:flex;flex-direction:column;padding:24px 22px 32px;}
+.cold-prompt{font-family:'Lora',serif;font-size:22px;font-weight:500;font-style:italic;color:var(--ink-100);line-height:1.3;margin-bottom:8px;}
+.cold-sub{font-size:12px;color:var(--ink-500);font-weight:300;margin-bottom:28px;}
+.vibe-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;}
+.vibe-card{border-radius:18px;overflow:hidden;position:relative;cursor:pointer;min-height:140px;transition:transform 0.2s;}
+.vibe-card:hover{transform:scale(1.02);}
+.vibe-card.selected{outline:2.5px solid var(--accent);outline-offset:2px;}
+.vibe-card img{width:100%;height:100%;object-fit:cover;display:block;}
+.vibe-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.85) 0%,rgba(14,10,6,0.1) 55%);}
+.vibe-card-body{position:absolute;bottom:0;left:0;right:0;padding:14px;}
+.vibe-title{font-family:'Lora',serif;font-size:14px;font-weight:500;color:#fff;font-style:italic;line-height:1.2;margin-bottom:2px;}
+.vibe-sub{font-family:'DM Mono',monospace;font-size:8px;color:rgba(255,255,255,0.55);letter-spacing:0.06em;}
+.cold-cta{margin-top:16px;width:100%;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:14px;cursor:pointer;transition:all 0.2s;opacity:0.4;}
+.cold-cta.enabled{opacity:1;box-shadow:0 4px 16px rgba(184,92,63,0.25);}
+
+/* ── SHORTLIST STATE ── */
+.shortlist-body{flex:1;display:flex;flex-direction:column;padding:16px 22px 32px;}
+.shortlist-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;}
+.shortlist-prompt{font-family:'Lora',serif;font-size:18px;font-weight:500;font-style:italic;color:var(--ink-100);line-height:1.3;margin-bottom:20px;}
+.dest-card{border-radius:18px;overflow:hidden;position:relative;height:160px;cursor:pointer;margin-bottom:10px;transition:transform 0.2s;}
+.dest-card:hover{transform:translateY(-2px);}
+.dest-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.dest-card:hover img{transform:scale(1.03);}
+.dest-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(14,10,6,0.82) 0%,rgba(14,10,6,0.15) 65%);}
+.dest-body{position:absolute;inset:0;padding:20px 22px;display:flex;flex-direction:column;justify-content:center;}
+.dest-city{font-family:'Lora',serif;font-size:20px;font-weight:500;color:#fff;letter-spacing:-0.02em;margin-bottom:4px;}
+.dest-why{font-size:11px;color:rgba(255,255,255,0.7);font-weight:300;font-style:italic;max-width:180px;line-height:1.4;}
+.dest-arrow{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.5);}
+.shortlist-back{margin-top:8px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);text-align:center;cursor:pointer;}
+.shortlist-back:hover{color:var(--ink-300);}
+
+/* ── RETURNING USER STATE ── */
+.returning-body{flex:1;display:flex;flex-direction:column;}
+.returning-hero{height:280px;position:relative;overflow:hidden;}
+.returning-hero img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.5s;}
+.returning-hero:hover img{transform:scale(1.03);}
+.returning-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.95) 0%,rgba(14,10,6,0.2) 60%);}
+.returning-hero-body{position:absolute;bottom:0;left:0;right:0;padding:22px;}
+.ret-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:6px;}
+.ret-city{font-family:'Lora',serif;font-size:28px;font-weight:500;color:#fff;letter-spacing:-0.02em;margin-bottom:5px;}
+.ret-why{font-size:12px;color:rgba(255,255,255,0.65);font-weight:300;font-style:italic;line-height:1.45;max-width:260px;}
+.returning-actions{padding:16px 22px;}
+.ret-plan-btn{width:100%;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:14px;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 16px rgba(184,92,63,0.25);}
+.ret-not-feeling{width:100%;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);background:none;border:none;cursor:pointer;padding:8px;}
+.ret-not-feeling:hover{color:var(--ink-300);}
+.returning-signals{padding:0 22px 24px;}
+.ret-signals-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-600);margin-bottom:10px;}
+.ret-signal-row{display:flex;gap:7px;flex-wrap:wrap;}
+.ret-signal{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;padding:4px 10px;border-radius:100px;background:var(--bg-raised);color:var(--ink-400);border:1px solid var(--ink-700);}
+[data-theme="dark"] .ret-signal{background:var(--bg-stone);}
+</style>
+</head>
+<body>
+
+<button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+  <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+  <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<div class="shell">
+
+<!-- Phone 1: Cold start — vibe selection -->
+<div>
+<div class="panel-label">Cold start · New user</div>
+<div class="phone" id="phoneCold">
+  <div class="status"><span class="status-time">10:47</span></div>
+  <div class="inspire-nav">
+    <div class="inspire-wordmark">Way<span>mark</span></div>
+    <div class="inspire-account"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+  </div>
+  <div class="cold-body">
+    <div class="cold-prompt">What are you in the mood for?</div>
+    <div class="cold-sub">Pick what pulls at you. We'll find the place.</div>
+    <div class="vibe-grid">
+      <div class="vibe-card" onclick="selectVibe(this)">
+        <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&q=70&auto=format&fit=crop" alt="">
+        <div class="vibe-card-overlay"></div>
+        <div class="vibe-card-body">
+          <div class="vibe-title">Warm + slow</div>
+          <div class="vibe-sub">Long lunches · no agenda</div>
+        </div>
+      </div>
+      <div class="vibe-card" onclick="selectVibe(this)">
+        <img src="https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&q=70&auto=format&fit=crop" alt="">
+        <div class="vibe-card-overlay"></div>
+        <div class="vibe-card-body">
+          <div class="vibe-title">Dense + late nights</div>
+          <div class="vibe-sub">Bars · music · 2am ramen</div>
+        </div>
+      </div>
+      <div class="vibe-card" onclick="selectVibe(this)">
+        <img src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=70&auto=format&fit=crop" alt="">
+        <div class="vibe-card-overlay"></div>
+        <div class="vibe-card-body">
+          <div class="vibe-title">Remote + physical</div>
+          <div class="vibe-sub">Trails · altitude · quiet</div>
+        </div>
+      </div>
+      <div class="vibe-card" onclick="selectVibe(this)">
+        <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=70&auto=format&fit=crop" alt="">
+        <div class="vibe-card-overlay"></div>
+        <div class="vibe-card-body">
+          <div class="vibe-title">Old + layered</div>
+          <div class="vibe-sub">History · temples · craft</div>
+        </div>
+      </div>
+    </div>
+    <button class="cold-cta" id="coldCta" onclick="showShortlist()">Show me where →</button>
+  </div>
+</div>
+</div>
+
+<!-- Phone 2: Shortlist — 3 destinations -->
+<div>
+<div class="panel-label">After vibe selection · Shortlist</div>
+<div class="phone">
+  <div class="status"><span class="status-time">10:47</span></div>
+  <div class="inspire-nav">
+    <div class="inspire-wordmark">Way<span>mark</span></div>
+    <div class="inspire-account"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+  </div>
+  <div class="shortlist-body">
+    <div class="shortlist-eyebrow">Based on your vibe</div>
+    <div class="shortlist-prompt">Three places that fit.</div>
+    <div class="dest-card">
+      <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=75&auto=format&fit=crop" alt="Kyoto">
+      <div class="dest-overlay"></div>
+      <div class="dest-body">
+        <div class="dest-city">Kyoto</div>
+        <div class="dest-why">Temples before the crowds, standing bars at night, nothing loud about it.</div>
+      </div>
+      <div class="dest-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></div>
+    </div>
+    <div class="dest-card">
+      <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=75&auto=format&fit=crop" alt="Lisbon">
+      <div class="dest-overlay"></div>
+      <div class="dest-body">
+        <div class="dest-city">Lisbon</div>
+        <div class="dest-why">Trams up the hills, natural wine in tile-covered rooms, slow by design.</div>
+      </div>
+      <div class="dest-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></div>
+    </div>
+    <div class="dest-card">
+      <img src="https://images.unsplash.com/photo-1534430480872-3498386e7856?w=600&q=75&auto=format&fit=crop" alt="Seoul">
+      <div class="dest-overlay"></div>
+      <div class="dest-body">
+        <div class="dest-city">Seoul</div>
+        <div class="dest-why">Old palaces next to rooftop bars. The contrast is the point.</div>
+      </div>
+      <div class="dest-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></div>
+    </div>
+    <div class="shortlist-back" onclick="">← different vibe</div>
+  </div>
+</div>
+</div>
+
+<!-- Phone 3: Returning user — confident single guess -->
+<div>
+<div class="panel-label">Returning user · Confident guess</div>
+<div class="phone">
+  <div class="status"><span class="status-time">10:47</span></div>
+  <div class="inspire-nav">
+    <div class="inspire-wordmark">Way<span>mark</span></div>
+    <div class="inspire-account"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+  </div>
+  <div class="returning-body">
+    <div class="returning-hero">
+      <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&q=80&auto=format&fit=crop" alt="Osaka">
+      <div class="returning-overlay"></div>
+      <div class="returning-hero-body">
+        <div class="ret-eyebrow">For you · This spring</div>
+        <div class="ret-city">Osaka</div>
+        <div class="ret-why">You tend toward food-first cities, late nights, and places locals still use. Osaka is that, dialed up.</div>
+      </div>
+    </div>
+    <div class="returning-actions">
+      <button class="ret-plan-btn">Plan this trip →</button>
+      <button class="ret-not-feeling" onclick="">Not feeling it · show me more</button>
+    </div>
+    <div class="returning-signals">
+      <div class="ret-signals-label">Why this</div>
+      <div class="ret-signal-row">
+        <div class="ret-signal">counter seats</div>
+        <div class="ret-signal">late dinners</div>
+        <div class="ret-signal">local-first</div>
+        <div class="ret-signal">no tourist menus</div>
+        <div class="ret-signal">street food</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- /shell -->
+
+<script>
+var selectedVibe = null;
+function selectVibe(el){
+  document.querySelectorAll('.vibe-card').forEach(function(c){c.classList.remove('selected');});
+  el.classList.add('selected');
+  selectedVibe = el;
+  document.getElementById('coldCta').classList.add('enabled');
+}
+function showShortlist(){
+  if(!selectedVibe) return;
+  alert('→ Slides to shortlist of 3 destinations');
+}
+</script>
+</body>
+</html>

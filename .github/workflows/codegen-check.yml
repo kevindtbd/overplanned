@@ -1,0 +1,64 @@
+name: Codegen Check
+
+on:
+  pull_request:
+    paths:
+      - 'prisma/schema.prisma'
+      - 'packages/schemas/**'
+      - 'services/api/models/generated.py'
+      - 'packages/shared-types/api.ts'
+      - 'services/api/config/qdrant_schema.json'
+      - 'scripts/prisma-to-jsonschema.ts'
+      - 'scripts/jsonschema-to-qdrant.ts'
+
+jobs:
+  codegen-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Python dependencies
+        run: pip install datamodel-code-generator
+
+      - name: Run codegen
+        run: npm run codegen
+
+      - name: Check for uncommitted changes
+        run: |
+          git diff --exit-code packages/schemas/ || {
+            echo "❌ JSON Schema files are out of sync"
+            echo "Run 'npm run codegen' locally and commit the changes"
+            exit 1
+          }
+          git diff --exit-code services/api/models/generated.py || {
+            echo "❌ Pydantic models are out of sync"
+            echo "Run 'npm run codegen' locally and commit the changes"
+            exit 1
+          }
+          git diff --exit-code packages/shared-types/api.ts || {
+            echo "❌ TypeScript types are out of sync"
+            echo "Run 'npm run codegen' locally and commit the changes"
+            exit 1
+          }
+          git diff --exit-code services/api/config/qdrant_schema.json || {
+            echo "❌ Qdrant schema is out of sync"
+            echo "Run 'npm run codegen' locally and commit the changes"
+            exit 1
+          }
+          echo "✓ All generated files are up to date"

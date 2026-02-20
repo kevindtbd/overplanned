@@ -1,0 +1,15 @@
+workers: 5
+model: claude-opus-4-6
+budget_usd: 500.0
+task_budget: 100.0
+timeout_ms: 900000
+retry:
+  max_attempts: 5
+  backoff_ms: [1000, 3000, 10000, 30000, 60000]
+circuit:
+  threshold: 5
+  recovery_ms: 30000
+streaming:
+  silence_timeout_sec: 180
+  json_truncation_timeout_sec: 60
+  enabled: true

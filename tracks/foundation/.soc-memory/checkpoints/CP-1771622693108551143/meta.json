@@ -1,0 +1,12 @@
+{
+  "id": "CP-1771622693108551143",
+  "timestamp": "2026-02-20T13:24:53.108553658-08:00",
+  "migration_id": "M-009",
+  "phase": "",
+  "file_hashes": {
+    "Dockerfile.web": "DELETED",
+    "services/api/embedding/service.py": "DELETED",
+    "services/api/search/service.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "CP-1771622549719104563",
+  "timestamp": "2026-02-20T13:22:29.719106556-08:00",
+  "migration_id": "M-006",
+  "phase": "",
+  "file_hashes": {
+    "package.json": "336",
+    "services/api/main.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

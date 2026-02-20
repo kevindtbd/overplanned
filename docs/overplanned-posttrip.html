@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Post-Trip</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#F7F4EF;--bg-card:#FFFFFF;--bg-raised:#EDE8E0;--bg-stone:#EAE4DA;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --gold:#A07830;--gold-light:#F5EDD8;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);--shadow-xl:0 32px 80px rgba(26,22,18,0.16);
+}
+[data-theme="dark"]{
+  --bg:#0C0A08;--bg-card:#161210;--bg-raised:#1A1510;--bg-stone:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --gold:#C8A96E;--gold-light:rgba(200,169,110,0.12);
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);--shadow-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);}
+.shell{display:flex;align-items:center;justify-content:center;gap:48px;min-height:100vh;padding:40px 24px;flex-wrap:wrap;}
+.panel-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);text-align:center;margin-bottom:10px;}
+.phone{width:390px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:40px;overflow:hidden;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;}
+[data-theme="dark"] .phone{background:var(--bg-stone);}
+.theme-btn{position:fixed;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);z-index:200;box-shadow:var(--shadow-md);}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+.status{padding:14px 26px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.status-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-100);}
+
+/* Hero — trip memory */
+.pt-hero{height:240px;position:relative;overflow:hidden;}
+.pt-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+.pt-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.92) 0%,rgba(14,10,6,0.1) 60%);}
+.pt-hero-body{position:absolute;bottom:0;left:0;right:0;padding:22px;}
+.pt-back-badge{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);border-radius:100px;padding:4px 10px;margin-bottom:10px;backdrop-filter:blur(4px);}
+.pt-trip-name{font-family:'Lora',serif;font-size:24px;font-weight:500;color:#fff;letter-spacing:-0.02em;margin-bottom:3px;}
+.pt-trip-meta{font-size:12px;color:rgba(255,255,255,0.55);font-weight:300;}
+
+/* Scroll body */
+.pt-body{flex:1;overflow-y:auto;padding:20px 22px 32px;}
+
+/* Photo strip */
+.pt-photos{display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;}
+.pt-photo{width:80px;height:80px;border-radius:12px;overflow:hidden;flex-shrink:0;position:relative;cursor:pointer;}
+.pt-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.3s;}
+.pt-photo:hover img{transform:scale(1.08);}
+.pt-photo-add{width:80px;height:80px;border-radius:12px;border:2px dashed var(--ink-700);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;flex-shrink:0;color:var(--ink-600);transition:border-color 0.15s;}
+.pt-photo-add:hover{border-color:var(--accent);color:var(--accent-dark);}
+.pt-photo-add-label{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;}
+
+/* Memory highlights */
+.pt-section-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;}
+.pt-highlights{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.pt-highlight{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-raised);border-radius:12px;}
+[data-theme="dark"] .pt-highlight{background:var(--bg-stone);}
+.pt-hl-photo{width:38px;height:38px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.pt-hl-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.pt-hl-body{flex:1;}
+.pt-hl-name{font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:1px;}
+.pt-hl-meta{font-size:10px;color:var(--ink-500);font-weight:300;font-style:italic;}
+.pt-hl-badge{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:100px;}
+.pt-hl-badge.fave{background:var(--gold-light);color:var(--gold);}
+[data-theme="dark"] .pt-hl-badge.fave{background:rgba(200,169,110,0.15);}
+.pt-hl-badge.visited{background:var(--success-bg);color:var(--success);}
+
+/* Feedback */
+.pt-feedback{background:var(--bg-raised);border-radius:16px;padding:16px;margin-bottom:20px;}
+[data-theme="dark"] .pt-feedback{background:var(--bg-stone);}
+.pt-feedback-q{font-family:'Lora',serif;font-size:15px;font-style:italic;color:var(--ink-100);margin-bottom:12px;line-height:1.35;}
+.pt-feedback-input{width:100%;background:var(--bg-card);border:1.5px solid var(--ink-700);border-radius:12px;padding:11px 14px;font-size:13px;font-family:'Sora',sans-serif;color:var(--ink-100);outline:none;transition:border-color 0.2s;resize:none;height:72px;font-style:italic;}
+[data-theme="dark"] .pt-feedback-input{background:var(--bg-raised);}
+.pt-feedback-input::placeholder{color:var(--ink-500);}
+.pt-feedback-input:focus{border-color:var(--accent);}
+.pt-feedback-send{margin-top:8px;width:100%;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:11px;cursor:pointer;}
+
+/* Share */
+.pt-share{margin-bottom:20px;}
+.pt-share-row{display:flex;gap:8px;}
+.pt-share-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:14px;cursor:pointer;transition:all 0.15s;}
+[data-theme="dark"] .pt-share-btn{background:var(--bg-stone);}
+.pt-share-btn:hover{border-color:var(--ink-500);}
+.pt-share-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.pt-share-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-400);text-align:center;line-height:1.3;}
+
+/* Per-slot rating actions */
+.pt-hl-actions{display:flex;gap:5px;align-items:center;}
+.pt-rate-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--ink-700);background:var(--bg-card);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;color:var(--ink-500);}
+[data-theme="dark"] .pt-rate-btn{background:var(--bg-raised);}
+.pt-rate-btn:hover{border-color:var(--ink-400);}
+.pt-rate-btn.loved{background:var(--gold-light);border-color:var(--gold);color:var(--gold);}
+.pt-rate-btn.skipped{background:var(--bg-raised);border-color:var(--ink-600);color:var(--ink-500);}
+[data-theme="dark"] .pt-rate-btn.skipped{background:var(--bg-stone);}
+.pt-rate-btn.missed{background:var(--accent-light);border-color:var(--accent);color:var(--accent-dark);}
+
+/* Map toggle button in section header */
+.pt-section-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.pt-map-toggle{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:4px 10px;border-radius:100px;border:1px solid var(--ink-700);background:var(--bg-raised);color:var(--ink-500);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:4px;}
+[data-theme="dark"] .pt-map-toggle{background:var(--bg-stone);}
+.pt-map-toggle:hover{border-color:var(--ink-400);color:var(--ink-200);}
+.pt-map-toggle.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent-dark);}
+
+/* Read-only visited map */
+.pt-map{border-radius:16px;overflow:hidden;margin-bottom:20px;display:none;border:1px solid var(--ink-700);}
+.pt-map.visible{display:block;}
+.pt-map-canvas{height:200px;position:relative;background:#EAE6DC;}
+[data-theme="dark"] .pt-map-canvas{background:#1A1612;}
+.pt-map-pin{position:absolute;transform:translate(-50%,-100%);cursor:pointer;}
+.pt-pin-dot{width:22px;height:22px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+.pt-pin-dot span{transform:rotate(45deg);font-family:'DM Mono',monospace;font-size:8px;color:#fff;}
+.pt-pin-dot.fave-pin{background:var(--gold);}
+.pt-pin-dot.visited-pin{background:var(--success);}
+.pt-pin-dot.skipped-pin{background:var(--ink-500);}
+.pt-map-legend{display:flex;gap:12px;padding:10px 14px;border-top:1px solid var(--ink-700);background:var(--bg-raised);}
+[data-theme="dark"] .pt-map-legend{background:var(--bg-stone);}
+.pt-map-legend-item{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-500);}
+.pt-legend-dot{width:8px;height:8px;border-radius:50%;}
+
+/* Re-engage */
+.pt-reengage{background:linear-gradient(135deg,var(--accent-light),var(--gold-light));border:1px solid var(--ink-700);border-radius:16px;padding:18px;text-align:center;}
+[data-theme="dark"] .pt-reengage{background:linear-gradient(135deg,rgba(201,104,72,0.1),rgba(200,169,110,0.08));}
+.pt-reengage-q{font-family:'Lora',serif;font-size:16px;font-style:italic;color:var(--ink-100);margin-bottom:12px;line-height:1.3;}
+.pt-reengage-btn{font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:11px 24px;cursor:pointer;box-shadow:0 4px 14px rgba(184,92,63,0.2);}
+</style>
+</head>
+<body>
+
+<button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+  <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+  <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<div class="shell">
+<div>
+<div class="panel-label">Post-trip · Day after return</div>
+<div class="phone">
+  <div class="status"><span class="status-time">09:12</span></div>
+
+  <!-- Hero memory -->
+  <div class="pt-hero">
+    <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80&auto=format&fit=crop" alt="Japan">
+    <div class="pt-hero-overlay"></div>
+    <div class="pt-hero-body">
+      <div class="pt-back-badge">
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Back home
+      </div>
+      <div class="pt-trip-name">Japan 2025</div>
+      <div class="pt-trip-meta">Mar 14 – 22 · 9 days · Tokyo, Kyoto, Osaka</div>
+    </div>
+  </div>
+
+  <div class="pt-body">
+
+    <!-- Photo strip -->
+    <div class="pt-section-label" style="margin-bottom:8px;">Your photos</div>
+    <div class="pt-photos">
+      <div class="pt-photo"><img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=200&q=70&auto=format&fit=crop" alt=""></div>
+      <div class="pt-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=200&q=70&auto=format&fit=crop" alt=""></div>
+      <div class="pt-photo"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&q=70&auto=format&fit=crop" alt=""></div>
+      <div class="pt-photo"><img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=200&q=70&auto=format&fit=crop" alt=""></div>
+      <div class="pt-photo-add">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <div class="pt-photo-add-label">Add</div>
+      </div>
+    </div>
+
+    <!-- Memory highlights with per-slot rating -->
+    <div class="pt-section-row">
+      <div class="pt-section-label" style="margin-bottom:0;">Highlights · 28 slots</div>
+      <div class="pt-map-toggle" id="mapToggle" onclick="toggleMap()">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        Where I went
+      </div>
+    </div>
+
+    <!-- Read-only visited map -->
+    <div class="pt-map" id="ptMap">
+      <div class="pt-map-canvas">
+        <svg width="100%" height="100%" viewBox="0 0 390 200" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;">
+          <rect width="390" height="200" fill="#EAE6DC"/>
+          <line x1="0" y1="80" x2="390" y2="80" stroke="#D4CFC5" stroke-width="16"/>
+          <line x1="0" y1="140" x2="390" y2="140" stroke="#D4CFC5" stroke-width="10"/>
+          <line x1="100" y1="0" x2="100" y2="200" stroke="#D4CFC5" stroke-width="16"/>
+          <line x1="240" y1="0" x2="240" y2="200" stroke="#D4CFC5" stroke-width="10"/>
+          <rect x="110" y="90" width="120" height="40" rx="3" fill="#DDD8CC" opacity="0.7"/>
+          <rect x="20" y="90" width="70" height="40" rx="3" fill="#DDD8CC" opacity="0.6"/>
+          <text x="170" y="115" font-family="monospace" font-size="7" fill="#B0AAA0" text-anchor="middle">KYOTO</text>
+          <text x="55" y="115" font-family="monospace" font-size="7" fill="#B0AAA0" text-anchor="middle">OSAKA</text>
+        </svg>
+        <!-- Visited pins -->
+        <div class="pt-map-pin" style="left:27%;top:38%;">
+          <div class="pt-pin-dot fave-pin"><span>★</span></div>
+        </div>
+        <div class="pt-map-pin" style="left:48%;top:52%;">
+          <div class="pt-pin-dot visited-pin"><span>✓</span></div>
+        </div>
+        <div class="pt-map-pin" style="left:62%;top:44%;">
+          <div class="pt-pin-dot visited-pin"><span>✓</span></div>
+        </div>
+        <div class="pt-map-pin" style="left:35%;top:65%;">
+          <div class="pt-pin-dot fave-pin"><span>★</span></div>
+        </div>
+        <div class="pt-map-pin" style="left:74%;top:58%;">
+          <div class="pt-pin-dot skipped-pin"><span>–</span></div>
+        </div>
+      </div>
+      <div class="pt-map-legend">
+        <div class="pt-map-legend-item"><div class="pt-legend-dot" style="background:var(--gold);"></div>Loved</div>
+        <div class="pt-map-legend-item"><div class="pt-legend-dot" style="background:var(--success);"></div>Visited</div>
+        <div class="pt-map-legend-item"><div class="pt-legend-dot" style="background:var(--ink-500);"></div>Skipped</div>
+      </div>
+    </div>
+
+    <div class="pt-highlights">
+      <div class="pt-highlight">
+        <div class="pt-hl-photo"><img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=100&q=70&auto=format&fit=crop" alt=""></div>
+        <div class="pt-hl-body">
+          <div class="pt-hl-name">Fushimi Inari · Day 3</div>
+          <div class="pt-hl-meta">before the crowds · 06:30</div>
+        </div>
+        <div class="pt-hl-actions">
+          <div class="pt-rate-btn loved" title="Loved it" onclick="rate(this,'loved')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <div class="pt-rate-btn" title="Didn't go" onclick="rate(this,'skipped')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="pt-highlight">
+        <div class="pt-hl-photo"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=100&q=70&auto=format&fit=crop" alt=""></div>
+        <div class="pt-hl-body">
+          <div class="pt-hl-name">Pontocho izakaya · Day 3</div>
+          <div class="pt-hl-meta">counter seats · late dinner</div>
+        </div>
+        <div class="pt-hl-actions">
+          <div class="pt-rate-btn" title="Loved it" onclick="rate(this,'loved')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <div class="pt-rate-btn" title="Didn't go" onclick="rate(this,'skipped')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="pt-highlight">
+        <div class="pt-hl-photo"><img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=100&q=70&auto=format&fit=crop" alt=""></div>
+        <div class="pt-hl-body">
+          <div class="pt-hl-name">Dotonbori walk · Day 7</div>
+          <div class="pt-hl-meta">street food · night market energy</div>
+        </div>
+        <div class="pt-hl-actions">
+          <div class="pt-rate-btn" title="Loved it" onclick="rate(this,'loved')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <div class="pt-rate-btn missed" title="Missed — wasn't right" onclick="rate(this,'missed')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+        </div>
+      </div>
+      <!-- Show all -->
+      <div style="text-align:center;padding:6px 0;">
+        <span style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);cursor:pointer;">Show all 28 slots →</span>
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="pt-feedback">
+      <div class="pt-feedback-q">Anything we should know for next time?</div>
+      <textarea class="pt-feedback-input" placeholder="The food spots were great, but I wanted more time in Osaka…"></textarea>
+      <button class="pt-feedback-send">Send →</button>
+    </div>
+
+    <!-- Share -->
+    <div class="pt-section-label">Share this trip</div>
+    <div class="pt-share">
+      <div class="pt-share-row">
+        <div class="pt-share-btn">
+          <div class="pt-share-icon" style="background:var(--accent-light);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-dark)" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="pt-share-label">Overplanned<br>friend</div>
+        </div>
+        <div class="pt-share-btn">
+          <div class="pt-share-icon" style="background:var(--gold-light);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <div class="pt-share-label">Link +<br>signup wall</div>
+        </div>
+        <div class="pt-share-btn">
+          <div class="pt-share-icon" style="background:var(--bg-stone);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-400)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div class="pt-share-label">Social<br>card</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Re-engage -->
+    <div class="pt-reengage">
+      <div class="pt-reengage-q">Ready for the next one?</div>
+      <button class="pt-reengage-btn">Find somewhere new →</button>
+    </div>
+
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+function toggleMap(){
+  var m = document.getElementById('ptMap');
+  var btn = document.getElementById('mapToggle');
+  var showing = m.classList.contains('visible');
+  m.classList.toggle('visible', !showing);
+  btn.classList.toggle('active', !showing);
+  btn.innerHTML = showing
+    ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Where I went'
+    : '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Hide map';
+}
+function rate(btn, state){
+  var actions = btn.closest('.pt-hl-actions');
+  actions.querySelectorAll('.pt-rate-btn').forEach(function(b){ b.classList.remove('loved','skipped','missed'); });
+  btn.classList.add(state);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,554 @@
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// CORE MODELS (Auth + Trips)
+// ============================================================================
+
+model User {
+  id                  String           @id @default(uuid())
+  email               String           @unique
+  name                String?
+  avatarUrl           String?
+  googleId            String?          @unique
+  emailVerified       DateTime?
+  subscriptionTier    SubscriptionTier @default(beta)
+  systemRole          SystemRole       @default(user)
+  featureFlags        Json?
+  accessCohort        String?
+  stripeCustomerId    String?          @unique
+  stripeSubId         String?
+  stripePriceId       String?
+  onboardingComplete  Boolean          @default(false)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  lastActiveAt        DateTime?
+
+  sessions     Session[]
+  accounts     Account[]
+  tripMembers  TripMember[]
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+  createdAt    DateTime @default(now())
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Trip {
+  id                String     @id @default(uuid())
+  userId            String
+  mode              TripMode
+  status            TripStatus @default(draft)
+  destination       String
+  city              String
+  country           String
+  timezone          String
+  startDate         DateTime
+  endDate           DateTime
+  groupId           String?
+  memberCount       Int?
+  planningProgress  Float?
+  presetTemplate    String?
+  personaSeed       Json?
+  fairnessState     Json?
+  affinityMatrix    Json?
+  logisticsState    Json?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  activatedAt       DateTime?
+  completedAt       DateTime?
+
+  members          TripMember[]
+  slots            ItinerarySlot[]
+  sharedTokens     SharedTripToken[]
+  inviteTokens     InviteToken[]
+}
+
+model TripMember {
+  id        String       @id @default(uuid())
+  tripId    String
+  trip      Trip         @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      TripRole
+  status    MemberStatus @default(invited)
+  personaSeed    Json?
+  energyProfile  Json?
+  joinedAt  DateTime?
+  createdAt DateTime     @default(now())
+
+  @@unique([tripId, userId])
+}
+
+model ItinerarySlot {
+  id              String     @id @default(uuid())
+  tripId          String
+  trip            Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  activityNodeId  String?
+  activityNode    ActivityNode? @relation(fields: [activityNodeId], references: [id])
+  dayNumber       Int
+  sortOrder       Int
+  slotType        SlotType
+  status          SlotStatus @default(proposed)
+  startTime       DateTime?
+  endTime         DateTime?
+  durationMinutes Int?
+  isLocked        Boolean    @default(false)
+  voteState       Json?
+  isContested     Boolean    @default(false)
+  swappedFromId   String?
+  pivotEventId    String?
+  wasSwapped      Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+// ============================================================================
+// WORLD KNOWLEDGE (ActivityNodes + Vibe Tags)
+// ============================================================================
+
+model ActivityNode {
+  id                String           @id @default(uuid())
+  name              String
+  slug              String           @unique
+  canonicalName     String
+  city              String
+  country           String
+  neighborhood      String?
+  latitude          Float
+  longitude         Float
+  category          ActivityCategory
+  subcategory       String?
+  priceLevel        Int?
+  hours             Json?
+  address           String?
+  phoneNumber       String?
+  websiteUrl        String?
+  foursquareId      String?          @unique
+  googlePlaceId     String?          @unique
+  primaryImageUrl   String?
+  imageSource       String?
+  imageValidated    Boolean          @default(false)
+  sourceCount       Int              @default(0)
+  convergenceScore  Float?
+  authorityScore    Float?
+  descriptionShort  String?
+  descriptionLong   String?
+  contentHash       String?
+  lastScrapedAt     DateTime?
+  lastValidatedAt   DateTime?
+  status            NodeStatus       @default(pending)
+  flagReason        String?
+  resolvedToId      String?
+  isCanonical       Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  vibeTags         ActivityNodeVibeTag[]
+  aliases          ActivityAlias[]
+  qualitySignals   QualitySignal[]
+  slots            ItinerarySlot[]
+}
+
+model VibeTag {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  category  String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  activityNodeVibeTags ActivityNodeVibeTag[]
+}
+
+model ActivityNodeVibeTag {
+  id             String       @id @default(uuid())
+  activityNodeId String
+  activityNode   ActivityNode @relation(fields: [activityNodeId], references: [id], onDelete: Cascade)
+  vibeTagId      String
+  vibeTag        VibeTag      @relation(fields: [vibeTagId], references: [id], onDelete: Cascade)
+  score          Float
+  source         String
+  createdAt      DateTime     @default(now())
+
+  @@unique([activityNodeId, vibeTagId, source])
+}
+
+model ActivityAlias {
+  id             String       @id @default(uuid())
+  activityNodeId String
+  activityNode   ActivityNode @relation(fields: [activityNodeId], references: [id], onDelete: Cascade)
+  alias          String
+  source         String
+  createdAt      DateTime     @default(now())
+
+  @@index([alias])
+  @@index([activityNodeId])
+}
+
+model QualitySignal {
+  id              String       @id @default(uuid())
+  activityNodeId  String
+  activityNode    ActivityNode @relation(fields: [activityNodeId], references: [id], onDelete: Cascade)
+  sourceName      String
+  sourceUrl       String?
+  sourceAuthority Float
+  signalType      String
+  rawExcerpt      String?
+  extractedAt     DateTime
+  createdAt       DateTime     @default(now())
+
+  @@index([activityNodeId, sourceName])
+}
+
+// ============================================================================
+// SIGNALS (Behavioral + Intention + Raw Events)
+// ============================================================================
+
+model BehavioralSignal {
+  id             String     @id @default(uuid())
+  userId         String
+  tripId         String?
+  slotId         String?
+  activityNodeId String?
+  signalType     SignalType
+  signalValue    Float
+  tripPhase      TripPhase
+  rawAction      String
+  weatherContext String?
+  modelVersion   String?
+  promptVersion  String?
+  createdAt      DateTime   @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, tripId, signalType])
+  @@index([activityNodeId, signalType])
+}
+
+model IntentionSignal {
+  id                 String   @id @default(uuid())
+  behavioralSignalId String
+  rawEventId         String?
+  userId             String
+  intentionType      String
+  confidence         Float
+  source             String
+  userProvided       Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([behavioralSignalId])
+  @@index([userId, intentionType])
+}
+
+model RawEvent {
+  id             String   @id @default(uuid())
+  userId         String
+  sessionId      String
+  tripId         String?
+  activityNodeId String?
+  clientEventId  String?
+  eventType      String
+  intentClass    IntentClass
+  surface        String?
+  payload        Json
+  platform       String?
+  screenWidth    Int?
+  networkType    String?
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, clientEventId])
+  @@index([userId, eventType, createdAt])
+  @@index([userId, activityNodeId])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@index([intentClass, eventType])
+}
+
+// ============================================================================
+// ML + ADMIN
+// ============================================================================
+
+model ModelRegistry {
+  id                 String     @id @default(uuid())
+  modelName          String
+  modelVersion       String
+  stage              ModelStage
+  modelType          String
+  description        String?
+  artifactPath       String?
+  artifactHash       String?
+  configSnapshot     Json?
+  metrics            Json?
+  evaluatedAt        DateTime?
+  trainingDataRange  Json?
+  parentVersionId    String?
+  promotedAt         DateTime?
+  promotedBy         String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@unique([modelName, modelVersion])
+  @@index([modelName, stage])
+}
+
+model PivotEvent {
+  id              String        @id @default(uuid())
+  tripId          String
+  slotId          String
+  triggerType     PivotTrigger
+  triggerPayload  Json?
+  originalNodeId  String
+  alternativeIds  String[]
+  selectedNodeId  String?
+  status          PivotStatus   @default(proposed)
+  resolvedAt      DateTime?
+  responseTimeMs  Int?
+  createdAt       DateTime      @default(now())
+
+  @@index([tripId, createdAt])
+  @@index([status])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  before     Json?
+  after      Json?
+  ipAddress  String
+  userAgent  String
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+}
+
+// ============================================================================
+// TOKENS (Shared Trip + Invite)
+// ============================================================================
+
+model SharedTripToken {
+  id          String    @id @default(uuid())
+  tripId      String
+  trip        Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  token       String    @unique
+  createdBy   String
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  viewCount   Int       @default(0)
+  importCount Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@index([token])
+}
+
+model InviteToken {
+  id        String    @id @default(uuid())
+  tripId    String
+  trip      Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  createdBy String
+  maxUses   Int       @default(1)
+  usedCount Int       @default(0)
+  role      TripRole  @default(member)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum SubscriptionTier {
+  free
+  beta
+  pro
+  lifetime
+}
+
+enum SystemRole {
+  user
+  admin
+}
+
+enum TripMode {
+  solo
+  group
+}
+
+enum TripStatus {
+  draft
+  planning
+  active
+  completed
+  archived
+}
+
+enum TripRole {
+  organizer
+  member
+}
+
+enum MemberStatus {
+  invited
+  joined
+  declined
+}
+
+enum SlotType {
+  anchor
+  flex
+  meal
+  break
+  transit
+}
+
+enum SlotStatus {
+  proposed
+  voted
+  confirmed
+  active
+  completed
+  skipped
+}
+
+enum ActivityCategory {
+  dining
+  drinks
+  culture
+  outdoors
+  active
+  entertainment
+  shopping
+  experience
+  nightlife
+  group_activity
+  wellness
+}
+
+enum NodeStatus {
+  pending
+  approved
+  flagged
+  archived
+}
+
+enum SignalType {
+  // Slot interactions
+  slot_view
+  slot_tap
+  slot_confirm
+  slot_skip
+  slot_swap
+  slot_complete
+  slot_dwell
+  // Discovery
+  discover_swipe_right
+  discover_swipe_left
+  discover_shortlist
+  discover_remove
+  // Vibe
+  vibe_select
+  vibe_deselect
+  vibe_implicit
+  // Post-trip
+  post_loved
+  post_skipped
+  post_missed
+  post_disliked
+  // Pivot
+  pivot_accepted
+  pivot_rejected
+  pivot_initiated
+  // Passive
+  dwell_time
+  scroll_depth
+  return_visit
+  share_action
+  // Promoted implicit (Month 5+)
+  considered_not_chosen
+  soft_positive
+  category_preference
+  time_preference
+  geographic_preference
+  pace_signal
+}
+
+enum TripPhase {
+  pre_trip
+  active
+  post_trip
+}
+
+enum IntentClass {
+  explicit
+  implicit
+  contextual
+}
+
+enum ModelStage {
+  staging
+  ab_test
+  production
+  archived
+}
+
+enum PivotTrigger {
+  weather_change
+  venue_closed
+  time_overrun
+  user_mood
+  user_request
+}
+
+enum PivotStatus {
+  proposed
+  accepted
+  rejected
+  expired
+}

@@ -1,0 +1,2359 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   LIGHT TOKENS
+   ============================================================ */
+[data-theme="light"] {
+  --bg-base:        #FAF8F5;
+  --bg-surface:     #FFFFFF;
+  --bg-raised:      #F3EFE9;
+  --bg-overlay:     #EDE8E1;
+  --bg-input:       #F3EFE9;
+
+  --accent:         #B85C3F;
+  --accent-light:   #F0E0D9;
+  --accent-muted:   #D4886E;
+  --accent-on:      #8C3A24;
+
+  --ink-100:        #1C1713;
+  --ink-200:        #3A302A;
+  --ink-300:        #5C5048;
+  --ink-400:        #7A6E64;
+  --ink-500:        #9C8E84;
+  --ink-600:        #BDB0A6;
+  --ink-700:        #D6CFC8;
+  --ink-800:        #EAE4DE;
+  --ink-900:        #F5F1EC;
+
+  --success:        #4A8A5C;
+  --success-bg:     #E0EEE5;
+  --warning:        #A07830;
+  --warning-bg:     #F2EAD8;
+  --info:           #3A6A8C;
+  --info-bg:        #D8E8F2;
+
+  --shadow-sm:  0 1px 3px rgba(28,23,19,0.06), 0 1px 2px rgba(28,23,19,0.04);
+  --shadow-md:  0 4px 16px rgba(28,23,19,0.08), 0 1px 4px rgba(28,23,19,0.04);
+  --shadow-lg:  0 12px 48px rgba(28,23,19,0.10), 0 2px 8px rgba(28,23,19,0.05);
+  --shadow-card:0 2px 8px rgba(28,23,19,0.06);
+}
+
+/* ============================================================
+   DARK TOKENS
+   ============================================================ */
+[data-theme="dark"] {
+  --bg-base:        #100E0B;
+  --bg-surface:     #171310;
+  --bg-raised:      #1F1A15;
+  --bg-overlay:     #28211A;
+  --bg-input:       #1F1A15;
+
+  --accent:         #C96848;
+  --accent-light:   rgba(201,104,72,0.14);
+  --accent-muted:   #8C402A;
+  --accent-on:      #E8906E;
+
+  --ink-100:        #F0EAE2;
+  --ink-200:        #D4C8BC;
+  --ink-300:        #A89484;
+  --ink-400:        #7A6A5C;
+  --ink-500:        #5C4E42;
+  --ink-600:        #3D332A;
+  --ink-700:        #2E251E;
+  --ink-800:        #221C16;
+  --ink-900:        #1A1410;
+
+  --success:        #5A9E6A;
+  --success-bg:     rgba(90,158,106,0.12);
+  --warning:        #B8943A;
+  --warning-bg:     rgba(184,148,58,0.12);
+  --info:           #4A84A8;
+  --info-bg:        rgba(74,132,168,0.12);
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:  0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:  0 16px 60px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-card:0 2px 12px rgba(0,0,0,0.25);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  background: var(--bg-base);
+  color: var(--ink-100);
+  font-family: 'Sora', sans-serif;
+  font-weight: 300;
+  line-height: 1.5;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ============================================================
+   THEME TOGGLE — fixed top right
+   ============================================================ */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--ink-700);
+  border-radius: 100px;
+  padding: 6px 14px 6px 8px;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover { border-color: var(--accent); }
+
+.toggle-track {
+  width: 32px;
+  height: 18px;
+  background: var(--ink-700);
+  border-radius: 100px;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+[data-theme="dark"] .toggle-track { background: var(--accent); }
+
+.toggle-thumb {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+[data-theme="dark"] .toggle-thumb { transform: translateX(14px); }
+
+.toggle-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-300);
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   PAGE LAYOUT
+   ============================================================ */
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 40px 80px;
+}
+
+.page-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.page-title {
+  font-size: 34px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin-bottom: 10px;
+}
+
+.page-desc {
+  font-size: 14px;
+  color: var(--ink-300);
+  font-weight: 300;
+  max-width: 440px;
+  line-height: 1.7;
+  margin-bottom: 56px;
+}
+
+.section {
+  margin-bottom: 64px;
+  padding-bottom: 64px;
+  border-bottom: 1px solid var(--ink-800);
+}
+
+.sec-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-bottom: 20px;
+}
+
+/* ============================================================
+   SVG ICON SYSTEM — colored wrappers
+   ============================================================ */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon svg { display: block; }
+
+/* Category icon badges */
+.icon-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-badge.food    { background: rgba(184,92,63,0.12); color: var(--accent); }
+.icon-badge.culture { background: var(--info-bg);       color: var(--info); }
+.icon-badge.pace    { background: var(--success-bg);    color: var(--success); }
+.icon-badge.activity{ background: var(--warning-bg);    color: var(--warning); }
+
+/* ============================================================
+   TOKEN DISPLAY
+   ============================================================ */
+.color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.color-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--ink-800);
+  border-radius: 10px;
+}
+
+.color-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.07);
+  flex-shrink: 0;
+}
+
+.color-info { display: flex; flex-direction: column; }
+.color-name { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--ink-100); }
+.color-val  { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink-400); }
+
+.type-stack { display: flex; flex-direction: column; }
+
+.type-line {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--ink-800);
+}
+
+.type-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-400);
+  min-width: 150px;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   PHOTO CARDS — destination hero + activity cards
+   ============================================================ */
+
+/* Destination hero — full bleed photo, text over gradient */
+.dest-hero {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  height: 340px;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.dest-hero img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  display: block;
+}
+
+.dest-hero:hover img { transform: scale(1.03); }
+
+.dest-hero-overlay {
+  position: absolute;
+  inset: 0;
+  /* warm gradient — not cold blue-black */
+  background:
+    linear-gradient(to top, rgba(12,9,6,0.82) 0%, rgba(12,9,6,0.28) 50%, transparent 80%),
+    linear-gradient(to right, rgba(12,9,6,0.22) 0%, transparent 60%);
+}
+
+.dest-hero-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 28px 28px 24px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dest-hero-text {}
+
+.dest-hero-country {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(240,234,226,0.55);
+  margin-bottom: 6px;
+}
+
+.dest-hero-city {
+  font-size: 38px;
+  font-weight: 500;
+  color: #F0EAE2;
+  letter-spacing: -0.03em;
+  line-height: 1.0;
+  margin-bottom: 12px;
+}
+
+/* Tags on photo — same glass pill style */
+.photo-tags { display: flex; gap: 7px; flex-wrap: wrap; }
+
+.photo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  background: rgba(240,234,226,0.12);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(240,234,226,0.16);
+  border-radius: 100px;
+  font-size: 11px;
+  color: rgba(240,234,226,0.80);
+}
+
+.photo-tag .icon { color: inherit; opacity: 0.85; }
+
+.dest-hero-action {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.plan-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(240,234,226,0.92);
+  color: #1C1713;
+  border: none;
+  border-radius: 100px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s;
+  backdrop-filter: blur(8px);
+}
+
+.plan-btn:hover { background: #fff; transform: translateY(-1px); }
+
+.dest-hero-hint {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: rgba(240,234,226,0.38);
+  text-align: right;
+}
+
+/* Activity card row — photo top, data below */
+.act-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.act-card {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ink-800);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.act-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--ink-600);
+}
+
+.act-photo {
+  position: relative;
+  height: 148px;
+  overflow: hidden;
+}
+
+.act-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.act-card:hover .act-photo img { transform: scale(1.06); }
+
+.act-photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(12,9,6,0.28) 100%);
+}
+
+/* Source badge — top right of photo */
+.photo-source-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(240,234,226,0.75);
+  background: rgba(12,9,6,0.42);
+  backdrop-filter: blur(6px);
+  padding: 3px 8px;
+  border-radius: 100px;
+}
+
+/* Local/tourist score bottom-left of photo */
+.photo-signal {
+  position: absolute;
+  bottom: 9px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 100px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  backdrop-filter: blur(8px);
+  border: 1px solid transparent;
+}
+
+.photo-signal.gem {
+  background: rgba(74,138,92,0.72);
+  color: #E4F2E8;
+  border-color: rgba(74,138,92,0.3);
+}
+
+.photo-signal.warn {
+  background: rgba(160,120,48,0.72);
+  color: #F2ECD8;
+  border-color: rgba(160,120,48,0.3);
+}
+
+/* Card body — same discipline as slot cards */
+.act-body {
+  padding: 12px 14px 14px;
+}
+
+.act-cat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.act-cat-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.act-cat-badge.food { background: rgba(184,92,63,0.12); color: var(--accent); }
+.act-cat-badge.cult { background: var(--info-bg); color: var(--info); }
+.act-cat-badge.pace { background: var(--success-bg); color: var(--success); }
+.act-cat-badge.actv { background: var(--warning-bg); color: var(--warning); }
+
+.act-cat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.act-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+/* One line max. Says one thing. Stops. */
+.act-why {
+  font-size: 11px;
+  color: var(--ink-400);
+  font-weight: 300;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.act-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.act-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.act-meta-item {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-500);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.act-meta-item .icon { color: var(--ink-600); }
+
+.act-add {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+
+.act-add:hover { transform: scale(1.1); opacity: 0.88; }
+.act-add.added { background: var(--success); }
+
+/* Slot card photo thumbnail — for anchor slots only */
+.slot-thumb {
+  width: 100%;
+  height: 90px;
+  border-radius: 9px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.slot-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.slot-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(12,9,6,0.3) 100%);
+}
+
+/* Dark mode photo card adjustments */
+[data-theme="dark"] .act-card {
+  background: var(--bg-raised);
+  border-color: var(--ink-700);
+}
+
+[data-theme="dark"] .act-card:hover {
+  border-color: var(--ink-500);
+}
+
+[data-theme="dark"] .dest-hero {
+  box-shadow: var(--shadow-lg);
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  font-family: 'Sora', sans-serif;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+  font-size: 13px;
+  font-weight: 400;
+  border-radius: 100px;
+  outline: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 18px;
+}
+
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-300);
+  border: 1px solid var(--ink-700);
+  padding: 7px 16px;
+}
+
+.btn-ghost:hover { border-color: var(--ink-400); color: var(--ink-100); }
+
+/* ============================================================
+   CREATION FLOW
+   ============================================================ */
+.shell {
+  background: var(--bg-surface);
+  border-radius: 22px;
+  border: 1px solid var(--ink-800);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+/* Topbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--ink-800);
+  background: var(--bg-surface);
+}
+
+.wordmark {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink-100);
+  letter-spacing: -0.04em;
+}
+.wordmark span { color: var(--accent); }
+
+.step-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.step-pip {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--ink-700);
+  transition: all 0.2s ease;
+  width: 20px;
+}
+
+.step-pip.done   { background: var(--accent); opacity: 0.5; width: 14px; }
+.step-pip.active { background: var(--accent); width: 28px; }
+
+/* Creation body */
+.creation-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 620px;
+}
+
+/* Left panel */
+.c-left {
+  padding: 32px 28px;
+  border-right: 1px solid var(--ink-800);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  background: var(--bg-surface);
+}
+
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+
+.field-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.field-heading {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.field-sub {
+  font-size: 12px;
+  color: var(--ink-300);
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* Input */
+.input-wrap { position: relative; }
+
+.input-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-500);
+  display: flex;
+}
+
+.input {
+  width: 100%;
+  padding: 11px 14px 11px 38px;
+  background: var(--bg-input);
+  border: 1.5px solid var(--ink-700);
+  border-radius: 12px;
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-100);
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.input:focus {
+  border-color: var(--accent-muted);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.input::placeholder { color: var(--ink-500); font-weight: 300; }
+
+/* Date row */
+.date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.date-input {
+  padding: 10px 13px;
+  background: var(--bg-input);
+  border: 1.5px solid var(--ink-700);
+  border-radius: 10px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  color: var(--ink-100);
+  outline: none;
+  width: 100%;
+  font-weight: 300;
+  cursor: pointer;
+  transition: border-color 0.18s;
+}
+
+.date-input:focus { border-color: var(--accent-muted); }
+
+/* Traveler counter */
+.counter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--bg-input);
+  border: 1.5px solid var(--ink-700);
+  border-radius: 12px;
+}
+
+.counter-info {}
+.counter-name { font-size: 13px; font-weight: 400; color: var(--ink-100); }
+.counter-hint { font-size: 11px; color: var(--ink-400); font-weight: 300; }
+
+.counter-ctrl { display: flex; align-items: center; gap: 12px; }
+
+.c-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-700);
+  background: var(--bg-surface);
+  color: var(--ink-300);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+  font-family: 'Sora', sans-serif;
+}
+
+.c-btn:hover { border-color: var(--accent); color: var(--accent); }
+.c-val { font-size: 15px; font-weight: 500; color: var(--ink-100); min-width: 18px; text-align: center; }
+
+/* Vibe chips */
+.vibe-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.vibe-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  background: var(--bg-raised);
+  border: 1.5px solid var(--ink-700);
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-300);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.vibe-chip:hover { border-color: var(--ink-500); color: var(--ink-100); }
+
+.vibe-chip.active {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent-on);
+}
+
+.vibe-chip .icon { color: inherit; }
+
+/* ============================================================
+   RIGHT PANEL — TAG SYSTEM
+   ============================================================ */
+.c-right {
+  padding: 28px;
+  background: var(--bg-raised);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.tag-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tag-panel-title { font-size: 15px; font-weight: 500; color: var(--ink-100); letter-spacing: -0.01em; }
+.tag-panel-hint  { font-size: 12px; color: var(--ink-400); font-weight: 300; margin-top: 3px; }
+
+.tag-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 3px 11px;
+  background: var(--accent-light);
+  color: var(--accent-on);
+  border: 1px solid rgba(184,92,63,0.2);
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Drop zone */
+.dropzone {
+  min-height: 80px;
+  background: var(--bg-surface);
+  border: 2px dashed var(--ink-700);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+  transition: border-color 0.18s, background 0.18s;
+  position: relative;
+}
+
+.dropzone.has-items { border-style: solid; border-color: var(--ink-700); }
+.dropzone.drag-over { border-color: var(--accent); background: var(--accent-light); }
+
+.drop-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.15s;
+}
+
+.drop-hint.hidden { opacity: 0; }
+
+.drop-hint-text {
+  font-size: 12px;
+  color: var(--ink-500);
+  font-weight: 300;
+  text-align: center;
+}
+
+/* Selected tags */
+.sel-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px 6px 10px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: default;
+  animation: tagIn 0.18s ease both;
+  user-select: none;
+}
+
+.sel-tag .icon { color: rgba(255,255,255,0.85); }
+
+.sel-tag-x {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.9);
+  transition: background 0.15s;
+}
+
+.sel-tag-x:hover { background: rgba(255,255,255,0.35); }
+
+@keyframes tagIn {
+  from { transform: scale(0.82); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* Tag pool */
+.pool-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-bottom: 10px;
+}
+
+.tag-cats { display: flex; flex-direction: column; gap: 18px; }
+
+.cat-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-300);
+  margin-bottom: 10px;
+}
+
+/* Category group label — icon inherits from badge, text stays neutral */
+.cat-name .icon-badge.food { color: var(--accent); }
+.cat-name .icon-badge.culture { color: var(--info); }
+.cat-name .icon-badge.pace { color: var(--success); }
+.cat-name .icon-badge.activity { color: var(--warning); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ink-700);
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-300);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.chip .icon { transition: color 0.15s; }
+
+/* Food chips — terracotta icon */
+.chip[data-tag="street-food"] .icon,
+.chip[data-tag="fine-dining"] .icon,
+.chip[data-tag="markets"] .icon,
+.chip[data-tag="local-bars"] .icon,
+.chip[data-tag="morning-coffee"] .icon,
+.chip[data-tag="izakayas"] .icon,
+.chip[data-tag="cooking-class"] .icon { color: var(--accent); }
+
+/* Culture chips — blue icon */
+.chip[data-tag="temples"] .icon,
+.chip[data-tag="museums"] .icon,
+.chip[data-tag="hidden-gems"] .icon,
+.chip[data-tag="photography"] .icon,
+.chip[data-tag="gardens"] .icon,
+.chip[data-tag="off-path"] .icon { color: var(--info); }
+
+/* Pace chips — green icon */
+.chip[data-tag="slow-mornings"] .icon,
+.chip[data-tag="late-nights"] .icon,
+.chip[data-tag="rest-days"] .icon,
+.chip[data-tag="spontaneous"] .icon { color: var(--success); }
+
+/* Activity chips — amber icon */
+.chip[data-tag="packed-days"] .icon,
+.chip[data-tag="hiking"] .icon,
+.chip[data-tag="cycling"] .icon,
+.chip[data-tag="live-music"] .icon,
+.chip[data-tag="shopping"] .icon,
+.chip[data-tag="onsen"] .icon,
+.chip[data-tag="day-trips"] .icon { color: var(--warning); }
+
+.chip:hover {
+  border-color: var(--accent-muted);
+  color: var(--accent-on);
+  background: var(--accent-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.chip:hover .icon { color: var(--accent); }
+
+.chip.used {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* ============================================================
+   ITINERARY VIEW
+   ============================================================ */
+.itin-shell {
+  background: var(--bg-surface);
+  border-radius: 22px;
+  border: 1px solid var(--ink-800);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.itin-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--ink-800);
+}
+
+.itin-top-left { display: flex; align-items: center; gap: 16px; }
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-400);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.back-link:hover { color: var(--ink-100); }
+
+.divider-v {
+  width: 1px;
+  height: 20px;
+  background: var(--ink-800);
+}
+
+.trip-info {}
+.trip-name { font-size: 14px; font-weight: 500; color: var(--ink-100); }
+.trip-sub  { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink-400); letter-spacing: 0.04em; }
+
+.itin-top-right { display: flex; align-items: center; gap: 12px; }
+
+/* Avatar stack */
+.av-stack { display: flex; }
+.av {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-surface);
+  font-size: 10px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center;
+  margin-left: -7px;
+}
+.av:first-child { margin-left: 0; }
+.av-1 { background: #C4B8A8; color: var(--bg-base); }
+.av-2 { background: #A8B8C4; color: var(--bg-base); }
+.av-3 { background: var(--accent); color: #fff; }
+.av-4 { background: #B4C4A8; color: var(--bg-base); }
+
+/* Day tabs */
+.day-tabs {
+  display: flex;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--ink-800);
+  overflow-x: auto;
+  scrollbar-width: none;
+  gap: 0;
+}
+
+.dtab {
+  padding: 11px 18px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-400);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.dtab:hover { color: var(--ink-100); }
+.dtab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+/* Main itin layout */
+.itin-body { display: grid; grid-template-columns: 1fr 280px; }
+
+.itin-main { padding: 24px; }
+
+.day-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.day-title { font-size: 22px; font-weight: 500; color: var(--ink-100); letter-spacing: -0.02em; }
+.day-sub   { font-size: 12px; color: var(--ink-400); font-weight: 300; margin-top: 3px; }
+
+/* Energy bar */
+.energy-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.energy-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  white-space: nowrap;
+}
+
+.energy-track {
+  flex: 1;
+  height: 3px;
+  background: var(--ink-800);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.energy-fill {
+  height: 100%;
+  width: 54%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--success), var(--warning));
+}
+
+.energy-status {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--success);
+  white-space: nowrap;
+}
+
+/* Slots */
+.slots { display: flex; flex-direction: column; }
+
+.slot-row { display: flex; gap: 10px; }
+
+.slot-time-col {
+  width: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 17px;
+}
+
+.slot-t {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-500);
+  width: 100%;
+  text-align: right;
+}
+
+.slot-spine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.s-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 17px;
+  position: relative;
+  z-index: 2;
+}
+
+.s-dot.anchor  { background: var(--accent); }
+.s-dot.flex    { background: transparent; border: 2px solid var(--ink-500); }
+.s-dot.meal    { background: var(--warning); }
+.s-dot.rest    { background: var(--success); }
+
+.s-line {
+  width: 1px;
+  flex: 1;
+  min-height: 12px;
+  background: var(--ink-800);
+}
+
+.slot-card {
+  flex: 1;
+  margin: 8px 0;
+  padding: 13px 15px;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ink-800);
+  border-radius: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.slot-card:hover { border-color: var(--ink-600); box-shadow: var(--shadow-sm); }
+.slot-card.active { border-color: var(--accent-muted); background: var(--accent-light); }
+
+.sc-type {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-bottom: 3px;
+}
+
+.sc-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-100);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.sc-why {
+  font-size: 12px;
+  color: var(--ink-300);
+  font-weight: 300;
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.sc-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.mtag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 2px 9px;
+  border-radius: 100px;
+  background: var(--bg-raised);
+  border: 1px solid var(--ink-800);
+  color: var(--ink-400);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mtag .icon { color: inherit; }
+.mtag.a { background: var(--accent-light); border-color: rgba(184,92,63,0.2); color: var(--accent-on); }
+.mtag.s { background: var(--success-bg);  border-color: rgba(74,138,92,0.2);  color: var(--success); }
+.mtag.w { background: var(--warning-bg);  border-color: rgba(160,120,48,0.2); color: var(--warning); }
+
+/* Transit row */
+.transit-r {
+  display: flex;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.tr-spacer { width: 44px; flex-shrink: 0; }
+.tr-spine  { width: 16px; flex-shrink: 0; display: flex; justify-content: center; }
+.tr-line   { width: 1px; height: 24px; background: var(--ink-800); }
+.tr-text   { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink-500); padding: 6px 0; display: flex; align-items: center; gap: 6px; }
+.tr-text svg { color: var(--ink-400); }
+
+/* Slot type label — colored dot matches sc-type text */
+.sc-type.anchor-t { color: var(--accent); }
+.sc-type.flex-t   { color: var(--info); }
+.sc-type.meal-t   { color: var(--warning); }
+.sc-type.break-t  { color: var(--success); }
+
+/* Inline poll */
+.poll-wrap {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ink-800);
+}
+
+.poll-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-bottom: 8px;
+}
+
+.poll-opts { display: flex; flex-direction: column; gap: 6px; }
+
+.poll-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 11px;
+  background: var(--bg-raised);
+  border: 1.5px solid var(--ink-800);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ink-300);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.poll-opt.win {
+  border-color: rgba(90,158,106,0.4);
+  background: var(--success-bg);
+  color: var(--success);
+  font-weight: 400;
+}
+
+.poll-votes { font-family: 'DM Mono', monospace; font-size: 10px; }
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.itin-sidebar {
+  border-left: 1px solid var(--ink-800);
+  background: var(--bg-raised);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.sb-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-bottom: 10px;
+}
+
+/* Route */
+.route-list { display: flex; flex-direction: column; }
+
+.r-item { display: flex; align-items: center; gap: 10px; }
+.r-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.r-name { font-size: 12px; color: var(--ink-100); font-weight: 400; }
+.r-area { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--ink-400); }
+.r-conn { width: 1px; height: 14px; background: var(--ink-800); margin-left: 3px; }
+
+/* Stats grid */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.stat-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--ink-800);
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+
+.stat-v {
+  font-family: 'DM Mono', monospace;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--ink-100);
+  letter-spacing: -0.02em;
+  display: block;
+}
+
+.stat-l {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+/* Tags driving today */
+.driving-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ============================================================
+   DARK MODE SPECIAL ATMOSPHERICS
+   ============================================================ */
+[data-theme="dark"] .shell,
+[data-theme="dark"] .itin-shell {
+  border-color: var(--ink-700);
+}
+
+[data-theme="dark"] .c-right {
+  background: linear-gradient(160deg, #1C1610 0%, #181310 100%);
+}
+
+[data-theme="dark"] .itin-sidebar {
+  background: linear-gradient(180deg, #1A1510 0%, #171210 100%);
+}
+
+[data-theme="dark"] .dropzone {
+  background: rgba(15,12,9,0.5);
+  border-color: var(--ink-600);
+}
+
+[data-theme="dark"] .slot-card {
+  background: var(--bg-raised);
+  border-color: var(--ink-700);
+}
+
+[data-theme="dark"] .slot-card:hover {
+  border-color: var(--ink-500);
+}
+
+[data-theme="dark"] .slot-card.active {
+  background: rgba(201,104,72,0.1);
+  border-color: rgba(201,104,72,0.4);
+}
+
+[data-theme="dark"] .poll-opt {
+  background: var(--bg-overlay);
+  border-color: var(--ink-700);
+}
+
+[data-theme="dark"] .stat-box {
+  background: var(--bg-overlay);
+  border-color: var(--ink-700);
+}
+
+[data-theme="dark"] .chip {
+  background: var(--bg-raised);
+  border-color: var(--ink-600);
+}
+
+[data-theme="dark"] .vibe-chip {
+  background: var(--bg-raised);
+  border-color: var(--ink-600);
+}
+
+[data-theme="dark"] .input,
+[data-theme="dark"] .date-input,
+[data-theme="dark"] .counter-row {
+  background: var(--bg-overlay);
+  border-color: var(--ink-600);
+}
+
+/* Dark glow on accent elements */
+[data-theme="dark"] .s-dot.anchor {
+  box-shadow: 0 0 8px rgba(201,104,72,0.5);
+}
+
+[data-theme="dark"] .av-3 {
+  box-shadow: 0 0 6px rgba(201,104,72,0.4);
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.shell   { animation: fadeUp 0.4s ease both 0.05s; }
+.itin-shell { animation: fadeUp 0.4s ease both 0.1s; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 860px) {
+  .creation-grid { grid-template-columns: 1fr; }
+  .c-left { border-right: none; border-bottom: 1px solid var(--ink-800); }
+  .itin-body { grid-template-columns: 1fr; }
+  .itin-sidebar { border-left: none; border-top: 1px solid var(--ink-800); }
+}
+
+@media (max-width: 600px) {
+  .page { padding: 60px 16px 60px; }
+  .page-title { font-size: 24px; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- THEME TOGGLE -->
+<div class="theme-toggle" onclick="toggleTheme()">
+  <div class="toggle-track"><div class="toggle-thumb"></div></div>
+  <span class="toggle-label" id="themeLabel">Light</span>
+</div>
+
+<div class="page">
+
+  <!-- Intro -->
+  <div style="margin-bottom:64px;padding-bottom:56px;border-bottom:1px solid var(--ink-800)">
+    <div class="page-eyebrow">Overplanned — Design System v4</div>
+    <div class="page-title">The base.</div>
+    <div class="page-desc">Photography for warmth. Data components for intelligence. Colored icons throughout. Two themes, one token system.</div>
+  </div>
+
+  <!-- TOKENS -->
+  <div class="section">
+    <div class="sec-label">00 — Design tokens</div>
+
+    <div class="color-grid" style="margin-bottom:24px">
+      <div class="color-chip"><div class="color-dot" style="background:var(--bg-base);border:1px solid var(--ink-700)"></div><div class="color-info"><span class="color-name">bg-base</span><span class="color-val">Warm base</span></div></div>
+      <div class="color-chip"><div class="color-dot" style="background:var(--bg-surface);border:1px solid var(--ink-700)"></div><div class="color-info"><span class="color-name">bg-surface</span><span class="color-val">Cards</span></div></div>
+      <div class="color-chip"><div class="color-dot" style="background:var(--bg-raised);border:1px solid var(--ink-700)"></div><div class="color-info"><span class="color-name">bg-raised</span><span class="color-val">Raised panels</span></div></div>
+      <div class="color-chip"><div class="color-dot" style="background:var(--accent)"></div><div class="color-info"><span class="color-name">accent</span><span class="color-val">Dusty terracotta</span></div></div>
+      <div class="color-chip"><div class="color-dot" style="background:var(--success)"></div><div class="color-info"><span class="color-name">success</span><span class="color-val">Forest green</span></div></div>
+      <div class="color-chip"><div class="color-dot" style="background:var(--warning)"></div><div class="color-info"><span class="color-name">warning</span><span class="color-val">Amber</span></div></div>
+    </div>
+
+    <div class="sec-label" style="margin-top:28px">Icon system — colored by category</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--ink-800);border-radius:10px">
+        <div class="icon-badge food">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        </div>
+        <span style="font-size:12px;color:var(--ink-300)">Food &amp; drink</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--ink-800);border-radius:10px">
+        <div class="icon-badge culture">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 21V9l9-6 9 6v12H3z"/><path d="M9 21V12h6v9"/></svg>
+        </div>
+        <span style="font-size:12px;color:var(--ink-300)">Sightseeing</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--ink-800);border-radius:10px">
+        <div class="icon-badge pace">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="2" x2="12" y2="9"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="1" y1="18" x2="3" y2="18"/><line x1="21" y1="18" x2="23" y2="18"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/><line x1="23" y1="22" x2="1" y2="22"/><polyline points="8 6 12 2 16 6"/></svg>
+        </div>
+        <span style="font-size:12px;color:var(--ink-300)">Pace &amp; style</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--ink-800);border-radius:10px">
+        <div class="icon-badge activity">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 17L9 11 13 15 21 7"/><path d="M14 7h7v7"/></svg>
+        </div>
+        <span style="font-size:12px;color:var(--ink-300)">Activities</span>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:28px">Type scale — Sora</div>
+    <div class="type-stack">
+      <div class="type-line"><span class="type-meta">34px · 500<br>Letter −0.025em</span><span style="font-size:34px;font-weight:500;color:var(--ink-100);letter-spacing:-0.025em">Two days in Kyoto</span></div>
+      <div class="type-line"><span class="type-meta">22px · 500<br>Letter −0.02em</span><span style="font-size:22px;font-weight:500;color:var(--ink-100);letter-spacing:-0.02em">Arashiyama & Gion</span></div>
+      <div class="type-line"><span class="type-meta">14px · 300<br>Body text</span><span style="font-size:14px;font-weight:300;color:var(--ink-300)">Quieter than the famous spots, better coffee, 10 minutes from your hotel.</span></div>
+      <div class="type-line"><span class="type-meta">10px · 400<br>DM Mono · ALL CAPS</span><span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:var(--ink-400);letter-spacing:0.14em;text-transform:uppercase">TABELOG · 09:30 · ANCHOR</span></div>
+    </div>
+  </div>
+
+  <!-- ==================== PHOTOGRAPHY + ACTIVITY CARDS ==================== -->
+  <div class="section">
+    <div class="sec-label">01 — Destination & activity cards</div>
+
+    <!-- Destination hero -->
+    <div class="dest-hero">
+      <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=1400&q=80&auto=format&fit=crop" alt="Kyoto">
+      <div class="dest-hero-overlay"></div>
+      <div class="dest-hero-content">
+        <div class="dest-hero-text">
+          <div class="dest-hero-country">Japan</div>
+          <div class="dest-hero-city">Kyoto</div>
+          <div class="photo-tags">
+            <div class="photo-tag">
+              <span class="icon">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </span>
+              Food scene
+            </div>
+            <div class="photo-tag">
+              <span class="icon">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 21V9l9-6 9 6v12H3z"/><path d="M9 21V12h6v9"/></svg>
+              </span>
+              Temples
+            </div>
+            <div class="photo-tag">
+              <span class="icon">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>
+              </span>
+              Hidden gems
+            </div>
+          </div>
+        </div>
+        <div class="dest-hero-action">
+          <button class="plan-btn">
+            Plan this trip
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <div class="dest-hero-hint">Mar – May · best season for you</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity cards — 3-up grid -->
+    <div class="act-row">
+
+      <!-- Card 1: Coffee -->
+      <div class="act-card">
+        <div class="act-photo">
+          <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80&auto=format&fit=crop" alt="% Arabica">
+          <div class="act-photo-overlay"></div>
+          <div class="photo-source-badge">Tabelog</div>
+          <div class="photo-signal gem">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>
+            Hidden gem
+          </div>
+        </div>
+        <div class="act-body">
+          <div class="act-cat-row">
+            <div class="act-cat-badge food">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/></svg>
+            </div>
+            <span class="act-cat-label">Coffee</span>
+          </div>
+          <div class="act-name">% Arabica Arashiyama</div>
+          <div class="act-why">Quieter than the station. Better morning light.</div>
+          <div class="act-foot">
+            <div class="act-meta">
+              <div class="act-meta-item">
+                <span class="icon"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                30 min
+              </div>
+              <div class="act-meta-item">¥800</div>
+            </div>
+            <button class="act-add" onclick="toggleAdd(this)">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Temple -->
+      <div class="act-card">
+        <div class="act-photo">
+          <img src="https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=600&q=80&auto=format&fit=crop" alt="Fushimi Inari">
+          <div class="act-photo-overlay"></div>
+          <div class="photo-source-badge">Jalan</div>
+          <div class="photo-signal warn">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+            Go before 7am
+          </div>
+        </div>
+        <div class="act-body">
+          <div class="act-cat-row">
+            <div class="act-cat-badge cult">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 21V9l9-6 9 6v12H3z"/><path d="M9 21V12h6v9"/></svg>
+            </div>
+            <span class="act-cat-label">Temple</span>
+          </div>
+          <div class="act-name">Fushimi Inari Taisha</div>
+          <div class="act-why">Locals score it 3.1. Crowds explain the tourist love.</div>
+          <div class="act-foot">
+            <div class="act-meta">
+              <div class="act-meta-item">
+                <span class="icon"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                90 min
+              </div>
+              <div class="act-meta-item">Free</div>
+            </div>
+            <button class="act-add" onclick="toggleAdd(this)">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Market -->
+      <div class="act-card">
+        <div class="act-photo">
+          <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80&auto=format&fit=crop" alt="Nishiki">
+          <div class="act-photo-overlay"></div>
+          <div class="photo-source-badge">Reddit</div>
+          <div class="photo-signal gem">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>
+            Local pick
+          </div>
+        </div>
+        <div class="act-body">
+          <div class="act-cat-row">
+            <div class="act-cat-badge food">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <span class="act-cat-label">Market</span>
+          </div>
+          <div class="act-name">Nishiki Market</div>
+          <div class="act-why">Peaks 12–2pm. Go at 10, eat everything.</div>
+          <div class="act-foot">
+            <div class="act-meta">
+              <div class="act-meta-item">
+                <span class="icon"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                1 hr
+              </div>
+              <div class="act-meta-item">¥1–2k</div>
+            </div>
+            <button class="act-add" onclick="toggleAdd(this)">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== TRIP CREATION ==================== -->
+  <div class="section">
+    <div class="sec-label">02 — Trip creation flow</div>
+
+    <div class="shell">
+      <!-- Topbar -->
+      <div class="topbar">
+        <div class="wordmark">Way<span>mark</span></div>
+        <div class="step-track">
+          <div class="step-pip done"></div>
+          <div class="step-pip active"></div>
+          <div class="step-pip"></div>
+          <div class="step-pip"></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost">Save draft</button>
+          <button class="btn btn-primary">Continue
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="creation-grid">
+        <!-- Left -->
+        <div class="c-left">
+          <div>
+            <div class="field-label" style="margin-bottom:8px">Step 2 of 4</div>
+            <div class="field-heading">Where and when?</div>
+            <div class="field-sub">Start with the basics. We'll tailor everything to your group next.</div>
+          </div>
+
+          <!-- Destination -->
+          <div class="field-group">
+            <div class="field-label">Destination</div>
+            <div class="input-wrap">
+              <div class="input-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <input class="input" type="text" placeholder="City, region or country" value="Kyoto, Japan">
+            </div>
+          </div>
+
+          <!-- Dates -->
+          <div class="field-group">
+            <div class="field-label">Dates</div>
+            <div class="date-row">
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:5px">From</div>
+                <input class="date-input" type="text" value="Mar 12, 2025">
+              </div>
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);margin-bottom:5px">To</div>
+                <input class="date-input" type="text" value="Mar 19, 2025">
+              </div>
+            </div>
+          </div>
+
+          <!-- Travelers -->
+          <div class="field-group">
+            <div class="field-label">Travelers</div>
+            <div class="counter-row">
+              <div>
+                <div class="counter-name">Group size</div>
+                <div class="counter-hint">We'll handle group dynamics</div>
+              </div>
+              <div class="counter-ctrl">
+                <button class="c-btn" onclick="adj(-1)">−</button>
+                <span class="c-val" id="cv">4</span>
+                <button class="c-btn" onclick="adj(1)">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vibe -->
+          <div class="field-group">
+            <div class="field-label">Overall vibe</div>
+            <div class="vibe-row" id="vibes">
+              <div class="vibe-chip" onclick="pickVibe(this)">
+                <span class="icon" style="color:var(--success)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 22V12M12 12C12 12 7 10 5 6c3 0 5.5 1.5 7 6z"/><path d="M12 12C12 12 17 10 19 6c-3 0-5.5 1.5-7 6z"/></svg>
+                </span>
+                Slow travel
+              </div>
+              <div class="vibe-chip active" onclick="pickVibe(this)">
+                <span class="icon" style="color:var(--accent)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                </span>
+                Food-first
+              </div>
+              <div class="vibe-chip" onclick="pickVibe(this)">
+                <span class="icon" style="color:var(--info)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 17L9 11 13 15 21 7"/><path d="M14 7h7v7"/></svg>
+                </span>
+                Active
+              </div>
+              <div class="vibe-chip" onclick="pickVibe(this)">
+                <span class="icon" style="color:var(--warning)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </span>
+                Cultural
+              </div>
+              <div class="vibe-chip" onclick="pickVibe(this)">
+                <span class="icon" style="color:var(--ink-400)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </span>
+                Nightlife
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: tag system -->
+        <div class="c-right">
+          <div class="tag-panel-head">
+            <div>
+              <div class="tag-panel-title">What matters on this trip?</div>
+              <div class="tag-panel-hint">Tap to select. More picks = better itinerary.</div>
+            </div>
+            <span class="tag-count" id="tagCount">5 selected</span>
+          </div>
+
+          <!-- Dropzone -->
+          <div class="dropzone has-items" id="dropzone">
+            <div class="drop-hint hidden" id="dropHint">
+              <div class="drop-hint-text">Tap tags below to add them here</div>
+            </div>
+            <!-- Pre-selected -->
+            <div class="sel-tag" data-tag="street-food">
+              <span class="icon" style="color:rgba(255,255,255,0.8)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </span>
+              Street food
+              <span class="sel-tag-x" onclick="removeTag(this)">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </span>
+            </div>
+            <div class="sel-tag" data-tag="local-bars">
+              <span class="icon" style="color:rgba(255,255,255,0.8)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 22H16M12 11V22M3 3H21L18 11H6L3 3Z"/></svg>
+              </span>
+              Local bars
+              <span class="sel-tag-x" onclick="removeTag(this)">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </span>
+            </div>
+            <div class="sel-tag" data-tag="morning-coffee">
+              <span class="icon" style="color:rgba(255,255,255,0.8)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/></svg>
+              </span>
+              Morning coffee
+              <span class="sel-tag-x" onclick="removeTag(this)">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </span>
+            </div>
+            <div class="sel-tag" data-tag="hidden-gems">
+              <span class="icon" style="color:rgba(255,255,255,0.8)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/><line x1="12" y1="22" x2="12" y2="2"/><polyline points="2 8.5 12 13 22 8.5"/></svg>
+              </span>
+              Hidden gems
+              <span class="sel-tag-x" onclick="removeTag(this)">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </span>
+            </div>
+            <div class="sel-tag" data-tag="late-nights">
+              <span class="icon" style="color:rgba(255,255,255,0.8)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              </span>
+              Late nights
+              <span class="sel-tag-x" onclick="removeTag(this)">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Tag pool -->
+          <div>
+            <div class="pool-label">Add more</div>
+            <div class="tag-cats">
+
+              <!-- Food -->
+              <div>
+                <div class="cat-name">
+                  <div class="icon-badge food" style="width:20px;height:20px;border-radius:5px">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                  </div>
+                  Food &amp; drink
+                </div>
+                <div class="chips">
+                  <div class="chip used" data-tag="street-food"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></span> Street food</div>
+                  <div class="chip" data-tag="fine-dining" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></span> Fine dining</div>
+                  <div class="chip" data-tag="markets" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span> Markets</div>
+                  <div class="chip used" data-tag="local-bars"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 22H16M12 11V22M3 3H21L18 11H6L3 3Z"/></svg></span> Local bars</div>
+                  <div class="chip used" data-tag="morning-coffee"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/></svg></span> Morning coffee</div>
+                  <div class="chip" data-tag="izakayas" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span> Izakayas</div>
+                  <div class="chip" data-tag="cooking-class" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2a10 10 0 0 1 10 10v8H2v-8A10 10 0 0 1 12 2z"/></svg></span> Cooking class</div>
+                </div>
+              </div>
+
+              <!-- Sightseeing -->
+              <div>
+                <div class="cat-name">
+                  <div class="icon-badge culture" style="width:20px;height:20px;border-radius:5px">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 21V9l9-6 9 6v12H3z"/><path d="M9 21V12h6v9"/></svg>
+                  </div>
+                  Sightseeing
+                </div>
+                <div class="chips">
+                  <div class="chip" data-tag="temples" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 21V9l9-6 9 6v12H3z"/><path d="M9 21V12h6v9"/></svg></span> Temples</div>
+                  <div class="chip" data-tag="museums" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="10" width="20" height="11" rx="1"/><path d="M12 2L2 7h20L12 2z"/></svg></span> Museums</div>
+                  <div class="chip used" data-tag="hidden-gems"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg></span> Hidden gems</div>
+                  <div class="chip" data-tag="photography" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span> Photography spots</div>
+                  <div class="chip" data-tag="gardens" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 22V12M12 12C12 12 7 10 5 6c3 0 5.5 1.5 7 6z"/><path d="M12 12C12 12 17 10 19 6c-3 0-5.5 1.5-7 6z"/></svg></span> Gardens</div>
+                  <div class="chip" data-tag="off-path" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></span> Off the path</div>
+                </div>
+              </div>
+
+              <!-- Pace -->
+              <div>
+                <div class="cat-name">
+                  <div class="icon-badge pace" style="width:20px;height:20px;border-radius:5px">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="2" x2="12" y2="9"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/></svg>
+                  </div>
+                  Pace &amp; style
+                </div>
+                <div class="chips">
+                  <div class="chip" data-tag="slow-mornings" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="2" x2="12" y2="9"/></svg></span> Slow mornings</div>
+                  <div class="chip used" data-tag="late-nights"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span> Late nights</div>
+                  <div class="chip" data-tag="packed-days" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> Packed days</div>
+                  <div class="chip" data-tag="rest-days" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M2 11a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4H2v-4z"/></svg></span> Rest days built in</div>
+                  <div class="chip" data-tag="spontaneous" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor"/></svg></span> Spontaneous</div>
+                </div>
+              </div>
+
+              <!-- Activities -->
+              <div>
+                <div class="cat-name">
+                  <div class="icon-badge activity" style="width:20px;height:20px;border-radius:5px">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 17L9 11 13 15 21 7"/><path d="M14 7h7v7"/></svg>
+                  </div>
+                  Activities
+                </div>
+                <div class="chips">
+                  <div class="chip" data-tag="hiking" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 17L9 11 13 15 21 7"/><path d="M14 7h7v7"/></svg></span> Hiking</div>
+                  <div class="chip" data-tag="cycling" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h-3l-2 6H5.5"/></svg></span> Cycling</div>
+                  <div class="chip" data-tag="live-music" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span> Live music</div>
+                  <div class="chip" data-tag="shopping" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span> Shopping</div>
+                  <div class="chip" data-tag="onsen" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12h20M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/></svg></span> Onsen</div>
+                  <div class="chip" data-tag="day-trips" onclick="addTag(this)"><span class="icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/></svg></span> Day trips</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ITINERARY VIEW ==================== -->
+  <div class="section">
+    <div class="sec-label">03 — Day itinerary view</div>
+
+    <div class="itin-shell">
+      <div class="itin-top">
+        <div class="itin-top-left">
+          <div class="back-link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Japan 2025
+          </div>
+          <div class="divider-v"></div>
+          <div class="trip-info">
+            <div class="trip-name">Kyoto</div>
+            <div class="trip-sub">Mar 14–17 · 4 people</div>
+          </div>
+        </div>
+        <div class="itin-top-right">
+          <div class="av-stack">
+            <div class="av av-1">KM</div>
+            <div class="av av-2">SL</div>
+            <div class="av av-3">JR</div>
+            <div class="av av-4">+1</div>
+          </div>
+          <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px">Edit day</button>
+        </div>
+      </div>
+
+      <div class="day-tabs">
+        <div class="dtab">Wed 12</div>
+        <div class="dtab">Thu 13</div>
+        <div class="dtab active">Fri 14</div>
+        <div class="dtab">Sat 15</div>
+        <div class="dtab">Sun 16</div>
+        <div class="dtab" style="color:var(--accent);font-weight:400">+ Add day</div>
+      </div>
+
+      <div class="itin-body">
+        <div class="itin-main">
+
+          <div class="day-head">
+            <div>
+              <div class="day-title">Arashiyama & Gion</div>
+              <div class="day-sub">Friday, March 14 · 5 stops · 4 people</div>
+            </div>
+            <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px">Shuffle day</button>
+          </div>
+
+          <div class="energy-row">
+            <span class="energy-lbl">Energy</span>
+            <div class="energy-track"><div class="energy-fill"></div></div>
+            <span class="energy-status">Good pace</span>
+          </div>
+
+          <div class="slots">
+
+            <div class="slot-row">
+              <div class="slot-time-col"><span class="slot-t">08:30</span></div>
+              <div class="slot-spine"><div class="s-dot anchor"></div><div class="s-line"></div></div>
+              <div class="slot-card active">
+                <div class="slot-thumb">
+                  <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80&auto=format&fit=crop" alt="% Arabica">
+                  <div class="slot-thumb-overlay"></div>
+                </div>
+                <div class="sc-type anchor-t">Anchor · Breakfast</div>
+                <div class="sc-name">% Arabica Arashiyama</div>
+                <div class="sc-why">Less crowded than the station location. Same quality, better light before the tourist rush.</div>
+                <div class="sc-foot">
+                  <span class="mtag a">
+                    <span class="icon"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg></span>
+                    Hidden gem
+                  </span>
+                  <span class="mtag">
+                    <span class="icon"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                    30 min
+                  </span>
+                  <span class="mtag">¥800</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="transit-r">
+              <div class="tr-spacer"></div>
+              <div class="tr-spine"><div class="tr-line"></div></div>
+              <div class="tr-text">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="4" r="2"/><path d="M14 8l-2 7-3-3-2 5"/></svg>
+                12 min walk toward bamboo grove
+              </div>
+            </div>
+
+            <div class="slot-row">
+              <div class="slot-time-col"><span class="slot-t">09:15</span></div>
+              <div class="slot-spine"><div class="s-dot anchor"></div><div class="s-line"></div></div>
+              <div class="slot-card">
+                <div class="slot-thumb">
+                  <img src="https://images.unsplash.com/photo-1576675784201-0e142b423952?w=600&q=80&auto=format&fit=crop" alt="Bamboo Grove">
+                  <div class="slot-thumb-overlay"></div>
+                </div>
+                <div class="sc-type anchor-t">Anchor · Outdoor</div>
+                <div class="sc-name">Sagano Bamboo Grove</div>
+                <div class="sc-why">Gets packed by 10am. Going now means you'll actually have space to walk through it.</div>
+                <div class="sc-foot">
+                  <span class="mtag s">Free</span>
+                  <span class="mtag">
+                    <span class="icon"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                    45 min
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="transit-r">
+              <div class="tr-spacer"></div>
+              <div class="tr-spine"><div class="tr-line"></div></div>
+              <div class="tr-text">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="4" r="2"/><path d="M14 8l-2 7-3-3-2 5"/></svg>
+                8 min walk
+              </div>
+            </div>
+
+            <div class="slot-row">
+              <div class="slot-time-col"><span class="slot-t">10:30</span></div>
+              <div class="slot-spine"><div class="s-dot flex"></div><div class="s-line"></div></div>
+              <div class="slot-card">
+                <div class="sc-type flex-t">Flex · Culture</div>
+                <div class="sc-name">Tenryu-ji Garden</div>
+                <div class="sc-why">Locals rate it higher than tourists do — usually a good sign. 2 alternatives queued if you'd rather keep moving.</div>
+                <div class="sc-foot">
+                  <span class="mtag">¥500</span>
+                  <span class="mtag">1 hr</span>
+                  <span class="mtag">2 alts</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="transit-r">
+              <div class="tr-spacer"></div>
+              <div class="tr-spine"><div class="tr-line"></div></div>
+              <div class="tr-text">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/></svg>
+                18 min transit to Nishiki
+              </div>
+            </div>
+
+            <div class="slot-row">
+              <div class="slot-time-col"><span class="slot-t">12:00</span></div>
+              <div class="slot-spine"><div class="s-dot meal"></div><div class="s-line"></div></div>
+              <div class="slot-card">
+                <div class="sc-type meal-t">Break · Lunch</div>
+                <div class="sc-name">Lunch — group voted</div>
+                <div class="sc-why">3 options based on everyone's tags. SL added ramen as a priority — it's winning.</div>
+                <div class="sc-foot">
+                  <span class="mtag w">Vote in progress</span>
+                  <span class="mtag">3 options</span>
+                </div>
+                <div class="poll-wrap">
+                  <div class="poll-lbl">Group poll</div>
+                  <div class="poll-opts">
+                    <div class="poll-opt win">
+                      <span>Ippudo Ramen</span>
+                      <span class="poll-votes">3 votes</span>
+                    </div>
+                    <div class="poll-opt">
+                      <span>Kaiseki lunch set</span>
+                      <span class="poll-votes">1 vote</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="transit-r">
+              <div class="tr-spacer"></div>
+              <div class="tr-spine"><div class="tr-line"></div></div>
+              <div class="tr-text">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="4" r="2"/><path d="M14 8l-2 7-3-3-2 5"/></svg>
+                20 min walk to Gion
+              </div>
+            </div>
+
+            <div class="slot-row">
+              <div class="slot-time-col"><span class="slot-t">15:00</span></div>
+              <div class="slot-spine"><div class="s-dot anchor"></div></div>
+              <div class="slot-card">
+                <div class="sc-type anchor-t">Anchor · Evening</div>
+                <div class="sc-name">Gion twilight walk + izakaya</div>
+                <div class="sc-why">Hanamikoji at dusk is worth it. Izakaya queued for after — matches the late nights tag everyone added.</div>
+                <div class="sc-foot">
+                  <span class="mtag s">Free to walk</span>
+                  <span class="mtag">2 hrs+</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="itin-sidebar">
+
+          <div>
+            <div class="sb-label">Route</div>
+            <div class="route-list">
+              <div class="r-item"><div class="r-dot" style="background:var(--accent)"></div><div><div class="r-name">% Arabica</div><div class="r-area">Arashiyama</div></div></div>
+              <div class="r-conn"></div>
+              <div class="r-item"><div class="r-dot" style="background:var(--accent)"></div><div><div class="r-name">Bamboo Grove</div><div class="r-area">Sagano</div></div></div>
+              <div class="r-conn"></div>
+              <div class="r-item"><div class="r-dot" style="background:var(--ink-500)"></div><div><div class="r-name">Tenryu-ji</div><div class="r-area">Arashiyama</div></div></div>
+              <div class="r-conn"></div>
+              <div class="r-item"><div class="r-dot" style="background:var(--warning)"></div><div><div class="r-name">Lunch TBD</div><div class="r-area">Nishiki</div></div></div>
+              <div class="r-conn"></div>
+              <div class="r-item"><div class="r-dot" style="background:var(--ink-500)"></div><div><div class="r-name">Gion</div><div class="r-area">Gion district</div></div></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="sb-label">Day stats</div>
+            <div class="stats-grid">
+              <div class="stat-box"><span class="stat-v">14.2</span><span class="stat-l">km total</span></div>
+              <div class="stat-box"><span class="stat-v">18k</span><span class="stat-l">steps est.</span></div>
+              <div class="stat-box"><span class="stat-v">¥4.1k</span><span class="stat-l">est. spend</span></div>
+              <div class="stat-box"><span class="stat-v">5</span><span class="stat-l">stops</span></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="sb-label">Tags driving today</div>
+            <div class="driving-tags">
+              <span class="mtag a">Street food</span>
+              <span class="mtag a">Hidden gems</span>
+              <span class="mtag a">Morning coffee</span>
+              <span class="mtag">Late nights</span>
+              <span class="mtag">Food-first</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Add button toggle
+function toggleAdd(btn) {
+  const added = btn.classList.toggle('added');
+  btn.innerHTML = added
+    ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+}
+
+// Theme toggle
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.dataset.theme === 'dark';
+  html.dataset.theme = isDark ? 'light' : 'dark';
+  document.getElementById('themeLabel').textContent = isDark ? 'Light' : 'Dark';
+}
+
+// Traveler counter
+let count = 4;
+function adj(d) {
+  count = Math.max(1, Math.min(12, count + d));
+  document.getElementById('cv').textContent = count;
+}
+
+// Vibe chips
+document.querySelectorAll('.vibe-chip').forEach(chip => {
+  chip.addEventListener('click', function() {
+    document.querySelectorAll('.vibe-chip').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Add tag
+function addTag(el) {
+  if (el.classList.contains('used')) return;
+  const tag = el.dataset.tag;
+  const label = el.textContent.trim();
+  const iconSvg = el.querySelector('.icon svg').outerHTML;
+
+  el.classList.add('used');
+
+  const dz = document.getElementById('dropzone');
+  dz.classList.add('has-items');
+  document.getElementById('dropHint').classList.add('hidden');
+
+  const sel = document.createElement('div');
+  sel.className = 'sel-tag';
+  sel.dataset.tag = tag;
+  sel.innerHTML = `
+    <span class="icon" style="color:rgba(255,255,255,0.8)">${iconSvg}</span>
+    ${label}
+    <span class="sel-tag-x" onclick="removeTag(this)">
+      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </span>`;
+  dz.appendChild(sel);
+  updateCount();
+}
+
+// Remove tag
+function removeTag(btn) {
+  const sel = btn.closest('.sel-tag');
+  const tag = sel.dataset.tag;
+
+  document.querySelectorAll('.chip').forEach(c => {
+    if (c.dataset.tag === tag) c.classList.remove('used');
+  });
+
+  sel.remove();
+
+  const remaining = document.querySelectorAll('.sel-tag').length;
+  if (remaining === 0) {
+    document.getElementById('dropHint').classList.remove('hidden');
+    document.getElementById('dropzone').classList.remove('has-items');
+  }
+  updateCount();
+}
+
+function updateCount() {
+  const n = document.querySelectorAll('.sel-tag').length;
+  document.getElementById('tagCount').textContent = `${n} selected`;
+}
+</script>
+</body>
+</html>

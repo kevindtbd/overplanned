@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Day View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   TOKENS
+   ============================================================ */
+[data-theme="light"] {
+  --bg-base:      #FAF8F5;
+  --bg-surface:   #FFFFFF;
+  --bg-raised:    #F3EFE9;
+  --bg-overlay:   #EDE8E1;
+  --accent:       #B85C3F;
+  --accent-light: #F0E0D9;
+  --accent-muted: #D4886E;
+  --accent-on:    #8C3A24;
+  --ink-100:      #1C1713;
+  --ink-200:      #3A302A;
+  --ink-300:      #5C5048;
+  --ink-400:      #7A6E64;
+  --ink-500:      #9C8E84;
+  --ink-600:      #BDB0A6;
+  --ink-700:      #D6CFC8;
+  --ink-800:      #EAE4DE;
+  --ink-900:      #F5F1EC;
+  --success:      #4A8A5C;  --success-bg: #E0EEE5;
+  --warning:      #A07830;  --warning-bg: #F2EAD8;
+  --info:         #3A6A8C;  --info-bg:    #D8E8F2;
+  --shadow-sm:    0 1px 3px rgba(28,23,19,0.06);
+  --shadow-md:    0 4px 16px rgba(28,23,19,0.08), 0 1px 4px rgba(28,23,19,0.04);
+  --shadow-lg:    0 12px 48px rgba(28,23,19,0.10), 0 2px 8px rgba(28,23,19,0.05);
+  --shadow-card:  0 2px 8px rgba(28,23,19,0.07), 0 1px 2px rgba(28,23,19,0.04);
+  --map-overlay:  rgba(250,248,245,0.92);
+}
+[data-theme="dark"] {
+  --bg-base:      #100E0B;
+  --bg-surface:   #171310;
+  --bg-raised:    #1F1A15;
+  --bg-overlay:   #28211A;
+  --accent:       #C96848;
+  --accent-light: rgba(201,104,72,0.14);
+  --accent-muted: #8C402A;
+  --accent-on:    #E8906E;
+  --ink-100:      #F0EAE2;
+  --ink-200:      #D4C8BC;
+  --ink-300:      #A89484;
+  --ink-400:      #7A6A5C;
+  --ink-500:      #5C4E42;
+  --ink-600:      #3D332A;
+  --ink-700:      #2E251E;
+  --ink-800:      #221C16;
+  --ink-900:      #1A1410;
+  --success:      #5A9E6A;  --success-bg: rgba(90,158,106,0.12);
+  --warning:      #B8943A;  --warning-bg: rgba(184,148,58,0.12);
+  --info:         #4A84A8;  --info-bg:    rgba(74,132,168,0.12);
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:    0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:    0 16px 60px rgba(0,0,0,0.5);
+  --shadow-card:  0 2px 12px rgba(0,0,0,0.35);
+  --map-overlay:  rgba(16,14,11,0.92);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+body {
+  font-family: 'Sora', sans-serif;
+  font-weight: 300;
+  background: var(--bg-base);
+  color: var(--ink-100);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ============================================================
+   LAYOUT — two-column: annotations left, phone right
+   ============================================================ */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 390px;
+  gap: 56px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 48px 32px 100px;
+  align-items: start;
+}
+
+/* ============================================================
+   THEME + MODE TOGGLES
+   ============================================================ */
+.controls {
+  position: fixed; top: 20px; right: 24px; z-index: 200;
+  display: flex; gap: 8px;
+}
+.ctrl-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--ink-700);
+  border-radius: 100px;
+  padding: 6px 14px 6px 8px;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ctrl-pill:hover { border-color: var(--ink-500); }
+.toggle-track {
+  width: 28px; height: 16px; background: var(--ink-700);
+  border-radius: 100px; position: relative; transition: background 0.2s; flex-shrink: 0;
+}
+[data-theme="dark"] .toggle-track { background: var(--accent); }
+.toggle-thumb {
+  width: 10px; height: 10px; background: #fff; border-radius: 50%;
+  position: absolute; top: 3px; left: 3px; transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+[data-theme="dark"] .toggle-thumb { transform: translateX(12px); }
+.ctrl-label {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-400);
+}
+.mode-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--ink-700);
+  border-radius: 100px;
+  padding: 6px 12px;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-pill:hover { border-color: var(--ink-500); }
+.mode-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ink-500); transition: background 0.2s;
+}
+.mode-pill.group-mode .mode-dot { background: var(--accent); }
+.mode-pill.group-mode { border-color: var(--accent-muted); }
+
+/* ============================================================
+   LEFT — annotations
+   ============================================================ */
+.left-col { animation: fadeUp 0.4s ease both 0.05s; }
+.phone-wrap { animation: fadeUp 0.4s ease both 0.12s; position: sticky; top: 48px; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.page-eyebrow {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 10px;
+}
+.page-title {
+  font-size: 26px; font-weight: 500; color: var(--ink-100);
+  letter-spacing: -0.025em; line-height: 1.2; margin-bottom: 6px;
+}
+.page-desc {
+  font-size: 13px; color: var(--ink-400); font-weight: 300;
+  line-height: 1.7; margin-bottom: 36px; max-width: 400px;
+}
+
+.anno-group { margin-bottom: 28px; }
+.anno-label {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-500); margin-bottom: 10px;
+}
+.anno-card {
+  background: var(--bg-surface); border: 1.5px solid var(--ink-800);
+  border-radius: 14px; padding: 14px 16px; margin-bottom: 8px;
+  cursor: pointer; transition: all 0.18s;
+}
+.anno-card:hover { border-color: var(--ink-600); transform: translateX(2px); }
+.anno-card.active { border-color: var(--accent); background: var(--accent-light); }
+.anno-title { font-size: 13px; font-weight: 500; color: var(--ink-100); margin-bottom: 3px; }
+.anno-body { font-size: 12px; color: var(--ink-400); font-weight: 300; line-height: 1.55; }
+
+.principle {
+  padding: 14px 16px; background: var(--bg-raised);
+  border-radius: 12px; border-left: 3px solid var(--accent);
+  margin-bottom: 10px;
+}
+.principle-label {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 5px;
+}
+.principle-text { font-size: 12px; color: var(--ink-300); font-weight: 300; line-height: 1.65; }
+
+/* ============================================================
+   PHONE SHELL
+   ============================================================ */
+.phone {
+  background: var(--bg-surface);
+  border-radius: 40px;
+  border: 1.5px solid var(--ink-700);
+  box-shadow: var(--shadow-lg);
+  overflow: clip;
+  display: flex; flex-direction: column;
+  height: 780px;
+  position: relative;
+}
+
+/* Top status bar */
+.phone-status {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 10px;
+  flex-shrink: 0;
+}
+.status-time {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--ink-400); letter-spacing: 0.04em;
+}
+.status-trip {
+  font-size: 12px; font-weight: 500; color: var(--ink-200);
+  letter-spacing: -0.01em;
+}
+.status-icons { display: flex; gap: 5px; align-items: center; }
+.status-icon { color: var(--ink-500); }
+
+/* Day nav */
+.day-nav {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--ink-800);
+}
+.day-nav-arrow {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--ink-700);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-400); cursor: pointer; transition: all 0.15s;
+  flex-shrink: 0;
+}
+.day-nav-arrow:hover { border-color: var(--ink-500); color: var(--ink-200); }
+.day-nav-center { text-align: center; }
+.day-nav-label {
+  font-size: 15px; font-weight: 500; color: var(--ink-100);
+  letter-spacing: -0.02em;
+}
+.day-nav-sub {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--ink-500); letter-spacing: 0.08em;
+  text-transform: uppercase; margin-top: 1px;
+}
+
+/* ============================================================
+   MAP STRIP
+   ============================================================ */
+.map-strip {
+  position: relative; height: 88px; flex-shrink: 0;
+  overflow: hidden; cursor: pointer;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.map-strip.expanded { height: 220px; }
+
+.map-img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: saturate(0.7) brightness(0.95);
+  transition: filter 0.3s, transform 0.4s;
+}
+.map-strip:hover .map-img { filter: saturate(0.85) brightness(1); }
+.map-strip.expanded .map-img { transform: scale(1.02); }
+
+/* Route line overlay — SVG drawn on top */
+.map-svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+/* Location pins on map */
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; transition: transform 0.2s;
+}
+.map-pin:hover { transform: translate(-50%, -100%) scale(1.1); }
+.map-pin-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  border: 2px solid #fff;
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  font-weight: 400; color: #fff;
+}
+.map-pin-dot.food    { background: var(--accent); }
+.map-pin-dot.culture { background: var(--info); }
+.map-pin-dot.activity { background: #7A6A3A; }
+.map-pin-dot.active  { transform: scale(1.2); box-shadow: 0 3px 10px rgba(0,0,0,0.35); }
+
+.map-pin-label {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  color: var(--ink-200);
+  background: var(--map-overlay);
+  padding: 2px 5px; border-radius: 4px;
+  margin-top: 2px; white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+
+/* Map expand hint */
+.map-hint {
+  position: absolute; bottom: 8px; right: 10px;
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-400);
+  background: var(--map-overlay);
+  padding: 3px 8px; border-radius: 100px;
+  backdrop-filter: blur(4px);
+  transition: opacity 0.2s;
+}
+.map-strip.expanded .map-hint { opacity: 0; }
+
+/* Map gradient fade at bottom */
+.map-fade {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 32px;
+  background: linear-gradient(to top, var(--bg-surface), transparent);
+  pointer-events: none;
+}
+
+/* ============================================================
+   SLOT SPINE — scrollable
+   ============================================================ */
+.slot-scroll {
+  flex: 1; overflow-y: auto; padding: 16px 18px 32px;
+  scrollbar-width: none;
+}
+.slot-scroll::-webkit-scrollbar { display: none; }
+
+/* Time axis */
+.time-axis {
+  display: flex; gap: 14px; margin-bottom: 0;
+}
+.time-col {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0; padding-top: 18px; flex-shrink: 0; width: 36px;
+}
+.time-label {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--ink-600); letter-spacing: 0.04em;
+  line-height: 1; margin-bottom: 6px;
+}
+.time-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  border: 1.5px solid var(--ink-700); background: var(--bg-surface);
+  flex-shrink: 0; transition: all 0.2s; z-index: 1;
+}
+.time-dot.active { background: var(--accent); border-color: var(--accent); }
+.time-dot.done   { background: var(--ink-700); border-color: var(--ink-700); }
+.time-line {
+  width: 1.5px; flex: 1; background: var(--ink-800); min-height: 16px;
+  margin-top: 4px;
+}
+.time-line.done { background: var(--ink-700); }
+
+.slots-col { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+/* ============================================================
+   SLOT CARD
+   ============================================================ */
+.slot-card {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--ink-800);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+.slot-card:hover { border-color: var(--ink-600); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.slot-card.active { border-color: var(--accent-muted); }
+.slot-card.done { opacity: 0.55; }
+.slot-card.done:hover { opacity: 0.75; }
+
+/* Photo header — anchored slots */
+.slot-photo {
+  position: relative; height: 100px; overflow: hidden;
+}
+.slot-photo img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform 0.4s;
+}
+.slot-card:hover .slot-photo img { transform: scale(1.03); }
+
+/* Photo gradient */
+.slot-photo-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(28,23,19,0.65) 0%, transparent 55%);
+}
+
+/* Category icon — sits on photo bottom left */
+.slot-cat-icon {
+  position: absolute; bottom: 9px; left: 10px;
+  width: 24px; height: 24px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+}
+.slot-cat-icon.food     { background: rgba(184,92,63,0.85); color: #fff; }
+.slot-cat-icon.culture  { background: rgba(58,106,140,0.85); color: #fff; }
+.slot-cat-icon.activity { background: rgba(122,106,58,0.85); color: #fff; }
+.slot-cat-icon.transit  { background: rgba(92,80,72,0.7); color: #fff; }
+
+/* Booking badge — on photo */
+.slot-booking-badge {
+  position: absolute; top: 9px; right: 10px;
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 100px;
+  backdrop-filter: blur(8px);
+}
+.slot-booking-badge.booked    { background: rgba(74,138,92,0.85); color: #fff; }
+.slot-booking-badge.bookable  { background: rgba(28,23,19,0.65); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.2); }
+.slot-booking-badge.needs-action { background: rgba(160,120,48,0.85); color: #fff; }
+.slot-booking-badge.not-bookable { display: none; }
+
+/* Card body */
+.slot-body { padding: 11px 13px 12px; }
+
+.slot-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 8px;
+  margin-bottom: 5px;
+}
+.slot-name {
+  font-size: 14px; font-weight: 500; color: var(--ink-100);
+  letter-spacing: -0.01em; line-height: 1.2;
+}
+.slot-duration {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--ink-500); letter-spacing: 0.04em;
+  flex-shrink: 0; margin-top: 2px;
+}
+
+/* The suggestion line — light, observational, not authoritative */
+.slot-suggestion {
+  font-size: 11px; color: var(--ink-400); font-weight: 300;
+  line-height: 1.5; margin-bottom: 8px;
+  font-style: italic;
+}
+
+/* Source + signals row */
+.slot-signals {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.signal-chip {
+  display: flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: 100px;
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.04em; color: var(--ink-500);
+  background: var(--bg-raised); border: 1px solid var(--ink-800);
+}
+.signal-chip.source { color: var(--info); background: var(--info-bg); border-color: transparent; }
+.signal-chip.local  { color: var(--success); background: var(--success-bg); border-color: transparent; }
+.signal-chip.busy   { color: var(--warning); background: var(--warning-bg); border-color: transparent; }
+.signal-chip.overrated { color: var(--ink-400); background: var(--bg-raised); }
+
+/* Transit slot — minimal, no photo */
+.slot-transit {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 13px;
+}
+.transit-icon { color: var(--ink-500); flex-shrink: 0; }
+.transit-body { flex: 1; }
+.transit-label { font-size: 12px; color: var(--ink-400); font-weight: 300; }
+.transit-detail {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  color: var(--ink-600); letter-spacing: 0.04em; margin-top: 1px;
+}
+.transit-time {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--ink-500); flex-shrink: 0;
+}
+
+/* Expanded slot detail */
+
+.slot-card.expanded 
+
+.slot-detail-inner {
+  padding: 11px 13px 13px;
+}
+.slot-detail-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+.slot-detail-row:last-child { margin-bottom: 0; }
+.detail-icon { color: var(--ink-500); flex-shrink: 0; }
+.detail-text { font-size: 12px; color: var(--ink-300); font-weight: 300; line-height: 1.4; }
+.detail-action {
+  margin-left: auto; flex-shrink: 0;
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent-on); background: var(--accent-light);
+  border: 1px solid var(--accent-muted); border-radius: 100px;
+  padding: 4px 10px; cursor: pointer; transition: all 0.15s;
+}
+.detail-action:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.detail-action.booked-action {
+  color: var(--success); background: var(--success-bg);
+  border-color: transparent;
+}
+
+/* ============================================================
+   GROUP LAYER — vote chips on cards (hidden in solo mode)
+   ============================================================ */
+.group-layer { display: none; }
+body.group-mode .group-layer { display: block; }
+
+.slot-group-strip {
+  padding: 8px 13px;
+  border-top: 1px solid var(--ink-800);
+  display: flex; align-items: center; gap: 6px;
+}
+.group-vote-chips { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+.gvote {
+  display: flex; align-items: center; gap: 3px;
+  padding: 2px 7px 2px 4px;
+  border-radius: 100px; border: 1px solid var(--ink-800);
+  background: var(--bg-raised);
+}
+.gvote.yes { background: var(--accent-light); border-color: var(--accent-muted); }
+.gvote.nope { background: var(--bg-raised); border-color: var(--ink-700); opacity: 0.6; }
+.gvote-pip {
+  width: 14px; height: 14px; border-radius: 50%; overflow: hidden;
+}
+.gvote-pip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gvote-label {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  color: var(--ink-400); letter-spacing: 0.04em;
+}
+.gvote.yes .gvote-label { color: var(--accent-on); }
+.slot-group-poll {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-500); flex-shrink: 0;
+  padding: 3px 8px; border-radius: 100px;
+  border: 1px solid var(--ink-700); cursor: pointer;
+  transition: all 0.15s;
+}
+.slot-group-poll:hover { border-color: var(--accent-muted); color: var(--accent-on); }
+
+/* ============================================================
+   BOTTOM NAV
+   ============================================================ */
+.bottom-nav {
+  flex-shrink: 0; border-top: 1px solid var(--ink-800);
+  padding: 10px 0 16px;
+  display: flex; justify-content: space-around; align-items: center;
+  background: var(--bg-surface);
+}
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; transition: all 0.15s; padding: 4px 12px;
+}
+.nav-item .nav-icon { color: var(--ink-600); transition: color 0.15s; }
+.nav-item .nav-label {
+  font-family: 'DM Mono', monospace; font-size: 8px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-600); transition: color 0.15s;
+}
+.nav-item.active .nav-icon { color: var(--accent); }
+.nav-item.active .nav-label { color: var(--accent); }
+.nav-item:hover .nav-icon { color: var(--ink-300); }
+.nav-item:hover .nav-label { color: var(--ink-300); }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes slotIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+.slot-card { animation: slotIn 0.3s ease both; }
+.slot-card:nth-child(1) { animation-delay: 0.05s; }
+.slot-card:nth-child(2) { animation-delay: 0.1s; }
+.slot-card:nth-child(3) { animation-delay: 0.15s; }
+.slot-card:nth-child(4) { animation-delay: 0.2s; }
+.slot-card:nth-child(5) { animation-delay: 0.25s; }
+.slot-card:nth-child(6) { animation-delay: 0.3s; }
+
+/* Group mode transition */
+.slot-group-strip {
+  animation: groupLayerIn 0.3s ease both;
+}
+@keyframes groupLayerIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; padding: 80px 16px 60px; }
+  .phone-wrap { position: static; }
+}
+
+
+/* ── Slot expand — clean ── */
+.slot-detail {
+  max-height: 0;
+  overflow: hidden;
+  border-top: 1px solid transparent;
+  transition: max-height 0.3s ease, border-color 0.3s ease;
+}
+.slot-card.expanded .slot-detail {
+  max-height: 400px;
+  border-top-color: var(--ink-800);
+}
+.slot-card.expanded {
+  border-color: var(--accent-muted);
+}
+
+@keyframes annoPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(184,92,63,0.5); }
+  50%  { box-shadow: 0 0 0 6px rgba(184,92,63,0); }
+  100% { box-shadow: 0 0 0 0 rgba(184,92,63,0); }
+}
+.anno-pulse {
+  animation: annoPulse 0.8s ease forwards;
+  border-color: var(--accent) !important;
+}
+</style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="ctrl-pill" onclick="toggleTheme()">
+    <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    <span class="ctrl-label" id="themeLabel">Light</span>
+  </div>
+  <div class="mode-pill" id="modePill" onclick="toggleMode()">
+    <div class="mode-dot"></div>
+    <span class="ctrl-label" id="modeLabel">Solo</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- ============================================================
+       LEFT — annotations
+       ============================================================ -->
+  <div class="left-col">
+    <div class="page-eyebrow">Day View</div>
+    <div class="page-title">The screen they<br>live in.</div>
+    <div class="page-desc">Everything else is a layer on top of this. The slot card is the product's core argument — it needs to feel like it knows you without telling you what to think.</div>
+
+    <div class="anno-group">
+      <div class="anno-label">Slot states</div>
+      <div class="anno-card" onclick="highlightState('done')">
+        <div class="anno-title">Done</div>
+        <div class="anno-body">Completed slots fade back. The day moves forward, not backward.</div>
+      </div>
+      <div class="anno-card active" onclick="highlightState('active')">
+        <div class="anno-title">Active</div>
+        <div class="anno-body">Current slot. Subtle terracotta border. Map pin highlighted.</div>
+      </div>
+      <div class="anno-card" onclick="highlightState('upcoming')">
+        <div class="anno-title">Upcoming</div>
+        <div class="anno-body">Full opacity, bookable state visible. Tap to expand details.</div>
+      </div>
+    </div>
+
+    <div class="anno-group">
+      <div class="anno-label">Booking states</div>
+      <div class="anno-card">
+        <div class="anno-title">Booked</div>
+        <div class="anno-body">Green badge on photo. Expanded view shows confirmation.</div>
+      </div>
+      <div class="anno-card">
+        <div class="anno-title">Bookable</div>
+        <div class="anno-body">One-tap confirm in expanded view. System has the details ready.</div>
+      </div>
+      <div class="anno-card">
+        <div class="anno-title">Needs action</div>
+        <div class="anno-body">Amber badge. Requires a call or manual step — app says so honestly.</div>
+      </div>
+    </div>
+
+    <div class="anno-group">
+      <div class="anno-label">The suggestion line</div>
+      <div class="principle" style="border-color:var(--accent)">
+        <div class="principle-label">Not authoritative</div>
+        <div class="principle-text">"locals-only counter · gets loud after 9" tells you what to expect without explaining why we picked it. Observational, not conclusive. The system shows its knowledge through specificity, not justification.</div>
+      </div>
+      <div class="principle" style="border-color:var(--info)">
+        <div class="principle-label">Source over badge</div>
+        <div class="principle-text">"847 local reviews on Tabelog" does more work than an "overrated" flag. The data speaks. We don't editorialize.</div>
+      </div>
+    </div>
+
+    <div class="anno-group">
+      <div class="anno-label">Map strip</div>
+      <div class="principle" style="border-color:var(--success)">
+        <div class="principle-label">Contextual, not default</div>
+        <div class="principle-text">The strip gives geographic orientation without demanding attention. Tap to expand. Pins are numbered to match the slot spine. Active slot highlighted automatically.</div>
+      </div>
+    </div>
+
+    <div class="anno-group">
+      <div class="anno-label">Group mode toggle</div>
+      <div class="principle" style="border-color:var(--warning)">
+        <div class="principle-label">Layer, not redesign</div>
+        <div class="principle-text">Switching to group adds vote chips and a poll action to each card. The card structure doesn't change — the group layer appears underneath. Solo and group share the same foundation.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================
+       RIGHT — phone
+       ============================================================ -->
+  <div class="phone-wrap">
+    <div class="phone">
+
+      <!-- Status bar -->
+      <div class="phone-status">
+        <span class="status-time">14:22</span>
+        <span class="status-trip">Kyoto · 7 days</span>
+        <div class="status-icons">
+          <span class="status-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          </span>
+          <span class="status-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+      </div>
+
+      <!-- Day nav -->
+      <div class="day-nav">
+        <div class="day-nav-arrow">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </div>
+        <div class="day-nav-center">
+          <div class="day-nav-label">Friday, March 14</div>
+          <div class="day-nav-sub">Day 3 of 7 · Kyoto</div>
+        </div>
+        <div class="day-nav-arrow">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <!-- Map strip -->
+      <div class="map-strip" id="mapStrip" onclick="toggleMap()">
+        <img class="map-img"
+          src="https://images.unsplash.com/photo-1623834232787-8c0b70ef6e5a?w=800&q=80&auto=format&fit=crop"
+          alt="Kyoto map"
+          onerror="this.src='https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80&auto=format&fit=crop'">
+
+        <!-- Route line SVG -->
+        <svg class="map-svg" viewBox="0 0 390 88" preserveAspectRatio="none">
+          <polyline
+            points="80,68 140,45 220,30 300,55 355,40"
+            fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.5"
+            stroke-dasharray="4 3" stroke-linecap="round"/>
+        </svg>
+
+        <!-- Pins -->
+        <div class="map-pin" style="left:21%;top:85%">
+          <div class="map-pin-dot culture done">1</div>
+          <div class="map-pin-label">Fushimi</div>
+        </div>
+        <div class="map-pin" style="left:37%;top:58%">
+          <div class="map-pin-dot food done">2</div>
+          <div class="map-pin-label">Lunch</div>
+        </div>
+        <div class="map-pin" style="left:57%;top:42%">
+          <div class="map-pin-dot culture active">3</div>
+          <div class="map-pin-label">Kinkaku-ji</div>
+        </div>
+        <div class="map-pin" style="left:78%;top:68%">
+          <div class="map-pin-dot food">4</div>
+          <div class="map-pin-label">Dinner</div>
+        </div>
+        <div class="map-pin" style="left:92%;top:52%">
+          <div class="map-pin-dot activity">5</div>
+          <div class="map-pin-label">Bar</div>
+        </div>
+
+        <div class="map-fade"></div>
+        <div class="map-hint">tap to expand</div>
+      </div>
+
+      <!-- Slot spine -->
+      <div class="slot-scroll" id="slotScroll">
+        <div class="time-axis">
+
+          <!-- Time column -->
+          <div class="time-col" id="timeCol">
+            <div class="time-label">09:00</div>
+            <div class="time-dot done"></div>
+            <div class="time-line done"></div>
+            <div class="time-label">12:30</div>
+            <div class="time-dot done"></div>
+            <div class="time-line done"></div>
+            <div class="time-label">14:00</div>
+            <div class="time-dot active"></div>
+            <div class="time-line"></div>
+            <div class="time-label">17:30</div>
+            <div class="time-dot"></div>
+            <div class="time-line"></div>
+            <div class="time-label">19:00</div>
+            <div class="time-dot"></div>
+            <div class="time-line"></div>
+            <div class="time-label">21:30</div>
+            <div class="time-dot"></div>
+          </div>
+
+          <!-- Slots column -->
+          <div class="slots-col">
+
+            <!-- Slot 1 — done, culture, photo -->
+            <div class="slot-card done">
+              <div class="slot-photo">
+                <img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=600&q=75&auto=format&fit=crop" alt="Fushimi Inari">
+                <div class="slot-photo-gradient"></div>
+                <div class="slot-cat-icon culture">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <div class="slot-booking-badge booked">Visited</div>
+              </div>
+              <div class="slot-body">
+                <div class="slot-header">
+                  <div class="slot-name">Fushimi Inari</div>
+                  <div class="slot-duration">2h 20m</div>
+                </div>
+                <div class="slot-suggestion">left before the crowds hit — good call</div>
+                <div class="slot-signals">
+                  <div class="signal-chip local">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    local pick
+                  </div>
+                  <div class="signal-chip source">Tabelog · 2.1k</div>
+                </div>
+              </div>
+              <div class="group-layer">
+                <div class="slot-group-strip">
+                  <div class="group-vote-chips">
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=40&q=60" onerror="this.parentNode.style.background='#8B6B4A'"></div>
+                      <span class="gvote-label">SL</span>
+                    </div>
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&q=60" onerror="this.parentNode.style.background='#4A6B8B'"></div>
+                      <span class="gvote-label">Kevin</span>
+                    </div>
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=40&q=60" onerror="this.parentNode.style.background='#5C7A4A'"></div>
+                      <span class="gvote-label">JR</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="slot-detail">
+                <div class="slot-detail-inner">
+                  <div class="slot-detail-row">
+                    <div class="detail-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                    <div class="detail-text">Completed 11:18 — 42 min ahead of schedule</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transit 1 -->
+            <div class="slot-card done" style="border-radius:10px;">
+              <div class="slot-transit">
+                <div class="transit-icon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                </div>
+                <div class="transit-body">
+                  <div class="transit-label">Taxi to Nishiki</div>
+                  <div class="transit-detail">18 min · ¥1,200</div>
+                </div>
+                <div class="transit-time">12:20</div>
+              </div>
+            </div>
+
+            <!-- Slot 2 — done, food, photo -->
+            <div class="slot-card done">
+              <div class="slot-photo">
+                <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=75&auto=format&fit=crop" alt="Lunch">
+                <div class="slot-photo-gradient"></div>
+                <div class="slot-cat-icon food">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                </div>
+                <div class="slot-booking-badge booked">Visited</div>
+              </div>
+              <div class="slot-body">
+                <div class="slot-header">
+                  <div class="slot-name">Nishiki Market graze</div>
+                  <div class="slot-duration">1h 30m</div>
+                </div>
+                <div class="slot-suggestion">standing counters only — moves at your pace</div>
+                <div class="slot-signals">
+                  <div class="signal-chip local">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    local pick
+                  </div>
+                  <div class="signal-chip source">Tabelog · 847</div>
+                </div>
+              </div>
+              <div class="group-layer">
+                <div class="slot-group-strip">
+                  <div class="group-vote-chips">
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=40&q=60" onerror="this.parentNode.style.background='#8B6B4A'"></div>
+                      <span class="gvote-label">SL</span>
+                    </div>
+                    <div class="gvote nope">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&q=60" onerror="this.parentNode.style.background='#4A6B8B'"></div>
+                      <span class="gvote-label">Kevin</span>
+                    </div>
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=40&q=60" onerror="this.parentNode.style.background='#5C7A4A'"></div>
+                      <span class="gvote-label">JR</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="slot-detail">
+                <div class="slot-detail-inner">
+                  <div class="slot-detail-row">
+                    <div class="detail-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                    <div class="detail-text">Completed 13:55</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transit 2 -->
+            <div class="slot-card" style="border-radius:10px; border-color: var(--accent-muted);">
+              <div class="slot-transit">
+                <div class="transit-icon" style="color:var(--accent);">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                </div>
+                <div class="transit-body">
+                  <div class="transit-label" style="color:var(--ink-300)">Taxi to Kinkaku-ji</div>
+                  <div class="transit-detail">22 min · ¥1,800 · en route</div>
+                </div>
+                <div class="transit-time" style="color:var(--accent);">now</div>
+              </div>
+            </div>
+
+            <!-- Slot 3 — ACTIVE, culture, photo -->
+            <div class="slot-card active">
+              <div class="slot-photo">
+                <img src="https://images.unsplash.com/photo-1624890240392-5a0a5c9a5a0e?w=600&q=75&auto=format&fit=crop"
+                  alt="Kinkaku-ji"
+                  onerror="this.src='https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=75&auto=format&fit=crop'">
+                <div class="slot-photo-gradient"></div>
+                <div class="slot-cat-icon culture">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                </div>
+                <div class="slot-booking-badge booked">Booked</div>
+              </div>
+              <div class="slot-body">
+                <div class="slot-header">
+                  <div class="slot-name">Kinkaku-ji</div>
+                  <div class="slot-duration">3h 30m</div>
+                </div>
+                <div class="slot-suggestion">weekday afternoon — thins out by 15:00</div>
+                <div class="slot-signals">
+                  <div class="signal-chip local">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    local pick
+                  </div>
+                  <div class="signal-chip source">Tabelog · 4.2k</div>
+                  <div class="signal-chip busy">busy 10–14:00</div>
+                </div>
+              </div>
+              <div class="group-layer">
+                <div class="slot-group-strip">
+                  <div class="group-vote-chips">
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=40&q=60" onerror="this.parentNode.style.background='#8B6B4A'"></div>
+                      <span class="gvote-label">SL</span>
+                    </div>
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&q=60" onerror="this.parentNode.style.background='#4A6B8B'"></div>
+                      <span class="gvote-label">Kevin</span>
+                    </div>
+                    <div class="gvote-pip" style="width:14px;height:14px;border-radius:50%;overflow:hidden;opacity:0.4;border:1px solid var(--ink-700)">
+                    </div>
+                    <span class="gvote-label" style="color:var(--ink-600);font-size:8px;font-family:'DM Mono',monospace;">JR hasn't voted</span>
+                  </div>
+                  <div class="slot-group-poll">Poll</div>
+                </div>
+              </div>
+              <div class="slot-detail">
+                <div class="slot-detail-inner">
+                  <div class="slot-detail-row">
+                    <div class="detail-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+                    <div class="detail-text">Kinkakuji-cho, Kita-ku, Kyoto</div>
+                  </div>
+                  <div class="slot-detail-row">
+                    <div class="detail-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                    <div class="detail-text">Open until 17:00 · ¥500 entry</div>
+                    <button class="detail-action booked-action" disabled>Confirmed</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 4 — upcoming, food, bookable -->
+            <div class="slot-card">
+              <div class="slot-photo">
+                <img src="https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=600&q=75&auto=format&fit=crop" alt="Dinner">
+                <div class="slot-photo-gradient"></div>
+                <div class="slot-cat-icon food">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                </div>
+                <button class="slot-booking-badge bookable" onclick="event.stopPropagation();expandAndBook(this)">Book now</button>
+              </div>
+              <div class="slot-body">
+                <div class="slot-header">
+                  <div class="slot-name">Pontocho izakaya</div>
+                  <div class="slot-duration">2h</div>
+                </div>
+                <div class="slot-suggestion">locals-only counter · gets full by 20:00</div>
+                <div class="slot-signals">
+                  <div class="signal-chip local">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    local pick
+                  </div>
+                  <div class="signal-chip source">Tabelog · 3.8k</div>
+                </div>
+              </div>
+              <div class="group-layer">
+                <div class="slot-group-strip">
+                  <div class="group-vote-chips">
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=40&q=60" onerror="this.parentNode.style.background='#8B6B4A'"></div>
+                      <span class="gvote-label">SL</span>
+                    </div>
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&q=60" onerror="this.parentNode.style.background='#4A6B8B'"></div>
+                      <span class="gvote-label">Kevin</span>
+                    </div>
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=40&q=60" onerror="this.parentNode.style.background='#5C7A4A'"></div>
+                      <span class="gvote-label">JR</span>
+                    </div>
+                  </div>
+                  <div class="slot-group-poll">Poll</div>
+                </div>
+              </div>
+              <div class="slot-detail">
+                <div class="slot-detail-inner">
+                  <div class="slot-detail-row">
+                    <div class="detail-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+                    <div class="detail-text">Pontocho-dori, Nakagyo-ku</div>
+                  </div>
+                  <div class="slot-detail-row">
+                    <div class="detail-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                    <div class="detail-text">19:00 · 1 seat available · ¥6,000 pp</div>
+                    <button class="detail-action" onclick="event.stopPropagation();bookSlot(this)">Book now</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 5 — upcoming, activity, needs-action -->
+            <div class="slot-card">
+              <div class="slot-body" style="padding:12px 13px">
+                <div class="slot-header">
+                  <div style="display:flex;align-items:center;gap:8px;flex:1">
+                    <div style="width:28px;height:28px;border-radius:8px;background:var(--bg-raised);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink-400);">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                    </div>
+                    <div class="slot-name">Gion jazz bar</div>
+                  </div>
+                  <div class="slot-duration">2h</div>
+                </div>
+                <div class="slot-suggestion">standing room only · cash only · worth it</div>
+                <div class="slot-signals" style="margin-top:6px">
+                  <div class="signal-chip source">Reddit · local rec</div>
+                  <div class="signal-chip needs-action" style="color:var(--warning);background:var(--warning-bg);border-color:transparent;">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    call ahead
+                  </div>
+                </div>
+              </div>
+              <div class="group-layer">
+                <div class="slot-group-strip">
+                  <div class="group-vote-chips">
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=40&q=60" onerror="this.parentNode.style.background='#8B6B4A'"></div>
+                      <span class="gvote-label">SL</span>
+                    </div>
+                    <div class="gvote nope">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&q=60" onerror="this.parentNode.style.background='#4A6B8B'"></div>
+                      <span class="gvote-label">Kevin</span>
+                    </div>
+                    <div class="gvote yes">
+                      <div class="gvote-pip"><img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=40&q=60" onerror="this.parentNode.style.background='#5C7A4A'"></div>
+                      <span class="gvote-label">JR</span>
+                    </div>
+                  </div>
+                  <div class="slot-group-poll">Poll</div>
+                </div>
+              </div>
+              <div class="slot-detail">
+                <div class="slot-detail-inner">
+                  <div class="slot-detail-row">
+                    <div class="detail-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+                    <div class="detail-text">No online booking — call +81 75 XXX XXXX to check availability</div>
+                    <button class="detail-action" onclick="event.stopPropagation();callSlot(this)">Call</button>
+                  </div>
+                  <div class="slot-detail-row">
+                    <div class="detail-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                    <div class="detail-text">Cash only · ¥2,500 cover</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- slots-col -->
+        </div><!-- time-axis -->
+      </div><!-- slot-scroll -->
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-item" onclick="setNav(this)">
+          <div class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+          <div class="nav-label">Home</div>
+        </div>
+        <div class="nav-item active" onclick="setNav(this)">
+          <div class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div class="nav-label">Today</div>
+        </div>
+        <div class="nav-item" onclick="setNav(this)">
+          <div class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+          <div class="nav-label">Discover</div>
+        </div>
+        <div class="nav-item" onclick="setNav(this)">
+          <div class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="nav-label">Group</div>
+        </div>
+        <div class="nav-item" onclick="setNav(this)">
+          <div class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+          <div class="nav-label">You</div>
+        </div>
+      </div>
+
+    </div><!-- phone -->
+  </div><!-- phone-wrap -->
+
+</div><!-- layout -->
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const dark = html.dataset.theme === 'dark';
+  html.dataset.theme = dark ? 'light' : 'dark';
+  document.getElementById('themeLabel').textContent = dark ? 'Light' : 'Dark';
+}
+
+let isGroup = false;
+function toggleMode() {
+  isGroup = !isGroup;
+  document.body.classList.toggle('group-mode', isGroup);
+  const pill = document.getElementById('modePill');
+  pill.classList.toggle('group-mode', isGroup);
+  document.getElementById('modeLabel').textContent = isGroup ? 'Group' : 'Solo';
+}
+
+function toggleMap() {
+  document.getElementById('mapStrip').classList.toggle('expanded');
+}
+
+function setNav(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.slot-card').forEach(function(card) {
+    if (!card.querySelector('.slot-detail')) return;
+    card.addEventListener('click', function(e) {
+      if (e.target.closest('.slot-group-poll') ||
+          e.target.closest('.slot-booking-badge')) {
+        return;
+      }
+      if (e.target.closest('.detail-action')) {
+        return;
+      }
+      var wasOpen = card.classList.contains('expanded');
+      document.querySelectorAll('.slot-card.expanded').forEach(function(c) {
+        c.classList.remove('expanded');
+      });
+      if (!wasOpen) card.classList.add('expanded');
+    });
+  });
+});
+
+
+function expandCard(el) {
+  var card = el.closest('.slot-card');
+  if (!card) return;
+  document.querySelectorAll('.slot-card.expanded').forEach(function(c) { c.classList.remove('expanded'); });
+  card.classList.add('expanded');
+  var scroll = document.getElementById('slotScroll');
+  scroll.scrollTo({ top: card.offsetTop - 20, behavior: 'smooth' });
+}
+
+function expandAndBook(el) {
+  expandCard(el);
+  // After expand, auto-trigger the Book now button inside
+  var card = el.closest('.slot-card');
+  setTimeout(function() {
+    var bookBtn = card.querySelector('.detail-action:not(.booked-action)');
+    if (bookBtn) {
+      bookBtn.style.animation = 'annoPulse 0.6s ease';
+    }
+  }, 350);
+}
+
+function bookSlot(btn) {
+  btn.textContent = 'Confirming...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+  setTimeout(function() {
+    // Update badge on the card
+    var card = btn.closest('.slot-card');
+    var badge = card.querySelector('.slot-booking-badge');
+    if (badge) {
+      badge.textContent = 'Booked';
+      badge.className = 'slot-booking-badge booked';
+    }
+    // Update button
+    btn.textContent = 'Confirmed';
+    btn.className = 'detail-action booked-action';
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'none';
+  }, 900);
+}
+
+function callSlot(btn) {
+  var card = btn.closest('.slot-card');
+  var badge = card.querySelector('.slot-booking-badge');
+  // Show a needs-action badge pulse
+  btn.textContent = 'Opening dialer...';
+  setTimeout(function() { btn.textContent = 'Call'; }, 1500);
+}
+
+function highlightState(state) {
+  // Highlight the annotation card
+  document.querySelectorAll('.anno-card').forEach(function(el) { el.classList.remove('active'); });
+  event.currentTarget.classList.add('active');
+
+  // Find the matching slot on the phone and pulse it
+  var slots = document.querySelectorAll('.slot-card');
+  var target = null;
+  slots.forEach(function(card) {
+    if (state === 'done'     && card.classList.contains('done') && !target) target = card;
+    if (state === 'active'   && card.classList.contains('active') && !target) target = card;
+    if (state === 'upcoming' && !card.classList.contains('done') && !card.classList.contains('active') && !target) target = card;
+  });
+
+  if (!target) return;
+
+  // Scroll into view within the slot-scroll container
+  var scroll = document.getElementById('slotScroll');
+  var cardTop = target.offsetTop - scroll.offsetTop;
+  scroll.scrollTo({ top: cardTop - 20, behavior: 'smooth' });
+
+  // Pulse highlight
+  target.classList.remove('anno-pulse');
+  void target.offsetWidth; // reflow to restart animation
+  target.classList.add('anno-pulse');
+  setTimeout(function() { target.classList.remove('anno-pulse'); }, 1200);
+}
+</script>
+</body>
+</html>

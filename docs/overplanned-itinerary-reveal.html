@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-state="loading">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Itinerary Reveal</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#F7F4EF;--bg-card:#FFFFFF;--bg-raised:#EDE8E0;--bg-stone:#EAE4DA;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-dark:#8C3A24;
+  --gold:#A07830;--gold-light:#F5EDD8;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08);--shadow-xl:0 32px 80px rgba(26,22,18,0.16);
+}
+[data-theme="dark"]{
+  --bg:#0C0A08;--bg-card:#161210;--bg-raised:#1A1510;--bg-stone:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-dark:#E8906E;
+  --gold:#C8A96E;--gold-light:rgba(200,169,110,0.12);
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);--shadow-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);}
+.shell{display:flex;align-items:center;justify-content:center;gap:48px;min-height:100vh;padding:40px 24px;flex-wrap:wrap;}
+.panel-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);text-align:center;margin-bottom:10px;}
+.phone{width:390px;height:780px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:44px;overflow:hidden;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;position:relative;}
+[data-theme="dark"] .phone{background:var(--bg-stone);}
+.theme-btn{position:fixed;top:20px;right:20px;width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);z-index:200;}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+.sbar{padding:14px 24px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.sbar-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-100);}
+
+/* ── STATE: LOADING ── */
+.loading-screen{position:absolute;inset:0;background:var(--bg-card);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;z-index:10;transition:opacity 0.6s ease;}
+[data-theme="dark"] .loading-screen{background:var(--bg-stone);}
+.loading-screen.hidden{opacity:0;pointer-events:none;}
+.loading-dest{font-family:'Lora',serif;font-size:28px;font-weight:500;font-style:italic;color:var(--ink-100);letter-spacing:-0.02em;text-align:center;margin-bottom:6px;}
+.loading-meta{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-500);text-align:center;margin-bottom:48px;}
+.loading-steps{display:flex;flex-direction:column;gap:12px;width:100%;max-width:260px;margin-bottom:40px;}
+.loading-step{display:flex;align-items:center;gap:10px;}
+.loading-step-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.4s ease;}
+.loading-step-dot.pending{background:var(--bg-raised);border:1.5px solid var(--ink-700);}
+[data-theme="dark"] .loading-step-dot.pending{background:var(--bg-stone);}
+.loading-step-dot.active{background:var(--accent-light);border:1.5px solid var(--accent);animation:pulse 1.2s infinite;}
+.loading-step-dot.done{background:var(--success-bg);border:1.5px solid var(--success);}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(184,92,63,0.3);}50%{box-shadow:0 0 0 6px rgba(184,92,63,0);}}
+.loading-step-label{font-size:12px;color:var(--ink-400);font-weight:300;transition:color 0.3s;}
+.loading-step.active .loading-step-label{color:var(--ink-100);}
+.loading-step.done .loading-step-label{color:var(--ink-500);text-decoration:line-through;}
+.loading-note{font-size:11px;color:var(--ink-500);font-style:italic;text-align:center;line-height:1.5;max-width:240px;}
+
+/* ── STATE: REVEAL ── */
+.reveal-screen{flex:1;display:flex;flex-direction:column;overflow:hidden;opacity:0;transition:opacity 0.8s ease 0.2s;}
+.reveal-screen.visible{opacity:1;}
+
+/* Big hero moment */
+.reveal-hero{height:260px;position:relative;overflow:hidden;flex-shrink:0;}
+.reveal-hero img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.05);transition:transform 1.2s ease;}
+.reveal-hero.zoomed img{transform:scale(1);}
+.reveal-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,0.95) 0%,rgba(14,10,6,0.1) 55%);}
+.reveal-hero-body{position:absolute;bottom:0;left:0;right:0;padding:24px;}
+.reveal-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:6px;}
+.reveal-city{font-family:'Lora',serif;font-size:30px;font-weight:500;color:#fff;letter-spacing:-0.02em;line-height:1.1;margin-bottom:3px;}
+.reveal-meta{font-size:12px;color:rgba(255,255,255,0.55);font-weight:300;}
+
+/* The hook line */
+.reveal-hook{padding:16px 22px;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.reveal-hook-text{font-family:'Lora',serif;font-size:15px;font-style:italic;color:var(--ink-100);line-height:1.45;}
+.reveal-hook-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.reveal-hook-tag{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 9px;border-radius:100px;background:var(--bg-raised);color:var(--ink-400);border:1px solid var(--ink-700);}
+[data-theme="dark"] .reveal-hook-tag{background:var(--bg-stone);}
+
+/* Day preview strip */
+.reveal-days{flex:1;overflow-y:auto;padding:14px 22px;}
+.reveal-days-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;}
+.reveal-day{display:flex;gap:10px;margin-bottom:10px;cursor:pointer;padding:10px;border-radius:14px;background:var(--bg-raised);border:1px solid var(--ink-700);transition:all 0.15s;align-items:flex-start;}
+[data-theme="dark"] .reveal-day{background:var(--bg-stone);}
+.reveal-day:hover{border-color:var(--ink-500);}
+.reveal-day-num{font-family:'DM Mono',monospace;font-size:18px;font-weight:300;color:var(--ink-600);width:28px;flex-shrink:0;line-height:1;}
+.reveal-day-body{flex:1;}
+.reveal-day-title{font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:2px;}
+.reveal-day-slots{font-size:10px;color:var(--ink-500);font-weight:300;line-height:1.5;font-style:italic;}
+.reveal-day-photos{display:flex;gap:4px;margin-top:7px;}
+.reveal-day-photo{width:36px;height:36px;border-radius:7px;overflow:hidden;}
+.reveal-day-photo img{width:100%;height:100%;object-fit:cover;}
+.reveal-day-photo.more{background:var(--bg-card);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);}
+[data-theme="dark"] .reveal-day-photo.more{background:var(--bg-raised);}
+
+/* CTA */
+.reveal-cta{padding:14px 22px 28px;flex-shrink:0;border-top:1px solid var(--ink-700);}
+.reveal-btn{width:100%;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:14px;cursor:pointer;box-shadow:0 4px 16px rgba(184,92,63,0.25);margin-bottom:8px;}
+.reveal-map-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-400);background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:100px;padding:10px;cursor:pointer;margin-bottom:8px;transition:all 0.15s;}
+[data-theme="dark"] .reveal-map-btn{background:var(--bg-stone);}
+.reveal-map-btn:hover{border-color:var(--ink-400);color:var(--ink-200);}
+
+/* Day expanded slot list */
+.reveal-day-slots-expanded{display:none;flex-direction:column;gap:0;margin-top:8px;border-top:1px solid var(--ink-700);padding-top:8px;}
+.reveal-day.open .reveal-day-slots-expanded{display:flex;}
+.reveal-day.open{border-color:var(--accent);}
+.reveal-slot-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--ink-800);}
+[data-theme="dark"] .reveal-slot-row{border-bottom-color:var(--ink-700);}
+.reveal-slot-row:last-child{border-bottom:none;}
+.reveal-slot-time{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);width:34px;flex-shrink:0;}
+.reveal-slot-name{font-size:11px;color:var(--ink-200);flex:1;}
+.reveal-slot-chip{font-family:'DM Mono',monospace;font-size:7px;padding:2px 7px;border-radius:100px;background:var(--bg-card);color:var(--ink-500);}
+[data-theme="dark"] .reveal-slot-chip{background:var(--bg-raised);}
+.reveal-day-chevron{color:var(--ink-500);transition:transform 0.2s;flex-shrink:0;}
+.reveal-day.open .reveal-day-chevron{transform:rotate(180deg);}
+
+/* Reveal map overlay */
+.reveal-map-overlay{position:absolute;inset:0;background:var(--bg-card);z-index:20;display:none;flex-direction:column;}
+[data-theme="dark"] .reveal-map-overlay{background:var(--bg-stone);}
+.reveal-map-overlay.visible{display:flex;}
+.reveal-map-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ink-700);flex-shrink:0;}
+.reveal-map-title{font-size:14px;font-weight:500;color:var(--ink-100);}
+.reveal-map-close{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-500);cursor:pointer;padding:4px 10px;border:1px solid var(--ink-700);border-radius:100px;background:var(--bg-raised);}
+[data-theme="dark"] .reveal-map-close{background:var(--bg-stone);}
+.reveal-map-canvas{flex:1;position:relative;background:#EAE6DC;}
+[data-theme="dark"] .reveal-map-canvas{background:#1A1612;}
+.reveal-map-note{padding:12px 20px;font-size:11px;color:var(--ink-500);font-style:italic;text-align:center;border-top:1px solid var(--ink-700);flex-shrink:0;}
+
+.reveal-btn-ghost{width:100%;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);background:none;border:none;cursor:pointer;padding:6px;}
+</style>
+</head>
+<body>
+<button class="theme-btn" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">
+  <svg class="icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+  <svg class="icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<div class="shell">
+
+<!-- Phone: Loading → Reveal (auto-animates) -->
+<div>
+<div class="panel-label" id="stateLabel">Loading · Generating itinerary</div>
+<div class="phone">
+  <div class="sbar"><span class="sbar-time">11:24</span></div>
+
+  <!-- Loading screen -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-dest">Kyoto</div>
+    <div class="loading-meta">Mar 14 – 22 · 9 days · Solo</div>
+    <div class="loading-steps">
+      <div class="loading-step done" id="step1">
+        <div class="loading-step-dot done">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="loading-step-label">Reading your travel style</div>
+      </div>
+      <div class="loading-step active" id="step2">
+        <div class="loading-step-dot active"></div>
+        <div class="loading-step-label">Finding local signals for Kyoto</div>
+      </div>
+      <div class="loading-step pending" id="step3">
+        <div class="loading-step-dot pending"></div>
+        <div class="loading-step-label">Building your 9-day route</div>
+      </div>
+      <div class="loading-step pending" id="step4">
+        <div class="loading-step-dot pending"></div>
+        <div class="loading-step-label">Timing slots to crowd patterns</div>
+      </div>
+    </div>
+    <div class="loading-note">We cross-reference Tabelog, local forums, and real visit patterns — not TripAdvisor.</div>
+  </div>
+
+  <!-- Reveal screen -->
+  <div class="reveal-screen" id="revealScreen">
+    <div class="reveal-hero" id="revealHero">
+      <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=700&q=85&auto=format&fit=crop" alt="Kyoto">
+      <div class="reveal-overlay"></div>
+      <div class="reveal-hero-body">
+        <div class="reveal-eyebrow">Your trip · Solo · 9 days</div>
+        <div class="reveal-city">Kyoto</div>
+        <div class="reveal-meta">Mar 14 – 22 · 28 slots · built around how you travel</div>
+      </div>
+    </div>
+    <div class="reveal-hook">
+      <div class="reveal-hook-text">"Counter seats, temples before the crowds, and one long dinner every night."</div>
+      <div class="reveal-hook-tags">
+        <div class="reveal-hook-tag">local-first</div>
+        <div class="reveal-hook-tag">slow mornings</div>
+        <div class="reveal-hook-tag">counter seats</div>
+        <div class="reveal-hook-tag">no tourist menus</div>
+      </div>
+    </div>
+    <div class="reveal-days">
+      <div class="reveal-days-label">9 days · 28 slots</div>
+      <div class="reveal-day" onclick="toggleDay(this)">
+        <div class="reveal-day-num">01</div>
+        <div class="reveal-day-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="reveal-day-title">Tokyo · Arrival day</div>
+            <svg class="reveal-day-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="reveal-day-slots">Easy start — Omoide Yokocho, Shinjuku standing bar, early night</div>
+          <div class="reveal-day-photos">
+            <div class="reveal-day-photo"><img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=100&q=60&auto=format&fit=crop" alt=""></div>
+            <div class="reveal-day-photo"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=100&q=60&auto=format&fit=crop" alt=""></div>
+            <div class="reveal-day-photo more">+2</div>
+          </div>
+          <div class="reveal-day-slots-expanded">
+            <div class="reveal-slot-row"><div class="reveal-slot-time">13:00</div><div class="reveal-slot-name">Shibuya crossing</div><div class="reveal-slot-chip">Free</div></div>
+            <div class="reveal-slot-row"><div class="reveal-slot-time">18:00</div><div class="reveal-slot-name">Omoide Yokocho</div><div class="reveal-slot-chip">Free</div></div>
+            <div class="reveal-slot-row"><div class="reveal-slot-time">20:30</div><div class="reveal-slot-name">Shinjuku standing bar</div><div class="reveal-slot-chip">Free</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal-day" onclick="toggleDay(this)">
+        <div class="reveal-day-num">03</div>
+        <div class="reveal-day-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="reveal-day-title">Kyoto · Temples + evening</div>
+            <svg class="reveal-day-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="reveal-day-slots">Fushimi at 6:30 before crowds · Philosopher's Path open · Pontocho counter</div>
+          <div class="reveal-day-photos">
+            <div class="reveal-day-photo"><img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=100&q=60&auto=format&fit=crop" alt=""></div>
+            <div class="reveal-day-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=100&q=60&auto=format&fit=crop" alt=""></div>
+            <div class="reveal-day-photo more">+3</div>
+          </div>
+          <div class="reveal-day-slots-expanded">
+            <div class="reveal-slot-row"><div class="reveal-slot-time">06:30</div><div class="reveal-slot-name">Fushimi Inari</div><div class="reveal-slot-chip">Free</div></div>
+            <div class="reveal-slot-row"><div class="reveal-slot-time">10:00</div><div class="reveal-slot-name">Kinkaku-ji</div><div class="reveal-slot-chip">Booked</div></div>
+            <div class="reveal-slot-row"><div class="reveal-slot-time">14:00</div><div class="reveal-slot-name">Philosopher's Path</div><div class="reveal-slot-chip">Free</div></div>
+            <div class="reveal-slot-row"><div class="reveal-slot-time">19:00</div><div class="reveal-slot-name">Pontocho izakaya</div><div class="reveal-slot-chip">Book</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal-day">
+        <div class="reveal-day-num">06</div>
+        <div class="reveal-day-body">
+          <div class="reveal-day-title">Osaka · Food day</div>
+          <div class="reveal-day-slots">Dotonbori at dusk · Shinsekai ramen counter · late night Hozenji</div>
+          <div class="reveal-day-photos">
+            <div class="reveal-day-photo"><img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=100&q=60&auto=format&fit=crop" alt=""></div>
+            <div class="reveal-day-photo"><img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100&q=60&auto=format&fit=crop" alt=""></div>
+            <div class="reveal-day-photo more">+2</div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal-day">
+        <div class="reveal-day-num">09</div>
+        <div class="reveal-day-body">
+          <div class="reveal-day-title">Last day · Easy exit</div>
+          <div class="reveal-day-slots">Nishiki market morning · airport by 15:00 · nothing rushed</div>
+          <div class="reveal-day-photos">
+            <div class="reveal-day-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=100&q=60&auto=format&fit=crop" alt=""></div>
+            <div class="reveal-day-photo more">+1</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="reveal-cta">
+      <button class="reveal-btn">Let's go →</button>
+      <button class="reveal-map-btn" onclick="showRevealMap()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        See trip on map
+      </button>
+      <button class="reveal-btn-ghost" onclick="adjustTrip()">Adjust something</button>
+    </div>
+
+    <!-- Map overlay -->
+    <div class="reveal-map-overlay" id="revealMapOverlay">
+      <div class="reveal-map-header">
+        <div class="reveal-map-title">Japan 2025 · 9 days</div>
+        <div class="reveal-map-close" onclick="hideRevealMap()">← Back</div>
+      </div>
+      <div class="reveal-map-canvas">
+        <svg width="100%" height="100%" viewBox="0 0 375 480" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;">
+          <rect width="375" height="480" fill="#EAE6DC"/>
+          <line x1="0" y1="160" x2="375" y2="160" stroke="#D4CFC5" stroke-width="18"/>
+          <line x1="0" y1="290" x2="375" y2="290" stroke="#D4CFC5" stroke-width="12"/>
+          <line x1="120" y1="0" x2="120" y2="480" stroke="#D4CFC5" stroke-width="18"/>
+          <line x1="255" y1="0" x2="255" y2="480" stroke="#D4CFC5" stroke-width="10"/>
+          <rect x="130" y="170" width="115" height="110" rx="4" fill="#DDD8CC" opacity="0.7"/>
+          <rect x="20" y="170" width="90" height="110" rx="4" fill="#DDD8CC" opacity="0.6"/>
+          <text x="188" y="230" font-family="monospace" font-size="9" fill="#B0AAA0" text-anchor="middle">KYOTO</text>
+          <text x="60" y="230" font-family="monospace" font-size="9" fill="#B0AAA0" text-anchor="middle">OSAKA</text>
+          <text x="300" y="100" font-family="monospace" font-size="9" fill="#B0AAA0" text-anchor="middle">TOKYO</text>
+        </svg>
+        <!-- City cluster pins -->
+        <div style="position:absolute;left:78%;top:15%;transform:translate(-50%,-100%);">
+          <div style="background:var(--accent);color:#fff;font-family:monospace;font-size:9px;padding:4px 10px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);">Tokyo · Days 1–3</div>
+        </div>
+        <div style="position:absolute;left:48%;top:40%;transform:translate(-50%,-100%);">
+          <div style="background:var(--accent);color:#fff;font-family:monospace;font-size:9px;padding:4px 10px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);">Kyoto · Days 4–7</div>
+        </div>
+        <div style="position:absolute;left:23%;top:48%;transform:translate(-50%,-100%);">
+          <div style="background:var(--ink-400);color:#fff;font-family:monospace;font-size:9px;padding:4px 10px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);">Osaka · Days 8–9</div>
+        </div>
+        <!-- Route line SVG overlay -->
+        <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;" viewBox="0 0 375 480">
+          <path d="M 292 72 Q 230 150 180 192 Q 110 230 86 230" stroke="var(--accent)" stroke-width="1.5" fill="none" stroke-dasharray="4 4" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="reveal-map-note">28 slots across 3 cities. Tap any cluster to preview days.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+
+<script>
+function toggleDay(el){
+  el.classList.toggle('open');
+}
+function showRevealMap(){
+  document.getElementById('revealMapOverlay').classList.add('visible');
+}
+function hideRevealMap(){
+  document.getElementById('revealMapOverlay').classList.remove('visible');
+}
+function adjustTrip(){
+  // placeholder — would open chat/edit surface
+  alert('Opens trip edit / chat surface');
+}
+
+var steps = [
+  {el:'step2', delay:1400},
+  {el:'step3', delay:2800},
+  {el:'step4', delay:3800}
+];
+var stepIdx = 0;
+
+function advanceStep(){
+  if(stepIdx >= steps.length){
+    // Show reveal
+    setTimeout(function(){
+      document.getElementById('loadingScreen').classList.add('hidden');
+      document.getElementById('revealScreen').classList.add('visible');
+      setTimeout(function(){document.getElementById('revealHero').classList.add('zoomed');},100);
+      document.getElementById('stateLabel').textContent = 'Reveal · First itinerary moment';
+    }, 600);
+    return;
+  }
+  var s = steps[stepIdx];
+  setTimeout(function(){
+    // Done previous
+    var prev = document.getElementById(s.el);
+    var prevDot = prev.querySelector('.loading-step-dot');
+    prev.classList.remove('pending');
+    prev.classList.add('active');
+    prevDot.className = 'loading-step-dot active';
+    prevDot.innerHTML = '';
+    // Done the one before
+    if(stepIdx > 0){
+      var prevEl = document.getElementById(steps[stepIdx-1].el);
+      var prevPrevDot = prevEl.querySelector('.loading-step-dot');
+      prevEl.classList.remove('active');
+      prevEl.classList.add('done');
+      prevPrevDot.className = 'loading-step-dot done';
+      prevPrevDot.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    }
+    stepIdx++;
+    advanceStep();
+  }, s.delay);
+}
+
+// Start sequence
+setTimeout(function(){
+  var s2 = document.getElementById('step2');
+  var s2dot = s2.querySelector('.loading-step-dot');
+  s2.classList.remove('active');
+  s2.classList.add('done');
+  s2dot.className = 'loading-step-dot done';
+  s2dot.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  advanceStep();
+},800);
+</script>
+</body>
+</html>

@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Group Planning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"] {
+  --bg-base:#FAF8F5;--bg-surface:#FFFFFF;--bg-raised:#F3EFE9;--bg-overlay:#EDE8E1;
+  --accent:#B85C3F;--accent-light:#F0E0D9;--accent-muted:#D4886E;--accent-on:#8C3A24;
+  --ink-100:#1C1713;--ink-200:#3A302A;--ink-300:#5C5048;--ink-400:#7A6E64;
+  --ink-500:#9C8E84;--ink-600:#BDB0A6;--ink-700:#D6CFC8;--ink-800:#EAE4DE;--ink-900:#F5F1EC;
+  --success:#4A8A5C;--success-bg:#E0EEE5;--warning:#A07830;--warning-bg:#F2EAD8;
+  --info:#3A6A8C;--info-bg:#D8E8F2;
+  --shadow-md:0 4px 16px rgba(28,23,19,0.08),0 1px 4px rgba(28,23,19,0.04);
+  --shadow-lg:0 12px 48px rgba(28,23,19,0.10),0 2px 8px rgba(28,23,19,0.05);
+  --shadow-drawer:0 -8px 40px rgba(28,23,19,0.12),0 -1px 8px rgba(28,23,19,0.06);
+}
+[data-theme="dark"] {
+  --bg-base:#100E0B;--bg-surface:#171310;--bg-raised:#1F1A15;--bg-overlay:#28211A;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-muted:#8C402A;--accent-on:#E8906E;
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;--ink-900:#1A1410;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);--warning:#B8943A;--warning-bg:rgba(184,148,58,0.12);
+  --info:#4A84A8;--info-bg:rgba(74,132,168,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);--shadow-lg:0 16px 60px rgba(0,0,0,0.5);
+  --shadow-drawer:0 -12px 60px rgba(0,0,0,0.55),0 -1px 8px rgba(0,0,0,0.3);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg-base);color:var(--ink-100);min-height:100vh;transition:background 0.3s,color 0.3s;}
+button{font-family:'Sora',sans-serif;border:none;cursor:pointer;background:none;}
+
+.controls{position:fixed;top:20px;right:24px;z-index:300;}
+.ctrl-pill{display:flex;align-items:center;gap:8px;background:var(--bg-surface);border:1px solid var(--ink-700);border-radius:100px;padding:6px 14px 6px 8px;box-shadow:var(--shadow-md);cursor:pointer;}
+.toggle-track{width:28px;height:16px;background:var(--ink-700);border-radius:100px;position:relative;transition:background 0.2s;flex-shrink:0;}
+[data-theme="dark"] .toggle-track{background:var(--accent);}
+.toggle-thumb{width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:transform 0.2s;}
+[data-theme="dark"] .toggle-thumb{transform:translateX(12px);}
+.ctrl-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-400);}
+
+.layout{display:grid;grid-template-columns:1fr 390px;gap:56px;max-width:1080px;margin:0 auto;padding:48px 32px 100px;align-items:start;}
+@media(max-width:760px){.layout{grid-template-columns:1fr;padding:80px 16px 60px;}.phone-wrap{position:static;}}
+.left-col{animation:fadeUp 0.4s ease both 0.05s;}
+.phone-wrap{animation:fadeUp 0.4s ease both 0.12s;position:sticky;top:48px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
+.page-title{font-size:26px;font-weight:500;letter-spacing:-0.025em;line-height:1.2;margin-bottom:6px;}
+.page-desc{font-size:13px;color:var(--ink-400);font-weight:300;line-height:1.7;margin-bottom:28px;max-width:400px;}
+
+/* TAB SWITCHER */
+.tab-row{display:flex;gap:6px;margin-bottom:28px;}
+.tab-btn{padding:7px 14px;border-radius:100px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-400);background:var(--bg-surface);border:1.5px solid var(--ink-800);cursor:pointer;transition:all 0.18s;}
+.tab-btn:hover{border-color:var(--ink-600);color:var(--ink-200);}
+.tab-btn.active{border-color:var(--accent);color:var(--accent-on);background:var(--accent-light);}
+
+/* SLOT STATE CARDS */
+.slot-states{margin-bottom:28px;}
+.state-row{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--bg-surface);border:1.5px solid var(--ink-800);border-radius:12px;margin-bottom:7px;cursor:pointer;transition:all 0.18s;}
+.state-row:hover{border-color:var(--ink-600);transform:translateX(2px);}
+.state-row.active{border-color:var(--accent);background:var(--accent-light);}
+.state-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.state-dot.needs-vote{background:var(--warning);}
+.state-dot.agreed{background:var(--success);}
+.state-dot.conflict{background:var(--info);}
+.state-dot.locked{background:var(--accent);}
+.state-tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;}
+.state-tag.needs-vote{color:var(--warning);}
+.state-tag.agreed{color:var(--success);}
+.state-tag.conflict{color:var(--info);}
+.state-tag.locked{color:var(--accent-on);}
+.state-title{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:1px;}
+.state-body{font-size:12px;color:var(--ink-400);font-weight:300;line-height:1.5;}
+
+.principle{padding:14px 16px;background:var(--bg-raised);border-radius:12px;border-left:3px solid var(--accent);margin-bottom:10px;}
+.principle-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:5px;}
+.principle-text{font-size:12px;color:var(--ink-300);font-weight:300;line-height:1.65;}
+
+/* ===== PHONE ===== */
+.phone{background:var(--bg-surface);border-radius:40px;border:1.5px solid var(--ink-700);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;height:780px;position:relative;overflow:clip;}
+[data-theme="dark"] .phone{border-color:var(--ink-600);}
+
+.phone-status{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 8px;flex-shrink:0;}
+.status-time{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-400);}
+
+/* TRIP HEADER */
+.trip-head{padding:0 20px 14px;flex-shrink:0;border-bottom:1px solid var(--ink-800);}
+.trip-name{font-size:19px;font-weight:500;letter-spacing:-0.025em;color:var(--ink-100);line-height:1.1;margin-bottom:5px;}
+.trip-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.trip-chip{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-500);display:flex;align-items:center;gap:3px;}
+.trip-sep{color:var(--ink-800);}
+.trip-days-left{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent-on);background:var(--accent-light);padding:2px 7px;border-radius:100px;}
+
+/* MEMBER RAIL */
+.member-rail{padding:10px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--ink-800);}
+.member-rail-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-600);margin-bottom:8px;}
+.member-list{display:flex;align-items:center;gap:10px;}
+.member-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.member-av{width:32px;height:32px;border-radius:50%;overflow:hidden;border:2px solid var(--bg-surface);box-shadow:0 0 0 1.5px var(--ink-800);position:relative;flex-shrink:0;}
+.member-av img{width:100%;height:100%;object-fit:cover;display:block;}
+.member-av.you{box-shadow:0 0 0 2px var(--accent);}
+.member-av-status{position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--bg-surface);}
+.member-av-status.online{background:var(--success);}
+.member-av-status.away{background:var(--warning);}
+.member-av-status.offline{background:var(--ink-700);}
+.member-name{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.04em;color:var(--ink-500);}
+.member-add{width:32px;height:32px;border-radius:50%;background:var(--bg-raised);border:1.5px dashed var(--ink-600);display:flex;align-items:center;justify-content:center;color:var(--ink-500);cursor:pointer;transition:all 0.15s;}
+.member-add:hover{border-color:var(--accent-muted);color:var(--accent-on);}
+
+/* PROGRESS BAR */
+.progress-bar-wrap{padding:10px 20px;flex-shrink:0;border-bottom:1px solid var(--ink-800);}
+.progress-meta{display:flex;justify-content:space-between;margin-bottom:5px;}
+.progress-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);}
+.progress-count{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);}
+.progress-track{height:3px;background:var(--ink-800);border-radius:100px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:100px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1);}
+
+/* DAY TABS */
+.day-tabs{display:flex;gap:0;padding:0 20px;flex-shrink:0;border-bottom:1px solid var(--ink-800);overflow-x:auto;scrollbar-width:none;}
+.day-tabs::-webkit-scrollbar{display:none;}
+.day-tab{padding:9px 14px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s;flex-shrink:0;display:flex;align-items:center;gap:5px;}
+.day-tab:hover{color:var(--ink-200);}
+.day-tab.active{color:var(--ink-100);border-bottom-color:var(--accent);}
+.day-tab-badge{width:5px;height:5px;border-radius:50%;}
+.day-tab-badge.warn{background:var(--warning);}
+.day-tab-badge.ok{background:var(--success);}
+.day-tab-badge.empty{background:var(--ink-600);}
+
+/* PLAN SCROLL */
+.plan-scroll{flex:1;overflow-y:auto;padding:14px 16px 24px;scrollbar-width:none;}
+.plan-scroll::-webkit-scrollbar{display:none;}
+
+/* SECTION HEADER */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;margin-top:4px;}
+.section-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);}
+.section-add{display:flex;align-items:center;gap:3px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-on);background:var(--accent-light);border:1px solid var(--accent-muted);border-radius:100px;padding:3px 9px;cursor:pointer;transition:all 0.15s;}
+.section-add:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* PLAN SLOT CARD */
+.plan-slot{background:var(--bg-surface);border:1.5px solid var(--ink-800);border-radius:14px;overflow:hidden;margin-bottom:8px;cursor:pointer;transition:border-color 0.2s,transform 0.15s;box-shadow:0 1px 4px rgba(28,23,19,0.04);}
+.plan-slot:hover{border-color:var(--ink-600);}
+.plan-slot.needs-vote{border-color:rgba(160,120,48,0.4);}
+.plan-slot.agreed{border-color:rgba(74,138,92,0.4);}
+.plan-slot.conflict{border-color:rgba(58,106,140,0.4);}
+.plan-slot.locked{border-color:var(--accent-muted);}
+.plan-slot.open{border-style:dashed;border-color:var(--ink-700);background:var(--bg-raised);}
+.plan-slot.expanded .plan-detail{max-height:400px;border-top-color:var(--ink-800);}
+
+.plan-slot-photo{height:72px;position:relative;overflow:hidden;}
+.plan-slot-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.plan-slot:hover .plan-slot-photo img{transform:scale(1.04);}
+.plan-slot-photo-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(28,23,19,0.55) 0%,transparent 60%);}
+.plan-slot-cat{position:absolute;bottom:7px;left:9px;width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);}
+.plan-slot-cat.food{background:rgba(184,92,63,0.85);color:#fff;}
+.plan-slot-cat.culture{background:rgba(58,106,140,0.85);color:#fff;}
+.plan-slot-cat.activity{background:rgba(122,106,58,0.85);color:#fff;}
+.plan-slot-cat.night{background:rgba(80,60,100,0.85);color:#fff;}
+.plan-slot-status{position:absolute;top:7px;right:9px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:100px;backdrop-filter:blur(8px);}
+.plan-slot-status.needs-vote{background:rgba(160,120,48,0.82);color:#fff;}
+.plan-slot-status.agreed{background:rgba(74,138,92,0.82);color:#fff;}
+.plan-slot-status.conflict{background:rgba(58,106,140,0.82);color:#fff;}
+.plan-slot-status.locked{background:rgba(184,92,63,0.82);color:#fff;}
+
+.plan-slot-body{padding:9px 11px 10px;}
+.plan-slot-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px;}
+.plan-slot-name{font-size:13px;font-weight:500;color:var(--ink-100);letter-spacing:-0.01em;}
+.plan-slot-time{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);flex-shrink:0;margin-top:2px;}
+.plan-slot-why{font-size:11px;color:var(--ink-400);font-weight:300;font-style:italic;line-height:1.4;margin-bottom:7px;}
+
+/* VOTE CHIPS */
+.vote-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.vote-chip{display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:100px;font-family:'DM Mono',monospace;font-size:9px;border:1px solid transparent;cursor:pointer;transition:all 0.15s;}
+.vote-chip.yes{background:var(--success-bg);color:var(--success);border-color:rgba(74,138,92,0.2);}
+.vote-chip.no{background:var(--warning-bg);color:var(--warning);border-color:rgba(160,120,48,0.2);}
+.vote-chip.maybe{background:var(--bg-raised);color:var(--ink-400);border-color:var(--ink-700);}
+.vote-chip.pending{background:var(--bg-raised);color:var(--ink-600);border-color:var(--ink-800);border-style:dashed;}
+.vote-chip-av{width:13px;height:13px;border-radius:50%;overflow:hidden;flex-shrink:0;}
+.vote-chip-av img{width:100%;height:100%;object-fit:cover;display:block;}
+
+/* MY VOTE */
+.my-vote-row{display:flex;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid var(--ink-800);}
+.my-vote-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 0;border-radius:100px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;border:1.5px solid var(--ink-700);color:var(--ink-400);cursor:pointer;transition:all 0.18s;}
+.my-vote-btn:hover.yes-btn{border-color:var(--success);color:var(--success);background:var(--success-bg);}
+.my-vote-btn:hover.no-btn{border-color:var(--warning);color:var(--warning);background:var(--warning-bg);}
+.my-vote-btn:hover.maybe-btn{border-color:var(--ink-500);color:var(--ink-200);}
+.my-vote-btn.voted-yes{border-color:var(--success);color:var(--success);background:var(--success-bg);}
+.my-vote-btn.voted-no{border-color:var(--warning);color:var(--warning);background:var(--warning-bg);}
+.my-vote-btn.voted-maybe{border-color:var(--ink-500);color:var(--ink-200);background:var(--bg-raised);}
+
+/* PLAN DETAIL */
+.plan-detail{max-height:0;overflow:hidden;border-top:1px solid transparent;transition:max-height 0.32s ease,border-color 0.25s;}
+.plan-detail-inner{padding:10px 11px 12px;}
+.plan-detail-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;}
+.plan-detail-row:last-child{margin-bottom:0;}
+.detail-icon{color:var(--ink-500);flex-shrink:0;margin-top:1px;}
+.detail-text{font-size:12px;color:var(--ink-300);font-weight:300;line-height:1.4;flex:1;}
+
+/* CONFLICT NOTICE */
+.conflict-notice{margin:8px 0;padding:9px 11px;background:var(--info-bg);border-radius:10px;border:1px solid rgba(58,106,140,0.2);}
+.conflict-notice-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--info);margin-bottom:3px;}
+.conflict-notice-text{font-size:11px;color:var(--ink-300);font-weight:300;line-height:1.4;}
+.conflict-notice-action{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--info);margin-top:5px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;}
+.conflict-notice-action:hover{text-decoration:underline;}
+
+/* OPEN SLOT */
+.open-slot-body{padding:14px 11px;display:flex;align-items:center;gap:10px;}
+.open-slot-icon{width:28px;height:28px;border-radius:8px;background:var(--bg-overlay);border:1.5px dashed var(--ink-600);display:flex;align-items:center;justify-content:center;color:var(--ink-500);flex-shrink:0;}
+.open-slot-text{flex:1;}
+.open-slot-label{font-size:12px;font-weight:400;color:var(--ink-300);margin-bottom:1px;}
+.open-slot-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-600);letter-spacing:0.04em;}
+.open-slot-suggest{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent-on);background:var(--accent-light);border:1px solid var(--accent-muted);border-radius:100px;padding:4px 9px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.open-slot-suggest:hover{background:var(--accent);color:#fff;}
+
+/* LOGISTICS SECTION */
+.logistics-section{margin-top:12px;}
+.logistics-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.logistics-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);}
+.logistics-row{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--bg-surface);border:1.5px solid var(--ink-800);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:all 0.15s;}
+.logistics-row:hover{border-color:var(--ink-600);}
+.logistics-row.resolved{opacity:0.55;}
+.logistics-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logistics-icon.ok{background:var(--success-bg);color:var(--success);}
+.logistics-icon.needs{background:var(--warning-bg);color:var(--warning);}
+.logistics-icon.info{background:var(--info-bg);color:var(--info);}
+.logistics-body{flex:1;}
+.logistics-name{font-size:12px;font-weight:400;color:var(--ink-200);margin-bottom:1px;}
+.logistics-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);}
+.logistics-resolve{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:var(--success);background:var(--success-bg);border:1px solid rgba(74,138,92,0.25);border-radius:100px;padding:3px 8px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+
+/* BOTTOM ACTION */
+.plan-bottom{flex-shrink:0;border-top:1px solid var(--ink-800);padding:12px 16px 16px;background:var(--bg-surface);}
+.plan-bottom-state{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);margin-bottom:8px;text-align:center;}
+.plan-cta{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.plan-cta:hover{opacity:0.88;transform:translateY(-1px);}
+.plan-cta:disabled{opacity:0.4;cursor:default;transform:none;}
+
+/* BOTTOM NAV */
+.bottom-nav{flex-shrink:0;border-top:1px solid var(--ink-800);padding:10px 0 14px;display:flex;justify-content:space-around;background:var(--bg-surface);}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:3px 12px;}
+.nav-item svg{color:var(--ink-600);transition:color 0.15s;}
+.nav-item span{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-600);transition:color 0.15s;}
+.nav-item.active svg,.nav-item.active span{color:var(--accent);}
+
+/* POLL DRAWER */
+.poll-drawer{position:absolute;bottom:0;left:0;right:0;background:var(--bg-surface);border-top:1px solid var(--ink-700);border-radius:22px 22px 0 0;box-shadow:var(--shadow-drawer);transform:translateY(100%);transition:transform 0.38s cubic-bezier(0.32,0.72,0,1);z-index:20;}
+[data-theme="dark"] .poll-drawer{background:var(--bg-raised);border-color:var(--ink-600);}
+.poll-drawer.visible{transform:translateY(0);}
+.drawer-handle{width:36px;height:4px;background:var(--ink-700);border-radius:2px;margin:12px auto 0;cursor:grab;}
+.poll-drawer-head{padding:14px 18px 0;display:flex;align-items:flex-start;justify-content:space-between;}
+.poll-drawer-title{font-size:15px;font-weight:500;color:var(--ink-100);letter-spacing:-0.01em;}
+.poll-drawer-sub{font-size:11px;color:var(--ink-400);font-weight:300;margin-top:2px;}
+.poll-dismiss{width:26px;height:26px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);transition:all 0.15s;flex-shrink:0;}
+.poll-dismiss:hover{border-color:var(--ink-500);color:var(--ink-100);}
+
+.poll-options{padding:12px 14px 0;}
+.poll-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--ink-800);border-radius:12px;margin-bottom:7px;cursor:pointer;transition:all 0.18s;background:var(--bg-raised);}
+.poll-option:hover{border-color:var(--ink-600);}
+.poll-option.selected-yes{border-color:var(--success);background:var(--success-bg);}
+.poll-option.selected-no{border-color:var(--warning);background:var(--warning-bg);}
+.poll-option.selected-maybe{border-color:var(--ink-500);background:var(--bg-overlay);}
+.poll-option-thumb{width:44px;height:44px;border-radius:9px;overflow:hidden;flex-shrink:0;}
+.poll-option-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.poll-option-body{flex:1;}
+.poll-option-name{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:2px;}
+.poll-option-why{font-size:11px;color:var(--ink-400);font-weight:300;font-style:italic;}
+.poll-option-votes{display:flex;gap:-3px;margin-top:4px;}
+.vote-pip{width:14px;height:14px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg-surface);margin-left:-4px;}
+.vote-pip:first-child{margin-left:0;}
+.vote-pip img{width:100%;height:100%;object-fit:cover;display:block;}
+.vote-pip.empty{background:var(--ink-700);display:flex;align-items:center;justify-content:center;}
+
+.poll-vote-row{display:flex;gap:7px;padding:14px 14px 4px;}
+.pvote-btn{flex:1;padding:10px 0;border-radius:100px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;border:1.5px solid var(--ink-700);color:var(--ink-400);cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.pvote-btn.yes:hover,.pvote-btn.yes.active{border-color:var(--success);color:var(--success);background:var(--success-bg);}
+.pvote-btn.maybe:hover,.pvote-btn.maybe.active{border-color:var(--ink-500);color:var(--ink-200);background:var(--bg-raised);}
+.pvote-btn.no:hover,.pvote-btn.no.active{border-color:var(--warning);color:var(--warning);background:var(--warning-bg);}
+
+.poll-dissent{margin:0 14px 14px;padding:9px 11px;background:var(--bg-raised);border-radius:10px;border:1px solid var(--ink-800);}
+.poll-dissent-text{font-size:11px;color:var(--ink-400);font-weight:300;line-height:1.45;margin-bottom:5px;}
+.poll-dissent-link{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-400);cursor:pointer;display:inline-flex;align-items:center;gap:3px;}
+.poll-dissent-link:hover{color:var(--ink-200);}
+
+.overlay{position:absolute;inset:0;background:rgba(28,23,19,0.18);opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:15;border-radius:40px;}
+.overlay.visible{opacity:1;pointer-events:auto;}
+
+/* ANIM */
+@keyframes slotIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.plan-slot{animation:slotIn 0.3s ease both;}
+.plan-slot:nth-child(1){animation-delay:0.04s;}
+.plan-slot:nth-child(2){animation-delay:0.08s;}
+.plan-slot:nth-child(3){animation-delay:0.12s;}
+.plan-slot:nth-child(4){animation-delay:0.16s;}
+.plan-slot:nth-child(5){animation-delay:0.20s;}
+.plan-slot:nth-child(6){animation-delay:0.24s;}
+@keyframes voteIn{from{transform:scale(0.8);opacity:0;}to{transform:scale(1);opacity:1;}}
+.vote-pop{animation:voteIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;}
+
+/* AGREED ROW — calm, done */
+.agreed-row { display:flex; align-items:center; gap:8px; }
+.agreed-pips { display:flex; }
+.agreed-pip { width:20px; height:20px; border-radius:50%; overflow:hidden; border:2px solid var(--bg-surface); margin-left:-6px; box-shadow:0 0 0 1px rgba(74,138,92,0.3); }
+.agreed-pip:first-child { margin-left:0; }
+.agreed-pip img { width:100%; height:100%; object-fit:cover; display:block; }
+.agreed-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.08em; text-transform:uppercase; color:var(--success); }
+
+/* CONFLICT CAMPS — tension visible at a glance */
+.conflict-camps { display:flex; align-items:center; gap:8px; margin-top:4px; }
+.camp { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.camp-pips { display:flex; }
+.camp-pip { width:22px; height:22px; border-radius:50%; overflow:hidden; margin-left:-6px; border:2px solid var(--bg-surface); }
+.camp-pip:first-child { margin-left:0; }
+.camp-pip img { width:100%; height:100%; object-fit:cover; display:block; }
+.camp-yes .camp-pip { box-shadow:0 0 0 1.5px rgba(74,138,92,0.4); }
+.camp-no .camp-pip { box-shadow:0 0 0 1.5px rgba(160,120,48,0.4); }
+.camp-label { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:0.08em; text-transform:uppercase; }
+.camp-yes .camp-label { color:var(--success); }
+.camp-no .camp-label { color:var(--warning); }
+.camp-divider { font-family:'DM Mono',monospace; font-size:9px; color:var(--ink-600); padding:0 2px; margin-bottom:10px; }
+.conflict-resolve-btn { margin-left:auto; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.06em; text-transform:uppercase; color:var(--info); background:var(--info-bg); border:1px solid rgba(58,106,140,0.25); border-radius:100px; padding:5px 10px; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+.conflict-resolve-btn:hover { background:var(--info); color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <div class="ctrl-pill" onclick="toggleTheme()">
+    <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    <span class="ctrl-label" id="themeLabel">Light</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT -->
+  <div class="left-col">
+    <div class="page-eyebrow">Group Planning · Pre-trip</div>
+    <div class="page-title">Build the trip<br>together, async.</div>
+    <div class="page-desc">Planning happens before departure, on everyone's phone, whenever they have a minute. The system generates a draft. The group votes on contested slots. Conflicts surface early, not at the destination.</div>
+
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchTab('slots',this)">Slot states</button>
+      <button class="tab-btn" onclick="switchTab('logistics',this)">Logistics</button>
+    </div>
+
+    <!-- SLOTS TAB -->
+    <div id="tabSlots">
+      <div class="slot-states">
+        <div class="state-row active" onclick="showSlotState('needs-vote',this)">
+          <div class="state-dot needs-vote"></div>
+          <div>
+            <div class="state-tag needs-vote">Needs a vote</div>
+            <div class="state-title">System proposed, nobody's weighed in</div>
+            <div class="state-body">Tap to open the poll drawer. Three options: yes, maybe, not for me. "Not for me" from two members flags a conflict.</div>
+          </div>
+        </div>
+        <div class="state-row" onclick="showSlotState('agreed',this)">
+          <div class="state-dot agreed"></div>
+          <div>
+            <div class="state-tag agreed">Agreed</div>
+            <div class="state-title">Group aligned — slot locks in</div>
+            <div class="state-body">70%+ alignment triggers auto-lock. Below that the system holds it open. Fairness debt runs quietly in the background.</div>
+          </div>
+        </div>
+        <div class="state-row" onclick="showSlotState('conflict',this)">
+          <div class="state-dot conflict"></div>
+          <div>
+            <div class="state-tag conflict">Conflict</div>
+            <div class="state-title">Split vote — system surfaces alternatives</div>
+            <div class="state-body">Two or more "not for me" votes. The notice shows who's on which side without assigning blame. Alternatives load in the drawer.</div>
+          </div>
+        </div>
+        <div class="state-row" onclick="showSlotState('locked',this)">
+          <div class="state-dot locked"></div>
+          <div>
+            <div class="state-tag locked">Locked</div>
+            <div class="state-title">Pre-purchased or immovable anchor</div>
+            <div class="state-body">Train, museum ticket, restaurant prepay. Can't be moved without surfacing a cascade warning. Shown in planning so nobody books over it.</div>
+          </div>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="principle-label">Abilene antidote</div>
+        <div class="principle-text">The "not for me" option has to be right there — not buried. Two "not for me" votes quietly flags the slot before it becomes an argument at the destination.</div>
+      </div>
+      <div class="principle" style="border-left-color:var(--success);margin-top:10px">
+        <div class="principle-label" style="color:var(--success)">Fairness debt (invisible)</div>
+        <div class="principle-text">If SL has won every contested slot and Kevin hasn't, the system quietly biases the next uncontested flex slot toward Kevin's preferences. Never surfaced as a score. Translated into action only.</div>
+      </div>
+    </div>
+
+    <!-- LOGISTICS TAB -->
+    <div id="tabLogistics" style="display:none">
+      <div class="slot-states">
+        <div class="state-row" onclick="switchToLogistics()">
+          <div class="state-dot agreed"></div>
+          <div>
+            <div class="state-tag agreed">Resolved</div>
+            <div class="state-title">Item confirmed, no action needed</div>
+            <div class="state-body">Dietary constraints recorded. Pre-purchased tickets assigned. Shared items holder confirmed.</div>
+          </div>
+        </div>
+        <div class="state-row active" onclick="switchToLogistics()">
+          <div class="state-dot needs-vote"></div>
+          <div>
+            <div class="state-tag needs-vote">Needs attention</div>
+            <div class="state-title">Something unresolved before departure</div>
+            <div class="state-body">One prompt per item. Resolved before the trip. Not a persistent checklist — surfaces and disappears.</div>
+          </div>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="principle-label">Background presence</div>
+        <div class="principle-text">Logistics don't live on the main planning screen. They surface when relevant — pre-trip for resolution, mid-trip only when a slot is approaching and something needs attention.</div>
+      </div>
+      <div class="principle" style="border-left-color:var(--info);margin-top:10px">
+        <div class="principle-label" style="color:var(--info)">Constraint-first aggregation</div>
+        <div class="principle-text">Hard constraints trump preference signals. One member's mobility constraint or dietary restriction filters candidates before fairness or vibe matching runs. The group doesn't vote on things that don't work for everyone.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHONE -->
+  <div class="phone-wrap">
+    <div class="phone">
+
+      <div class="phone-status">
+        <span class="status-time">10:41</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-500)">Planning</span>
+      </div>
+
+      <div class="trip-head">
+        <div class="trip-name">Japan 2025</div>
+        <div class="trip-meta">
+          <div class="trip-chip"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Mar 12–22</div>
+          <div class="trip-sep">·</div>
+          <div class="trip-chip"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>4 people</div>
+          <div class="trip-sep">·</div>
+          <div class="trip-days-left">18 days out</div>
+        </div>
+      </div>
+
+      <div class="member-rail">
+        <div class="member-rail-label">Group</div>
+        <div class="member-list">
+          <div class="member-item">
+            <div class="member-av you"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""><div class="member-av-status online"></div></div>
+            <div class="member-name">you</div>
+          </div>
+          <div class="member-item">
+            <div class="member-av"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt=""><div class="member-av-status online"></div></div>
+            <div class="member-name">SL</div>
+          </div>
+          <div class="member-item">
+            <div class="member-av"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" alt=""><div class="member-av-status away"></div></div>
+            <div class="member-name">JR</div>
+          </div>
+          <div class="member-item">
+            <div class="member-av"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt=""><div class="member-av-status offline"></div></div>
+            <div class="member-name">Mia</div>
+          </div>
+          <div class="member-add" onclick="addMember()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-meta">
+          <span class="progress-label">Planning progress</span>
+          <span class="progress-count" id="progressCount">6 of 14 slots agreed</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:43%"></div></div>
+      </div>
+
+      <div class="day-tabs">
+        <div class="day-tab active" onclick="switchDay(this,'day1')">Day 1 <div class="day-tab-badge warn"></div></div>
+        <div class="day-tab" onclick="switchDay(this,'day2')">Day 2 <div class="day-tab-badge ok"></div></div>
+        <div class="day-tab" onclick="switchDay(this,'day3')">Day 3 <div class="day-tab-badge warn"></div></div>
+        <div class="day-tab" onclick="switchDay(this,'day4')">Day 4 <div class="day-tab-badge empty"></div></div>
+        <div class="day-tab" onclick="switchDay(this,'day5')">Day 5 <div class="day-tab-badge empty"></div></div>
+      </div>
+
+      <div class="plan-scroll" id="planScroll">
+
+        <!-- DAY 1 -->
+        <div id="day1">
+          <div class="section-header">
+            <div class="section-label">Morning</div>
+            <button class="section-add" onclick="suggestSlot('morning')"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>suggest</button>
+          </div>
+
+          <!-- LOCKED slot -->
+          <div class="plan-slot locked" id="slotShinkansen" onclick="toggleSlotExpand(this)">
+            <div class="plan-slot-photo">
+              <img src="https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=600&q=70&auto=format&fit=crop" alt="">
+              <div class="plan-slot-photo-grad"></div>
+              <div class="plan-slot-cat activity"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+              <div class="plan-slot-status locked">Locked · pre-paid</div>
+            </div>
+            <div class="plan-slot-body">
+              <div class="plan-slot-header"><div class="plan-slot-name">Shinkansen Tokyo → Kyoto</div><div class="plan-slot-time">08:30</div></div>
+              <div class="plan-slot-why">N700S · reserved seats · 2h 15m</div>
+              <div class="agreed-row">
+                <div class="agreed-pips">
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                </div>
+                <div class="agreed-label">everyone in</div>
+              </div>
+            </div>
+            <div class="plan-detail">
+              <div class="plan-detail-inner">
+                <div class="plan-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="detail-text">¥13,870 pp · paid by Kevin · split tracked</div></div>
+                <div class="plan-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="detail-text">Cannot be moved — cascade warning will appear if surrounding slots shift by more than 40 min</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NEEDS VOTE slot -->
+          <div class="plan-slot needs-vote" id="slotArashiyama" onclick="openPoll(this,'arashiyama')">
+            <div class="plan-slot-photo">
+              <img src="https://images.unsplash.com/photo-1576675784201-0e142b423952?w=600&q=70&auto=format&fit=crop" alt="">
+              <div class="plan-slot-photo-grad"></div>
+              <div class="plan-slot-cat activity"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+              <div class="plan-slot-status needs-vote">Needs a vote</div>
+            </div>
+            <div class="plan-slot-body">
+              <div class="plan-slot-header"><div class="plan-slot-name">Arashiyama bamboo grove</div><div class="plan-slot-time">11:00</div></div>
+              <div class="plan-slot-why">best light before noon · 2.1k local reviews</div>
+              <div class="vote-row">
+                <div class="vote-chip yes"><div class="vote-chip-av"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt=""></div>SL</div>
+                <div class="vote-chip pending"><div class="vote-chip-av"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" alt=""></div>JR</div>
+                <div class="vote-chip pending"><div class="vote-chip-av"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt=""></div>Mia</div>
+                <div class="vote-chip pending" id="myVoteArashiyama"><div class="vote-chip-av"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>you</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-header" style="margin-top:12px">
+            <div class="section-label">Afternoon</div>
+            <button class="section-add" onclick="suggestSlot('afternoon')"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>suggest</button>
+          </div>
+
+          <!-- AGREED slot -->
+          <div class="plan-slot agreed" id="slotNishiki" onclick="toggleSlotExpand(this)">
+            <div class="plan-slot-photo">
+              <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=70&auto=format&fit=crop" alt="">
+              <div class="plan-slot-photo-grad"></div>
+              <div class="plan-slot-cat food"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+              <div class="plan-slot-status agreed">Agreed</div>
+            </div>
+            <div class="plan-slot-body">
+              <div class="plan-slot-header"><div class="plan-slot-name">Nishiki Market lunch</div><div class="plan-slot-time">14:00</div></div>
+              <div class="plan-slot-why">standing counters · everyone in</div>
+              <div class="agreed-row">
+                <div class="agreed-pips">
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                </div>
+                <div class="agreed-label">everyone in</div>
+              </div>
+            </div>
+            <div class="plan-detail">
+              <div class="plan-detail-inner">
+                <div class="plan-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="detail-text">Nishiki-koji, Nakagyo-ku, Kyoto</div></div>
+                <div class="plan-detail-row"><div class="detail-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="detail-text">Open 09:00–18:00 · no reservation needed</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONFLICT slot -->
+          <div class="plan-slot conflict" id="slotKinkaku" onclick="openPoll(this,'kinkaku')">
+            <div class="plan-slot-photo">
+              <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=70&auto=format&fit=crop" alt="">
+              <div class="plan-slot-photo-grad"></div>
+              <div class="plan-slot-cat culture"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+              <div class="plan-slot-status conflict">Conflict</div>
+            </div>
+            <div class="plan-slot-body">
+              <div class="plan-slot-header"><div class="plan-slot-name">Kinkaku-ji</div><div class="plan-slot-time">16:30</div></div>
+              <div class="plan-slot-why">too touristy — group split</div>
+              <div class="conflict-camps">
+                <div class="camp camp-yes">
+                  <div class="camp-pips">
+                    <div class="camp-pip"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                    <div class="camp-pip"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  </div>
+                  <div class="camp-label">want it</div>
+                </div>
+                <div class="camp-divider">vs</div>
+                <div class="camp camp-no">
+                  <div class="camp-pips">
+                    <div class="camp-pip"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                    <div class="camp-pip"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  </div>
+                  <div class="camp-label">not for us</div>
+                </div>
+                <button class="conflict-resolve-btn" onclick="event.stopPropagation();openPoll(document.getElementById('slotKinkaku'),'kinkaku')">See alternatives</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-header" style="margin-top:12px">
+            <div class="section-label">Evening</div>
+            <button class="section-add" onclick="suggestSlot('evening')"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>suggest</button>
+          </div>
+
+          <!-- OPEN slot -->
+          <div class="plan-slot open">
+            <div class="open-slot-body">
+              <div class="open-slot-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+              <div class="open-slot-text">
+                <div class="open-slot-label">Dinner — not planned yet</div>
+                <div class="open-slot-sub">19:00 · 2h window</div>
+              </div>
+              <button class="open-slot-suggest" onclick="suggestSlot('dinner')">Suggest</button>
+            </div>
+          </div>
+
+        </div><!-- day1 -->
+
+        <!-- DAY 2 (hidden) -->
+        <div id="day2" style="display:none">
+          <div class="section-header"><div class="section-label">All day</div></div>
+          <div class="plan-slot agreed">
+            <div class="plan-slot-body" style="padding:11px">
+              <div class="plan-slot-header"><div class="plan-slot-name">Nara day trip</div><div class="plan-slot-time">09:00</div></div>
+              <div class="plan-slot-why">deer park · Todai-ji · everyone agreed</div>
+              <div class="agreed-row">
+                <div class="agreed-pips">
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="agreed-pip"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                </div>
+                <div class="agreed-label">everyone in</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DAYS 3-5 (hidden) -->
+        <div id="day3" style="display:none">
+          <div class="open-slot-body" style="padding:24px 0;justify-content:center;flex-direction:column;align-items:center;gap:8px">
+            <div style="font-size:13px;color:var(--ink-400);font-weight:300;">Day 3 — draft pending</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-600);letter-spacing:0.08em;text-transform:uppercase;">system generating suggestions</div>
+          </div>
+        </div>
+        <div id="day4" style="display:none"><div style="padding:24px 16px;font-size:13px;color:var(--ink-400);font-weight:300;text-align:center;">Day 4 — not started</div></div>
+        <div id="day5" style="display:none"><div style="padding:24px 16px;font-size:13px;color:var(--ink-400);font-weight:300;text-align:center;">Day 5 — not started</div></div>
+
+        <!-- LOGISTICS (shown in logistics tab view) -->
+        <div id="logisticsSection" style="display:none">
+          <div class="logistics-section">
+            <div class="logistics-header">
+              <div class="logistics-title">Before you go</div>
+            </div>
+            <div class="logistics-row needs" onclick="resolveLogistics(this)">
+              <div class="logistics-icon needs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+              <div class="logistics-body"><div class="logistics-name">Mia — vegan · affects all restaurant picks</div><div class="logistics-sub">confirmed by Mia · filtering active</div></div>
+              <button class="logistics-resolve">Done</button>
+            </div>
+            <div class="logistics-row needs" onclick="resolveLogistics(this)">
+              <div class="logistics-icon needs"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+              <div class="logistics-body"><div class="logistics-name">Portable charger — who's bringing it?</div><div class="logistics-sub">needed day 3 · unassigned</div></div>
+              <button class="logistics-resolve">Assign</button>
+            </div>
+            <div class="logistics-row resolved">
+              <div class="logistics-icon ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="logistics-body"><div class="logistics-name">JR — no stairs constraint · routing adjusted</div><div class="logistics-sub">affects day 2 + day 4 routing</div></div>
+            </div>
+            <div class="logistics-row resolved">
+              <div class="logistics-icon ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="logistics-body"><div class="logistics-name">Shinkansen — paid by Kevin · ¥55,480 total</div><div class="logistics-sub">split tracked · all confirmed</div></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- plan-scroll -->
+
+      <div class="plan-bottom">
+        <div class="plan-bottom-state" id="planBottomState">3 slots still need votes</div>
+        <button class="plan-cta" id="planCta" onclick="finalizePlan()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Finalize plan
+        </button>
+      </div>
+
+      <!-- Overlay -->
+      <div class="overlay" id="overlay" onclick="closePoll()"></div>
+
+      <!-- POLL DRAWER -->
+      <div class="poll-drawer" id="pollDrawer">
+        <div class="drawer-handle"></div>
+        <div class="poll-drawer-head">
+          <div>
+            <div class="poll-drawer-title" id="pollTitle">Vote on this slot</div>
+            <div class="poll-drawer-sub" id="pollSub">What do you think?</div>
+          </div>
+          <div class="poll-dismiss" onclick="closePoll()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+        </div>
+
+        <div class="poll-options" id="pollOptions">
+          <!-- filled by JS -->
+        </div>
+
+        <div class="poll-vote-row">
+          <button class="pvote-btn yes" onclick="castVote('yes',this)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Yes
+          </button>
+          <button class="pvote-btn maybe" onclick="castVote('maybe',this)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Maybe
+          </button>
+          <button class="pvote-btn no" onclick="castVote('no',this)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Not for me
+          </button>
+        </div>
+
+        <div class="poll-dissent">
+          <div class="poll-dissent-text">Not feeling any of these? The system can find something completely different for this slot.</div>
+          <div class="poll-dissent-link" onclick="requestAlternatives()">Find something else <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Home</span></div>
+        <div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Today</span></div>
+        <div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>Discover</span></div>
+        <div class="nav-item active"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Group</span></div>
+        <div class="nav-item"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>You</span></div>
+      </div>
+
+    </div><!-- phone -->
+  </div>
+</div>
+
+<script>
+var currentPollSlot = null;
+var agreedCount = 6;
+var totalSlots = 14;
+
+// POLL DATA
+var POLLS = {
+  arashiyama: {
+    title: 'Arashiyama bamboo grove',
+    sub: '11:00 · morning · outdoor',
+    options: [
+      { name: 'Arashiyama bamboo grove', why: 'early light · less crowded · 30 min walk', img: 'https://images.unsplash.com/photo-1576675784201-0e142b423952?w=200&q=60&auto=format&fit=crop', votes: ['SL'] },
+      { name: 'Tenryu-ji garden instead', why: 'same area · covered if weather turns', img: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=200&q=60&auto=format&fit=crop', votes: [] }
+    ]
+  },
+  kinkaku: {
+    title: 'Kinkaku-ji',
+    sub: '16:30 · afternoon · culture',
+    options: [
+      { name: 'Kinkaku-ji', why: 'iconic · SL and Mia voted yes', img: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=200&q=60&auto=format&fit=crop', votes: ['you','Mia'] },
+      { name: 'Ryoan-ji rock garden', why: 'quieter · JR and SL prefer this', img: 'https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=200&q=60&auto=format&fit=crop', votes: ['JR','SL'] },
+      { name: 'Nishiki Tenmangu', why: 'street level · no entry fee · 10 min away', img: 'https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=200&q=60&auto=format&fit=crop', votes: [] }
+    ]
+  }
+};
+
+var AV = {
+  you:  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop',
+  SL:   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop',
+  JR:   'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop',
+  Mia:  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop'
+};
+
+function openPoll(slotEl, key) {
+  // Don't open if clicking expand on locked/agreed
+  if (slotEl.classList.contains('locked') || slotEl.classList.contains('agreed')) {
+    toggleSlotExpand(slotEl); return;
+  }
+  currentPollSlot = key;
+  var poll = POLLS[key];
+  document.getElementById('pollTitle').textContent = poll.title;
+  document.getElementById('pollSub').textContent = poll.sub;
+
+  // Build options HTML
+  var html = '';
+  poll.options.forEach(function(opt, i) {
+    var pips = opt.votes.map(function(v) {
+      return '<div class="vote-pip"><img src="' + AV[v] + '" alt="' + v + '"></div>';
+    }).join('');
+    if (pips) pips = '<div class="poll-option-votes">' + pips + '</div>';
+    html += '<div class="poll-option" onclick="selectOption(this,' + i + ')">' +
+      '<div class="poll-option-thumb"><img src="' + opt.img + '" alt=""></div>' +
+      '<div class="poll-option-body"><div class="poll-option-name">' + opt.name + '</div>' +
+      '<div class="poll-option-why">' + opt.why + '</div>' + pips + '</div>' +
+      '</div>';
+  });
+  document.getElementById('pollOptions').innerHTML = html;
+
+  // Reset vote buttons
+  document.querySelectorAll('.pvote-btn').forEach(function(b) { b.classList.remove('active'); });
+
+  document.getElementById('overlay').classList.add('visible');
+  setTimeout(function() { document.getElementById('pollDrawer').classList.add('visible'); }, 30);
+}
+
+function selectOption(el, idx) {
+  document.querySelectorAll('.poll-option').forEach(function(o) { o.classList.remove('selected-yes','selected-no','selected-maybe'); });
+  el.classList.add('selected-yes');
+}
+
+function castVote(dir, btn) {
+  document.querySelectorAll('.pvote-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+
+  setTimeout(function() {
+    closePoll();
+    // Update the slot state
+    if (currentPollSlot === 'arashiyama' && dir === 'yes') {
+      var slot = document.getElementById('slotArashiyama');
+      slot.className = 'plan-slot agreed';
+      slot.querySelector('.plan-slot-status').className = 'plan-slot-status agreed';
+      slot.querySelector('.plan-slot-status').textContent = 'Agreed';
+      // Update my vote chip
+      var myChip = document.getElementById('myVoteArashiyama');
+      if (myChip) {
+        myChip.className = 'vote-chip yes vote-pop';
+        setTimeout(function(){ myChip.classList.remove('vote-pop'); }, 300);
+      }
+      agreedCount++;
+      updateProgress();
+    } else if (currentPollSlot === 'arashiyama' && dir === 'no') {
+      var slot = document.getElementById('slotArashiyama');
+      slot.className = 'plan-slot conflict';
+      slot.querySelector('.plan-slot-status').className = 'plan-slot-status conflict';
+      slot.querySelector('.plan-slot-status').textContent = 'Conflict';
+      var myChip = document.getElementById('myVoteArashiyama');
+      if (myChip) { myChip.className = 'vote-chip no vote-pop'; setTimeout(function(){ myChip.classList.remove('vote-pop'); }, 300); }
+    } else if (dir === 'maybe') {
+      var myChip = document.getElementById('myVoteArashiyama');
+      if (myChip && currentPollSlot === 'arashiyama') { myChip.className = 'vote-chip maybe vote-pop'; setTimeout(function(){ myChip.classList.remove('vote-pop'); }, 300); }
+    }
+  }, 400);
+}
+
+function closePoll() {
+  document.getElementById('pollDrawer').classList.remove('visible');
+  document.getElementById('overlay').classList.remove('visible');
+}
+
+function toggleSlotExpand(el) {
+  var wasOpen = el.classList.contains('expanded');
+  document.querySelectorAll('.plan-slot.expanded').forEach(function(s) { s.classList.remove('expanded'); });
+  if (!wasOpen) el.classList.add('expanded');
+}
+
+function switchDay(tab, dayId) {
+  document.querySelectorAll('.day-tab').forEach(function(t) { t.classList.remove('active'); });
+  tab.classList.add('active');
+  ['day1','day2','day3','day4','day5'].forEach(function(d) {
+    document.getElementById(d).style.display = d === dayId ? 'block' : 'none';
+  });
+  document.getElementById('logisticsSection').style.display = 'none';
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('tabSlots').style.display = tab === 'slots' ? 'block' : 'none';
+  document.getElementById('tabLogistics').style.display = tab === 'logistics' ? 'block' : 'none';
+  if (tab === 'logistics') {
+    // Show logistics in phone
+    ['day1','day2','day3','day4','day5'].forEach(function(d) { document.getElementById(d).style.display = 'none'; });
+    document.getElementById('logisticsSection').style.display = 'block';
+    document.querySelectorAll('.day-tab').forEach(function(t) { t.classList.remove('active'); });
+  }
+}
+
+function switchToLogistics() {
+  document.querySelectorAll('.tab-btn')[1].click();
+}
+
+function updateProgress() {
+  var pct = Math.round((agreedCount / totalSlots) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressCount').textContent = agreedCount + ' of ' + totalSlots + ' slots agreed';
+  var remaining = totalSlots - agreedCount;
+  if (remaining === 0) {
+    document.getElementById('planBottomState').textContent = 'All slots agreed — ready to go';
+    document.getElementById('planCta').disabled = false;
+  } else {
+    document.getElementById('planBottomState').textContent = remaining + ' slot' + (remaining === 1 ? '' : 's') + ' still need votes';
+  }
+}
+
+function showSlotState(state, row) {
+  document.querySelectorAll('.state-row').forEach(function(r) { r.classList.remove('active'); });
+  row.classList.add('active');
+  // Scroll phone to relevant slot
+  var scroll = document.getElementById('planScroll');
+  var targets = { 'needs-vote': 'slotArashiyama', 'agreed': 'slotNishiki', 'conflict': 'slotKinkaku', 'locked': 'slotShinkansen' };
+  var target = document.getElementById(targets[state]);
+  if (target) {
+    // Ensure day1 is showing
+    ['day1','day2','day3','day4','day5'].forEach(function(d) { document.getElementById(d).style.display = d === 'day1' ? 'block' : 'none'; });
+    document.querySelectorAll('.day-tab')[0].classList.add('active');
+    document.querySelectorAll('.day-tab').forEach(function(t,i) { if(i>0) t.classList.remove('active'); });
+    document.getElementById('logisticsSection').style.display = 'none';
+    setTimeout(function() {
+      scroll.scrollTo({ top: target.offsetTop - 20, behavior: 'smooth' });
+      target.style.transform = 'scale(1.01)';
+      setTimeout(function() { target.style.transform = ''; }, 350);
+    }, 50);
+  }
+}
+
+function suggestSlot(time) {
+  var btn = event.target.closest('.section-add');
+  var orig = btn.innerHTML;
+  btn.innerHTML = '<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>loading...';
+  btn.style.opacity = '0.6';
+  setTimeout(function() {
+    btn.innerHTML = orig;
+    btn.style.opacity = '1';
+  }, 1200);
+}
+
+function requestAlternatives() {
+  closePoll();
+}
+
+function resolveLogistics(row) {
+  var btn = row.querySelector('.logistics-resolve');
+  if (!btn) return;
+  btn.textContent = 'Done';
+  btn.style.background = 'var(--success-bg)';
+  btn.style.color = 'var(--success)';
+  setTimeout(function() { row.classList.add('resolved'); }, 400);
+}
+
+function addMember() {
+  var btn = event.target.closest('.member-add');
+  btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  btn.style.borderColor = 'var(--success)';
+  btn.style.color = 'var(--success)';
+  setTimeout(function() {
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }, 1500);
+}
+
+function finalizePlan() {
+  var btn = document.getElementById('planCta');
+  btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Plan locked in';
+  btn.style.background = 'var(--success)';
+  btn.disabled = true;
+  document.getElementById('planBottomState').textContent = 'Sending to everyone...';
+}
+
+function toggleTheme() {
+  var html = document.documentElement;
+  var dark = html.dataset.theme === 'dark';
+  html.dataset.theme = dark ? 'light' : 'dark';
+  document.getElementById('themeLabel').textContent = dark ? 'Light' : 'Dark';
+}
+</script>
+</body>
+</html>

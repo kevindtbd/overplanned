@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771621088213125093",
+  "timestamp": "2026-02-20T12:58:08.213125965-08:00",
+  "migration_id": "M-001",
+  "phase": "",
+  "file_hashes": {
+    "docker-compose.yml": "DELETED"
+  },
+  "description": "Pre-batch"
+}

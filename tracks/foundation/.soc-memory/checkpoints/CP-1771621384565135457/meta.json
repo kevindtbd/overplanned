@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771621384565135457",
+  "timestamp": "2026-02-20T13:03:04.565138893-08:00",
+  "migration_id": "M-002",
+  "phase": "",
+  "file_hashes": {
+    "prisma/schema.prisma": "DELETED"
+  },
+  "description": "Pre-batch"
+}

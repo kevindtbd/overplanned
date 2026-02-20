@@ -1,0 +1,424 @@
+**Overplanned**
+
+RBAC, User Tiers & Alpha/Beta Infrastructure
+
+Internal Engineering Reference • February 2026
+
+**Overview**
+
+This document captures the full RBAC (role-based access control) design
+for Overplanned, including the database schema, entitlement logic, and
+the alpha/beta infrastructure approach. The goal is a system that is
+simple enough to ship fast and extensible enough to layer Stripe on
+later without rework.
+
+Two orthogonal axes drive access decisions:
+
+-   Subscription tier --- what the user has paid for (free, pro,
+    lifetime)
+
+-   System role --- what the user is allowed to do in the system (user,
+    admin)
+
+During alpha and beta, there is no Stripe integration. Tiers are
+assigned manually. The database schema is fully Stripe-ready so the
+transition is a configuration swap, not a code rewrite.
+
+**Subscription Tiers**
+
+Three tiers define what product features a user can access.
+
+  ------------------------------------------------------------------------
+  **Tier**        **How Granted**       **Stripe         **Expires**
+                                        Required**       
+  --------------- --------------------- ---------------- -----------------
+  free            Default on signup     No               Never (it\'s the
+                                                         floor)
+
+  pro             Stripe subscription   Yes (later)      Yes ---
+                                                         tier_expires_at
+                                                         populated
+
+  lifetime        Manual grant or       No / Optional    Never
+                  one-time purchase                      
+  ------------------------------------------------------------------------
+
+> **Note:** *Lifetime is a permanent pass-through. Once granted, no
+> subscription expiry check is ever run against this user.*
+
+**System Roles**
+
+Two roles. Roles are about system access, not product features.
+
+  -------------------------------------------------------------------------
+  **Role**     **Who**            **Effective Tier** **Access**
+  ------------ ------------------ ------------------ ----------------------
+  user         Everyone by        Their stored tier  Normal product
+               default                               experience
+
+  admin        Kevin + internal   Always lifetime    Admin dashboard, all
+               team               (overridden)       features, internal
+                                                     tooling
+  -------------------------------------------------------------------------
+
+Admin implies lifetime entitlements at the application layer. Stored
+subscription_tier for an admin can be anything --- the
+get_effective_tier() function always returns lifetime for admin
+accounts. This means you can accidentally wipe an admin\'s tier record
+and they still have full access.
+
+**Database Schema**
+
+All columns live on the users table. No new tables needed for RBAC.
+
+**Columns to Add**
+
+> \-- Subscription tier
+>
+> ALTER TABLE users
+>
+> ADD COLUMN subscription_tier VARCHAR(20) NOT NULL DEFAULT \'free\';
+>
+> \-- values: \'free\' \| \'pro\' \| \'lifetime\'
+>
+> \-- System role
+>
+> ALTER TABLE users
+>
+> ADD COLUMN system_role VARCHAR(20) NOT NULL DEFAULT \'user\';
+>
+> \-- values: \'user\' \| \'admin\'
+>
+> \-- How the tier was granted (audit trail)
+>
+> ALTER TABLE users
+>
+> ADD COLUMN tier_granted_by VARCHAR(20);
+>
+> \-- values: \'stripe\' \| \'manual\' \| \'admin_grant\' \| null
+>
+> \-- When pro expires (null for free/lifetime/manual)
+>
+> ALTER TABLE users
+>
+> ADD COLUMN tier_expires_at TIMESTAMPTZ;
+>
+> \-- Audit timestamp
+>
+> ALTER TABLE users
+>
+> ADD COLUMN tier_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+>
+> \-- Alpha/beta cohort for UI gating
+>
+> ALTER TABLE users
+>
+> ADD COLUMN access_cohort VARCHAR(20);
+>
+> \-- values: \'alpha\' \| \'beta\' \| \'public\' \| null
+>
+> \-- Per-user feature overrides (escape hatch, no schema change needed)
+>
+> ALTER TABLE users
+>
+> ADD COLUMN feature_flags JSONB NOT NULL DEFAULT \'{}\';
+>
+> \-- e.g. {\"show_map_v2\": true, \"skip_onboarding\": true}
+
+**Full Column Reference**
+
+  ----------------------------------------------------------------------------
+  **Column**          **Type**      **Default**   **Purpose**
+  ------------------- ------------- ------------- ----------------------------
+  subscription_tier   varchar(20)   \'free\'      free / pro / lifetime
+
+  system_role         varchar(20)   \'user\'      user / admin
+
+  tier_granted_by     varchar(20)   null          stripe / manual /
+                                                  admin_grant --- audit trail
+
+  tier_expires_at     timestamptz   null          Pro expiry. Null for
+                                                  lifetime. Checked on auth.
+
+  tier_updated_at     timestamptz   now()         Last change to tier. For
+                                                  audit log.
+
+  access_cohort       varchar(20)   null          alpha / beta / public ---
+                                                  drives UI variant
+
+  feature_flags       jsonb         \'{}\'        Per-user flag overrides
+                                                  without schema changes
+  ----------------------------------------------------------------------------
+
+**Entitlement Logic**
+
+All access decisions should go through a single get_effective_tier()
+function. Never scatter role checks across the codebase.
+
+**Python**
+
+> TIER_RANK = {\'free\': 0, \'pro\': 1, \'lifetime\': 2}
+>
+> FEATURE_GATES = {
+>
+> \'basic_itinerary\': 0, \# free
+>
+> \'trip_history\': 0,
+>
+> \'advanced_persona\': 1, \# pro
+>
+> \'multi_trip_compare\': 1,
+>
+> \'priority_recs\': 1,
+>
+> \'admin_dashboard\': 2, \# lifetime (admin gets this via override)
+>
+> \'early_features\': 2,
+>
+> }
+>
+> def get_effective_tier(user) -\> str:
+>
+> \"\"\"Admin always gets lifetime, regardless of stored tier.\"\"\"
+>
+> if user.system_role == \'admin\':
+>
+> return \'lifetime\'
+>
+> return user.subscription_tier
+>
+> def can_access(user, feature: str) -\> bool:
+>
+> tier = get_effective_tier(user)
+>
+> return FEATURE_GATES\[feature\] \<= TIER_RANK\[tier\]
+
+**TypeScript**
+
+> const TIER_RANK: Record\<string, number\> = {
+>
+> free: 0, pro: 1, lifetime: 2
+>
+> };
+>
+> const FEATURE_GATES: Record\<string, number\> = {
+>
+> basic_itinerary: 0,
+>
+> trip_history: 0,
+>
+> advanced_persona: 1,
+>
+> priority_recs: 1,
+>
+> admin_dashboard: 2,
+>
+> early_features: 2,
+>
+> };
+>
+> function getEffectiveTier(user: User): string {
+>
+> if (user.system_role === \'admin\') return \'lifetime\';
+>
+> return user.subscription_tier;
+>
+> }
+>
+> function canAccess(user: User, feature: string): boolean {
+>
+> const tier = getEffectiveTier(user);
+>
+> return FEATURE_GATES\[feature\] \<= TIER_RANK\[tier\];
+>
+> }
+
+**Alpha & Beta Infrastructure**
+
+No Stripe during alpha or beta. Full product access for everyone. The
+RBAC columns are present so nothing needs to change when monetization
+switches on.
+
+**What Changes: Dev to Alpha**
+
+  -----------------------------------------------------------------------
+  **Item**         **Change**                            **Effort**
+  ---------------- ------------------------------------- ----------------
+  Stripe keys      Swap test keys for live keys in       5 min
+                   Secret Manager                        
+
+  Database         Bump Cloud SQL from db-f1-micro to    10 min
+                   db-g1-small (\~\$25/mo)               
+
+  Activity data    Run full scraper against target       30 min
+                   regions before first invite           
+
+  Auth             Add Google OAuth via NextAuth ---     20 min
+                   eliminates password friction          
+
+  Error logging    Add Sentry free tier before sharing   5 min
+                   link with friends                     
+  -----------------------------------------------------------------------
+
+**What Does NOT Change**
+
+-   No staging environment needed --- 10 friends do not need environment
+    parity
+
+-   No CDN beyond Cloudflare free tier
+
+-   No separate prod/staging databases --- one prod DB, Docker locally
+    for dev
+
+-   No monitoring dashboards --- check Cloud Run logs directly when
+    something breaks
+
+**Beta Access Gate (No Stripe)**
+
+During beta, bypass the paywall entirely. Everyone who signs up gets
+full access. Stripe stays wired in the codebase but the check always
+returns true.
+
+> \-- Option A: use access_cohort column (already in schema)
+>
+> \-- Set access_cohort = \'beta\' for all signups during beta period
+>
+> \-- Option B: simpler boolean if you want pure on/off
+>
+> ALTER TABLE users ADD COLUMN beta_access BOOLEAN DEFAULT true;
+>
+> \-- Access check during beta:
+>
+> const hasAccess = user.access_cohort === \'beta\'
+>
+> \|\| \[\'pro\', \'lifetime\'\].includes(user.subscription_tier)
+>
+> \|\| user.system_role === \'admin\';
+>
+> \-- When you flip to monetization: set default to false,
+>
+> \-- grandfather existing beta users to \'free\' or give them a grace
+> period.
+
+**Lifetime Grant (Manual, No Stripe)**
+
+For close friends who get permanent access. Keep this list tight ---
+lifetime is a real cost as the product grows.
+
+> UPDATE users
+>
+> SET
+>
+> subscription_tier = \'lifetime\',
+>
+> tier_granted_by = \'manual\',
+>
+> tier_updated_at = NOW()
+>
+> WHERE email IN (
+>
+> \'friend1@gmail.com\',
+>
+> \'friend2@gmail.com\'
+>
+> );
+>
+> **Note:** *Lifetime users have no tier_expires_at. The expiry check
+> short-circuits before ever reading that field.*
+
+**Admin Grant (Kevin)**
+
+> UPDATE users
+>
+> SET
+>
+> subscription_tier = \'lifetime\',
+>
+> system_role = \'admin\',
+>
+> tier_granted_by = \'manual\',
+>
+> tier_updated_at = NOW()
+>
+> WHERE email = \'kevin@overplanned.com\';
+
+**Stripe Transition (Later)**
+
+When Stripe goes live, it writes to exactly three columns via webhook:
+subscription_tier, tier_granted_by, and tier_expires_at. Everything else
+in the schema is untouched. The entitlement logic doesn\'t change. The
+UI gates don\'t change.
+
+> \-- Stripe webhook handler pseudocode
+>
+> async function handleStripeWebhook(event) {
+>
+> if (event.type === \'customer.subscription.created\') {
+>
+> await db.query(\`
+>
+> UPDATE users SET
+>
+> subscription_tier = \'pro\',
+>
+> tier_granted_by = \'stripe\',
+>
+> tier_expires_at = \$1,
+>
+> tier_updated_at = NOW()
+>
+> WHERE stripe_customer_id = \$2
+>
+> \`, \[event.data.current_period_end, event.data.customer\]);
+>
+> }
+>
+> if (event.type === \'customer.subscription.deleted\') {
+>
+> await db.query(\`
+>
+> UPDATE users SET
+>
+> subscription_tier = \'free\',
+>
+> tier_expires_at = null,
+>
+> tier_updated_at = NOW()
+>
+> WHERE stripe_customer_id = \$1
+>
+> \`, \[event.data.customer\]);
+>
+> }
+>
+> }
+>
+> **Note:** *Lifetime users are never touched by Stripe webhooks. The
+> webhook handler should check tier_granted_by != \'manual\' before
+> updating.*
+
+**Summary**
+
+  -----------------------------------------------------------------------
+  **Decision**             **Rationale**
+  ------------------------ ----------------------------------------------
+  Two axes: tier + role    Clean separation --- tier = what you paid for,
+                           role = what you can do
+
+  Admin implies lifetime   Belt-and-suspenders. Accidental tier reset
+  via code, not DB         cannot lock out admin.
+
+  feature_flags JSONB      Per-user overrides during alpha without schema
+                           changes for every experiment
+
+  access_cohort column     Drives UI variant (alpha vs beta vs public)
+                           independently of entitlement
+
+  Stripe writes only 3     Monetization transition is config, not
+  columns                  architecture
+
+  No hard-deletes of tier  tier_updated_at + tier_granted_by give audit
+  history                  trail for disputes
+  -----------------------------------------------------------------------
+
+Overplanned Internal • February 2026 • RBAC v1

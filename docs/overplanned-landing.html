@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Travel that knows you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;1,400;1,500&family=Outfit:wght@400;500;600;700&family=DM+Mono:wght@300;400&family=Sora:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"]{
+  --bg:#FAFAF8;--bg-warm:#F5F1EB;--bg-card:#FFFFFF;--bg-stone:#EDE8E0;--bg-raised:#F0ECE5;
+  --accent:#B85C3F;--accent-light:#F2E0D8;--accent-muted:#D4886E;--accent-dark:#8C3A24;
+  --gold:#A07830;--gold-light:#F5EDD8;
+  --ink-100:#1A1612;--ink-200:#3A322A;--ink-300:#5C5248;--ink-400:#7A6E62;
+  --ink-500:#9E9286;--ink-600:#C2B8AE;--ink-700:#DDD8D0;--ink-800:#EDEAE4;--ink-900:#F7F4EF;
+  --success:#3D7A52;--success-bg:#E4F0EA;
+  --info:#2E6A9C;--info-bg:#DCECf8;
+  --warning:#956820;--warning-bg:#F5EDD8;
+  --shadow-md:0 4px 20px rgba(26,22,18,0.08),0 1px 4px rgba(26,22,18,0.05);
+  --shadow-lg:0 16px 56px rgba(26,22,18,0.10),0 4px 12px rgba(26,22,18,0.06);
+  --shadow-xl:0 32px 80px rgba(26,22,18,0.12),0 8px 24px rgba(26,22,18,0.07);
+}
+[data-theme="dark"]{
+  --bg:#0E0C09;--bg-warm:#141109;--bg-card:#171310;--bg-stone:#1F1A14;--bg-raised:#1C1813;
+  --accent:#C96848;--accent-light:rgba(201,104,72,0.14);--accent-muted:#8C402A;--accent-dark:#E8906E;
+  --gold:#C8A96E;--gold-light:rgba(200,169,110,0.12);
+  --ink-100:#F0EAE2;--ink-200:#D4C8BC;--ink-300:#A89484;--ink-400:#7A6A5C;
+  --ink-500:#5C4E42;--ink-600:#3D332A;--ink-700:#2E251E;--ink-800:#221C16;--ink-900:#1A1410;
+  --success:#5A9E6A;--success-bg:rgba(90,158,106,0.12);
+  --info:#4A84A8;--info-bg:rgba(74,132,168,0.12);
+  --warning:#B8943A;--warning-bg:rgba(184,148,58,0.12);
+  --shadow-md:0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:0 16px 56px rgba(0,0,0,0.5);
+  --shadow-xl:0 32px 80px rgba(0,0,0,0.6);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-100);overflow-x:hidden;transition:background 0.3s,color 0.3s;}
+button,input{font-family:'Sora',sans-serif;}
+::selection{background:var(--accent);color:#fff;}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;padding:0 56px;height:62px;display:flex;align-items:center;justify-content:space-between;transition:all 0.3s;}
+nav.scrolled{background:var(--bg);border-bottom:1px solid var(--ink-700);backdrop-filter:blur(20px);}
+.nav-logo{font-family:'Outfit',sans-serif;font-size:19px;font-weight:700;letter-spacing:-0.04em;color:var(--ink-100);}
+.nav-logo span{color:var(--accent);}
+.nav-links{display:flex;align-items:center;gap:32px;}
+.nav-links a{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-400);text-decoration:none;transition:color 0.2s;}
+.nav-links a:hover{color:var(--ink-100);}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.theme-btn{width:34px;height:34px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--ink-700);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-400);transition:all 0.2s;}
+.theme-btn:hover{border-color:var(--ink-500);color:var(--ink-100);}
+.icon-sun{display:none;}.icon-moon{display:block;}
+[data-theme="dark"] .icon-sun{display:block;}[data-theme="dark"] .icon-moon{display:none;}
+.nav-cta{font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:#fff;background:var(--ink-100);border:none;border-radius:100px;padding:9px 22px;cursor:pointer;transition:all 0.2s;}
+[data-theme="dark"] .nav-cta{color:var(--bg);}
+.nav-cta:hover{background:var(--accent);}
+@media(max-width:800px){.nav-links{display:none;}nav{padding:0 24px;}}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;padding-top:62px;overflow:hidden;}
+@media(max-width:900px){.hero{grid-template-columns:1fr;}.hero-right{display:none;}}
+.hero-left{display:flex;flex-direction:column;justify-content:center;padding:60px 48px 60px 80px;}
+@media(max-width:1100px){.hero-left{padding:48px 32px 48px 56px;}}
+@media(max-width:900px){.hero-left{padding:60px 24px;}}
+
+.hero-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:22px;display:flex;align-items:center;gap:10px;animation:fadeUp 0.7s ease both 0.08s;}
+.hero-eyebrow::before{content:'';width:24px;height:1px;background:var(--accent);}
+
+h1.hero-title{font-family:'Lora',serif;font-size:clamp(46px,5vw,78px);font-weight:500;line-height:1.05;letter-spacing:-0.02em;color:var(--ink-100);margin-bottom:24px;animation:fadeUp 0.7s ease both 0.16s;}
+h1.hero-title em{font-style:italic;color:var(--gold);}
+
+.hero-sub{font-size:16px;color:var(--ink-400);font-weight:300;line-height:1.74;max-width:440px;margin-bottom:42px;animation:fadeUp 0.7s ease both 0.24s;}
+
+.hero-actions{display:flex;align-items:center;gap:14px;margin-bottom:40px;animation:fadeUp 0.7s ease both 0.32s;}
+.btn-primary{font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:14px 30px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(184,92,63,0.25);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(184,92,63,0.35);}
+.btn-ghost{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-400);cursor:pointer;transition:color 0.2s;display:inline-flex;align-items:center;gap:6px;background:none;border:none;padding:0;}
+.btn-ghost:hover{color:var(--ink-100);}
+.btn-ghost svg{transition:transform 0.2s;}
+.btn-ghost:hover svg{transform:translateX(3px);}
+
+.hero-cities{display:flex;align-items:center;gap:10px;flex-wrap:wrap;animation:fadeUp 0.7s ease both 0.40s;}
+.hero-cities-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-600);}
+.city-pill{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;color:var(--ink-400);background:var(--bg-raised);border:1px solid var(--ink-700);border-radius:100px;padding:3px 10px;}
+
+/* GLOBE RIGHT */
+.hero-right{position:relative;background:var(--bg-warm);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+[data-theme="dark"] .hero-right{background:var(--bg-raised);}
+.hero-right::before{content:'';position:absolute;left:0;top:0;width:80px;height:100%;background:linear-gradient(to right,var(--bg),transparent);z-index:2;pointer-events:none;}
+.hero-right::after{content:'';position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(to top,var(--bg),transparent);z-index:2;pointer-events:none;}
+#globeCanvas{display:block;position:relative;z-index:1;}
+.globe-card{position:absolute;z-index:3;background:var(--bg-card);border-radius:14px;box-shadow:var(--shadow-lg);border:1px solid var(--ink-700);padding:10px 14px;animation:floatCard 7s ease-in-out infinite;}
+.globe-card:nth-child(3){animation-delay:-2.5s;}.globe-card:nth-child(4){animation-delay:-5s;}
+@keyframes floatCard{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+.gc-city{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent-dark);margin-bottom:3px;}
+.gc-name{font-size:12px;font-weight:500;color:var(--ink-100);margin-bottom:2px;}
+.gc-sub{font-size:10px;color:var(--ink-400);font-weight:300;font-style:italic;}
+.gc-src{font-family:'DM Mono',monospace;font-size:8px;color:var(--info);background:var(--info-bg);padding:2px 6px;border-radius:100px;display:inline-block;margin-top:5px;}
+/* Globe banner — only shows on small screens when hero-right is hidden */
+.globe-banner{display:none;position:relative;height:280px;background:var(--bg-warm);border-bottom:1px solid var(--ink-700);overflow:hidden;}
+[data-theme="dark"] .globe-banner{background:var(--bg-raised);}
+.globe-banner::after{content:'';position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none;z-index:2;}
+#globeCanvasBanner{display:block;width:100%;height:100%;}
+.globe-banner-cards{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:space-around;pointer-events:none;padding:20px 32px;}
+.gbc{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:12px;padding:8px 12px;box-shadow:var(--shadow-md);}
+.gbc-city{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent-dark);margin-bottom:2px;}
+.gbc-name{font-size:11px;font-weight:500;color:var(--ink-100);margin-bottom:1px;}
+.gbc-src{font-family:'DM Mono',monospace;font-size:7px;color:var(--info);background:var(--info-bg);padding:1px 5px;border-radius:100px;display:inline-block;margin-top:3px;}
+@media(max-width:900px){
+  .hero-right{display:none;}
+  .globe-banner{display:block;}
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+
+/* ── SHARED SECTION STYLES ── */
+.section-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow::before{content:'';width:18px;height:1px;background:var(--accent);}
+.section-eyebrow.centered{justify-content:center;}
+.section-eyebrow.centered::before{display:none;}
+h2.section-title{font-family:'Lora',serif;font-size:clamp(30px,3.5vw,50px);font-weight:500;letter-spacing:-0.02em;line-height:1.1;color:var(--ink-100);margin-bottom:16px;}
+h2.section-title em{font-style:italic;color:var(--gold);}
+.section-body{font-size:15px;color:var(--ink-400);font-weight:300;line-height:1.75;max-width:480px;}
+.dot-list{margin-top:28px;display:flex;flex-direction:column;gap:11px;}
+.dot-item{display:flex;align-items:flex-start;gap:10px;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:7px;}
+.dot-item span{font-size:13px;color:var(--ink-400);font-weight:300;line-height:1.6;}
+
+/* ── OUTPUT SECTION ── */
+.output-section{padding:100px 80px;background:var(--bg);border-top:1px solid var(--ink-700);}
+@media(max-width:900px){.output-section{padding:72px 24px;}}
+.two-col{display:grid;grid-template-columns:1fr 1.15fr;gap:64px;align-items:center;max-width:1200px;margin:0 auto;}
+@media(max-width:900px){.two-col{grid-template-columns:1fr;}}
+.two-col.flip{grid-template-columns:1.15fr 1;}
+@media(max-width:900px){.two-col.flip{grid-template-columns:1fr;}}
+
+/* itinerary card */
+.itinerary-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-xl);}
+.ic-head{padding:14px 18px 12px;border-bottom:1px solid var(--ink-700);display:flex;align-items:center;justify-content:space-between;}
+.ic-title{font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;letter-spacing:-0.02em;color:var(--ink-100);}
+.ic-meta{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);letter-spacing:0.08em;text-transform:uppercase;}
+.ic-tabs{display:flex;padding:0 18px;border-bottom:1px solid var(--ink-700);overflow:hidden;}
+.ic-tab{padding:8px 10px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-500);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;}
+.ic-tab.active{color:var(--ink-100);border-bottom-color:var(--accent);}
+.ic-slot{display:flex;align-items:stretch;border-bottom:1px solid var(--ink-700);cursor:pointer;transition:background 0.15s;}
+.ic-slot:last-child{border-bottom:none;}
+.ic-slot:hover{background:var(--bg-warm);}
+.ic-slot.active-now{background:var(--accent-light);border-left:3px solid var(--accent);}
+[data-theme="dark"] .ic-slot.active-now{background:rgba(201,104,72,0.08);}
+.ic-photo{width:72px;height:72px;flex-shrink:0;overflow:hidden;position:relative;}
+.ic-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.4s;}
+.ic-slot:hover .ic-photo img{transform:scale(1.06);}
+.ic-badge{position:absolute;bottom:4px;left:4px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.04em;text-transform:uppercase;padding:1px 5px;border-radius:100px;}
+.ic-badge.booked{background:rgba(61,122,82,0.88);color:#fff;}
+.ic-badge.bookable{background:rgba(26,22,18,0.6);color:rgba(255,255,255,0.92);}
+.ic-body{flex:1;padding:10px 14px;display:flex;flex-direction:column;justify-content:center;}
+.ic-name{font-size:13px;font-weight:500;color:var(--ink-100);margin-bottom:2px;}
+.ic-why{font-size:11px;color:var(--ink-400);font-weight:300;font-style:italic;margin-bottom:5px;}
+.ic-chips{display:flex;gap:4px;flex-wrap:wrap;}
+.ic-chip{font-family:'DM Mono',monospace;font-size:8px;padding:2px 6px;border-radius:100px;}
+.ic-chip.local{color:var(--success);background:var(--success-bg);}
+.ic-chip.source{color:var(--info);background:var(--info-bg);}
+.ic-chip.busy{color:var(--warning);background:var(--warning-bg);}
+.ic-transit{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg-raised);border-bottom:1px solid var(--ink-700);}
+.ic-transit-txt{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);}
+
+/* ── HOW IT WORKS ── */
+.how-section{padding:100px 80px;background:var(--bg-warm);border-top:1px solid var(--ink-700);}
+@media(max-width:900px){.how-section{padding:72px 24px;}}
+.how-header{text-align:center;max-width:560px;margin:0 auto 56px;}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--ink-700);border:1px solid var(--ink-700);border-radius:20px;overflow:hidden;max-width:1100px;margin:0 auto;}
+@media(max-width:800px){.how-grid{grid-template-columns:1fr;}}
+.how-cell{background:var(--bg-card);padding:36px 32px;transition:background 0.2s;}
+[data-theme="dark"] .how-cell{background:var(--bg-stone);}
+.how-cell:hover{background:var(--bg-warm);}
+[data-theme="dark"] .how-cell:hover{background:var(--bg-raised);}
+.how-num{font-family:'Lora',serif;font-size:54px;font-weight:500;font-style:italic;color:var(--ink-700);line-height:1;margin-bottom:18px;}
+[data-theme="dark"] .how-num{color:var(--ink-600);}
+.how-title{font-size:16px;font-weight:500;color:var(--ink-100);letter-spacing:-0.01em;margin-bottom:10px;line-height:1.3;}
+.how-body{font-size:13px;color:var(--ink-400);font-weight:300;line-height:1.72;}
+.how-tag{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;margin-top:16px;display:inline-block;padding:3px 9px;border-radius:100px;}
+.how-tag.local{color:var(--success);background:var(--success-bg);}
+.how-tag.signals{color:var(--accent-dark);background:var(--accent-light);}
+.how-tag.live{color:var(--info);background:var(--info-bg);}
+
+/* ── PERSONA ── */
+.persona-section{padding:100px 80px;background:var(--bg);border-top:1px solid var(--ink-700);}
+@media(max-width:900px){.persona-section{padding:72px 24px;}}
+.persona-card{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:20px;padding:28px;box-shadow:var(--shadow-xl);}
+[data-theme="dark"] .persona-card{background:var(--bg-stone);}
+.pc-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-500);margin-bottom:10px;}
+.pc-name{font-family:'Lora',serif;font-size:20px;font-weight:500;font-style:italic;color:var(--ink-100);margin-bottom:4px;line-height:1.25;}
+.pc-sub{font-size:12px;color:var(--ink-400);font-weight:300;margin-bottom:20px;}
+.pc-signals{display:flex;flex-direction:column;gap:9px;}
+.pc-row{display:flex;align-items:center;gap:10px;}
+.pc-row-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-400);width:124px;flex-shrink:0;text-align:right;}
+.pc-track{flex:1;height:5px;background:var(--ink-800);border-radius:100px;overflow:hidden;}
+[data-theme="dark"] .pc-track{background:var(--ink-700);}
+.pc-fill{height:100%;border-radius:100px;background:var(--accent);}
+.pc-fill.muted{background:var(--ink-600);}
+.pc-val{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-500);width:28px;}
+
+/* ── GROUP ── */
+.group-section{padding:100px 80px;background:var(--bg-warm);border-top:1px solid var(--ink-700);}
+@media(max-width:900px){.group-section{padding:72px 24px;}}
+.group-phones{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.group-phone-wrap{display:flex;flex-direction:column;gap:6px;}
+.gp-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);text-align:center;}
+.gphone{background:var(--bg-card);border:1px solid var(--ink-700);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-md);}
+[data-theme="dark"] .gphone{background:var(--bg-stone);}
+.gphone-head{padding:9px 12px 8px;border-bottom:1px solid var(--ink-700);font-size:11px;font-weight:500;color:var(--ink-100);}
+.gphone-slot{padding:8px 10px;}
+/* agreed */
+.agreed-row{display:flex;align-items:center;gap:6px;}
+.agreed-pips{display:flex;}
+.pip{width:16px;height:16px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg-card);margin-left:-4px;}
+.pip:first-child{margin-left:0;}
+.pip img{width:100%;height:100%;object-fit:cover;display:block;}
+.agreed-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:var(--success);}
+/* conflict */
+.camps{display:flex;align-items:center;gap:6px;}
+.camp{display:flex;align-items:center;gap:3px;}
+.camp-pip{width:16px;height:16px;border-radius:50%;overflow:hidden;border:1.5px solid var(--bg-card);margin-left:-4px;}
+.camp-pip:first-child{margin-left:0;}
+.camp-pip img{width:100%;height:100%;object-fit:cover;display:block;}
+.camp-label{font-family:'DM Mono',monospace;font-size:8px;}
+.camp.want .camp-label{color:var(--success);}.camp.pass .camp-label{color:var(--warning);}
+.vs{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-500);}
+/* pending */
+.gvotes{display:flex;gap:3px;}
+.gvote{display:flex;align-items:center;gap:2px;padding:2px 5px;border-radius:100px;font-family:'DM Mono',monospace;font-size:7px;}
+.gvote.yes{background:var(--success-bg);color:var(--success);}
+.gvote.pending{background:var(--bg-raised);color:var(--ink-500);border:1px dashed var(--ink-700);}
+.gvote-av{width:10px;height:10px;border-radius:50%;overflow:hidden;}
+.gvote-av img{width:100%;height:100%;object-fit:cover;display:block;}
+/* pivot */
+.pivot-notice{padding:8px 10px;background:var(--accent-light);border-top:1px dashed rgba(184,92,63,0.3);}
+[data-theme="dark"] .pivot-notice{background:rgba(201,104,72,0.1);}
+.pn-sig{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent-dark);margin-bottom:3px;}
+.pn-msg{font-size:9px;color:var(--ink-200);font-weight:400;margin-bottom:5px;line-height:1.4;}
+.pn-btns{display:flex;gap:4px;}
+.pn-btn{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:0.04em;text-transform:uppercase;border-radius:100px;padding:3px 8px;cursor:pointer;}
+.pn-btn.accept{background:var(--accent);color:#fff;border:none;}
+.pn-btn.keep{background:transparent;color:var(--ink-400);border:1px solid var(--ink-700);}
+.pending-slot{padding:7px 10px;font-size:10px;color:var(--ink-400);opacity:0.5;border-bottom:1px dashed var(--ink-700);font-style:italic;}
+
+/* ── MAP SECTION ── */
+.map-section{padding:0;background:var(--bg);border-top:1px solid var(--ink-700);overflow:hidden;}
+.map-section-inner{display:grid;grid-template-columns:1fr 1.4fr;max-width:100%;align-items:stretch;}
+@media(max-width:900px){.map-section-inner{grid-template-columns:1fr;}}
+.map-text{padding:80px 64px;display:flex;flex-direction:column;justify-content:center;}
+@media(max-width:1100px){.map-text{padding:64px 48px;}}
+@media(max-width:900px){.map-text{padding:72px 24px;}}
+.map-canvas-wrap{position:relative;background:var(--bg-stone);border-left:1px solid var(--ink-700);}
+[data-theme="dark"] .map-canvas-wrap{background:var(--bg-stone);}
+@media(max-width:900px){.map-canvas-wrap{border-left:none;border-top:1px solid var(--ink-700);}}
+#tripMap{display:block;width:100%;height:100%;min-height:360px;}
+.map-legend{position:absolute;bottom:18px;right:18px;background:var(--bg-card);border:1px solid var(--ink-700);border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;gap:5px;}
+[data-theme="dark"] .map-legend{background:var(--bg-raised);}
+.ml-row{display:flex;align-items:center;gap:7px;}
+.ml-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ml-dot.start{background:var(--success);}
+.ml-dot.visited{background:var(--ink-500);}
+.ml-dot.end{background:var(--accent);}
+.ml-label{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-400);}
+
+/* ── WAITLIST ── */
+.waitlist-section{padding:120px 80px;background:var(--bg-warm);border-top:1px solid var(--ink-700);text-align:center;position:relative;overflow:hidden;}
+@media(max-width:900px){.waitlist-section{padding:80px 24px;}}
+.waitlist-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(184,92,63,0.08) 0%,transparent 65%);pointer-events:none;}
+h2.waitlist-title{font-family:'Lora',serif;font-size:clamp(36px,4.5vw,60px);font-weight:500;letter-spacing:-0.02em;line-height:1.05;color:var(--ink-100);margin-bottom:14px;}
+h2.waitlist-title em{font-style:italic;color:var(--gold);}
+.waitlist-sub{font-size:15px;color:var(--ink-400);font-weight:300;max-width:400px;margin:0 auto 44px;line-height:1.74;}
+.waitlist-form{display:flex;gap:8px;max-width:420px;margin:0 auto;}
+@media(max-width:580px){.waitlist-form{flex-direction:column;}}
+.waitlist-input{flex:1;background:var(--bg-card);border:1.5px solid var(--ink-700);border-radius:100px;padding:13px 20px;font-size:13px;color:var(--ink-100);outline:none;transition:border-color 0.2s;}
+.waitlist-input::placeholder{color:var(--ink-500);}
+.waitlist-input:focus{border-color:var(--accent);}
+.waitlist-btn{font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:100px;padding:13px 28px;cursor:pointer;transition:all 0.2s;white-space:nowrap;box-shadow:0 4px 16px rgba(184,92,63,0.22);}
+.waitlist-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(184,92,63,0.32);}
+.waitlist-note{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;color:var(--ink-500);margin-top:14px;}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--ink-700);padding:28px 80px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);}
+@media(max-width:700px){footer{padding:24px;flex-direction:column;gap:10px;text-align:center;}}
+.footer-logo{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;letter-spacing:-0.04em;color:var(--ink-500);}
+.footer-logo span{color:var(--accent);}
+.footer-note{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-600);}
+
+/* ── REVEAL ── */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity 0.65s ease,transform 0.65s ease;}
+.reveal.visible{opacity:1;transform:none;}
+.rd1{transition-delay:0.1s;}.rd2{transition-delay:0.2s;}.rd3{transition-delay:0.3s;}
+</style>
+</head>
+<body>
+
+<nav id="mainNav">
+  <div class="nav-logo">Way<span>mark</span></div>
+  <div class="nav-links">
+    <a href="#output">The Output</a>
+    <a href="#how">How It Works</a>
+    <a href="#group">Group Trips</a>
+    <a href="#waitlist">Join</a>
+  </div>
+  <div class="nav-right">
+    <button class="theme-btn" onclick="toggleTheme()">
+      <svg class="icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <button class="nav-cta" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Get Early Access</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">Travel Intelligence</div>
+    <h1 class="hero-title">The trip that<br>knows you're<br><em>already here.</em></h1>
+    <p class="hero-sub">Overplanned builds your itinerary from how you actually travel — not your demographics. Local sources. Real-time adaptation. A plan that changes when you do.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+        Join the Waitlist
+      </button>
+      <button class="btn-ghost" onclick="document.getElementById('output').scrollIntoView({behavior:'smooth'})">
+        See It In Action
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <div class="hero-cities">
+      <span class="hero-cities-label">First cities</span>
+      <span class="city-pill">Tokyo</span>
+      <span class="city-pill">Kyoto</span>
+      <span class="city-pill">Seoul</span>
+      <span class="city-pill">Barcelona</span>
+    </div>
+  </div>
+  <div class="hero-right">
+    <canvas id="globeCanvas"></canvas>
+    <div class="globe-card" style="top:20%;left:7%;">
+      <div class="gc-city">Kyoto · Day 3</div>
+      <div class="gc-name">Kinkaku-ji</div>
+      <div class="gc-sub">weekday · thins out by 15:00</div>
+      <div class="gc-src">Tabelog · 4.2k</div>
+    </div>
+    <div class="globe-card" style="bottom:26%;right:7%;">
+      <div class="gc-city">Tokyo · Day 1</div>
+      <div class="gc-name">Tsukiji outer market</div>
+      <div class="gc-sub">locals-only · 06:00 counter</div>
+      <div class="gc-src">Tabelog · 8.1k</div>
+    </div>
+    <div class="globe-card" style="top:54%;left:5%;">
+      <div class="gc-city">Seoul · Pivot</div>
+      <div class="gc-name">Rain at 14:00 →</div>
+      <div class="gc-sub">swapping to indoor alternative</div>
+    </div>
+  </div>
+</section>
+
+<!-- GLOBE BANNER — mobile/tablet only, hidden on large desktop -->
+<div class="globe-banner">
+  <canvas id="globeCanvasBanner"></canvas>
+  <div class="globe-banner-cards">
+    <div class="gbc">
+      <div class="gbc-city">Tokyo · Day 1</div>
+      <div class="gbc-name">Tsukiji market</div>
+      <div class="gbc-src">Tabelog · 8.1k</div>
+    </div>
+    <div class="gbc">
+      <div class="gbc-city">Kyoto · Day 3</div>
+      <div class="gbc-name">Kinkaku-ji</div>
+      <div class="gbc-src">Tabelog · 4.2k</div>
+    </div>
+    <div class="gbc">
+      <div class="gbc-city">Seoul · Pivot</div>
+      <div class="gbc-name">Rain → swap</div>
+      <div class="gbc-src">Live adaptation</div>
+    </div>
+  </div>
+</div>
+
+<!-- OUTPUT -->
+<section class="output-section" id="output">
+  <div class="two-col">
+    <div class="reveal">
+      <div class="section-eyebrow">The Output</div>
+      <h2 class="section-title">A day written<br><em>for you.</em></h2>
+      <p class="section-body">Not a highlights reel. Slots chosen from behavioral signals, sourced from locals, with honest booking states and a suggestion line that's specific — not "great for foodies."</p>
+      <div class="dot-list">
+        <div class="dot-item"><div class="dot"></div><span>Source attribution on every slot — not a black box</span></div>
+        <div class="dot-item"><div class="dot"></div><span>Booking states that reflect reality — "call ahead" when that's the truth</span></div>
+        <div class="dot-item"><div class="dot"></div><span>Busy window signals so you know when to actually arrive</span></div>
+      </div>
+    </div>
+    <div class="reveal rd2">
+      <div class="itinerary-card">
+        <div class="ic-head">
+          <div class="ic-title">Kyoto · Day 3</div>
+          <div class="ic-meta">Friday · 4 Slots</div>
+        </div>
+        <div class="ic-tabs">
+          <div class="ic-tab">Wed</div><div class="ic-tab">Thu</div>
+          <div class="ic-tab active">Fri</div>
+          <div class="ic-tab">Sat</div><div class="ic-tab">Sun</div>
+        </div>
+        <div class="ic-slot">
+          <div class="ic-photo"><img src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=300&q=70&auto=format&fit=crop" alt=""><div class="ic-badge booked">Visited</div></div>
+          <div class="ic-body">
+            <div class="ic-name">Fushimi Inari</div>
+            <div class="ic-why">left before the crowds hit</div>
+            <div class="ic-chips"><div class="ic-chip local">Local</div><div class="ic-chip source">Tabelog · 2.1k</div></div>
+          </div>
+        </div>
+        <div class="ic-transit">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--ink-500)" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <div class="ic-transit-txt">18 min taxi · ¥1,200</div>
+        </div>
+        <div class="ic-slot active-now">
+          <div class="ic-photo"><img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=300&q=70&auto=format&fit=crop" alt=""><div class="ic-badge booked">Booked</div></div>
+          <div class="ic-body">
+            <div class="ic-name">Kinkaku-ji</div>
+            <div class="ic-why">weekday afternoon · thins out by 15:00</div>
+            <div class="ic-chips"><div class="ic-chip local">Local</div><div class="ic-chip source">Tabelog · 4.2k</div><div class="ic-chip busy">Busy 10–14</div></div>
+          </div>
+        </div>
+        <div class="ic-slot">
+          <div class="ic-photo"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=300&q=70&auto=format&fit=crop" alt=""><div class="ic-badge bookable">Book Now</div></div>
+          <div class="ic-body">
+            <div class="ic-name">Pontocho izakaya</div>
+            <div class="ic-why">locals-only counter · full by 20:00</div>
+            <div class="ic-chips"><div class="ic-chip local">Local</div><div class="ic-chip source">Tabelog · 3.8k</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="how-header reveal">
+    <div class="section-eyebrow centered">Why It's Different</div>
+    <h2 class="section-title" style="text-align:center;margin:0 auto 14px;">The plan you'd make<br><em>if you already knew.</em></h2>
+    <p class="section-body" style="text-align:center;margin:0 auto;">Most travel apps show you the same city. Overplanned shows you your city — the one that fits how you actually move through the world.</p>
+  </div>
+  <div class="how-grid reveal rd1">
+    <div class="how-cell">
+      <div class="how-num">01</div>
+      <div class="how-title">Finds the counter seat nobody put on a list</div>
+      <div class="how-body">The 8-seat ramen spot. The izakaya that only takes walk-ins before 18:00. The coffee bar that opened three months ago. Sources that don't translate, aggregated so you don't have to.</div>
+      <div class="how-tag local">Local-First</div>
+    </div>
+    <div class="how-cell">
+      <div class="how-num">02</div>
+      <div class="how-title">Knows what kind of tired you are</div>
+      <div class="how-body">Day four tired is different from day one tired. A quick coffee break tired is different from "cancel the afternoon" tired. The plan adjusts — one slot, not a rebuild — without you having to explain yourself.</div>
+      <div class="how-tag live">Reads the Room</div>
+    </div>
+    <div class="how-cell">
+      <div class="how-num">03</div>
+      <div class="how-title">Gets better every time you use it</div>
+      <div class="how-body">Every trip compounds. The more you travel, the sharper your recommendations get — not because you filled out a profile, but because the system watched what you actually chose, skipped, and lingered on.</div>
+      <div class="how-tag signals">Compounds Over Time</div>
+    </div>
+  </div>
+</section>
+
+<!-- PERSONA -->
+<section class="persona-section">
+  <div class="two-col" style="max-width:1100px;margin:0 auto;">
+    <div class="reveal rd2">
+      <div class="persona-card">
+        <div class="pc-label">Detected Persona · Updating</div>
+        <div class="pc-name">"Will walk 40 minutes<br>to avoid a tourist menu"</div>
+        <div class="pc-sub">Inferred across 4 trips · 47 behavioral signals</div>
+        <div class="pc-signals">
+          <div class="pc-row"><div class="pc-row-label">Skips hotel dining</div><div class="pc-track"><div class="pc-fill" style="width:97%"></div></div><div class="pc-val">0.97</div></div>
+          <div class="pc-row"><div class="pc-row-label">Local over aggregator</div><div class="pc-track"><div class="pc-fill" style="width:94%"></div></div><div class="pc-val">0.94</div></div>
+          <div class="pc-row"><div class="pc-row-label">Counter seating</div><div class="pc-track"><div class="pc-fill" style="width:88%"></div></div><div class="pc-val">0.88</div></div>
+          <div class="pc-row"><div class="pc-row-label">Late lunch window</div><div class="pc-track"><div class="pc-fill" style="width:78%"></div></div><div class="pc-val">0.78</div></div>
+          <div class="pc-row"><div class="pc-row-label">Michelin indifferent</div><div class="pc-track"><div class="pc-fill muted" style="width:54%"></div></div><div class="pc-val" style="color:var(--ink-600)">0.54</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="reveal">
+      <div class="section-eyebrow">Persona System</div>
+      <h2 class="section-title">Gets sharper<br><em>every trip.</em></h2>
+      <p class="section-body">No onboarding quiz. No self-reported preferences. Overplanned detects travel patterns from what you actually do — what you skip, linger on, search after midnight, and book twice.</p>
+      <div class="dot-list">
+        <div class="dot-item"><div class="dot"></div><span>Compounds across trips — not reset each time</span></div>
+        <div class="dot-item"><div class="dot"></div><span>Updates mid-trip — tired on day four reads differently than tired on day one</span></div>
+        <div class="dot-item"><div class="dot"></div><span>Never surfaced as a label — translated directly into what you see</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GROUP -->
+<section class="group-section" id="group">
+  <div class="two-col" style="max-width:1100px;margin:0 auto;">
+    <div class="reveal">
+      <div class="section-eyebrow">Group Trips</div>
+      <h2 class="section-title">Four people.<br><em>One plan.</em></h2>
+      <p class="section-body">Async voting before you leave. The system tracks who keeps compromising — not just who wins the vote — and rebalances across the trip. Conflicts surface as two camps, not a debate thread nobody reads.</p>
+    </div>
+    <div class="reveal rd2">
+      <div class="group-phones">
+        <div class="group-phone-wrap">
+          <div class="gp-label">Agreed</div>
+          <div class="gphone">
+            <div class="gphone-head">Nishiki Market</div>
+            <div class="gphone-slot">
+              <div class="agreed-row">
+                <div class="agreed-pips">
+                  <div class="pip"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="pip"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="pip"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="pip"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                </div>
+                <div class="agreed-label">Everyone in</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="group-phone-wrap">
+          <div class="gp-label">Conflict</div>
+          <div class="gphone">
+            <div class="gphone-head">Kinkaku-ji</div>
+            <div class="gphone-slot">
+              <div class="camps">
+                <div class="camp want">
+                  <div class="camp-pip"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="camp-pip"><img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="camp-label">want it</div>
+                </div>
+                <div class="vs">vs</div>
+                <div class="camp pass">
+                  <div class="camp-pip"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="camp-pip"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" alt=""></div>
+                  <div class="camp-label">not for us</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="group-phone-wrap">
+          <div class="gp-label">Votes Pending</div>
+          <div class="gphone">
+            <div class="gphone-head">Arashiyama</div>
+            <div class="gphone-slot">
+              <div class="gvotes">
+                <div class="gvote yes"><div class="gvote-av"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80&auto=format&fit=crop" alt=""></div>SL</div>
+                <div class="gvote pending"><div class="gvote-av"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80&auto=format&fit=crop" alt=""></div>you</div>
+                <div class="gvote pending"><div class="gvote-av"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&q=80&auto=format&fit=crop" alt=""></div>JR</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="group-phone-wrap">
+          <div class="gp-label">Mid-Trip Pivot</div>
+          <div class="gphone" style="border-color:rgba(184,92,63,0.4);">
+            <div class="gphone-head" style="color:var(--accent);">Day 3 · Kyoto</div>
+            <div class="pending-slot">Arashiyama bamboo — outdoor</div>
+            <div class="pivot-notice">
+              <div class="pn-sig">System · Weather</div>
+              <div class="pn-msg">Rain at 14:00 — swapping outdoor slot</div>
+              <div class="pn-btns">
+                <button class="pn-btn accept">Swap It In</button>
+                <button class="pn-btn keep">Keep It</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAP — full bleed, text left, canvas right, edge to edge -->
+<section class="map-section">
+  <div class="map-section-inner">
+    <div class="map-text reveal">
+      <div class="section-eyebrow">Trip Summary</div>
+      <h2 class="section-title">Every trip<br>leaves <em>a trace.</em></h2>
+      <p class="section-body" style="max-width:360px;">After each trip, Overplanned renders the route you took — every slot, every transit, in the order it happened. Not navigation. Just a satisfying artifact of where you actually went, and the data that makes your next trip better.</p>
+      <div class="dot-list" style="max-width:360px;">
+        <div class="dot-item"><div class="dot"></div><span>Compounds into your behavioral profile for next time</span></div>
+        <div class="dot-item"><div class="dot"></div><span>Shareable — export as an image or keep it private</span></div>
+      </div>
+    </div>
+    <div class="map-canvas-wrap reveal rd2">
+      <canvas id="tripMap"></canvas>
+      <div class="map-legend">
+        <div class="ml-row"><div class="ml-dot start"></div><div class="ml-label">Start</div></div>
+        <div class="ml-row"><div class="ml-dot visited"></div><div class="ml-label">Visited</div></div>
+        <div class="ml-row"><div class="ml-dot end"></div><div class="ml-label">End</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section class="waitlist-section" id="waitlist">
+  <div class="waitlist-glow"></div>
+  <div style="position:relative;z-index:1;" class="reveal">
+    <div class="section-eyebrow centered" style="margin-bottom:18px;">Join Overplanned</div>
+    <h2 class="waitlist-title">Travel smarter<br>from <em>day one.</em></h2>
+    <p class="waitlist-sub">First cities at launch: Tokyo, Kyoto, Osaka, Seoul, Barcelona. iOS and Android.</p>
+    <div class="waitlist-form">
+      <input class="waitlist-input" type="email" id="emailInput" placeholder="your@email.com">
+      <button class="waitlist-btn" onclick="joinWaitlist()">Join Waitlist</button>
+    </div>
+    <div class="waitlist-note" id="waitlistNote">No spam. Just a quiet email when it's ready.</div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Way<span>mark</span></div>
+  <div class="footer-note">Built on behavioral signals, not demographics</div>
+</footer>
+
+<script>
+/* THEME */
+function toggleTheme(){
+  var h=document.documentElement;
+  h.dataset.theme=h.dataset.theme==='dark'?'light':'dark';
+  redraw();
+}
+function redraw(){ drawGlobe(); drawTripMap(); }
+
+/* NAV */
+window.addEventListener('scroll',function(){
+  document.getElementById('mainNav').classList.toggle('scrolled',window.scrollY>40);
+});
+
+/* REVEAL */
+var rObs=new IntersectionObserver(function(e){
+  e.forEach(function(en){if(en.isIntersecting){en.target.classList.add('visible');rObs.unobserve(en.target);}});
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(function(el){rObs.observe(el);});
+
+/* ── GLOBE (hero desktop + banner mobile) ── */
+var gT=0,gRotY=-0.5,gRAF;
+function drawGlobe(){
+  cancelAnimationFrame(gRAF);
+  var dark=document.documentElement.dataset.theme==='dark';
+  var isSmall=window.innerWidth<=900;
+  var canvasId=isSmall?'globeCanvasBanner':'globeCanvas';
+  var canvas=document.getElementById(canvasId);
+  if(!canvas)return;
+  var par=canvas.parentElement;
+  canvas.width=par.offsetWidth; canvas.height=par.offsetHeight;
+  var W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=Math.min(W,H)*0.37;
+
+  function ll(la,ln){var p=(90-la)*Math.PI/180,t=(ln+180)*Math.PI/180;return{x:-Math.sin(p)*Math.cos(t),y:Math.cos(p),z:Math.sin(p)*Math.sin(t)};}
+  function pr(v){var cY=Math.cos(gRotY),sY=Math.sin(gRotY),x2=v.x*cY+v.z*sY,z2=-v.x*sY+v.z*cY;return{x:cx+x2*R,y:cy-v.y*R,z:z2,vis:z2>-0.12};}
+
+  var CITIES=[
+    {lat:35.67,lng:139.65,name:'Tokyo',r:7,main:1},{lat:35.01,lng:135.77,name:'Kyoto',r:5.5,main:1},
+    {lat:37.57,lng:126.98,name:'Seoul',r:6,main:1},{lat:41.39,lng:2.17,name:'Barcelona',r:5,main:1},
+    {lat:48.86,lng:2.35,r:4},{lat:40.71,lng:-74.01,r:4},{lat:1.35,lng:103.82,r:3.5},
+    {lat:22.32,lng:114.17,r:3.5},{lat:34.69,lng:135.50,r:4},{lat:-33.87,lng:151.21,r:3.5},
+  ];
+  var ROUTES=[[0,1],[0,2],[3,4],[0,8],[5,3],[6,7]];
+
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    var bg=ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.5);
+    bg.addColorStop(0,dark?'rgba(201,104,72,0.05)':'rgba(184,92,63,0.05)');
+    bg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    var g=ctx.createRadialGradient(cx-R*.2,cy-R*.2,0,cx,cy,R);
+    g.addColorStop(0,dark?'rgba(44,36,26,0.65)':'rgba(255,255,255,0.5)');
+    g.addColorStop(1,dark?'rgba(18,14,9,0.2)':'rgba(237,232,224,0.15)');
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+    ctx.strokeStyle=dark?'rgba(201,104,72,0.14)':'rgba(184,92,63,0.11)';ctx.lineWidth=1;ctx.stroke();
+    ctx.globalAlpha=dark?0.09:0.07;
+    ctx.strokeStyle=dark?'rgba(240,234,226,0.5)':'rgba(26,22,18,0.5)';ctx.lineWidth=0.5;
+    for(var la=-60;la<=60;la+=30){var rL=Math.cos(la*Math.PI/180)*R,yL=cy-Math.sin(la*Math.PI/180)*R;ctx.beginPath();ctx.ellipse(cx,yL,rL,rL*0.11,0,0,Math.PI*2);ctx.stroke();}
+    for(var ln=0;ln<360;ln+=30){var a=pr(ll(70,ln)),b=pr(ll(-70,ln));if(a.vis&&b.vis){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
+    ctx.globalAlpha=1;
+    var pC=CITIES.map(function(c){var p=pr(ll(c.lat,c.lng));return Object.assign({},c,p);});
+    ROUTES.forEach(function(r,i){
+      var a=pC[r[0]],b=pC[r[1]];if(!a||!b||!a.vis||!b.vis)return;
+      ctx.beginPath();ctx.setLineDash([4,3]);
+      var al=0.28+0.14*Math.sin(gT*0.018+i);
+      ctx.strokeStyle=dark?'rgba(201,104,72,'+al+')':'rgba(184,92,63,'+al+')';
+      ctx.lineWidth=1;var mx=(a.x+b.x)/2,my=(a.y+b.y)/2-18;
+      ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo(mx,my,b.x,b.y);ctx.stroke();ctx.setLineDash([]);
+    });
+    pC.forEach(function(c,i){
+      if(!c.vis)return;
+      var r=c.r*(c.main?1+0.08*Math.sin(gT*0.025+i):0.6);
+      if(c.main){
+        var gl=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,r+6);
+        gl.addColorStop(0,dark?'rgba(201,104,72,0.22)':'rgba(184,92,63,0.15)');
+        gl.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.beginPath();ctx.arc(c.x,c.y,r+6,0,Math.PI*2);ctx.fillStyle=gl;ctx.fill();
+      }
+      ctx.beginPath();ctx.arc(c.x,c.y,r,0,Math.PI*2);
+      ctx.fillStyle=c.main?(dark?'#C96848':'#B85C3F'):(dark?'rgba(201,104,72,0.4)':'rgba(184,92,63,0.35)');
+      ctx.fill();
+      ctx.strokeStyle=dark?'rgba(14,12,9,0.85)':'rgba(255,255,255,0.9)';ctx.lineWidth=1.5;ctx.stroke();
+      if(c.main&&c.name){ctx.fillStyle=dark?'rgba(240,234,226,0.65)':'rgba(26,22,18,0.6)';ctx.font='500 9px Sora,sans-serif';ctx.fillText(c.name,c.x+r+5,c.y+3);}
+    });
+    var tN=(gT%160)/160,p0=pC[0],p1=pC[1];
+    if(p0&&p1&&p0.vis&&p1.vis){
+      var mx2=(p0.x+p1.x)/2,my2=(p0.y+p1.y)/2-18;
+      var tx=(1-tN)*(1-tN)*p0.x+2*(1-tN)*tN*mx2+tN*tN*p1.x;
+      var ty=(1-tN)*(1-tN)*p0.y+2*(1-tN)*tN*my2+tN*tN*p1.y;
+      ctx.beginPath();ctx.arc(tx,ty,3.5,0,Math.PI*2);
+      ctx.fillStyle=dark?'#C96848':'#B85C3F';ctx.fill();
+      ctx.strokeStyle=dark?'rgba(14,12,9,0.85)':'#fff';ctx.lineWidth=1.5;ctx.stroke();
+    }
+    gT++;gRotY+=0.0018;
+    gRAF=requestAnimationFrame(frame);
+  }
+  var ctx=canvas.getContext('2d');
+  frame();
+}
+
+/* ── TRIP MAP ── */
+function drawTripMap(){
+  var canvas=document.getElementById('tripMap');
+  if(!canvas)return;
+  var dark=document.documentElement.dataset.theme==='dark';
+  var W=canvas.parentElement.offsetWidth;
+  var H=canvas.parentElement.offsetHeight||460;
+  canvas.width=W;canvas.height=H;
+  var ctx=canvas.getContext('2d');
+
+  // base
+  ctx.fillStyle=dark?'#1A1510':'#EDE8E0';ctx.fillRect(0,0,W,H);
+
+  // street grid
+  ctx.strokeStyle=dark?'rgba(255,255,255,0.045)':'rgba(255,255,255,0.72)';ctx.lineWidth=5;
+  for(var x=0;x<W;x+=52){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(var y=0;y<H;y+=52){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  // diagonal avenues
+  ctx.lineWidth=8;
+  ctx.beginPath();ctx.moveTo(0,H*.52);ctx.lineTo(W,H*.22);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(W*.15,0);ctx.lineTo(W*.72,H);ctx.stroke();
+
+  // city blocks
+  ctx.fillStyle=dark?'rgba(26,20,14,0.65)':'rgba(192,182,170,0.38)';
+  [[W*.07,H*.05,90,60],[W*.26,H*.25,100,68],[W*.50,H*.08,86,58],
+   [W*.70,H*.36,82,54],[W*.34,H*.58,78,58],[W*.62,H*.60,96,52],
+   [W*.82,H*.12,70,48],[W*.88,H*.55,65,46]].forEach(function(b){ctx.fillRect(b[0],b[1],b[2],b[3]);});
+
+  // 7 trip stops
+  var stops=[
+    {x:W*.10,y:H*.78,label:'Tsukiji',start:true},
+    {x:W*.24,y:H*.62,label:'Senso-ji'},
+    {x:W*.37,y:H*.45,label:'Shinjuku'},
+    {x:W*.50,y:H*.32,label:'Harajuku'},
+    {x:W*.63,y:H*.22,label:'Meiji'},
+    {x:W*.76,y:H*.38,label:'Ginza'},
+    {x:W*.88,y:H*.24,label:'Roppongi',end:true},
+  ];
+
+  // draw dashed route
+  ctx.beginPath();ctx.moveTo(stops[0].x,stops[0].y);
+  for(var i=1;i<stops.length;i++){
+    var mx=(stops[i-1].x+stops[i].x)/2,my=(stops[i-1].y+stops[i].y)/2-22;
+    ctx.quadraticCurveTo(stops[i-1].x,stops[i-1].y,mx,my);
+  }
+  ctx.lineTo(stops[stops.length-1].x,stops[stops.length-1].y);
+  ctx.strokeStyle=dark?'rgba(201,104,72,0.55)':'rgba(184,92,63,0.5)';
+  ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);
+
+  // draw stops
+  stops.forEach(function(s,i){
+    var isEnd=s.end,isStart=s.start;
+    var col=isStart?(dark?'#5A9E6A':'#3D7A52'):isEnd?(dark?'#C96848':'#B85C3F'):(dark?'#5C4E42':'#9E9286');
+    var r=isStart||isEnd?8:5.5;
+    // glow for endpoints
+    if(isStart||isEnd){
+      ctx.beginPath();ctx.arc(s.x,s.y,r+7,0,Math.PI*2);
+      var gl=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,r+7);
+      gl.addColorStop(0,isEnd?(dark?'rgba(201,104,72,0.2)':'rgba(184,92,63,0.15)'):'rgba(61,122,82,0.15)');
+      gl.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=gl;ctx.fill();
+    }
+    ctx.beginPath();ctx.arc(s.x,s.y,r,0,Math.PI*2);
+    ctx.fillStyle=col;ctx.fill();
+    ctx.strokeStyle=dark?'rgba(14,12,9,0.9)':'rgba(255,255,255,0.95)';ctx.lineWidth=2;ctx.stroke();
+    // label
+    ctx.fillStyle=dark?'rgba(240,234,226,0.7)':'rgba(26,22,18,0.65)';
+    ctx.font=(isStart||isEnd?'600':'400')+' 9px Sora,sans-serif';
+    var lx=s.x+(s.x>W*.6?-(ctx.measureText(s.label).width+10):r+7);
+    ctx.fillText(s.label,lx,s.y+(i%2===0?-8:14));
+  });
+
+  // day markers along route
+  var dayBreaks=[1,3,5];
+  dayBreaks.forEach(function(idx,d){
+    var s=stops[idx];
+    ctx.fillStyle=dark?'rgba(201,104,72,0.8)':'rgba(184,92,63,0.75)';
+    ctx.font='400 8px DM Mono,monospace';
+    ctx.fillText('Day '+(d+1),s.x+10,s.y-10);
+  });
+}
+
+/* INIT */
+window.addEventListener('load',function(){drawGlobe();drawTripMap();});
+window.addEventListener('resize',function(){drawGlobe();drawTripMap();});
+
+/* WAITLIST */
+function joinWaitlist(){
+  var input=document.getElementById('emailInput');
+  var note=document.getElementById('waitlistNote');
+  var btn=document.querySelector('.waitlist-btn');
+  if(!input.value||!input.value.includes('@')){
+    input.style.borderColor='var(--accent)';input.focus();
+    setTimeout(function(){input.style.borderColor='';},1500);return;
+  }
+  btn.textContent="You're In";btn.style.background='var(--success)';
+  btn.style.boxShadow='none';btn.disabled=true;input.disabled=true;
+  note.textContent="We'll reach out when your city goes live.";
+  note.style.color='var(--success)';
+}
+document.getElementById('emailInput').addEventListener('keydown',function(e){if(e.key==='Enter')joinWaitlist();});
+</script>
+</body>
+</html>
