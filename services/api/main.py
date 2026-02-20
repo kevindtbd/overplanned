@@ -17,6 +17,10 @@ from services.api.middleware.rate_limit import RateLimitMiddleware
 from services.api.middleware.sentry import setup_sentry
 from services.api.routers import health, events, embed, search, calendar
 from services.api.routers import generate
+from services.api.routers import invites
+from services.api.routers import shared_trips
+from services.api.routers import prompt
+from services.api.routers import pivot as pivot_router
 from services.api.search.qdrant_client import QdrantSearchClient
 from services.api.search.service import ActivitySearchService
 
@@ -90,6 +94,11 @@ app.include_router(embed.router)
 app.include_router(search.router)
 app.include_router(calendar.router)
 app.include_router(generate.router)
+app.include_router(invites.router)
+app.include_router(invites.preview_router)
+app.include_router(shared_trips.router)
+app.include_router(prompt.router)
+app.include_router(pivot_router.router)
 
 # CORS (needs to be outermost to handle preflight)
 setup_cors(app)

@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     generation_candidate_pool_size: int = 30
     generation_llm_timeout_s: float = 5.0
 
+    # Weather (OpenWeatherMap)
+    # Free tier: 1,000 calls/day. Redis caching (1 hour per city) keeps usage well under budget.
+    openweathermap_api_key: str = ""
+    weather_api_timeout_s: float = 8.0
+
     model_config = {"env_prefix": "", "env_file": ".env", "extra": "ignore"}
 
 
