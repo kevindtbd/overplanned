@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771629076189914114",
+  "timestamp": "2026-02-20T15:11:16.189915928-08:00",
+  "migration_id": "M-007",
+  "phase": "",
+  "file_hashes": {
+    "services/api/posttrip/reengagement.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

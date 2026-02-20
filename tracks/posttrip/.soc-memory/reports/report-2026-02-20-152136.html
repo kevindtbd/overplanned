@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC Conductor Report - posttrip</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    padding: 20px;
+  }
+  h1, h2, h3 { color: #e0e0e0; }
+  h1 { font-size: 1.8em; margin-bottom: 8px; }
+  h2 { font-size: 1.3em; margin-bottom: 6px; }
+
+  .banner {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .banner h1 { color: #e94560; }
+  .banner .meta { color: #a0a0a0; font-size: 0.9em; margin-top: 4px; }
+
+  .stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .stat-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    padding: 12px 20px;
+    min-width: 140px;
+    text-align: center;
+  }
+  .stat-card .value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #e94560;
+  }
+  .stat-card .label {
+    font-size: 0.85em;
+    color: #a0a0a0;
+    text-transform: uppercase;
+  }
+
+  details {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  summary {
+    cursor: pointer;
+    padding: 14px 20px;
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #e0e0e0;
+    user-select: none;
+  }
+  summary:hover { background: #1a1a3e; border-radius: 8px; }
+  details[open] summary { border-bottom: 1px solid #0f3460; }
+  .section-content { padding: 16px 20px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid #0f3460;
+  }
+  th {
+    color: #a0a0a0;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    background: #1a1a2e;
+  }
+
+  .status-pass { color: #4ecca3; font-weight: bold; }
+  .status-fail { color: #e94560; font-weight: bold; }
+  .status-complete { color: #4ecca3; }
+  .status-pending { color: #f0c040; }
+  .status-running { color: #4fc3f7; }
+  .status-failed { color: #e94560; }
+
+  .file-created { color: #4ecca3; }
+  .file-modified { color: #f0c040; }
+  .file-deleted { color: #e94560; }
+
+  ul.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+  }
+  ul.file-list li {
+    padding: 4px 0;
+    font-family: monospace;
+    font-size: 0.9em;
+  }
+
+  .failure-output {
+    background: #1a1a2e;
+    border: 1px solid #e94560;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 4px 0 8px 0;
+    font-family: monospace;
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    color: #e0a0a0;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .no-data { color: #a0a0a0; font-style: italic; padding: 12px 0; }
+
+  .model-grid {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .model-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    padding: 16px 24px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .model-card .count {
+    font-size: 2em;
+    font-weight: bold;
+    color: #4fc3f7;
+  }
+  .model-card .name {
+    font-size: 0.9em;
+    color: #a0a0a0;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>SOC Conductor Report</h1>
+  <div class="meta">
+    Project: posttrip |
+    Generated: 2026-02-20 15:21:36 PST |
+    Baseline: e8027b60fc696406b750607f01f94f1dc7cabbeb
+  </div>
+  <div class="stats">
+    <div class="stat-card">
+      <div class="value">8</div>
+      <div class="label">Tasks</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0</div>
+      <div class="label">Tests Passed</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0</div>
+      <div class="label">Tests Failed</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0.0%</div>
+      <div class="label">Coverage</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">19m29.579407519s</div>
+      <div class="label">Duration</div>
+    </div>
+  </div>
+</div>
+
+
+<details>
+  <summary>Test Results (0 tests)</summary>
+  <div class="section-content">
+    
+    <p class="no-data">No test results available.</p>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Work Summary (8 migrations)</summary>
+  <div class="section-content">
+    
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Description</th><th>Status</th><th>Model</th><th>Core Type</th><th>Duration</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>T-0003</td>
+          <td>Capture explicit skip reasons as IntentionSignals for training.
+1. Options: &#34;not interested&#34; | &#34;bad timing&#34; | &#34;too far&#34; | &#34;already visited&#34; | &#34;weather&#34; | &#34;group conflict&#34;
+2. Write IntentionSignal: source=&#34;user_explicit&#34;, confidence=1.0, intentionType from selection
+3. These are the highest-confidence training signals we get.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>signals</td>
+          <td>46.118307031s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0004</td>
+          <td>Rule-based batch job that infers IntentionSignals from BehavioralSignals &#43; context.
+1. Rules config (JSON, not ad-hoc if/else):
+   - (post_skipped, rain, outdoors) → weather_dependent (0.7)
+   - (post_skipped, clear, dining) → not_interested (0.6)
+   - (post_skipped, time_overrun) → bad_timing (0.8)
+2. Write IntentionSignal: source=&#34;rule_heuristic&#34;, confidence from rules
+3. Explicit user feedback (M-003) always wins on read (higher confidence)
+4. Process full backlog on first run</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>signals</td>
+          <td>1m9.105246083s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0005</td>
+          <td>Photo upload per slot with visited map.
+1. Photo upload: server-generated signed GCS URL for direct upload
+2. Max 10MB, image/jpeg &#43; image/png &#43; image/webp only
+3. Visited map: read-only map of completed slots
+4. Trip summary card</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>media</td>
+          <td>2m18.275659924s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0006</td>
+          <td>Public memory page using SharedTripToken infrastructure.
+1. Extends SharedTripToken (Track 4) or creates new token for solo trips
+2. Public page: photo strip &#43; itinerary &#43; highlights
+3. Same security as Track 4 M-006 (XSS prevention, CSP, rate limiting)</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>sharing</td>
+          <td>4m19.168959645s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0007</td>
+          <td>Push notification &#43; email to bring users back after trip completion.
+1. Next destination suggestion based on behavioral signals (Qdrant search with accumulated persona)
+2. 24hr push: FCM setup, PushToken model, notification queue in Redis
+3. 7-day email via Resend: trip memory &#43; &#34;Where next?&#34;
+4. Email: SPF/DKIM/DMARC, unsubscribe mechanism, rate limit 1 per 7 days
+5. One-time-use login links for email deep links (15-min expiry)
+6. No session tokens in push notification deep links</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>engagement</td>
+          <td>3m41.145945573s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0008</td>
+          <td>Full test suite for post-trip features.
+1. Unit: timezone-aware completion (freeze_time across zones), disambiguation rules, photo upload validation
+2. Integration: trip completes → reflection → signals &#43; intentions written
+3. Integration: disambiguation batch produces correct IntentionSignals
+4. Integration: slot status override (completed → skipped) works
+5. E2E: full trip lifecycle ending with post-trip, re-engagement verified
+6. Cross-track: pivot signals from Track 5 visible in disambiguation</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>tests</td>
+          <td>6m39.06434907s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0001</td>
+          <td>Auto-transition trip to completed status when endDate passes in the trip&#39;s timezone.
+1. Timezone-aware comparison: convert Trip.endDate to UTC using Trip.timezone, compare to now()
+2. Auto-transition: Trip.status → completed, set Trip.completedAt
+3. Manual option: user marks trip as done via button
+4. Scheduled job: check trips hourly for completion</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>completion</td>
+          <td>41.965658993s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0002</td>
+          <td>Highlight rating per slot with single feedback question.
+1. Per-slot rating: loved / skipped / missed (emoji-free icons)
+2. &#34;What would you do differently?&#34; free text
+3. Write BehavioralSignal: post_loved, post_skipped, post_missed, post_disliked
+4. Post-trip feedback CAN override slot status (completed → skipped if user says they didn&#39;t go)</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>reflection</td>
+          <td>1m49.951663419s</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Files Changed (0 created, 10 modified, 0 deleted)</summary>
+  <div class="section-content">
+    
+
+    
+
+    
+    <h3 class="file-modified" style="margin: 8px 0 4px 0;">Modified</h3>
+    <ul class="file-list">
+      <li class="file-modified">~ tracks/admin/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/foundation/.soc-memory/CHANGELOG.md</li><li class="file-modified">~ tracks/foundation/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/group/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/midtrip/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/pipeline/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/posttrip/.soc-memory/CHANGELOG.md</li><li class="file-modified">~ tracks/posttrip/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/solo/.soc-memory/CHANGELOG.md</li><li class="file-modified">~ tracks/solo/.soc-memory/conductor.yaml</li>
+    </ul>
+    
+
+    
+
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Timeline (8 events)</summary>
+  <div class="section-content">
+    
+    <table>
+      <thead>
+        <tr><th>Task ID</th><th>Worker</th><th>Model</th><th>Start Time</th><th>Duration</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>T-0001</td>
+          <td>0</td>
+          <td></td>
+          <td>15:02:06</td>
+          <td>41.965658993s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0002</td>
+          <td>1</td>
+          <td></td>
+          <td>15:02:48</td>
+          <td>1m49.951663419s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0003</td>
+          <td>2</td>
+          <td></td>
+          <td>15:04:38</td>
+          <td>46.118307031s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0005</td>
+          <td>0</td>
+          <td></td>
+          <td>15:04:38</td>
+          <td>2m18.275659924s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0004</td>
+          <td>1</td>
+          <td></td>
+          <td>15:06:57</td>
+          <td>1m9.105246083s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0006</td>
+          <td>2</td>
+          <td></td>
+          <td>15:06:57</td>
+          <td>4m19.168959645s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0007</td>
+          <td>0</td>
+          <td></td>
+          <td>15:11:16</td>
+          <td>3m41.145945573s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0008</td>
+          <td>1</td>
+          <td></td>
+          <td>15:14:57</td>
+          <td>6m39.06434907s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Decisions &amp; Constraints</summary>
+  <div class="section-content">
+    <h3 style="margin-bottom: 6px;">Decisions</h3>
+    
+    <p class="no-data">No decisions recorded.</p>
+    
+
+    <h3 style="margin: 12px 0 6px 0;">Constraints</h3>
+    
+    <p class="no-data">No constraints recorded.</p>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Model Usage</summary>
+  <div class="section-content">
+    <div class="model-grid">
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Opus</div>
+      </div>
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Sonnet</div>
+      </div>
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Haiku</div>
+      </div>
+    </div>
+  </div>
+</details>
+
+</body>
+</html>

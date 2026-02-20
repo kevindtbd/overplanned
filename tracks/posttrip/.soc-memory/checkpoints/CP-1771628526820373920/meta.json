@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771628526820373920",
+  "timestamp": "2026-02-20T15:02:06.820375734-08:00",
+  "migration_id": "M-001",
+  "phase": "",
+  "file_hashes": {
+    "services/api/posttrip/completion.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

@@ -1,0 +1,68 @@
+{
+  "version": "1.0",
+  "rules": [
+    {
+      "id": "weather_outdoor_skip",
+      "description": "Outdoor activity skipped during rain likely weather-related",
+      "conditions": {
+        "signal_type": "post_skipped",
+        "weather_condition": "rain",
+        "activity_category": "outdoors"
+      },
+      "intention": "weather",
+      "confidence": 0.7
+    },
+    {
+      "id": "clear_dining_skip",
+      "description": "Dining skipped in good weather suggests disinterest",
+      "conditions": {
+        "signal_type": "post_skipped",
+        "weather_condition": "clear",
+        "activity_category": "dining"
+      },
+      "intention": "not_interested",
+      "confidence": 0.6
+    },
+    {
+      "id": "time_overrun_skip",
+      "description": "Skip due to previous activity running late",
+      "conditions": {
+        "signal_type": "post_skipped",
+        "time_overrun": true
+      },
+      "intention": "bad_timing",
+      "confidence": 0.8
+    },
+    {
+      "id": "distance_skip",
+      "description": "Skip when distance exceeds comfort threshold",
+      "conditions": {
+        "signal_type": "post_skipped",
+        "distance_km": {"gt": 10}
+      },
+      "intention": "too_far",
+      "confidence": 0.75
+    },
+    {
+      "id": "group_conflict_skip",
+      "description": "Group trip activity skipped with conflicting preferences",
+      "conditions": {
+        "signal_type": "post_skipped",
+        "is_group_trip": true,
+        "has_preference_conflict": true
+      },
+      "intention": "group_conflict",
+      "confidence": 0.65
+    },
+    {
+      "id": "revisit_skip",
+      "description": "Activity skipped at previously visited location",
+      "conditions": {
+        "signal_type": "post_skipped",
+        "previously_visited": true
+      },
+      "intention": "already_visited",
+      "confidence": 0.7
+    }
+  ]
+}

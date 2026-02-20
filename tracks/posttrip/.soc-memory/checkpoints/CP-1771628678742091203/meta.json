@@ -1,0 +1,11 @@
+{
+  "id": "CP-1771628678742091203",
+  "timestamp": "2026-02-20T15:04:38.742093267-08:00",
+  "migration_id": "M-003",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/components/posttrip/PhotoStrip.tsx": "DELETED",
+    "services/api/posttrip/intention_signal.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

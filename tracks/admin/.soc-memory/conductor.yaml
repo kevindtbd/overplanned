@@ -3,6 +3,7 @@ model: claude-opus-4-6
 budget_usd: 500.0
 task_budget: 100.0
 timeout_ms: 900000
+root_dir: ../../
 
 retry:
   max_attempts: 3

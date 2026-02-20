@@ -1,0 +1,11 @@
+{
+  "id": "CP-1771628817020186982",
+  "timestamp": "2026-02-20T15:06:57.020188164-08:00",
+  "migration_id": "M-004",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/app/memory/[token]/page.tsx": "DELETED",
+    "services/api/posttrip/disambiguation.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}
