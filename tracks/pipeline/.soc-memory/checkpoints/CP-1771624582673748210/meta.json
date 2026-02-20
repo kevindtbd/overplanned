@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771624582673748210",
+  "timestamp": "2026-02-20T13:56:22.673755003-08:00",
+  "migration_id": "M-005",
+  "phase": "",
+  "file_hashes": {
+    "services/api/pipeline/entity_resolution.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

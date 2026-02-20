@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC Conductor Report - pipeline</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    padding: 20px;
+  }
+  h1, h2, h3 { color: #e0e0e0; }
+  h1 { font-size: 1.8em; margin-bottom: 8px; }
+  h2 { font-size: 1.3em; margin-bottom: 6px; }
+
+  .banner {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .banner h1 { color: #e94560; }
+  .banner .meta { color: #a0a0a0; font-size: 0.9em; margin-top: 4px; }
+
+  .stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .stat-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    padding: 12px 20px;
+    min-width: 140px;
+    text-align: center;
+  }
+  .stat-card .value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #e94560;
+  }
+  .stat-card .label {
+    font-size: 0.85em;
+    color: #a0a0a0;
+    text-transform: uppercase;
+  }
+
+  details {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  summary {
+    cursor: pointer;
+    padding: 14px 20px;
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #e0e0e0;
+    user-select: none;
+  }
+  summary:hover { background: #1a1a3e; border-radius: 8px; }
+  details[open] summary { border-bottom: 1px solid #0f3460; }
+  .section-content { padding: 16px 20px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid #0f3460;
+  }
+  th {
+    color: #a0a0a0;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    background: #1a1a2e;
+  }
+
+  .status-pass { color: #4ecca3; font-weight: bold; }
+  .status-fail { color: #e94560; font-weight: bold; }
+  .status-complete { color: #4ecca3; }
+  .status-pending { color: #f0c040; }
+  .status-running { color: #4fc3f7; }
+  .status-failed { color: #e94560; }
+
+  .file-created { color: #4ecca3; }
+  .file-modified { color: #f0c040; }
+  .file-deleted { color: #e94560; }
+
+  ul.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+  }
+  ul.file-list li {
+    padding: 4px 0;
+    font-family: monospace;
+    font-size: 0.9em;
+  }
+
+  .failure-output {
+    background: #1a1a2e;
+    border: 1px solid #e94560;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 4px 0 8px 0;
+    font-family: monospace;
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    color: #e0a0a0;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .no-data { color: #a0a0a0; font-style: italic; padding: 12px 0; }
+
+  .model-grid {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .model-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    padding: 16px 24px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .model-card .count {
+    font-size: 2em;
+    font-weight: bold;
+    color: #4fc3f7;
+  }
+  .model-card .name {
+    font-size: 0.9em;
+    color: #a0a0a0;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>SOC Conductor Report</h1>
+  <div class="meta">
+    Project: pipeline |
+    Generated: 2026-02-20 14:15:10 PST |
+    Baseline: cc33de20625cff625df5ab19dddf4904d70ef384
+  </div>
+  <div class="stats">
+    <div class="stat-card">
+      <div class="value">14</div>
+      <div class="label">Tasks</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0</div>
+      <div class="label">Tests Passed</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0</div>
+      <div class="label">Tests Failed</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0.0%</div>
+      <div class="label">Coverage</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">27m29.3237959s</div>
+      <div class="label">Duration</div>
+    </div>
+  </div>
+</div>
+
+
+<details>
+  <summary>Test Results (0 tests)</summary>
+  <div class="section-content">
+    
+    <p class="no-data">No test results available.</p>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Work Summary (14 migrations)</summary>
+  <div class="section-content">
+    
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Description</th><th>Status</th><th>Model</th><th>Core Type</th><th>Duration</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>T-0012</td>
+          <td>Validate and curate images for ActivityNodes using a priority waterfall.
+Create services/api/pipeline/image_validation.py:
+  1. Unsplash (free API, high quality)
+  2. Foursquare venue photos
+  3. Google Places photos
+  4. None (no image)
+  - Cloud Vision API: quality check (blur, lighting)
+  - Inappropriate content detection (SafeSearch)
+  - Minimum resolution: 400x300
+Deliverable: nodes with images validated, bad images flagged.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>maintenance</td>
+          <td>2m23.028511724s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0001</td>
+          <td>Base scraper class with retry, backoff, dead letter queue, and alerting. All scrapers inherit from this.
+Create services/api/scrapers/base.py with:
+Unit tests with mock HTTP: verify retry fires on 500, dead letter on permanent failure, rate limiting works.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>scraper-framework</td>
+          <td>4m20.72560528s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0002</td>
+          <td>RSS feed parser for travel blogs. First concrete scraper using the base framework.
+Create services/api/scrapers/blog_rss.py:
+Deliverable: scrape The Infatuation feed → QualitySignal rows in DB with correct authority scores.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>scrapers</td>
+          <td>2m7.852902784s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0010</td>
+          <td>Generate embeddings and sync ActivityNodes to Qdrant vector database.
+Create services/api/pipeline/qdrant_sync.py:
+  - Vector: 768-dim embedding
+  - Payload: id, city, category, priceLevel, convergenceScore, authorityScore, vibeTagSlugs, isCanonical
+  - Distance: Cosine
+  - Full sync: all canonical nodes
+  - Incremental: detect changed nodes (updatedAt &gt; last sync time) → re-embed → upsert
+Deliverable: vector search &#34;quiet coffee shop in Austin&#34; returns relevant hydrated nodes.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>sync</td>
+          <td>2m3.077201784s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0011</td>
+          <td>End-to-end orchestrator that seeds a city with all data sources, resolves entities, tags, scores, and syncs to Qdrant.
+Create services/api/pipeline/city_seeder.py:
+  1. Run all scrapers for city (blog, atlas, foursquare, reddit)
+  2. Entity resolution (incremental mode for new nodes)
+  3. LLM vibe extraction (untagged nodes)
+  4. Rule-based vibe inference
+  5. Convergence &#43; authority scoring
+  6. Qdrant sync (incremental)
+  - Track per-step completion in a progress table or JSON file
+  - On crash: restart from last completed step
+  - Each step is idempotent (safe to re-run)
+  - nodes_scraped, nodes_resolved, nodes_tagged, nodes_indexed
+  - Status: pending | in_progress | completed | failed
+Deliverable: seed 1 city end-to-end with checkpoint/resume. All tables &#43; Qdrant populated.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>orchestrator</td>
+          <td>2m21.510112991s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0013</td>
+          <td>Scheduled job to delete raw excerpts after 30 days for compliance (Reddit content addendum).
+Create services/api/pipeline/content_purge.py:
+Deliverable: cron runs, old excerpts nulled, all derived data preserved.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>maintenance</td>
+          <td>1m0.818796288s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0014</td>
+          <td>Comprehensive test suite for the entire data pipeline.
+Create tests in services/api/tests/pipeline/:
+1. **Unit tests per scraper** (test_scrapers.py):
+   - Mock HTTP responses for each scraper
+   - Verify retry on 500, dead letter on permanent failure
+   - Rate limiting verification
+   - Correct QualitySignal output format
+2. **Entity resolution integration** (test_entity_resolution.py):
+   - 3-source dedup: Foursquare &#43; blog &#43; Atlas Obscura for same venue → 1 canonical node
+   - CJK normalization: Japanese venue names resolved correctly
+   - Chain stores at different locations: don&#39;t merge (different coordinates)
+   - Merge preserves all signals: QualitySignals transferred to canonical node
+   - Alias creation verified
+3. **Pipeline integration** (test_pipeline_integration.py):
+   - Full 1-city pipeline: scrape → resolve → tag → score → Qdrant
+   - Qdrant parity: Postgres canonical count == Qdrant count
+4. **Checkpoint/resume** (test_checkpoint.py):
+   - Simulate crash mid-pipeline → restart → verify resumes from correct step
+5. **LLM cost logging** (test_cost_logging.py):
+   - Every Haiku call logged with model_version, prompt_version, latency, cost
+6. **Content purge** (test_content_purge.py):
+   - rawExcerpt null after 30 days
+   - VibeTags and scores preserved
+7. **Convergence scoring** (test_convergence.py):
+   - Multi-source nodes &gt; single-source nodes
+Deliverable: pytest services/api/tests/pipeline/ all green, 25&#43; tests.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>tests</td>
+          <td>6m13.43511721s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0003</td>
+          <td>HTML scraper for Atlas Obscura hidden gems.
+Create services/api/scrapers/atlas_obscura.py:
+Deliverable: scrape 1 city → ActivityNode rows with hidden_gem QualitySignals.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>scrapers</td>
+          <td>1m16.121843714s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0004</td>
+          <td>Foursquare Places API client for structured venue data.
+Create services/api/scrapers/foursquare.py:
+Category mapping: Foursquare categories → our 11 coarse ActivityCategory enum values.
+Deliverable: query &#34;restaurants in Austin&#34; → ActivityNode rows with Foursquare IDs and mapped categories.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>scrapers</td>
+          <td>1m38.017416437s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0005</td>
+          <td>Load Reddit travel recommendations from Arctic Shift Parquet dumps. Historical archive batch processing, not live scraping.
+Create services/api/scrapers/arctic_shift.py:
+  - r/JapanTravel, r/solotravel, r/travel, r/foodtravel, city-specific subs
+  - Venue name mentions, location context, sentiment
+  - Score/upvote weighting for authority
+Deliverable: load r/JapanTravel archive → QualitySignal rows for Tokyo/Kyoto/Osaka venues.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>scrapers</td>
+          <td>2m13.064694127s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0006</td>
+          <td>Deduplication system that resolves multiple references to the same real-world venue into a single canonical ActivityNode. The &#34;7-Eleven problem&#34; — seven spellings, one store.
+Create services/api/pipeline/entity_resolution.py:
+  1. External ID match: foursquareId or googlePlaceId exact match → merge
+  2. Geocode proximity: PostGIS ST_DWithin(&lt;50m) &#43; same ActivityCategory → candidate merge
+  3. Fuzzy name: pg_trgm trigram similarity &gt; 0.7 on canonicalName → candidate merge
+  4. Content hash: SHA-256 of normalized (name &#43; lat &#43; lng &#43; category) → exact match
+  - Set losing node: resolvedToId = winning node ID, isCanonical = false
+  - Create ActivityAlias row: aliasName = losing node&#39;s name, source = losing node&#39;s source
+  - Migrate all QualitySignals from losing to winning node (update activityNodeId)
+  - Migrate all ActivityNodeVibeTag entries
+  - Lowercase, strip punctuation, collapse whitespace
+  - CJK handling: normalize Unicode (NFKC), handle katakana/hiragana equivalence
+  - Strip common suffixes: &#34;Restaurant&#34;, &#34;Cafe&#34;, &#34;Bar&#34;, etc.
+  - Incremental: new nodes only (fast, run after each scrape)
+  - Full sweep: all nodes (slow, catches retroactive dupes, run weekly)
+Deliverable: scrape same venue from 3 sources → single canonical node, all signals preserved, aliases created.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>resolution</td>
+          <td>2m21.678889929s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0007</td>
+          <td>Use Haiku to classify ActivityNodes into vibe tags from the 42-tag vocabulary.
+Create services/api/pipeline/vibe_extraction.py:
+Deliverable: run extraction on 50 nodes → vibe tags populated, costs &#43; model version logged in ModelRegistry.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>tagging</td>
+          <td>2m14.756949946s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0008</td>
+          <td>Apply deterministic category → vibe tag mapping rules. Baseline vibe tags for all nodes regardless of LLM availability.
+Create services/api/pipeline/rule_inference.py:
+  - nightlife → [(&#34;late-night&#34;, 0.9), (&#34;high-energy&#34;, 0.7)]
+  - dining &#43; priceLevel &gt;= 4 → [(&#34;splurge&#34;, 0.8)]
+  - outdoors → [(&#34;fresh-air&#34;, 0.9)]
+  - culture → [(&#34;deep-dive&#34;, 0.7)]
+  - etc. for all 11 categories
+Deliverable: all ActivityNodes with a category get baseline vibe tags from rules.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>tagging</td>
+          <td>1m19.274558802s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0009</td>
+          <td>Score ActivityNodes based on cross-source agreement (convergence) and source authority weighting.
+Create services/api/pipeline/convergence.py:
+  - Count unique sources per ActivityNode (via QualitySignal)
+  - 3&#43; sources agreeing on same vibe tag → convergence boost
+  - Formula: convergenceScore = min(unique_sources / 3.0, 1.0)
+  - Source authority weights (from source registry):
+    - The Infatuation: 0.9, Atlas Obscura: 0.85, Foursquare: 0.7, Reddit (high upvotes): 0.6, Generic blog: 0.4
+  - Formula: authorityScore = weighted average of source authorities for this node
+Deliverable: multi-source nodes show higher convergence and authority than single-source.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>tagging</td>
+          <td>1m10.176092628s</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Files Changed (0 created, 8 modified, 0 deleted)</summary>
+  <div class="section-content">
+    
+
+    
+
+    
+    <h3 class="file-modified" style="margin: 8px 0 4px 0;">Modified</h3>
+    <ul class="file-list">
+      <li class="file-modified">~ tracks/admin/.soc-memory/CHANGELOG.md</li><li class="file-modified">~ tracks/admin/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/group/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/midtrip/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/pipeline/.soc-memory/CHANGELOG.md</li><li class="file-modified">~ tracks/pipeline/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/posttrip/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/solo/.soc-memory/conductor.yaml</li>
+    </ul>
+    
+
+    
+
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Timeline (14 events)</summary>
+  <div class="section-content">
+    
+    <table>
+      <thead>
+        <tr><th>Task ID</th><th>Worker</th><th>Model</th><th>Start Time</th><th>Duration</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>T-0001</td>
+          <td>0</td>
+          <td></td>
+          <td>13:47:41</td>
+          <td>4m20.72560528s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0003</td>
+          <td>2</td>
+          <td></td>
+          <td>13:52:01</td>
+          <td>1m16.121843714s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0004</td>
+          <td>0</td>
+          <td></td>
+          <td>13:52:01</td>
+          <td>1m38.017416437s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0002</td>
+          <td>1</td>
+          <td></td>
+          <td>13:52:01</td>
+          <td>2m7.852902784s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0005</td>
+          <td>2</td>
+          <td></td>
+          <td>13:54:09</td>
+          <td>2m13.064694127s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0006</td>
+          <td>0</td>
+          <td></td>
+          <td>13:56:22</td>
+          <td>2m21.678889929s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0008</td>
+          <td>2</td>
+          <td></td>
+          <td>13:58:44</td>
+          <td>1m19.274558802s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0007</td>
+          <td>1</td>
+          <td></td>
+          <td>13:58:44</td>
+          <td>2m14.756949946s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0009</td>
+          <td>0</td>
+          <td></td>
+          <td>14:00:59</td>
+          <td>1m10.176092628s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0010</td>
+          <td>2</td>
+          <td></td>
+          <td>14:02:09</td>
+          <td>2m3.077201784s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0011</td>
+          <td>1</td>
+          <td></td>
+          <td>14:04:12</td>
+          <td>2m21.510112991s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0013</td>
+          <td>2</td>
+          <td></td>
+          <td>14:06:33</td>
+          <td>1m0.818796288s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0012</td>
+          <td>0</td>
+          <td></td>
+          <td>14:06:33</td>
+          <td>2m23.028511724s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0014</td>
+          <td>1</td>
+          <td></td>
+          <td>14:08:56</td>
+          <td>6m13.43511721s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Decisions &amp; Constraints</summary>
+  <div class="section-content">
+    <h3 style="margin-bottom: 6px;">Decisions</h3>
+    
+    <p class="no-data">No decisions recorded.</p>
+    
+
+    <h3 style="margin: 12px 0 6px 0;">Constraints</h3>
+    
+    <p class="no-data">No constraints recorded.</p>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Model Usage</summary>
+  <div class="section-content">
+    <div class="model-grid">
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Opus</div>
+      </div>
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Sonnet</div>
+      </div>
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Haiku</div>
+      </div>
+    </div>
+  </div>
+</details>
+
+</body>
+</html>

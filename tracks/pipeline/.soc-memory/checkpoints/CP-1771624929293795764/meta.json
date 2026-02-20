@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771624929293795764",
+  "timestamp": "2026-02-20T14:02:09.293796495-08:00",
+  "migration_id": "M-009",
+  "phase": "",
+  "file_hashes": {
+    "services/api/pipeline/qdrant_sync.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

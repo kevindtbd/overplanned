@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771624449605709646",
+  "timestamp": "2026-02-20T13:54:09.605710578-08:00",
+  "migration_id": "M-004",
+  "phase": "",
+  "file_hashes": {
+    "services/api/scrapers/arctic_shift.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

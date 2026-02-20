@@ -1,0 +1,55 @@
+{
+  "city": "tokyo",
+  "run_id": "",
+  "started_at": null,
+  "finished_at": null,
+  "overall_status": "pending",
+  "nodes_scraped": 0,
+  "nodes_resolved": 0,
+  "nodes_tagged": 0,
+  "nodes_indexed": 0,
+  "steps": {
+    "scrape": {
+      "status": "completed",
+      "started_at": null,
+      "finished_at": "2026-02-20T22:14:41.467304+00:00",
+      "error": null,
+      "metrics": {}
+    },
+    "entity_resolution": {
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "error": null,
+      "metrics": {}
+    },
+    "vibe_extraction": {
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "error": null,
+      "metrics": {}
+    },
+    "rule_inference": {
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "error": null,
+      "metrics": {}
+    },
+    "convergence": {
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "error": null,
+      "metrics": {}
+    },
+    "qdrant_sync": {
+      "status": "pending",
+      "started_at": null,
+      "finished_at": null,
+      "error": null,
+      "metrics": {}
+    }
+  }
+}

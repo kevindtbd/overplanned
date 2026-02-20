@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC Conductor Report - admin</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    padding: 20px;
+  }
+  h1, h2, h3 { color: #e0e0e0; }
+  h1 { font-size: 1.8em; margin-bottom: 8px; }
+  h2 { font-size: 1.3em; margin-bottom: 6px; }
+
+  .banner {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .banner h1 { color: #e94560; }
+  .banner .meta { color: #a0a0a0; font-size: 0.9em; margin-top: 4px; }
+
+  .stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .stat-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    padding: 12px 20px;
+    min-width: 140px;
+    text-align: center;
+  }
+  .stat-card .value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #e94560;
+  }
+  .stat-card .label {
+    font-size: 0.85em;
+    color: #a0a0a0;
+    text-transform: uppercase;
+  }
+
+  details {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  summary {
+    cursor: pointer;
+    padding: 14px 20px;
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #e0e0e0;
+    user-select: none;
+  }
+  summary:hover { background: #1a1a3e; border-radius: 8px; }
+  details[open] summary { border-bottom: 1px solid #0f3460; }
+  .section-content { padding: 16px 20px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid #0f3460;
+  }
+  th {
+    color: #a0a0a0;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    background: #1a1a2e;
+  }
+
+  .status-pass { color: #4ecca3; font-weight: bold; }
+  .status-fail { color: #e94560; font-weight: bold; }
+  .status-complete { color: #4ecca3; }
+  .status-pending { color: #f0c040; }
+  .status-running { color: #4fc3f7; }
+  .status-failed { color: #e94560; }
+
+  .file-created { color: #4ecca3; }
+  .file-modified { color: #f0c040; }
+  .file-deleted { color: #e94560; }
+
+  ul.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+  }
+  ul.file-list li {
+    padding: 4px 0;
+    font-family: monospace;
+    font-size: 0.9em;
+  }
+
+  .failure-output {
+    background: #1a1a2e;
+    border: 1px solid #e94560;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 4px 0 8px 0;
+    font-family: monospace;
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    color: #e0a0a0;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .no-data { color: #a0a0a0; font-style: italic; padding: 12px 0; }
+
+  .model-grid {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .model-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    padding: 16px 24px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .model-card .count {
+    font-size: 2em;
+    font-weight: bold;
+    color: #4fc3f7;
+  }
+  .model-card .name {
+    font-size: 0.9em;
+    color: #a0a0a0;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>SOC Conductor Report</h1>
+  <div class="meta">
+    Project: admin |
+    Generated: 2026-02-20 14:05:49 PST |
+    Baseline: cc33de20625cff625df5ab19dddf4904d70ef384
+  </div>
+  <div class="stats">
+    <div class="stat-card">
+      <div class="value">9</div>
+      <div class="label">Tasks</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0</div>
+      <div class="label">Tests Passed</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0</div>
+      <div class="label">Tests Failed</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0.0%</div>
+      <div class="label">Coverage</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">15m38.906731756s</div>
+      <div class="label">Duration</div>
+    </div>
+  </div>
+</div>
+
+
+<details>
+  <summary>Test Results (0 tests)</summary>
+  <div class="section-content">
+    
+    <p class="no-data">No test results available.</p>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Work Summary (9 migrations)</summary>
+  <div class="section-content">
+    
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Description</th><th>Status</th><th>Model</th><th>Core Type</th><th>Duration</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>T-0001</td>
+          <td>Admin middleware, layout, and AuditLog writes on every action.
+1. systemRole: admin check middleware for all /admin routes
+2. Admin layout (separate from user app shell)
+3. AuditLog write on every admin action (append-only)
+4. Captures: actorId, action, targetType, targetId, before/after, ipAddress, userAgent</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>auth</td>
+          <td>1m14.573235143s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0002</td>
+          <td>Model management with promotion safety gates.
+1. List models with stage badges
+2. Promotion requires metrics comparison (new must beat current on primary metric)
+3. Path: staging → ab_test → production (admin-only confirmation)
+4. 2-minute cooldown between promotions
+5. artifactHash verification display
+6. All promotions logged to AuditLog</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>models</td>
+          <td>2m53.806435062s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0004</td>
+          <td>Admin queue for flagged or low-convergence nodes.
+1. List flagged/low-convergence nodes
+2. Approve / edit / archive (all logged to AuditLog with before/after)
+3. Alias management
+4. Status changes logged (replaces StatusHistory for now)</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>nodes</td>
+          <td>3m12.334980081s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0005</td>
+          <td>Monitor scraper health and source freshness.
+1. Last scrape time per source
+2. Alert if stale (configurable threshold)
+3. Authority score management (logged to AuditLog)</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>sources</td>
+          <td>3m53.414617592s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0008</td>
+          <td>Token management and injection detection review queue.
+1. SharedTripToken management: view, revoke (logged)
+2. InviteToken management: view, revoke
+3. Injection detection queue (flagged prompt bar inputs)</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>safety</td>
+          <td>3m5.938443186s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0003</td>
+          <td>Trigger and monitor city seeding from admin UI.
+1. Trigger seed job with confirmation &#43; estimated cost
+2. Progress dashboard per city
+3. Rate limit: 2 seed triggers per minute</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>seeding</td>
+          <td>2m14.766216271s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0006</td>
+          <td>Search users, view history, manage feature flags and subscription tiers.
+1. Search by email/name
+2. View: signals, trips, tier, feature flags
+3. Feature flag overrides (logged to AuditLog)
+4. Subscription tier changes via admin (replaces SQL for lifetime)
+5. All lookups logged to AuditLog (action: &#34;user_lookup&#34;)</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>users</td>
+          <td>3m7.010426704s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0007</td>
+          <td>LLM costs, API call counts, pipeline job health, cost alerting.
+1. LLM costs by model, date, pipeline stage
+2. API call counts (Foursquare, Google, OpenWeatherMap)
+3. Pipeline success/failure rates
+4. Cost alerting: configurable thresholds, alert on exceed</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>pipeline</td>
+          <td>3m39.497331073s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0009</td>
+          <td>Full test suite for admin features.
+1. Unit: admin auth guard, promotion safety gate, cost alerting thresholds
+2. Integration: admin actions → DB state &#43; AuditLog entries
+3. Integration: AuditLog append-only (UPDATE/DELETE rejected at DB level)
+4. E2E: admin login → navigate all surfaces → perform actions → verify AuditLog</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>tests</td>
+          <td>4m12.640956699s</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Files Changed (0 created, 8 modified, 0 deleted)</summary>
+  <div class="section-content">
+    
+
+    
+
+    
+    <h3 class="file-modified" style="margin: 8px 0 4px 0;">Modified</h3>
+    <ul class="file-list">
+      <li class="file-modified">~ tracks/admin/.soc-memory/CHANGELOG.md</li><li class="file-modified">~ tracks/admin/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/group/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/midtrip/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/pipeline/.soc-memory/CHANGELOG.md</li><li class="file-modified">~ tracks/pipeline/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/posttrip/.soc-memory/conductor.yaml</li><li class="file-modified">~ tracks/solo/.soc-memory/conductor.yaml</li>
+    </ul>
+    
+
+    
+
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Timeline (9 events)</summary>
+  <div class="section-content">
+    
+    <table>
+      <thead>
+        <tr><th>Task ID</th><th>Worker</th><th>Model</th><th>Start Time</th><th>Duration</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>T-0001</td>
+          <td>1</td>
+          <td></td>
+          <td>13:47:41</td>
+          <td>1m14.573235143s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0003</td>
+          <td>0</td>
+          <td></td>
+          <td>13:48:55</td>
+          <td>2m14.766216271s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0002</td>
+          <td>2</td>
+          <td></td>
+          <td>13:48:55</td>
+          <td>2m53.806435062s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0004</td>
+          <td>1</td>
+          <td></td>
+          <td>13:48:55</td>
+          <td>3m12.334980081s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0006</td>
+          <td>2</td>
+          <td></td>
+          <td>13:52:07</td>
+          <td>3m7.010426704s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0007</td>
+          <td>1</td>
+          <td></td>
+          <td>13:52:07</td>
+          <td>3m39.497331073s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0005</td>
+          <td>0</td>
+          <td></td>
+          <td>13:52:07</td>
+          <td>3m53.414617592s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0008</td>
+          <td>2</td>
+          <td></td>
+          <td>13:56:01</td>
+          <td>3m5.938443186s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0009</td>
+          <td>1</td>
+          <td></td>
+          <td>13:59:07</td>
+          <td>4m12.640956699s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Decisions &amp; Constraints</summary>
+  <div class="section-content">
+    <h3 style="margin-bottom: 6px;">Decisions</h3>
+    
+    <p class="no-data">No decisions recorded.</p>
+    
+
+    <h3 style="margin: 12px 0 6px 0;">Constraints</h3>
+    
+    <p class="no-data">No constraints recorded.</p>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Model Usage</summary>
+  <div class="section-content">
+    <div class="model-grid">
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Opus</div>
+      </div>
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Sonnet</div>
+      </div>
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Haiku</div>
+      </div>
+    </div>
+  </div>
+</details>
+
+</body>
+</html>

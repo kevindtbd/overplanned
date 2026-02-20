@@ -1,0 +1,12 @@
+{
+  "id": "CP-1771624327985388891",
+  "timestamp": "2026-02-20T13:52:07.985389682-08:00",
+  "migration_id": "M-005",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/app/admin/pipeline/page.tsx": "DELETED",
+    "apps/web/app/admin/sources/page.tsx": "DELETED",
+    "apps/web/app/admin/users/page.tsx": "DELETED"
+  },
+  "description": "Pre-batch"
+}

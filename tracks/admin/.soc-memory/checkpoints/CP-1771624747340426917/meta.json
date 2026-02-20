@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771624747340426917",
+  "timestamp": "2026-02-20T13:59:07.340427708-08:00",
+  "migration_id": "M-009",
+  "phase": "",
+  "file_hashes": {
+    "services/api/tests/admin/conftest.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

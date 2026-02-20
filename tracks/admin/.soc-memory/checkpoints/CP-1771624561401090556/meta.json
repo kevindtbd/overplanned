@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771624561401090556",
+  "timestamp": "2026-02-20T13:56:01.40109246-08:00",
+  "migration_id": "M-008",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/app/admin/safety/page.tsx": "DELETED"
+  },
+  "description": "Pre-batch"
+}

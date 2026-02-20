@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771624859111787061",
+  "timestamp": "2026-02-20T14:00:59.111787913-08:00",
+  "migration_id": "M-008",
+  "phase": "",
+  "file_hashes": {
+    "services/api/pipeline/convergence.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

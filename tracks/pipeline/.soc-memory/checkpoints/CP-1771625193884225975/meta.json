@@ -1,0 +1,11 @@
+{
+  "id": "CP-1771625193884225975",
+  "timestamp": "2026-02-20T14:06:33.884227678-08:00",
+  "migration_id": "M-011",
+  "phase": "",
+  "file_hashes": {
+    "services/api/pipeline/content_purge.py": "DELETED",
+    "services/api/pipeline/image_validation.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

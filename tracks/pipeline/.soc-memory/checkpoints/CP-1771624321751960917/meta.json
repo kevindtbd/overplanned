@@ -1,0 +1,12 @@
+{
+  "id": "CP-1771624321751960917",
+  "timestamp": "2026-02-20T13:52:01.751961759-08:00",
+  "migration_id": "M-001",
+  "phase": "",
+  "file_hashes": {
+    "services/api/scrapers/atlas_obscura.py": "DELETED",
+    "services/api/scrapers/blog_rss.py": "DELETED",
+    "services/api/scrapers/foursquare.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

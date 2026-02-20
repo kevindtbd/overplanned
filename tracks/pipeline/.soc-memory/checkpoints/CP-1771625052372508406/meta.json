@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771625052372508406",
+  "timestamp": "2026-02-20T14:04:12.372509769-08:00",
+  "migration_id": "M-010",
+  "phase": "",
+  "file_hashes": {
+    "services/api/pipeline/city_seeder.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

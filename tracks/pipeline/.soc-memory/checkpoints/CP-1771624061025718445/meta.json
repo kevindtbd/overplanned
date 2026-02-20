@@ -1,0 +1,10 @@
+{
+  "id": "CP-1771624061025718445",
+  "timestamp": "2026-02-20T13:47:41.025722803-08:00",
+  "migration_id": "M-000",
+  "phase": "",
+  "file_hashes": {
+    "services/api/scrapers/base.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}

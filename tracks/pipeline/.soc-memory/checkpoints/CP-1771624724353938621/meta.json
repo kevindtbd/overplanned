@@ -1,0 +1,11 @@
+{
+  "id": "CP-1771624724353938621",
+  "timestamp": "2026-02-20T13:58:44.353939573-08:00",
+  "migration_id": "M-006",
+  "phase": "",
+  "file_hashes": {
+    "services/api/pipeline/rule_inference.py": "DELETED",
+    "services/api/pipeline/vibe_extraction.py": "DELETED"
+  },
+  "description": "Pre-batch"
+}
