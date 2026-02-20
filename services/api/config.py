@@ -46,6 +46,13 @@ class Settings(BaseSettings):
     events_batch_max_size: int = 1000
     events_request_max_bytes: int = 1_048_576  # 1MB
 
+    # Anthropic
+    anthropic_api_key: str = ""
+
+    # Generation
+    generation_candidate_pool_size: int = 30
+    generation_llm_timeout_s: float = 5.0
+
     model_config = {"env_prefix": "", "env_file": ".env", "extra": "ignore"}
 
 

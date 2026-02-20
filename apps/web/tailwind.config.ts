@@ -46,6 +46,21 @@ const config: Config = {
         primary: "var(--color-warm-text-primary)",
         secondary: "var(--color-warm-text-secondary)",
       },
+      keyframes: {
+        "slot-reveal": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(12px) scale(0.97)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0) scale(1)",
+          },
+        },
+      },
+      animation: {
+        "slot-reveal": "slot-reveal 0.5s ease-out forwards",
+      },
     },
   },
   plugins: [],

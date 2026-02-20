@@ -15,7 +15,8 @@ from services.api.config import settings
 from services.api.middleware.cors import setup_cors
 from services.api.middleware.rate_limit import RateLimitMiddleware
 from services.api.middleware.sentry import setup_sentry
-from services.api.routers import health, events, embed, search
+from services.api.routers import health, events, embed, search, calendar
+from services.api.routers import generate
 from services.api.search.qdrant_client import QdrantSearchClient
 from services.api.search.service import ActivitySearchService
 
@@ -87,6 +88,8 @@ app.include_router(health.router)
 app.include_router(events.router)
 app.include_router(embed.router)
 app.include_router(search.router)
+app.include_router(calendar.router)
+app.include_router(generate.router)
 
 # CORS (needs to be outermost to handle preflight)
 setup_cors(app)
