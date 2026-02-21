@@ -146,6 +146,8 @@ model ItinerarySlot {
   wasSwapped      Boolean    @default(false)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
+
+  @@index([tripId, dayNumber])
 }
 
 // ============================================================================
@@ -335,6 +337,29 @@ model ModelRegistry {
 
   @@unique([modelName, modelVersion])
   @@index([modelName, stage])
+}
+
+model RankingEvent {
+  id                 String   @id @default(uuid())
+  userId             String
+  tripId             String
+  sessionId          String?
+  dayNumber          Int
+  modelName          String
+  modelVersion       String
+  candidateIds       String[]
+  rankedIds          String[]
+  selectedIds        String[]
+  surface            String
+  shadowModelName    String?
+  shadowModelVersion String?
+  shadowRankedIds    String[]
+  latencyMs          Int?
+  createdAt          DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([tripId, dayNumber])
+  @@index([modelName, modelVersion])
 }
 
 model PivotEvent {

@@ -230,6 +230,82 @@ async def trigger_seed(
     )
 
 
+# ---------------------------------------------------------------------------
+# Persona seeding
+# ---------------------------------------------------------------------------
+
+class PersonaSeedRequest(BaseModel):
+    cities: list[str] = Field(
+        default=["Tokyo"],
+        description="Cities to generate trips for (must have ActivityNodes)",
+    )
+    personas_per_archetype: int = Field(
+        default=3, ge=1, le=20,
+        description="Number of fake users per archetype (6 archetypes total)",
+    )
+
+
+class PersonaSeedResponse(BaseModel):
+    users_created: int
+    trips_created: int
+    slots_created: int
+    signals_created: int
+    errors: list[str]
+
+
+@router.post("/personas", response_model=PersonaSeedResponse)
+async def seed_personas(body: PersonaSeedRequest, request: Request):
+    """
+    Seed fake personas with behavioral signal histories for shadow model training.
+
+    Creates users with archetype-driven trip patterns and realistic
+    confirm/skip/love/dislike signals suitable for BPR training.
+    """
+    from services.api.pipeline.persona_seeder import run_persona_seed
+
+    db_pool = request.app.state.db
+    result = await run_persona_seed(
+        db_pool,
+        cities=body.cities,
+        personas_per_archetype=body.personas_per_archetype,
+    )
+    return PersonaSeedResponse(
+        users_created=result.users_created,
+        trips_created=result.trips_created,
+        slots_created=result.slots_created,
+        signals_created=result.signals_created,
+        errors=result.errors,
+    )
+
+
+class TrainingDataSeedResponse(BaseModel):
+    model_registry_seeded: int
+    signals_backfilled: int
+    persona_dimensions_created: int
+    ranking_events_created: int
+    errors: list[str]
+
+
+@router.post("/training-data", response_model=TrainingDataSeedResponse)
+async def seed_training_data(request: Request):
+    """
+    Seed training data: ModelRegistry, PersonaDimension, RankingEvent.
+
+    Fixes the 3 BPR training blockers. Idempotent — safe to re-run.
+    """
+    from services.api.pipeline.training_data_seeder import seed_training_data as run_seed
+
+    db_pool = request.app.state.db
+    result = await run_seed(db_pool)
+    return TrainingDataSeedResponse(
+        model_registry_seeded=result.model_registry_seeded,
+        signals_backfilled=result.signals_backfilled,
+        persona_dimensions_created=result.persona_dimensions_created,
+        ranking_events_created=result.ranking_events_created,
+        errors=result.errors,
+    )
+
+
 @router.get("/progress", response_model=ProgressResponse)
 async def get_progress(request: Request):
     """Return progress for all active and recent seed jobs."""
