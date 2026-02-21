@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef } from "react";
+import {
+  latLngToVec3,
+  projectPoint,
+  resolveCardPositions,
+  type ProjectedPoint,
+  type CardRect,
+} from "./globe-utils";
 
 /* ------------------------------------------------------------------ */
 /*  Continent dot-matrix data (~400 [lat, lng] pairs)                  */
@@ -137,7 +144,7 @@ const CONTINENT_DOTS: [number, number][] = [
 ];
 
 /* ------------------------------------------------------------------ */
-/*  City + card data                                                    */
+/*  City + card data (13 total: 5 featured + 8 minor)                  */
 /* ------------------------------------------------------------------ */
 interface CityDef {
   lat: number;
@@ -154,114 +161,228 @@ interface CityDef {
 }
 
 const CITIES: CityDef[] = [
+  // Featured (5, with tooltip cards) — uniform sizes (Stripe-style)
   {
-    lat: 35.67, lng: 139.65, name: "Tokyo", r: 9, main: true,
-    card: { eyebrow: "TOKYO \u00B7 DAY 1", title: "Tsukiji outer market", desc: "locals-only \u00B7 06:00 counter", tag: "Tabelog \u00B7 8.1k" },
+    lat: 35.67, lng: 139.65, name: "Tokyo", r: 5, main: true,
+    card: { eyebrow: "TOKYO \u00B7 DAY 1", title: "Tsukiji outer market", desc: "locals-only \u00B7 06:00 counter", tag: "8.1k local reviews" },
   },
   {
-    lat: 35.01, lng: 135.77, name: "Kyoto", r: 8, main: true,
-    card: { eyebrow: "KYOTO \u00B7 DAY 3", title: "Kinkaku-ji", desc: "weekday \u00B7 thins out by 15:00", tag: "Tabelog \u00B7 4.2k" },
+    lat: 35.01, lng: 135.77, name: "Kyoto", r: 5, main: true,
+    card: { eyebrow: "KYOTO \u00B7 DAY 3", title: "Kinkaku-ji", desc: "weekday \u00B7 thins out by 15:00", tag: "4.2k local reviews" },
   },
   {
-    lat: 37.57, lng: 126.98, name: "Seoul", r: 8, main: true,
+    lat: 37.57, lng: 126.98, name: "Seoul", r: 5, main: true,
     card: { eyebrow: "SEOUL \u00B7 PIVOT", title: "Rain at 14:00", desc: "swapping to indoor alternative" },
   },
   {
-    lat: 41.39, lng: 2.17, name: "Barcelona", r: 8.5, main: true,
+    lat: 41.39, lng: 2.17, name: "Barcelona", r: 5, main: true,
     card: { eyebrow: "BARCELONA \u00B7 DAY 2", title: "El Born backstreets", desc: "pre-lunch tapas crawl", tag: "Local" },
   },
-  { lat: 48.86, lng: 2.35, r: 5, main: false, name: "" },
-  { lat: 40.71, lng: -74.01, r: 5, main: false, name: "" },
-  { lat: 1.35, lng: 103.82, r: 5, main: false, name: "" },
-  { lat: 22.32, lng: 114.17, r: 5, main: false, name: "" },
-  { lat: 34.69, lng: 135.5, r: 5, main: false, name: "" },
-  { lat: -33.87, lng: 151.21, r: 5, main: false, name: "" },
+  {
+    lat: 34.69, lng: 135.50, name: "Osaka", r: 5, main: true,
+    card: { eyebrow: "OSAKA \u00B7 NIGHT", title: "Dotonbori standing bar", desc: "walk-ins only before 18:00", tag: "5.6k local reviews" },
+  },
+  // Minor dots — uniform size
+  { lat: 38.72, lng: -9.14, name: "Lisbon", r: 3, main: false },
+  { lat: 41.01, lng: 28.98, name: "Istanbul", r: 3, main: false },
+  { lat: 31.63, lng: -8.00, name: "Marrakech", r: 2.5, main: false },
+  { lat: 25.03, lng: 121.57, name: "Taipei", r: 3, main: false },
+  { lat: 10.82, lng: 106.63, name: "HCMC", r: 2.5, main: false },
+  { lat: 19.43, lng: -99.13, name: "MexicoCity", r: 2.5, main: false },
+  { lat: -34.60, lng: -58.38, name: "BuenosAires", r: 2.5, main: false },
+  { lat: -33.87, lng: 151.21, name: "Sydney", r: 3, main: false },
 ];
 
-const ROUTES = [[0, 1], [0, 2], [3, 4], [0, 8], [5, 3], [6, 7]];
+/* ------------------------------------------------------------------ */
+/*  Heatmap scatter dots near featured cities                          */
+/*  Denser + bigger near city center, fading outward                   */
+/* ------------------------------------------------------------------ */
+function generateHeatmapDots(): { lat: number; lng: number; r: number }[] {
+  const dots: { lat: number; lng: number; r: number }[] = [];
+  // Deterministic scatter using simple hash
+  const featured = CITIES.filter((c) => c.main);
+  for (const city of featured) {
+    // Inner ring (3-5 dots, close, bigger)
+    const innerCount = 4;
+    for (let i = 0; i < innerCount; i++) {
+      const angle = (Math.PI * 2 * i) / innerCount + city.lat * 0.1;
+      const dist = 1.2 + (i % 3) * 0.4;
+      dots.push({
+        lat: city.lat + Math.sin(angle) * dist,
+        lng: city.lng + Math.cos(angle) * dist * 1.3,
+        r: 2.2 + (i % 2) * 0.4,
+      });
+    }
+    // Outer ring (5-7 dots, farther, smaller)
+    const outerCount = 6;
+    for (let i = 0; i < outerCount; i++) {
+      const angle = (Math.PI * 2 * i) / outerCount + city.lng * 0.05;
+      const dist = 2.8 + (i % 4) * 0.8;
+      dots.push({
+        lat: city.lat + Math.sin(angle) * dist,
+        lng: city.lng + Math.cos(angle) * dist * 1.3,
+        r: 1.4 + (i % 3) * 0.3,
+      });
+    }
+  }
+  return dots;
+}
 
-interface CardPos {
-  x: number;
-  y: number;
+const HEATMAP_DOTS = generateHeatmapDots();
+const HEATMAP_VECS = HEATMAP_DOTS.map((d) => latLngToVec3(d.lat, d.lng));
+
+const ROUTES: [number, number][] = [
+  [0, 2],  // Tokyo → Seoul
+  [2, 8],  // Seoul → Taipei
+  [4, 9],  // Osaka → HCMC
+];
+
+const ROUTE_DASH = [5, 3];
+
+/* ------------------------------------------------------------------ */
+/*  Card lerp state — persistent across frames                        */
+/* ------------------------------------------------------------------ */
+interface LerpCard {
+  targetX: number;
+  targetY: number;
+  displayX: number;
+  displayY: number;
   opacity: number;
   visible: boolean;
   cityIdx: number;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Pre-compute Vec3 for all static data                              */
+/* ------------------------------------------------------------------ */
+const CONTINENT_VECS = CONTINENT_DOTS.map(([la, ln]) => latLngToVec3(la, ln));
+const CITY_VECS = CITIES.map((c) => latLngToVec3(c.lat, c.lng));
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
+
 export default function GlobeCanvas({ className = "" }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
+  const rotRef = useRef(2.36); // initial rotation: East Asia facing (Tokyo z2=+0.56, Seoul +0.53, Osaka +0.58)
   const tRef = useRef(0);
-  const rotRef = useRef(-0.5);
-  const cardPosRef = useRef<CardPos[]>([]);
-  const [cardPositions, setCardPositions] = useState<CardPos[]>([]);
+  const isRunningRef = useRef(false);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const isDarkRef = useRef(false);
+  const cardElemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const lerpCardsRef = useRef<LerpCard[]>([]);
+  const lastCardUpdateRef = useRef(0);
 
-  const isDark = useCallback(() => {
-    return document.documentElement.getAttribute("data-theme") === "dark";
-  }, []);
+  // Cached gradients (recreated on resize only)
+  const cachedGradientsRef = useRef<{
+    ambient: CanvasGradient | null;
+    sphere: CanvasGradient | null;
+    cx: number;
+    cy: number;
+    R: number;
+  }>({ ambient: null, sphere: null, cx: 0, cy: 0, R: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const ctxOrNull = canvas.getContext("2d");
+    if (!ctxOrNull) return;
+    const ctx = ctxOrNull; // narrowed to non-null for closures
+    ctxRef.current = ctx;
+
+    // Reduced motion preference
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Theme observer — cache isDark, no DOM read per frame
+    isDarkRef.current = document.documentElement.getAttribute("data-theme") === "dark";
+    const themeObserver = new MutationObserver(() => {
+      isDarkRef.current = document.documentElement.getAttribute("data-theme") === "dark";
+      // Invalidate cached gradients on theme change
+      cachedGradientsRef.current.ambient = null;
+      cachedGradientsRef.current.sphere = null;
+    });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    // Resize handler with DPR scaling
+    let W = 0;
+    let H = 0;
+
     function resize() {
       const par = canvas!.parentElement;
       if (!par) return;
-      canvas!.width = par.offsetWidth;
-      canvas!.height = par.offsetHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = par.offsetWidth;
+      const h = par.offsetHeight;
+      if (w === 0 || h === 0) return;
+      canvas!.width = w * dpr;
+      canvas!.height = h * dpr;
+      canvas!.style.width = w + "px";
+      canvas!.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      W = w;
+      H = h;
+      // Invalidate cached gradients
+      cachedGradientsRef.current.ambient = null;
+      cachedGradientsRef.current.sphere = null;
     }
 
-    function ll(la: number, ln: number) {
-      const p = ((90 - la) * Math.PI) / 180;
-      const t = ((ln + 180) * Math.PI) / 180;
-      return { x: -Math.sin(p) * Math.cos(t), y: Math.cos(p), z: Math.sin(p) * Math.sin(t) };
-    }
-
-    function pr(v: { x: number; y: number; z: number }, cx: number, cy: number, R: number) {
-      const cY = Math.cos(rotRef.current);
-      const sY = Math.sin(rotRef.current);
-      const x2 = v.x * cY + v.z * sY;
-      const z2 = -v.x * sY + v.z * cY;
-      return { x: cx + x2 * R, y: cy - v.y * R, z: z2, vis: z2 > -0.12 };
-    }
+    // Projected city results — pre-allocated, mutated in-place
+    const projectedCities: (ProjectedPoint & { r: number; main: boolean })[] =
+      CITIES.map((c) => ({ x: 0, y: 0, z: 0, vis: false, r: c.r, main: c.main }));
 
     function frame() {
-      const ctx = canvas!.getContext("2d");
-      if (!ctx) return;
-      const W = canvas!.width;
-      const H = canvas!.height;
-      if (W === 0 || H === 0) return;
-      const cx = W / 2;
-      const cy = H / 2;
-      const R = Math.min(W, H) * 0.43;
-      const dark = isDark();
+      if (!isRunningRef.current) return;
+      if (W === 0 || H === 0) {
+        rafRef.current = requestAnimationFrame(frame);
+        return;
+      }
+
+      const dark = isDarkRef.current;
+      const rotation = rotRef.current;
       const t = tRef.current;
+
+      // Globe positioning — offset right, capped for ultrawide
+      const cx = Math.min(W, 1600) * 0.72;
+      const cy = H * 0.52;
+      const R = H * 0.58;
 
       ctx.clearRect(0, 0, W, H);
 
-      // Ambient glow
-      const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.5);
-      bg.addColorStop(0, dark ? "rgba(201,104,72,0.05)" : "rgba(184,92,63,0.05)");
-      bg.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = bg;
+      // --- Ambient glow (cached) ---
+      if (!cachedGradientsRef.current.ambient || cachedGradientsRef.current.cx !== cx || cachedGradientsRef.current.cy !== cy || cachedGradientsRef.current.R !== R) {
+        const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.5);
+        bg.addColorStop(0, dark ? "rgba(201,104,72,0.05)" : "rgba(184,92,63,0.05)");
+        bg.addColorStop(1, "rgba(0,0,0,0)");
+        cachedGradientsRef.current.ambient = bg;
+
+        const g = ctx.createRadialGradient(cx - R * 0.2, cy - R * 0.2, 0, cx, cy, R);
+        g.addColorStop(0, dark ? "rgba(44,36,26,0.35)" : "rgba(220,212,200,0.35)");
+        g.addColorStop(1, dark ? "rgba(18,14,9,0.08)" : "rgba(210,200,188,0.12)");
+        cachedGradientsRef.current.sphere = g;
+
+        cachedGradientsRef.current.cx = cx;
+        cachedGradientsRef.current.cy = cy;
+        cachedGradientsRef.current.R = R;
+      }
+
+      ctx.fillStyle = cachedGradientsRef.current.ambient!;
       ctx.fillRect(0, 0, W, H);
 
-      // Globe sphere
-      const g = ctx.createRadialGradient(cx - R * 0.2, cy - R * 0.2, 0, cx, cy, R);
-      g.addColorStop(0, dark ? "rgba(44,36,26,0.65)" : "rgba(255,255,255,0.5)");
-      g.addColorStop(1, dark ? "rgba(18,14,9,0.2)" : "rgba(237,232,224,0.15)");
+      // --- Globe sphere ---
       ctx.beginPath();
       ctx.arc(cx, cy, R, 0, Math.PI * 2);
-      ctx.fillStyle = g;
+      ctx.fillStyle = cachedGradientsRef.current.sphere!;
       ctx.fill();
-      ctx.strokeStyle = dark ? "rgba(201,104,72,0.14)" : "rgba(184,92,63,0.11)";
+      ctx.strokeStyle = dark ? "rgba(201,104,72,0.15)" : "rgba(184,92,63,0.18)";
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Grid lines
-      ctx.globalAlpha = dark ? 0.09 : 0.07;
-      ctx.strokeStyle = dark ? "rgba(240,234,226,0.5)" : "rgba(26,22,18,0.5)";
+      // --- Grid lines ---
+      ctx.globalAlpha = dark ? 0.12 : 0.14;
+      ctx.strokeStyle = dark ? "rgba(240,234,226,0.5)" : "rgba(26,22,18,0.35)";
       ctx.lineWidth = 0.5;
       for (let la = -60; la <= 60; la += 30) {
         const rL = Math.cos((la * Math.PI) / 180) * R;
@@ -271,8 +392,8 @@ export default function GlobeCanvas({ className = "" }: { className?: string }) 
         ctx.stroke();
       }
       for (let ln = 0; ln < 360; ln += 30) {
-        const a = pr(ll(70, ln), cx, cy, R);
-        const b = pr(ll(-70, ln), cx, cy, R);
+        const a = projectPoint(latLngToVec3(70, ln), cx, cy, R, rotation);
+        const b = projectPoint(latLngToVec3(-70, ln), cx, cy, R, rotation);
         if (a.vis && b.vis) {
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
@@ -282,66 +403,75 @@ export default function GlobeCanvas({ className = "" }: { className?: string }) 
       }
       ctx.globalAlpha = 1;
 
-      // Continent dot-matrix
-      const contDotColor = dark ? "rgba(201,104,72,0.12)" : "rgba(184,92,63,0.08)";
+      // --- Continent dots (batched single path) ---
+      const contDotColor = dark ? "rgba(201,104,72,0.22)" : "rgba(184,92,63,0.30)";
       ctx.fillStyle = contDotColor;
-      for (let i = 0; i < CONTINENT_DOTS.length; i++) {
-        const [la, ln] = CONTINENT_DOTS[i];
-        const v = ll(la, ln);
-        const p = pr(v, cx, cy, R);
+      ctx.beginPath();
+      for (let i = 0; i < CONTINENT_VECS.length; i++) {
+        const p = projectPoint(CONTINENT_VECS[i], cx, cy, R, rotation);
         if (p.z > -0.1) {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.moveTo(p.x + 1.8, p.y);
+          ctx.arc(p.x, p.y, 1.8, 0, Math.PI * 2);
         }
       }
+      ctx.fill();
 
-      // Project cities
-      const pC = CITIES.map((c) => ({ ...c, ...pr(ll(c.lat, c.lng), cx, cy, R) }));
+      // --- Heatmap scatter dots (denser near cities) ---
+      const heatColor = dark ? "rgba(201,104,72,0.35)" : "rgba(184,92,63,0.32)";
+      ctx.fillStyle = heatColor;
+      ctx.beginPath();
+      for (let i = 0; i < HEATMAP_VECS.length; i++) {
+        const p = projectPoint(HEATMAP_VECS[i], cx, cy, R, rotation);
+        if (p.z > -0.05) {
+          const r = HEATMAP_DOTS[i].r;
+          ctx.moveTo(p.x + r, p.y);
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        }
+      }
+      ctx.fill();
 
-      // Routes — thicker, more pronounced arcs
+      // --- Project cities (in-place mutation) ---
+      for (let i = 0; i < CITY_VECS.length; i++) {
+        const p = projectPoint(CITY_VECS[i], cx, cy, R, rotation);
+        projectedCities[i].x = p.x;
+        projectedCities[i].y = p.y;
+        projectedCities[i].z = p.z;
+        projectedCities[i].vis = p.vis;
+      }
+
+      // --- Routes ---
+      ctx.setLineDash(ROUTE_DASH);
       ROUTES.forEach((r, i) => {
-        const a = pC[r[0]];
-        const b = pC[r[1]];
-        if (!a || !b || !a.vis || !b.vis) return;
-        ctx.beginPath();
-        ctx.setLineDash([5, 3]);
-        const al = 0.32 + 0.16 * Math.sin(t * 0.018 + i);
+        const a = projectedCities[r[0]];
+        const b = projectedCities[r[1]];
+        if (!a.vis || !b.vis) return;
+        const al = 0.4 + 0.2 * Math.sin(t * 0.018 + i);
         ctx.strokeStyle = dark ? `rgba(201,104,72,${al})` : `rgba(184,92,63,${al})`;
         ctx.lineWidth = 1.5;
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const arcH = Math.max(28, dist * 0.22);
+        const arcH = Math.max(18, dist * 0.18);
         const mx = (a.x + b.x) / 2;
         const my = (a.y + b.y) / 2 - arcH;
+        ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.quadraticCurveTo(mx, my, b.x, b.y);
         ctx.stroke();
-        ctx.setLineDash([]);
       });
+      ctx.setLineDash([]);
 
-      // Cities — bigger main dots with pulsing glow ring
-      pC.forEach((c, i) => {
+      // --- City dots ---
+      projectedCities.forEach((c, i) => {
         if (!c.vis) return;
         if (c.main) {
-          const pulse = 14 + 4 * Math.sin(t * 0.03 + i * 1.5);
-          // Outer glow ring
-          const glOuter = ctx.createRadialGradient(c.x, c.y, c.r * 0.5, c.x, c.y, pulse);
-          glOuter.addColorStop(0, dark ? "rgba(201,104,72,0.18)" : "rgba(184,92,63,0.12)");
+          // Subtle steady glow — no pulse animation (Stripe-style)
+          const glOuter = ctx.createRadialGradient(c.x, c.y, c.r * 0.5, c.x, c.y, c.r + 8);
+          glOuter.addColorStop(0, dark ? "rgba(201,104,72,0.25)" : "rgba(184,92,63,0.22)");
           glOuter.addColorStop(1, "rgba(0,0,0,0)");
           ctx.beginPath();
-          ctx.arc(c.x, c.y, pulse, 0, Math.PI * 2);
+          ctx.arc(c.x, c.y, c.r + 8, 0, Math.PI * 2);
           ctx.fillStyle = glOuter;
-          ctx.fill();
-
-          // Inner glow
-          const glInner = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r + 4);
-          glInner.addColorStop(0, dark ? "rgba(201,104,72,0.30)" : "rgba(184,92,63,0.22)");
-          glInner.addColorStop(1, "rgba(0,0,0,0)");
-          ctx.beginPath();
-          ctx.arc(c.x, c.y, c.r + 4, 0, Math.PI * 2);
-          ctx.fillStyle = glInner;
           ctx.fill();
         }
 
@@ -352,127 +482,206 @@ export default function GlobeCanvas({ className = "" }: { className?: string }) 
           ? dark ? "#C96848" : "#B85C3F"
           : dark ? "rgba(201,104,72,0.4)" : "rgba(184,92,63,0.35)";
         ctx.fill();
-        ctx.strokeStyle = dark ? "rgba(14,12,9,0.85)" : "rgba(255,255,255,0.9)";
+        ctx.strokeStyle = dark ? "rgba(14,12,9,0.85)" : "rgba(250,248,245,0.95)";
         ctx.lineWidth = 1.5;
         ctx.stroke();
       });
 
-      // Traveling dot — bigger (5px radius)
-      const tN = (t % 160) / 160;
-      const p0 = pC[0];
-      const p1 = pC[1];
-      if (p0 && p1 && p0.vis && p1.vis) {
-        const dx = p1.x - p0.x;
-        const dy = p1.y - p0.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const arcH = Math.max(28, dist * 0.22);
-        const mx = (p0.x + p1.x) / 2;
-        const my = (p0.y + p1.y) / 2 - arcH;
-        const tx = (1 - tN) * (1 - tN) * p0.x + 2 * (1 - tN) * tN * mx + tN * tN * p1.x;
-        const ty = (1 - tN) * (1 - tN) * p0.y + 2 * (1 - tN) * tN * my + tN * tN * p1.y;
+      // --- Card positions (time-based throttle: every ~32ms) ---
+      const now = performance.now();
+      if (now - lastCardUpdateRef.current >= 32) {
+        lastCardUpdateRef.current = now;
 
-        // Glow behind traveling dot
-        const tGl = ctx.createRadialGradient(tx, ty, 0, tx, ty, 12);
-        tGl.addColorStop(0, dark ? "rgba(201,104,72,0.25)" : "rgba(184,92,63,0.18)");
-        tGl.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.beginPath();
-        ctx.arc(tx, ty, 12, 0, Math.PI * 2);
-        ctx.fillStyle = tGl;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(tx, ty, 5, 0, Math.PI * 2);
-        ctx.fillStyle = dark ? "#C96848" : "#B85C3F";
-        ctx.fill();
-        ctx.strokeStyle = dark ? "rgba(14,12,9,0.85)" : "#fff";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
-
-      // Update card positions (throttled to ~30fps: every other frame at 60fps)
-      if (t % 2 === 0) {
-        const newPositions: CardPos[] = [];
-        pC.forEach((c, i) => {
-          if (!c.main || !c.card) return;
-          const vis = c.z > 0;
-          const opacity = vis ? Math.min(1, c.z * 2.5) : 0;
-          newPositions.push({
-            x: c.x + 15,
-            y: c.y - 5,
-            opacity,
-            visible: vis,
-            cityIdx: i,
-          });
+        // Build raw card rects for visible featured cities
+        const rawCards: CardRect[] = [];
+        const cardCityIndices: number[] = [];
+        projectedCities.forEach((c, i) => {
+          if (!c.main || !CITIES[i].card) return;
+          const vis = c.z > 0.3;
+          if (vis) {
+            rawCards.push({
+              x: c.x + 18,
+              y: c.y - 30,
+              width: 160,
+              height: 72,
+              cityIdx: i,
+            });
+            cardCityIndices.push(i);
+          }
         });
-        cardPosRef.current = newPositions;
-        setCardPositions(newPositions);
+
+        // Anti-collision
+        const resolved = resolveCardPositions(rawCards, { width: W, height: H });
+
+        // Draw leader lines on canvas
+        ctx.setLineDash([3, 3]);
+        ctx.lineWidth = 1;
+        resolved.forEach((card, ci) => {
+          const city = projectedCities[card.cityIdx];
+          ctx.strokeStyle = dark ? "rgba(201,104,72,0.3)" : "rgba(184,92,63,0.35)";
+          ctx.beginPath();
+          ctx.moveTo(city.x, city.y);
+          const cpx = (city.x + card.x) / 2;
+          const cpy = city.y - 15;
+          ctx.quadraticCurveTo(cpx, cpy, card.x, card.y + card.height / 2);
+          ctx.stroke();
+        });
+        ctx.setLineDash([]);
+
+        // Update lerp targets
+        const newLerp: LerpCard[] = [];
+        const featuredIndices = CITIES.map((c, i) => c.main && c.card ? i : -1).filter(i => i >= 0);
+
+        featuredIndices.forEach((cityIdx) => {
+          const resolvedCard = resolved.find((r) => r.cityIdx === cityIdx);
+          const city = projectedCities[cityIdx];
+          const vis = city.z > 0.3;
+          const opacity = vis ? Math.min(0.92, city.z * 2.5) : 0;
+
+          const existing = lerpCardsRef.current.find((l) => l.cityIdx === cityIdx);
+          if (existing) {
+            existing.targetX = resolvedCard ? resolvedCard.x : city.x + 18;
+            existing.targetY = resolvedCard ? resolvedCard.y : city.y - 30;
+            existing.visible = vis;
+            // Lerp opacity
+            existing.opacity += (opacity - existing.opacity) * 0.12;
+            newLerp.push(existing);
+          } else {
+            const tx = resolvedCard ? resolvedCard.x : city.x + 18;
+            const ty = resolvedCard ? resolvedCard.y : city.y - 30;
+            newLerp.push({
+              targetX: tx, targetY: ty,
+              displayX: tx, displayY: ty,
+              opacity, visible: vis, cityIdx,
+            });
+          }
+        });
+        lerpCardsRef.current = newLerp;
       }
 
-      tRef.current++;
-      rotRef.current += 0.0018;
+      // --- Lerp card positions every frame ---
+      lerpCardsRef.current.forEach((card) => {
+        card.displayX += (card.targetX - card.displayX) * 0.12;
+        card.displayY += (card.targetY - card.displayY) * 0.12;
+
+        // Apply to DOM directly
+        const el = cardElemRefs.current.get(card.cityIdx);
+        if (el) {
+          el.style.transform = `translate(${card.displayX}px, ${card.displayY}px)`;
+          el.style.opacity = String(Math.max(0, card.opacity));
+          el.style.display = card.opacity > 0.01 ? "block" : "none";
+        }
+      });
+
+      if (!prefersReducedMotion) {
+        tRef.current++;
+        rotRef.current += 0.0008;
+      }
       rafRef.current = requestAnimationFrame(frame);
     }
 
+    // --- Start/stop loop ---
+    function startLoop() {
+      if (isRunningRef.current) return;
+      isRunningRef.current = true;
+      rafRef.current = requestAnimationFrame(frame);
+    }
+
+    function stopLoop() {
+      isRunningRef.current = false;
+      cancelAnimationFrame(rafRef.current);
+    }
+
+    // --- Init ---
     resize();
 
-    if (canvas.width > 0 && canvas.height > 0) {
-      frame();
-    }
+    // IntersectionObserver — pause when offscreen
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) startLoop();
+        else stopLoop();
+      },
+      { threshold: 0.01 },
+    );
+    io.observe(canvas);
 
-    function onResize() {
-      const prevW = canvas!.width;
+    // Visibility change — pause when tab backgrounded
+    const onVisChange = () => {
+      if (document.hidden) stopLoop();
+      // Don't auto-restart — IO will handle it when visible
+    };
+    document.addEventListener("visibilitychange", onVisChange);
+
+    // Resize
+    const onResize = () => {
       resize();
-      if (prevW === 0 && canvas!.width > 0 && canvas!.height > 0) {
-        frame();
-      }
-    }
-
+    };
     window.addEventListener("resize", onResize);
+
     return () => {
-      cancelAnimationFrame(rafRef.current);
+      stopLoop();
+      io.disconnect();
+      themeObserver.disconnect();
+      document.removeEventListener("visibilitychange", onVisChange);
       window.removeEventListener("resize", onResize);
     };
-  }, [isDark]);
+  }, []);
+
+  // Build featured city list for JSX (rendered once, positioned via refs)
+  const featuredCities = CITIES.map((c, i) => ({ city: c, idx: i })).filter(
+    ({ city }) => city.main && city.card,
+  );
 
   return (
-    <div ref={wrapperRef} className={`absolute inset-0 w-full h-full ${className}`} style={{ position: "absolute" }}>
+    <div
+      ref={wrapperRef}
+      className={`absolute inset-0 w-full h-full ${className}`}
+      style={{ position: "absolute" }}
+    >
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-      {/* Tooltip card overlays */}
-      {cardPositions.map((pos) => {
-        const city = CITIES[pos.cityIdx];
-        if (!city.card || !pos.visible) return null;
-        const bob = Math.sin(Date.now() * 0.002 + pos.cityIdx * 1.3) * 3;
-        return (
-          <div
-            key={city.name}
-            className="absolute pointer-events-none z-[4]"
+      {/* Tooltip card overlays — rendered once, positioned via direct DOM mutation */}
+      {featuredCities.map(({ city, idx }) => (
+        <div
+          key={city.name}
+          ref={(el) => {
+            if (el) cardElemRefs.current.set(idx, el);
+            else cardElemRefs.current.delete(idx);
+          }}
+          className="absolute pointer-events-none z-[4]"
+          style={{
+            willChange: "transform, opacity",
+            top: 0,
+            left: 0,
+            opacity: 0,
+            display: "none",
+          }}
+        >
+          <div className="rounded-[14px] shadow-lg p-[10px_14px] min-w-[140px] max-w-[180px]"
             style={{
-              left: pos.x,
-              top: pos.y + bob,
-              opacity: pos.opacity,
-              transition: "opacity 0.4s ease",
-              transform: "translateY(-50%)",
+              background: "var(--bg-surface)",
+              border: "1px solid color-mix(in srgb, var(--ink-700) 60%, transparent)",
+              borderRadius: "14px",
+              boxShadow: "var(--shadow-card)",
+              maxWidth: "180px",
             }}
           >
-            <div className="card rounded-[14px] shadow-lg p-[10px_14px] min-w-[140px] max-w-[180px]">
-              <div className="font-dm-mono text-[8px] tracking-[0.1em] uppercase text-accent-fg mb-[3px]">
-                {city.card.eyebrow}
-              </div>
-              <div className="text-[12px] font-medium text-ink-100 mb-[2px] whitespace-nowrap">
-                {city.card.title}
-              </div>
-              <div className="text-[10px] text-ink-400 font-light italic whitespace-nowrap">
-                {city.card.desc}
-              </div>
-              {city.card.tag && (
-                <span className="font-dm-mono text-[8px] text-info bg-info-bg px-1.5 py-0.5 rounded-full inline-block mt-[5px]">
-                  {city.card.tag}
-                </span>
-              )}
+            <div className="font-dm-mono text-[8px] tracking-[0.1em] uppercase text-accent-fg mb-[3px]">
+              {city.card!.eyebrow}
             </div>
+            <div className="text-[12px] font-medium text-ink-100 mb-[2px] whitespace-nowrap">
+              {city.card!.title}
+            </div>
+            <div className="text-[10px] text-ink-400 font-light italic whitespace-nowrap">
+              {city.card!.desc}
+            </div>
+            {city.card!.tag && (
+              <span className="font-dm-mono text-[8px] text-info bg-info-bg px-1.5 py-0.5 rounded-full inline-block mt-[5px]">
+                {city.card!.tag}
+              </span>
+            )}
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 }

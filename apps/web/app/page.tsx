@@ -1,8 +1,17 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import LandingNav from "@/components/landing/LandingNav";
 import RevealOnScroll from "@/components/landing/RevealOnScroll";
 import WaitlistForm from "@/components/landing/WaitlistForm";
-import GlobeCanvas from "@/components/landing/GlobeCanvas";
+
+const GlobeCanvas = dynamic(
+  () => import("@/components/landing/GlobeCanvas"),
+  { ssr: false },
+);
+const TripMapCanvas = dynamic(
+  () => import("@/components/landing/TripMapCanvas"),
+  { ssr: false },
+);
 
 export const metadata: Metadata = {
   title: "overplanned. -- Travel that knows you",
@@ -413,9 +422,38 @@ export default function LandingPage() {
       <LandingNav />
 
       {/* ==================== HERO ==================== */}
-      <section className="min-h-screen grid grid-cols-1 lg:grid-cols-2 pt-[62px] overflow-hidden">
-        {/* Left */}
-        <div className="flex flex-col justify-center px-6 py-[60px] md:px-14 lg:pl-20 lg:pr-12">
+      <section className="relative min-h-screen overflow-hidden max-w-[1600px] mx-auto pt-[62px]">
+        {/* Z1: Globe canvas (full bleed, md+ only) */}
+        <div className="absolute inset-0 z-[1] hidden md:block">
+          <GlobeCanvas />
+        </div>
+
+        {/* Z2: Ambient terracotta glow */}
+        <div
+          className="absolute inset-0 z-[2] pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at 72% 52%, rgba(196,105,79,0.06) 0%, transparent 65%)" }}
+        />
+
+        {/* Z3: Gradient layers (text protection) */}
+        <div
+          className="absolute left-0 inset-y-0 w-[55%] z-[3] pointer-events-none"
+          style={{ background: "linear-gradient(to right, var(--bg-base-92) 0%, var(--bg-base-92) 30%, var(--bg-base-60) 50%, transparent 100%)" }}
+        />
+        <div
+          className="absolute bottom-0 inset-x-0 h-[140px] z-[3] pointer-events-none"
+          style={{ background: "linear-gradient(to top, var(--bg-base-92) 0%, transparent 100%)" }}
+        />
+        <div
+          className="absolute top-0 inset-x-0 h-[80px] z-[3] pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, var(--bg-base-92) 0%, transparent 100%)" }}
+        />
+        <div
+          className="absolute right-0 inset-y-0 w-[80px] z-[3] pointer-events-none"
+          style={{ background: "linear-gradient(to left, var(--bg-base-50) 0%, transparent 100%)" }}
+        />
+
+        {/* Z10: Text content */}
+        <div className="relative z-[10] flex flex-col justify-center min-h-screen px-6 py-[60px] md:px-14 lg:pl-20 lg:pr-12 max-w-[600px]">
           {/* Eyebrow */}
           <div className="section-eyebrow mb-[22px] animate-[fadeUp_0.7s_ease_both_0.08s]">
             Travel Intelligence
@@ -470,19 +508,11 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-
-        {/* Right: Globe (desktop only) */}
-        <div className="hidden lg:flex relative bg-warm items-center justify-center overflow-hidden">
-          {/* Left-edge gradient fade */}
-          <div className="absolute left-0 top-0 w-20 h-full bg-gradient-to-r from-base to-transparent z-[5] pointer-events-none" />
-          {/* Bottom gradient fade */}
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base to-transparent z-[5] pointer-events-none" />
-          <GlobeCanvas />
-        </div>
       </section>
 
-      {/* Globe banner -- mobile only */}
-      <div className="lg:hidden relative h-[280px] bg-warm border-b border-ink-700 overflow-hidden">
+      {/* Globe banner -- mobile only (below md) */}
+      <div className="md:hidden relative h-[320px] bg-warm border-b border-ink-700 overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[60px] bg-gradient-to-b from-base to-transparent pointer-events-none z-[2]" />
         <div className="absolute bottom-0 left-0 right-0 h-[60px] bg-gradient-to-t from-base to-transparent pointer-events-none z-[2]" />
         <GlobeCanvas />
       </div>
@@ -570,7 +600,7 @@ export default function LandingPage() {
                 key={cell.num}
                 className="bg-surface hover:bg-warm transition-colors p-[36px_32px]"
               >
-                <div className="font-lora text-[54px] font-medium italic text-ink-700 leading-none mb-[18px]">
+                <div className="font-lora text-[54px] font-medium italic text-ink-600 leading-none mb-[18px]">
                   {cell.num}
                 </div>
                 <div className="text-[16px] font-medium text-ink-100 tracking-[-0.01em] mb-2.5 leading-[1.3]">
@@ -588,6 +618,69 @@ export default function LandingPage() {
             ))}
           </div>
         </RevealOnScroll>
+      </section>
+
+      {/* ==================== LOCAL SOURCES ==================== */}
+      <section className="py-[72px] px-6 lg:py-[100px] lg:px-20 bg-base border-t border-ink-700">
+        <div className="max-w-[1100px] mx-auto">
+          <RevealOnScroll>
+            <div className="text-center max-w-[560px] mx-auto mb-14">
+              <div className="section-eyebrow justify-center before:hidden mb-3.5">
+                Local Sources, Not Aggregators
+              </div>
+              <h2 className="font-lora text-[clamp(30px,3.5vw,50px)] font-medium tracking-[-0.02em] leading-[1.1] text-ink-100 mb-4 text-center">
+                Intelligence from
+                <br />
+                <em className="italic text-gold">the ground floor.</em>
+              </h2>
+              <p className="text-[15px] text-ink-400 font-light leading-[1.75] text-center mx-auto">
+                Every recommendation traces back to a source you can verify. Not
+                a five-star rating from someone who visited once -- continuous
+                signals from people who live there.
+              </p>
+            </div>
+          </RevealOnScroll>
+
+          <RevealOnScroll delay={100}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1000px] mx-auto">
+              {[
+                {
+                  stat: "8,100+",
+                  label: "local reviews per city",
+                  desc: "Sourced from regional food databases, resident forums, and local bloggers -- not tourist review platforms.",
+                  tagClass: "bg-success-bg text-success",
+                },
+                {
+                  stat: "12+",
+                  label: "source types per destination",
+                  desc: "Local review sites, resident forums, seasonal menus, booking availability, weather APIs, transit schedules -- all cross-referenced so you don't have to.",
+                  tagClass: "bg-info-bg text-info",
+                },
+                {
+                  stat: "3 months",
+                  label: "average source freshness",
+                  desc: "Venues that opened this quarter. Closures caught before you show up. Hours that changed last week, already updated in your plan.",
+                  tagClass: "bg-accent-light text-accent-fg",
+                },
+              ].map((card) => (
+                <div
+                  key={card.label}
+                  className="card rounded-[16px] p-[28px_24px] shadow-md"
+                >
+                  <div className="font-lora text-[36px] font-medium text-accent leading-none mb-1.5">
+                    {card.stat}
+                  </div>
+                  <div className="font-dm-mono text-[9px] tracking-[0.1em] uppercase text-ink-500 mb-3">
+                    {card.label}
+                  </div>
+                  <div className="text-[13px] text-ink-400 font-light leading-[1.72]">
+                    {card.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </RevealOnScroll>
+        </div>
       </section>
 
       {/* ==================== PERSONA ==================== */}
@@ -613,6 +706,7 @@ export default function LandingPage() {
                 "Compounds across trips -- not reset each time",
                 "Updates mid-trip -- tired on day four reads differently than tired on day one",
                 "Never surfaced as a label -- translated directly into what you see",
+                "Works offline -- swipe through pre-cached activities, signals sync when you reconnect",
               ]}
             />
           </RevealOnScroll>
@@ -670,19 +764,14 @@ export default function LandingPage() {
               />
             </RevealOnScroll>
           </div>
-          <RevealOnScroll delay={200}>
-            <div className="relative bg-stone border-t lg:border-t-0 lg:border-l border-ink-700 min-h-[360px] flex items-center justify-center">
-              {/* Placeholder for the trip map canvas -- static representation */}
-              <div className="w-full h-full min-h-[360px] p-8 flex items-center justify-center">
-                <div className="text-ink-500 font-dm-mono text-[10px] tracking-[0.08em] uppercase">
-                  Trip route visualization
-                </div>
-              </div>
+          <RevealOnScroll delay={200} className="h-full">
+            <div className="relative bg-stone border-t lg:border-t-0 lg:border-l border-ink-700 min-h-[420px] h-full">
+              <TripMapCanvas />
               {/* Map legend */}
               <div className="absolute bottom-[18px] right-[18px] card rounded-[10px] p-[10px_14px] flex flex-col gap-[5px]">
                 {[
-                  { color: "bg-success", label: "Start" },
                   { color: "bg-ink-500", label: "Visited" },
+                  { color: "bg-success", label: "You Are Here" },
                   { color: "bg-accent", label: "End" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-[7px]">

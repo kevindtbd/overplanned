@@ -74,3 +74,57 @@ Four Google Fonts (Sora, DM Mono, Lora, Outfit) adds network requests and potent
 3. **Update token values** to use design-v4.html as canonical (not app-shell.html values)
 4. **Landing page globe as isolated subtask** with its own dependency (Three.js) and mobile fallback
 5. **Add "theme provider" component** in Phase 1 that handles detection, localStorage, and the data-theme attribute
+
+---
+
+# Globe Redesign Review (2026-02-21)
+
+*Reviewer: deepen-plan*
+
+## Issues Addressed During Review
+
+### 1. Visual Weight: Globe vs Headline (RESOLVED)
+- **Concern:** H*0.82 globe might overpower headline text
+- **Decision:** Keep H*0.82. If the globe looks cinematic, text being slightly subordinate is fine. Gradient layers protect text contrast for accessibility. Tune during implementation if needed.
+
+### 2. Kyoto/Osaka Dot Overlap (RESOLVED)
+- **Concern:** 0.32 degrees apart = ~8-12px at this radius, dots nearly merge
+- **Decision:** Two dots is fine. Anti-collision handles the tooltip cards. Dots overlapping slightly is acceptable.
+
+### 3. CSS Variable Strategy (RESOLVED -- PLAN UPDATED)
+- **Concern:** `--bg-base-rgb` requires updating 4 theme blocks in globals.css
+- **Decision:** Use pre-computed variants (`--bg-base-92`, `--bg-base-60`, etc.) instead of RGB decomposition. Matches existing `--bg-surface-80` pattern. Simpler maintenance.
+- **Action:** Update plan Section 5 to use pre-computed variants instead of RGB variable.
+
+### 4. Source Naming on Marketing Page (RESOLVED -- PLAN UPDATED)
+- **Concern:** Naming Tabelog, Reddit, Naver publicly creates aging risk and potential IP issues
+- **Decision:** Never name sources publicly. Describe source *types* instead: "local review platforms in Japanese," "resident forum threads," "local food bloggers." Specificity comes from data (review counts, freshness) not brand names.
+- **Action:** Update plan Sections 3 and 4 to remove all platform names. Rewrite copy to be brand-agnostic.
+
+### 5. Trip Map Animation (RESOLVED -- PLAN UPDATED)
+- **Concern:** Static trip map may feel dead compared to animated globe
+- **Decision:** Add progressive route-drawing animation triggered by IntersectionObserver. Route "draws itself" when scrolled into view, then holds. One-shot, not continuous.
+- **Action:** Update plan Section 2 to include progressive draw animation using IntersectionObserver.
+
+## Remaining Risks
+
+### Performance: Globe at Backdrop Scale
+- ~400 continent dots + 13 city dots + 3 routes + anti-collision + lerp = more work per frame at a larger canvas
+- Canvas at H*0.82 on a 4K display = huge pixel count
+- **Mitigation:** Already throttling card updates to every 2 frames. Monitor frame rate during implementation. Consider devicePixelRatio capping at 2 for the globe canvas.
+
+### Gradient Layer Stacking on Various Browsers
+- 5 overlapping gradient divs with pointer-events-none = no interaction issues, but rendering might vary
+- **Mitigation:** Test in Chrome, Firefox, Safari during implementation. Gradients are CSS-only, well-supported.
+
+### Text Contrast on Globe Overlap Zone
+- Where the left gradient fades and the globe shows through, headline text sits on a semi-transparent background
+- WCAG contrast may fail if gradient isn't strong enough
+- **Mitigation:** The left gradient is solid for the first 35%, semi-transparent 35-55%. Headline should be fully within the solid zone. Test with contrast checker.
+
+## No Changes Needed For
+- Globe positioning values (W*0.72, H*0.52) -- solid reasoning
+- Compound rotation math -- standard 3D rotation matrix, well-understood
+- Anti-collision algorithm -- researched and validated, performance is trivial at this scale
+- Mobile treatment -- separate banner is the right call
+- City roster -- good geographic spread, removes problematic overlaps
