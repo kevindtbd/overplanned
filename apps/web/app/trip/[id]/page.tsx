@@ -1,245 +1,282 @@
 "use client";
 
-// Trip Detail Page — /trip/[id]
-// Shows DayNavigation + DayView for the selected trip.
-// Currently uses mock data; will be replaced with server-side fetch from Prisma.
+// Trip Detail Page -- /trip/[id]
+// Fetches real trip data from GET /api/trips/[id] and renders
+// DayNavigation + DayView with actual slots.
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { DayNavigation } from "@/components/trip/DayNavigation";
 import { DayView } from "@/components/trip/DayView";
 import { type SlotData } from "@/components/slot/SlotCard";
 import { type SlotActionEvent } from "@/components/slot/SlotActions";
+import { SlotSkeleton, ErrorState } from "@/components/states";
 
-// ---------- Mock data (replaced by API/Prisma in production) ----------
+// ---------- City photos for hero ----------
 
-const MOCK_TRIP = {
-  id: "trip-001",
-  destination: "Tokyo",
-  city: "Tokyo",
-  country: "Japan",
-  timezone: "Asia/Tokyo",
-  startDate: "2026-03-15T00:00:00+09:00",
-  endDate: "2026-03-19T00:00:00+09:00",
-  totalDays: 5,
-  status: "active" as const,
+const CITY_PHOTOS: Record<string, string> = {
+  Tokyo:
+    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200&q=80",
+  Kyoto:
+    "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&q=80",
+  Osaka:
+    "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=1200&q=80",
+  Bangkok:
+    "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=1200&q=80",
+  Seoul:
+    "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=1200&q=80",
+  Lisbon:
+    "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1200&q=80",
+  Barcelona:
+    "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1200&q=80",
+  Paris:
+    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200&q=80",
+  London:
+    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=80",
+  Berlin:
+    "https://images.unsplash.com/photo-1560969184-10fe8719e047?w=1200&q=80",
 };
 
-const MOCK_SLOTS: Record<number, SlotData[]> = {
-  1: [
-    {
-      id: "slot-001",
-      activityName: "Tsukiji Outer Market",
-      imageUrl: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80",
-      startTime: "2026-03-15T09:00:00+09:00",
-      endTime: "2026-03-15T11:00:00+09:00",
-      durationMinutes: 120,
-      slotType: "anchor",
-      status: "confirmed",
-      isLocked: false,
-      vibeTags: [
-        { slug: "local-favorite", name: "Local Favorite" },
-        { slug: "morning-ritual", name: "Morning Ritual" },
-        { slug: "street-food", name: "Street Food" },
-      ],
-      primaryVibeSlug: "local-favorite",
-      activityNodeId: "node-001",
-    },
-    {
-      id: "slot-002",
-      activityName: "TeamLab Borderless",
-      imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&q=80",
-      startTime: "2026-03-15T13:00:00+09:00",
-      endTime: "2026-03-15T15:30:00+09:00",
-      durationMinutes: 150,
-      slotType: "anchor",
-      status: "proposed",
-      isLocked: false,
-      vibeTags: [
-        { slug: "immersive", name: "Immersive" },
-        { slug: "worth-the-hype", name: "Worth the Hype" },
-      ],
-      primaryVibeSlug: "immersive",
-      activityNodeId: "node-002",
-    },
-    {
-      id: "slot-003",
-      activityName: "Shibuya Evening Walk",
-      imageUrl: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800&q=80",
-      startTime: "2026-03-15T18:00:00+09:00",
-      endTime: "2026-03-15T19:30:00+09:00",
-      durationMinutes: 90,
-      slotType: "flex",
-      status: "proposed",
-      isLocked: false,
-      vibeTags: [
-        { slug: "night-vibes", name: "Night Vibes" },
-        { slug: "iconic", name: "Iconic" },
-      ],
-      primaryVibeSlug: "night-vibes",
-      activityNodeId: "node-003",
-    },
-    {
-      id: "slot-004",
-      activityName: "Omoide Yokocho",
-      imageUrl: "https://images.unsplash.com/photo-1554797589-7241bb691973?w=800&q=80",
-      startTime: "2026-03-15T20:00:00+09:00",
-      endTime: "2026-03-15T21:30:00+09:00",
-      durationMinutes: 90,
-      slotType: "meal",
-      status: "proposed",
-      isLocked: false,
-      vibeTags: [
-        { slug: "hole-in-the-wall", name: "Hole in the Wall" },
-        { slug: "late-night", name: "Late Night" },
-        { slug: "local-favorite", name: "Local Favorite" },
-      ],
-      primaryVibeSlug: "hole-in-the-wall",
-      activityNodeId: "node-004",
-    },
-  ],
-  2: [
-    {
-      id: "slot-005",
-      activityName: "Meiji Shrine Morning",
-      imageUrl: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80",
-      startTime: "2026-03-16T08:00:00+09:00",
-      endTime: "2026-03-16T09:30:00+09:00",
-      durationMinutes: 90,
-      slotType: "anchor",
-      status: "confirmed",
-      isLocked: true,
-      vibeTags: [
-        { slug: "peaceful", name: "Peaceful" },
-        { slug: "cultural", name: "Cultural" },
-      ],
-      primaryVibeSlug: "peaceful",
-      activityNodeId: "node-005",
-    },
-    {
-      id: "slot-006",
-      activityName: "Harajuku Backstreets",
-      imageUrl: "https://images.unsplash.com/photo-1480796927426-f609979314bd?w=800&q=80",
-      startTime: "2026-03-16T11:00:00+09:00",
-      endTime: "2026-03-16T13:00:00+09:00",
-      durationMinutes: 120,
-      slotType: "flex",
-      status: "proposed",
-      isLocked: false,
-      vibeTags: [
-        { slug: "quirky", name: "Quirky" },
-        { slug: "shopping", name: "Shopping" },
-        { slug: "instagram-worthy", name: "Instagram Worthy" },
-        { slug: "youth-culture", name: "Youth Culture" },
-        { slug: "street-fashion", name: "Street Fashion" },
-      ],
-      primaryVibeSlug: "quirky",
-      activityNodeId: "node-006",
-    },
-  ],
-  3: [],
-  4: [
-    {
-      id: "slot-007",
-      activityName: "Akihabara Deep Dive",
-      startTime: "2026-03-18T14:00:00+09:00",
-      endTime: "2026-03-18T17:00:00+09:00",
-      durationMinutes: 180,
-      slotType: "flex",
-      status: "proposed",
-      isLocked: false,
-      vibeTags: [
-        { slug: "niche", name: "Niche" },
-        { slug: "iconic", name: "Iconic" },
-      ],
-      primaryVibeSlug: "niche",
-      activityNodeId: "node-007",
-    },
-  ],
-  5: [
-    {
-      id: "slot-008",
-      activityName: "Shinjuku Gyoen Farewell Walk",
-      imageUrl: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80",
-      startTime: "2026-03-19T10:00:00+09:00",
-      endTime: "2026-03-19T12:00:00+09:00",
-      durationMinutes: 120,
-      slotType: "anchor",
-      status: "proposed",
-      isLocked: false,
-      vibeTags: [
-        { slug: "peaceful", name: "Peaceful" },
-        { slug: "scenic", name: "Scenic" },
-      ],
-      primaryVibeSlug: "scenic",
-      activityNodeId: "node-008",
-    },
-  ],
-};
+// ---------- Types for API response ----------
+
+interface ApiSlot {
+  id: string;
+  dayNumber: number;
+  sortOrder: number;
+  slotType: string;
+  status: string;
+  startTime: string | null;
+  endTime: string | null;
+  durationMinutes: number | null;
+  isLocked: boolean;
+  activityNode: {
+    id: string;
+    name: string;
+    category: string;
+    latitude: number;
+    longitude: number;
+    priceLevel: number | null;
+    durationMinutes: number | null;
+    source: string;
+    primaryImageUrl?: string | null;
+  } | null;
+}
+
+interface ApiTrip {
+  id: string;
+  name: string | null;
+  destination: string;
+  city: string;
+  country: string;
+  timezone: string;
+  startDate: string;
+  endDate: string;
+  mode: string;
+  status: string;
+  planningProgress: number;
+  slots: ApiSlot[];
+  members: {
+    id: string;
+    userId: string;
+    role: string;
+    status: string;
+    joinedAt: string;
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+      image: string | null;
+    };
+  }[];
+}
+
+type FetchState = "loading" | "error" | "success";
+
+// ---------- Helpers ----------
+
+function apiSlotToSlotData(slot: ApiSlot): SlotData {
+  return {
+    id: slot.id,
+    activityName: slot.activityNode?.name ?? "Unnamed Activity",
+    imageUrl: slot.activityNode?.primaryImageUrl ?? undefined,
+    startTime: slot.startTime ?? undefined,
+    endTime: slot.endTime ?? undefined,
+    durationMinutes: slot.durationMinutes ?? slot.activityNode?.durationMinutes ?? undefined,
+    slotType: slot.slotType as SlotData["slotType"],
+    status: slot.status as SlotData["status"],
+    isLocked: slot.isLocked,
+    vibeTags: [], // Vibe tags would need a separate join; empty for now
+    activityNodeId: slot.activityNode?.id,
+  };
+}
+
+function computeTotalDays(startDate: string, endDate: string): number {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diff = Math.ceil(
+    (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  return Math.max(diff, 1);
+}
 
 // ---------- Component ----------
 
-export default function TripDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function TripDetailPage() {
+  const params = useParams<{ id: string }>();
+  const tripId = params.id;
+
+  const [trip, setTrip] = useState<ApiTrip | null>(null);
+  const [fetchState, setFetchState] = useState<FetchState>("loading");
+  const [errorMessage, setErrorMessage] = useState("Failed to load trip");
   const [currentDay, setCurrentDay] = useState(1);
 
-  // In production, fetch trip + slots from API using params.id
-  const trip = MOCK_TRIP;
+  const fetchTrip = useCallback(async () => {
+    setFetchState("loading");
+    try {
+      const res = await fetch(`/api/trips/${tripId}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 404) {
+          throw new Error("Trip not found");
+        }
+        if (res.status === 403) {
+          throw new Error("You do not have access to this trip");
+        }
+        throw new Error(data.error || "Failed to load trip");
+      }
+      const { trip: tripData } = await res.json();
+      setTrip(tripData);
+      setFetchState("success");
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to load trip"
+      );
+      setFetchState("error");
+    }
+  }, [tripId]);
+
+  useEffect(() => {
+    fetchTrip();
+  }, [fetchTrip]);
+
+  // Compute derived data
+  const totalDays = useMemo(() => {
+    if (!trip) return 1;
+    return computeTotalDays(trip.startDate, trip.endDate);
+  }, [trip]);
+
+  const slotsByDay = useMemo(() => {
+    if (!trip) return {};
+    const grouped: Record<number, SlotData[]> = {};
+    for (const slot of trip.slots) {
+      const day = slot.dayNumber;
+      if (!grouped[day]) grouped[day] = [];
+      grouped[day].push(apiSlotToSlotData(slot));
+    }
+    return grouped;
+  }, [trip]);
+
   const slotsForDay = useMemo(
-    () => MOCK_SLOTS[currentDay] || [],
-    [currentDay]
+    () => slotsByDay[currentDay] || [],
+    [slotsByDay, currentDay]
   );
 
   const handleSlotAction = useCallback(
     (event: SlotActionEvent) => {
       // In production: POST to /api/behavioral-signals
-      // {
-      //   userId: session.user.id,
-      //   tripId: params.id,
-      //   slotId: event.slotId,
-      //   signalType: event.signalType,
-      //   signalValue: event.signalValue,
-      //   tripPhase: "pre_trip",
-      //   rawAction: event.action,
-      //   surface: "day_view",
-      // }
       console.log("[BehavioralSignal]", {
-        tripId: params.id,
+        tripId,
         ...event,
         surface: "day_view",
       });
     },
-    [params.id]
+    [tripId]
   );
 
-  // Count slots per status for summary
+  // Status summary across all days
   const statusSummary = useMemo(() => {
-    const allSlots = Object.values(MOCK_SLOTS).flat();
+    if (!trip) return { total: 0, confirmed: 0, proposed: 0 };
+    const allSlots = trip.slots;
     return {
       total: allSlots.length,
-      confirmed: allSlots.filter((s) => s.status === "confirmed").length,
+      confirmed: allSlots.filter(
+        (s) => s.status === "confirmed" || s.status === "active"
+      ).length,
       proposed: allSlots.filter(
         (s) => s.status === "proposed" || s.status === "voted"
       ).length,
     };
-  }, []);
+  }, [trip]);
 
+  const tripPhoto = trip ? CITY_PHOTOS[trip.city] : undefined;
+  const tripName = trip?.name || trip?.destination || "";
+
+  // -- Loading --
+  if (fetchState === "loading") {
+    return (
+      <AppShell context="trip" tripName="Loading...">
+        <div className="space-y-6">
+          <div className="space-y-1">
+            <div className="skel h-7 w-48 rounded-full" />
+            <div className="skel h-4 w-32 rounded-full mt-2" />
+          </div>
+          <div className="flex gap-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skel h-14 w-20 rounded-lg" />
+            ))}
+          </div>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex gap-4">
+              <div className="w-16 flex flex-col items-center gap-2">
+                <div className="skel h-3 w-12 rounded-full" />
+                <div className="skel h-3 w-3 rounded-full" />
+              </div>
+              <div className="flex-1">
+                <SlotSkeleton />
+              </div>
+            </div>
+          ))}
+        </div>
+      </AppShell>
+    );
+  }
+
+  // -- Error --
+  if (fetchState === "error") {
+    return (
+      <AppShell context="app">
+        <div className="py-12">
+          <ErrorState message={errorMessage} onRetry={fetchTrip} />
+        </div>
+      </AppShell>
+    );
+  }
+
+  // -- Success --
   return (
-    <AppShell>
+    <AppShell
+      context="trip"
+      tripPhoto={tripPhoto}
+      tripName={tripName}
+    >
       <div className="space-y-6">
         {/* Trip header */}
         <header className="space-y-1">
           <h1 className="font-sora text-2xl sm:text-3xl font-bold text-ink-100">
-            {trip.destination}
+            {trip!.destination}
           </h1>
           <div className="flex items-center gap-3 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
-            <span>{trip.city}, {trip.country}</span>
-            <span aria-hidden="true" className="text-ink-700">|</span>
-            <span>{trip.totalDays} days</span>
-            <span aria-hidden="true" className="text-ink-700">|</span>
+            <span>
+              {trip!.city}, {trip!.country}
+            </span>
+            <span aria-hidden="true" className="text-ink-700">
+              |
+            </span>
+            <span>{totalDays} days</span>
+            <span aria-hidden="true" className="text-ink-700">
+              |
+            </span>
             <span>
               {statusSummary.confirmed}/{statusSummary.total} confirmed
             </span>
@@ -248,11 +285,11 @@ export default function TripDetailPage({
 
         {/* Day navigation */}
         <DayNavigation
-          totalDays={trip.totalDays}
+          totalDays={totalDays}
           currentDay={currentDay}
           onDayChange={setCurrentDay}
-          startDate={trip.startDate}
-          timezone={trip.timezone}
+          startDate={trip!.startDate}
+          timezone={trip!.timezone}
         />
 
         {/* Day header */}
@@ -261,7 +298,8 @@ export default function TripDetailPage({
             Day {currentDay}
           </h2>
           <span className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
-            {slotsForDay.length} {slotsForDay.length === 1 ? "activity" : "activities"}
+            {slotsForDay.length}{" "}
+            {slotsForDay.length === 1 ? "activity" : "activities"}
           </span>
         </div>
 
@@ -269,7 +307,7 @@ export default function TripDetailPage({
         <DayView
           dayNumber={currentDay}
           slots={slotsForDay}
-          timezone={trip.timezone}
+          timezone={trip!.timezone}
           onSlotAction={handleSlotAction}
         />
       </div>

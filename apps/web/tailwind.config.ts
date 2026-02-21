@@ -44,6 +44,11 @@ const config: Config = {
       borderColor: {
         DEFAULT: "var(--ink-700)",
       },
+      gradientColorStops: {
+        base: "var(--bg-base)",
+        surface: "var(--bg-surface)",
+        warm: "var(--bg-warm)",
+      },
       textColor: {
         primary: "var(--ink-100)",
         secondary: "var(--ink-400)",
@@ -65,9 +70,18 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(12px) scale(0.97)" },
           "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
         },
+        fadeUp: {
+          "0%": { opacity: "0", transform: "translateY(14px)" },
+          "100%": { opacity: "1", transform: "none" },
+        },
+        floatCard: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-9px)" },
+        },
       },
       animation: {
         "slot-reveal": "slot-reveal 0.5s ease-out forwards",
+        "float-card": "floatCard 7s ease-in-out infinite",
       },
     },
   },

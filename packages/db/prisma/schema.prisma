@@ -81,6 +81,7 @@ model VerificationToken {
 model Trip {
   id                String     @id @default(uuid())
   userId            String
+  name              String?
   mode              TripMode
   status            TripStatus @default(draft)
   destination       String
@@ -368,6 +369,25 @@ model AuditLog {
 
   @@index([actorId, createdAt])
   @@index([targetType, targetId])
+}
+
+// ============================================================================
+// PERSONA DIMENSIONS (Materialized from Trip personaSeed for ML training)
+// ============================================================================
+
+model PersonaDimension {
+  id         String   @id @default(uuid())
+  userId     String
+  dimension  String   // pace_preference, budget_sensitivity, cuisine_openness, etc.
+  value      String   // the dimension value (e.g. "slow", "high", "0.85")
+  confidence Float    @default(1.0)
+  source     String   @default("onboarding") // onboarding | inferred | decayed
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, dimension])
+  @@index([userId])
+  @@index([dimension, value])
 }
 
 // ============================================================================

@@ -10,6 +10,7 @@ import {
 import { DatesStep } from "./components/DatesStep";
 import { TripDNAStep, type Pace, type MorningPreference } from "./components/TripDNAStep";
 import { TemplateStep } from "./components/TemplateStep";
+import { ErrorState } from "@/components/states";
 
 type WizardStep = "fork" | "destination" | "dates" | "name" | "dna" | "template";
 
@@ -109,6 +110,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState<WizardStep>("fork");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Form state
   const [destination, setDestination] = useState<LaunchCity | null>(null);
@@ -176,6 +178,7 @@ export default function OnboardingPage() {
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
       const payload = {
@@ -187,7 +190,6 @@ export default function OnboardingPage() {
         endDate: new Date(endDate).toISOString(),
         name: tripName.trim(),
         mode: "solo" as const,
-        status: "planning" as const,
         presetTemplate: template,
         personaSeed: {
           pace,
@@ -204,13 +206,16 @@ export default function OnboardingPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to create trip");
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to create trip");
       }
 
-      const { tripId } = await res.json();
-      router.push(`/trips/${tripId}/generating`);
-    } catch {
-      // TODO: surface error to user via toast
+      const { trip } = await res.json();
+      router.push(`/trip/${trip.id}`);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
+      );
       setIsSubmitting(false);
     }
   }
@@ -231,7 +236,7 @@ export default function OnboardingPage() {
             <div className="flex-1">
               <div className="h-1 overflow-hidden rounded-full bg-ink-700">
                 <div
-                  className="h-full rounded-full bg-accenttransition-all duration-300"
+                  className="h-full rounded-full bg-accent transition-all duration-300"
                   style={{
                     width: `${(progressStep / totalSteps) * 100}%`,
                   }}
@@ -313,6 +318,21 @@ export default function OnboardingPage() {
           </div>
         )}
       </div>
+
+      {/* Submission error */}
+      {submitError && step === "template" && (
+        <div className="fixed bottom-24 left-0 right-0 z-30 px-4">
+          <div className="mx-auto max-w-lg">
+            <ErrorState
+              message={submitError}
+              onRetry={() => {
+                setSubmitError(null);
+                handleComplete();
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Bottom navigation — hidden on fork screen */}
       {step !== "fork" && (
