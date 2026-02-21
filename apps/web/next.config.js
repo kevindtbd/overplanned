@@ -5,11 +5,11 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' https://images.unsplash.com https://lh3.googleusercontent.com data: blob:",
-      "connect-src 'self' https://accounts.google.com",
+      "connect-src 'self' https://accounts.google.com http://localhost:8000 https://*.overplanned.app",
       "frame-src 'self' https://accounts.google.com",
       "object-src 'none'",
       "base-uri 'self'",

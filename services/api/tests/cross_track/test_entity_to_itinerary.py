@@ -278,7 +278,7 @@ class TestCategoryToSlotMapping:
     def test_all_categories_have_mapping(self, category: str):
         """Every ActivityCategory enum value produces a valid SlotType."""
         slot_type = _map_category_to_slot_type(category)
-        valid_slot_types = {"anchor", "flex", "meal", "break", "transit"}
+        valid_slot_types = {"anchor", "flex", "meal", "rest", "transit"}
         assert slot_type in valid_slot_types, (
             f"Category '{category}' mapped to '{slot_type}' which is not a valid SlotType"
         )

@@ -1,6 +1,17 @@
 node_modules/
+.next/
 dist/
 *.log
 .DS_Store
 .env
 .env.local
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# SOC track working directories (production code lives at project root)
+tracks/*/services/
+tracks/*/apps/
+tracks/*/data/
+tracks/*/tests/

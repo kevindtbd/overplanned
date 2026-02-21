@@ -4,9 +4,11 @@ Overplanned FastAPI service — ML, scraping, search, and event ingestion.
 Entrypoint: uvicorn services.api.main:app --host 0.0.0.0 --port 8000
 """
 
+import logging
 import uuid
 from contextlib import asynccontextmanager
 
+import asyncpg
 import redis.asyncio as aioredis
 from fastapi import FastAPI, Request, Response
 from starlette.responses import JSONResponse
@@ -21,6 +23,9 @@ from services.api.routers import invites
 from services.api.routers import shared_trips
 from services.api.routers import prompt
 from services.api.routers import pivot as pivot_router
+from services.api.routers import upload
+from services.api.routers import admin_nodes, admin_users, admin_models
+from services.api.routers import admin_sources, admin_pipeline, admin_seeding, admin_safety
 from services.api.search.qdrant_client import QdrantSearchClient
 from services.api.search.service import ActivitySearchService
 
@@ -51,8 +56,21 @@ async def lifespan(app: FastAPI):
     _redis_holder["client"] = redis_client
     app.state.redis = redis_client
     app.state.settings = settings
-    # DB pool placeholder — wired by database migration task
-    app.state.db = None
+
+    # Database connection pool via asyncpg
+    db_pool = None
+    if settings.database_url:
+        try:
+            db_pool = await asyncpg.create_pool(
+                settings.database_url,
+                min_size=2,
+                max_size=10,
+                command_timeout=30,
+            )
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"DB pool failed to connect: {e}")
+
+    app.state.db = db_pool
 
     # Search service — Qdrant client + embedding + DB hydration
     qdrant_client = QdrantSearchClient()
@@ -65,7 +83,7 @@ async def lifespan(app: FastAPI):
     app.state.qdrant = qdrant_client
     app.state.search_service = ActivitySearchService(
         qdrant=qdrant_client,
-        db=app.state.db,
+        db=db_pool,
         embed_fn=_embed_fn,
         score_threshold=settings.search_score_threshold,
     )
@@ -73,6 +91,8 @@ async def lifespan(app: FastAPI):
     yield
 
     await qdrant_client.close()
+    if db_pool:
+        await db_pool.close()
     if redis_client:
         await redis_client.aclose()
 
@@ -99,6 +119,16 @@ app.include_router(invites.preview_router)
 app.include_router(shared_trips.router)
 app.include_router(prompt.router)
 app.include_router(pivot_router.router)
+app.include_router(upload.router)
+
+# Admin routers
+app.include_router(admin_nodes.router)
+app.include_router(admin_users.router)
+app.include_router(admin_models.router)
+app.include_router(admin_sources.router)
+app.include_router(admin_pipeline.router)
+app.include_router(admin_seeding.router)
+app.include_router(admin_safety.router)
 
 # CORS (needs to be outermost to handle preflight)
 setup_cors(app)

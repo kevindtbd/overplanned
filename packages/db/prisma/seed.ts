@@ -173,7 +173,7 @@ async function main() {
       address: '5 Chome-2-1 Tsukiji, Chuo City, Tokyo 104-0045, Japan',
       descriptionShort: 'Famous seafood and produce market with street food stalls',
       descriptionLong: 'The Tsukiji Outer Market continues to thrive as a bustling hub of fresh seafood, produce, and street food. While the wholesale market has moved, the outer market offers an authentic local experience with traditional food stalls, fresh sushi, and Japanese culinary culture.',
-      status: 'active',
+      status: 'approved',
       isCanonical: true,
       sourceCount: 3,
       convergenceScore: 0.92,
@@ -182,45 +182,371 @@ async function main() {
       lastValidatedAt: new Date(),
     },
   });
-  console.log(`✅ Created sample activity node: ${sampleNode.name}`);
+  console.log(`Created sample activity node: ${sampleNode.name}`);
 
-  // Link vibe tags to sample node
-  console.log('🔗 Linking vibe tags to activity node...');
-  const localFavoriteTag = await prisma.vibeTag.findUnique({
-    where: { slug: 'local-favorite' },
-  });
-  const culturalTag = await prisma.vibeTag.findUnique({
-    where: { slug: 'cultural' },
-  });
-  const earlyBirdTag = await prisma.vibeTag.findUnique({
-    where: { slug: 'early-bird' },
-  });
+  // Additional Tokyo ActivityNodes
+  console.log('Seeding additional Tokyo activity nodes...');
 
-  if (localFavoriteTag && culturalTag && earlyBirdTag) {
-    await prisma.activityNodeVibeTag.createMany({
-      data: [
-        {
-          activityNodeId: sampleNode.id,
-          vibeTagId: localFavoriteTag.id,
-          score: 0.95,
-          source: 'rule_inference',
-        },
-        {
-          activityNodeId: sampleNode.id,
-          vibeTagId: culturalTag.id,
-          score: 0.88,
-          source: 'rule_inference',
-        },
-        {
-          activityNodeId: sampleNode.id,
-          vibeTagId: earlyBirdTag.id,
-          score: 0.92,
-          source: 'rule_inference',
-        },
-      ],
-    });
-    console.log('✅ Linked 3 vibe tags to activity node');
+  const tokyoNodes: Array<{
+    name: string;
+    slug: string;
+    canonicalName: string;
+    neighborhood: string;
+    latitude: number;
+    longitude: number;
+    category: string;
+    priceLevel: number;
+    sourceCount: number;
+    convergenceScore: number;
+    authorityScore: number;
+    descriptionShort: string;
+    vibeTags: string[];
+  }> = [
+    {
+      name: 'Senso-ji Temple',
+      slug: 'senso-ji-temple-tokyo',
+      canonicalName: 'senso-ji temple',
+      neighborhood: 'Asakusa',
+      latitude: 35.7148,
+      longitude: 139.7967,
+      category: 'culture',
+      priceLevel: 1,
+      sourceCount: 5,
+      convergenceScore: 0.95,
+      authorityScore: 0.92,
+      descriptionShort: 'Ancient Buddhist temple and iconic Tokyo landmark in the heart of Asakusa.',
+      vibeTags: ['historical', 'cultural', 'traditional'],
+    },
+    {
+      name: 'Meiji Jingu',
+      slug: 'meiji-jingu-tokyo',
+      canonicalName: 'meiji jingu',
+      neighborhood: 'Shibuya',
+      latitude: 35.6764,
+      longitude: 139.6993,
+      category: 'culture',
+      priceLevel: 1,
+      sourceCount: 4,
+      convergenceScore: 0.93,
+      authorityScore: 0.90,
+      descriptionShort: 'Serene Shinto shrine surrounded by a sprawling old-growth forest in central Tokyo.',
+      vibeTags: ['quiet', 'traditional', 'relaxing'],
+    },
+    {
+      name: 'teamLab Borderless',
+      slug: 'teamlab-borderless-tokyo',
+      canonicalName: 'teamlab borderless',
+      neighborhood: 'Odaiba',
+      latitude: 35.6268,
+      longitude: 139.7837,
+      category: 'entertainment',
+      priceLevel: 3,
+      sourceCount: 4,
+      convergenceScore: 0.91,
+      authorityScore: 0.88,
+      descriptionShort: 'Immersive digital art museum with boundary-free interactive installations.',
+      vibeTags: ['modern', 'artsy', 'unique'],
+    },
+    {
+      name: 'Shibuya Crossing',
+      slug: 'shibuya-crossing-tokyo',
+      canonicalName: 'shibuya crossing',
+      neighborhood: 'Shibuya',
+      latitude: 35.6595,
+      longitude: 139.7004,
+      category: 'experience',
+      priceLevel: 1,
+      sourceCount: 5,
+      convergenceScore: 0.94,
+      authorityScore: 0.85,
+      descriptionShort: 'The world-famous scramble intersection where thousands cross simultaneously.',
+      vibeTags: ['high-energy', 'lively', 'unique'],
+    },
+    {
+      name: 'Shinjuku Gyoen',
+      slug: 'shinjuku-gyoen-tokyo',
+      canonicalName: 'shinjuku gyoen',
+      neighborhood: 'Shinjuku',
+      latitude: 35.6852,
+      longitude: 139.7100,
+      category: 'outdoors',
+      priceLevel: 1,
+      sourceCount: 4,
+      convergenceScore: 0.90,
+      authorityScore: 0.87,
+      descriptionShort: 'Expansive national garden blending Japanese, English, and French landscape styles.',
+      vibeTags: ['relaxing', 'quiet', 'seasonal'],
+    },
+    {
+      name: 'Akihabara Electric Town',
+      slug: 'akihabara-electric-town-tokyo',
+      canonicalName: 'akihabara electric town',
+      neighborhood: 'Chiyoda',
+      latitude: 35.7023,
+      longitude: 139.7745,
+      category: 'shopping',
+      priceLevel: 2,
+      sourceCount: 3,
+      convergenceScore: 0.88,
+      authorityScore: 0.82,
+      descriptionShort: 'Neon-lit district packed with electronics shops, anime stores, and gaming arcades.',
+      vibeTags: ['lively', 'modern', 'unique'],
+    },
+    {
+      name: 'Robot Restaurant',
+      slug: 'robot-restaurant-tokyo',
+      canonicalName: 'robot restaurant',
+      neighborhood: 'Shinjuku',
+      latitude: 35.6938,
+      longitude: 139.7034,
+      category: 'nightlife',
+      priceLevel: 3,
+      sourceCount: 3,
+      convergenceScore: 0.78,
+      authorityScore: 0.72,
+      descriptionShort: 'Over-the-top neon-drenched cabaret show featuring robots and high-energy performances.',
+      vibeTags: ['high-energy', 'unique', 'late-night'],
+    },
+    {
+      name: 'Omoide Yokocho',
+      slug: 'omoide-yokocho-tokyo',
+      canonicalName: 'omoide yokocho',
+      neighborhood: 'Shinjuku',
+      latitude: 35.6934,
+      longitude: 139.6988,
+      category: 'dining',
+      priceLevel: 1,
+      sourceCount: 4,
+      convergenceScore: 0.91,
+      authorityScore: 0.88,
+      descriptionShort: 'Atmospheric alley of tiny yakitori stalls dating back to the post-war era.',
+      vibeTags: ['hole-in-the-wall', 'local-favorite', 'late-night'],
+    },
+    {
+      name: 'Golden Gai',
+      slug: 'golden-gai-tokyo',
+      canonicalName: 'golden gai',
+      neighborhood: 'Shinjuku',
+      latitude: 35.6940,
+      longitude: 139.7040,
+      category: 'drinks',
+      priceLevel: 2,
+      sourceCount: 5,
+      convergenceScore: 0.93,
+      authorityScore: 0.90,
+      descriptionShort: 'Labyrinth of over 200 tiny themed bars crammed into six narrow alleys.',
+      vibeTags: ['hidden-gem', 'cozy', 'late-night'],
+    },
+    {
+      name: 'Harajuku Takeshita Street',
+      slug: 'harajuku-takeshita-street-tokyo',
+      canonicalName: 'harajuku takeshita street',
+      neighborhood: 'Shibuya',
+      latitude: 35.6702,
+      longitude: 139.7026,
+      category: 'shopping',
+      priceLevel: 2,
+      sourceCount: 3,
+      convergenceScore: 0.86,
+      authorityScore: 0.78,
+      descriptionShort: 'Colorful pedestrian street at the epicenter of Japanese youth fashion culture.',
+      vibeTags: ['lively', 'modern', 'instagram-worthy'],
+    },
+    {
+      name: 'Yanaka Ginza',
+      slug: 'yanaka-ginza-tokyo',
+      canonicalName: 'yanaka ginza',
+      neighborhood: 'Taito',
+      latitude: 35.7268,
+      longitude: 139.7672,
+      category: 'experience',
+      priceLevel: 1,
+      sourceCount: 3,
+      convergenceScore: 0.85,
+      authorityScore: 0.83,
+      descriptionShort: 'Charming old-Tokyo shopping street with craft vendors and neighborhood cats.',
+      vibeTags: ['hidden-gem', 'traditional', 'slow-paced'],
+    },
+    {
+      name: 'Todoroki Valley',
+      slug: 'todoroki-valley-tokyo',
+      canonicalName: 'todoroki valley',
+      neighborhood: 'Setagaya',
+      latitude: 35.6077,
+      longitude: 139.6452,
+      category: 'outdoors',
+      priceLevel: 1,
+      sourceCount: 2,
+      convergenceScore: 0.80,
+      authorityScore: 0.76,
+      descriptionShort: 'Hidden ravine garden tucked beneath residential streets with a serene walking path.',
+      vibeTags: ['hidden-gem', 'quiet', 'relaxing'],
+    },
+    {
+      name: 'Shimokitazawa',
+      slug: 'shimokitazawa-tokyo',
+      canonicalName: 'shimokitazawa',
+      neighborhood: 'Setagaya',
+      latitude: 35.6611,
+      longitude: 139.6683,
+      category: 'entertainment',
+      priceLevel: 2,
+      sourceCount: 3,
+      convergenceScore: 0.87,
+      authorityScore: 0.84,
+      descriptionShort: 'Bohemian neighborhood of vintage shops, indie theaters, and live music venues.',
+      vibeTags: ['artsy', 'low-key', 'local-favorite'],
+    },
+    {
+      name: 'Kappabashi Kitchen Street',
+      slug: 'kappabashi-kitchen-street-tokyo',
+      canonicalName: 'kappabashi kitchen street',
+      neighborhood: 'Taito',
+      latitude: 35.7142,
+      longitude: 139.7868,
+      category: 'shopping',
+      priceLevel: 2,
+      sourceCount: 3,
+      convergenceScore: 0.82,
+      authorityScore: 0.79,
+      descriptionShort: 'Specialist kitchenware district where restaurants source knives, ceramics, and food samples.',
+      vibeTags: ['unique', 'hands-on', 'local-favorite'],
+    },
+    {
+      name: 'Nakameguro',
+      slug: 'nakameguro-tokyo',
+      canonicalName: 'nakameguro',
+      neighborhood: 'Meguro',
+      latitude: 35.6442,
+      longitude: 139.6988,
+      category: 'drinks',
+      priceLevel: 2,
+      sourceCount: 3,
+      convergenceScore: 0.84,
+      authorityScore: 0.81,
+      descriptionShort: 'Trendy canal-side neighborhood with craft cocktail bars, cafes, and cherry blossom walks.',
+      vibeTags: ['date-spot', 'minimalist', 'seasonal'],
+    },
+    {
+      name: 'Sumo at Ryogoku',
+      slug: 'sumo-at-ryogoku-tokyo',
+      canonicalName: 'sumo at ryogoku',
+      neighborhood: 'Sumida',
+      latitude: 35.6967,
+      longitude: 139.7932,
+      category: 'active',
+      priceLevel: 3,
+      sourceCount: 4,
+      convergenceScore: 0.89,
+      authorityScore: 0.87,
+      descriptionShort: 'Grand sumo tournaments and training stable visits in the traditional wrestling district.',
+      vibeTags: ['spectator', 'traditional', 'cultural'],
+    },
+    {
+      name: 'Roppongi Art Triangle',
+      slug: 'roppongi-art-triangle-tokyo',
+      canonicalName: 'roppongi art triangle',
+      neighborhood: 'Minato',
+      latitude: 35.6604,
+      longitude: 139.7292,
+      category: 'culture',
+      priceLevel: 2,
+      sourceCount: 3,
+      convergenceScore: 0.86,
+      authorityScore: 0.83,
+      descriptionShort: 'Three world-class art museums forming a walkable cultural corridor in Roppongi.',
+      vibeTags: ['artsy', 'modern', 'educational'],
+    },
+    {
+      name: 'Harmonica Yokocho',
+      slug: 'harmonica-yokocho-tokyo',
+      canonicalName: 'harmonica yokocho',
+      neighborhood: 'Musashino',
+      latitude: 35.7031,
+      longitude: 139.5796,
+      category: 'dining',
+      priceLevel: 1,
+      sourceCount: 2,
+      convergenceScore: 0.79,
+      authorityScore: 0.75,
+      descriptionShort: 'Retro alleyway market near Kichijoji station with tiny bars and izakaya joints.',
+      vibeTags: ['hole-in-the-wall', 'cozy', 'local-favorite'],
+    },
+    {
+      name: 'Nezu Museum',
+      slug: 'nezu-museum-tokyo',
+      canonicalName: 'nezu museum',
+      neighborhood: 'Minato',
+      latitude: 35.6614,
+      longitude: 139.7174,
+      category: 'culture',
+      priceLevel: 2,
+      sourceCount: 3,
+      convergenceScore: 0.83,
+      authorityScore: 0.80,
+      descriptionShort: 'Elegant museum of pre-modern Asian art set within a stunning bamboo-lined garden.',
+      vibeTags: ['quiet', 'traditional', 'artsy'],
+    },
+  ];
+
+  // Helper to look up vibe tags by slug
+  const vibeTagCache: Record<string, string> = {};
+  const allVibeTags = await prisma.vibeTag.findMany();
+  for (const vt of allVibeTags) {
+    vibeTagCache[vt.slug] = vt.id;
   }
+
+  // Create each Tokyo node sequentially and link vibe tags
+  for (const nodeData of tokyoNodes) {
+    const { vibeTags: tagSlugs, ...fields } = nodeData;
+    const node = await prisma.activityNode.create({
+      data: {
+        ...fields,
+        city: 'Tokyo',
+        country: 'Japan',
+        status: 'approved',
+        isCanonical: true,
+        lastScrapedAt: new Date(),
+        lastValidatedAt: new Date(),
+      },
+    });
+
+    // Link vibe tags
+    for (const slug of tagSlugs) {
+      const tagId = vibeTagCache[slug];
+      if (tagId) {
+        await prisma.activityNodeVibeTag.create({
+          data: {
+            activityNodeId: node.id,
+            vibeTagId: tagId,
+            score: 0.85 + Math.random() * 0.10,
+            source: 'rule_inference',
+          },
+        });
+      }
+    }
+
+    console.log(`  Created: ${node.name} (${tagSlugs.length} tags)`);
+  }
+  console.log(`Created ${tokyoNodes.length} additional Tokyo activity nodes`);
+
+  // Link vibe tags to Tsukiji node
+  console.log('Linking vibe tags to Tsukiji node...');
+  const tsukijiTagSlugs = ['local-favorite', 'cultural', 'early-bird'];
+  for (const slug of tsukijiTagSlugs) {
+    const tagId = vibeTagCache[slug];
+    if (tagId) {
+      await prisma.activityNodeVibeTag.create({
+        data: {
+          activityNodeId: sampleNode.id,
+          vibeTagId: tagId,
+          score: slug === 'local-favorite' ? 0.95 : slug === 'cultural' ? 0.88 : 0.92,
+          source: 'rule_inference',
+        },
+      });
+    }
+  }
+  console.log('Linked 3 vibe tags to Tsukiji node');
 
   // Seed sample quality signal
   console.log('⭐ Seeding sample quality signal...');
@@ -271,8 +597,8 @@ async function main() {
   console.log(`  - ${VIBE_TAGS.length} vibe tags`);
   console.log('  - 2 test users (1 user, 1 admin)');
   console.log('  - 1 sample trip (Tokyo)');
-  console.log('  - 1 sample activity node (Tsukiji Market)');
-  console.log('  - 3 vibe tag associations');
+  console.log('  - 20 Tokyo activity nodes (Tsukiji + 19 additional)');
+  console.log('  - 2-3 vibe tag associations per node');
   console.log('  - 1 quality signal');
   console.log('  - 1 model registry entry');
 }

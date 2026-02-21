@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from prisma import Prisma
 
-from middleware.audit import audit_action
+from services.api.middleware.audit import audit_action
 
 router = APIRouter(prefix="/admin/models", tags=["admin-models"])
 

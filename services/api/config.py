@@ -15,10 +15,10 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Database
-    database_url: str = Field(default="postgresql://postgres:postgres@localhost:5432/overplanned")
+    database_url: str = Field(default="postgresql://overplanned:overplanned_dev@localhost:16432/overplanned")
 
     # Redis
-    redis_url: str = Field(default="redis://localhost:6379/0")
+    redis_url: str = Field(default="redis://:overplanned_dev@localhost:16379/0")
 
     # CORS
     cors_origins: list[str] = Field(

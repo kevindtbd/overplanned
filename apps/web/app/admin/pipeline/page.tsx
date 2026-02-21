@@ -76,7 +76,7 @@ interface CostAlertStatus {
 // Constants
 // ---------------------------------------------------------------------------
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 const DAYS_OPTIONS = [
   { value: 1, label: '24h' },

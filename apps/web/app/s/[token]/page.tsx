@@ -113,7 +113,7 @@ async function fetchSharedTrip(
   const apiBase =
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8000";
+    "";
 
   // Sanitize token before using in URL
   const safeToken = token.replace(/[^A-Za-z0-9\-_]/g, "").slice(0, 64);

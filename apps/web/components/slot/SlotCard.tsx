@@ -31,7 +31,7 @@ export type SlotTypeLabel =
   | "anchor"
   | "flex"
   | "meal"
-  | "break"
+  | "rest"
   | "transit";
 
 export interface SlotData {

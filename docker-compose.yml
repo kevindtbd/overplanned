@@ -29,6 +29,7 @@ services:
     container_name: overplanned-pgbouncer
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-overplanned}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-overplanned}
+      AUTH_TYPE: scram-sha-256
       POOL_MODE: ${PGBOUNCER_POOL_MODE:-transaction}
       MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-100}
       DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-25}
@@ -41,7 +42,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "psql -U ${POSTGRES_USER:-overplanned} -h 127.0.0.1 -p 5432 -d pgbouncer -c 'SHOW POOLS;' || exit 1"]
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 5432 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -65,7 +66,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--no-auth-warning", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -87,7 +88,7 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:6333/health || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/6333' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -96,12 +97,40 @@ services:
     networks:
       - overplanned-net
 
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    container_name: overplanned-api
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-overplanned}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-overplanned}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      QDRANT_URL: http://qdrant:6333
+      ENVIRONMENT: development
+    volumes:
+      - ./services/api:/app/services/api
+      - embedding_cache:/root/.cache/torch
+    networks:
+      - overplanned-net
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
   qdrant_data:
+    driver: local
+  embedding_cache:
     driver: local
 
 networks:

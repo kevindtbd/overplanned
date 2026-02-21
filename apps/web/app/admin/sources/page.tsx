@@ -36,7 +36,7 @@ interface StalenessConfig {
 // Constants
 // ---------------------------------------------------------------------------
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 const POLL_INTERVAL_MS = 30_000;
 
 const FRESHNESS_COLORS: Record<string, string> = {

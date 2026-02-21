@@ -34,7 +34,7 @@ interface CityProgress {
 // Constants
 // ---------------------------------------------------------------------------
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 const POLL_INTERVAL_MS = 5_000;
 const RATE_LIMIT_COOLDOWN_MS = 30_000;
 

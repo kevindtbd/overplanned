@@ -1,42 +1,46 @@
-// Overplanned Database Schema
-// Foundation Track M-002
-// 22 models, full contract definitions
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator python {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 // ============================================================================
-// CORE AUTH & USER MODELS (NextAuth + custom fields)
+// CORE MODELS (Auth + Trips)
 // ============================================================================
 
 model User {
-  id                 String           @id @default(uuid())
-  email              String           @unique
-  name               String?
-  avatarUrl          String?
-  googleId           String?          @unique
-  emailVerified      DateTime?
-  subscriptionTier   SubscriptionTier @default(beta)
-  systemRole         SystemRole       @default(user)
-  featureFlags       Json?
-  accessCohort       String?
-  stripeCustomerId   String?          @unique
-  stripeSubId        String?
-  stripePriceId      String?
-  onboardingComplete Boolean          @default(false)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  lastActiveAt       DateTime?
+  id                  String           @id @default(uuid())
+  email               String           @unique
+  name                String?
+  avatarUrl           String?
+  googleId            String?          @unique
+  emailVerified       DateTime?
+  subscriptionTier    SubscriptionTier @default(beta)
+  systemRole          SystemRole       @default(user)
+  featureFlags        Json?
+  accessCohort        String?
+  stripeCustomerId    String?          @unique
+  stripeSubId         String?
+  stripePriceId       String?
+  onboardingComplete  Boolean          @default(false)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  lastActiveAt        DateTime?
 
-  // Relations
-  sessions Session[]
-  accounts Account[]
+  sessions     Session[]
+  accounts     Account[]
+  tripMembers  TripMember[]
 }
 
 model Session {
@@ -44,7 +48,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expires      DateTime // max 30 days, idle timeout 7 days
+  expires      DateTime
   createdAt    DateTime @default(now())
 }
 
@@ -74,38 +78,30 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// ============================================================================
-// TRIP & ITINERARY MODELS
-// ============================================================================
-
 model Trip {
-  id               String     @id @default(uuid())
-  userId           String
-  mode             TripMode   // solo | group
-  status           TripStatus // draft | planning | active | completed | archived
-  destination      String
-  city             String
-  country          String
-  timezone         String     // IANA timezone e.g. "Asia/Tokyo"
-  startDate        DateTime
-  endDate          DateTime
-  groupId          String?
-  memberCount      Int?
-  planningProgress Float?
-  presetTemplate   String?
-  personaSeed      Json?      // onboarding answers, cold-start embedding seed
+  id                String     @id @default(uuid())
+  userId            String
+  mode              TripMode
+  status            TripStatus @default(draft)
+  destination       String
+  city              String
+  country           String
+  timezone          String
+  startDate         DateTime
+  endDate           DateTime
+  groupId           String?
+  memberCount       Int?
+  planningProgress  Float?
+  presetTemplate    String?
+  personaSeed       Json?
+  fairnessState     Json?
+  affinityMatrix    Json?
+  logisticsState    Json?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  activatedAt       DateTime?
+  completedAt       DateTime?
 
-  // Track 4 group fields (deferred but defined)
-  fairnessState    Json?
-  affinityMatrix   Json?
-  logisticsState   Json?
-
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  activatedAt      DateTime?
-  completedAt      DateTime?
-
-  // Relations
   members          TripMember[]
   slots            ItinerarySlot[]
   sharedTokens     SharedTripToken[]
@@ -117,13 +113,11 @@ model TripMember {
   tripId    String
   trip      Trip         @relation(fields: [tripId], references: [id], onDelete: Cascade)
   userId    String
-  role      TripRole     // organizer | member
-  status    MemberStatus // invited | joined | declined
-
-  // Track 4 group fields
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      TripRole
+  status    MemberStatus @default(invited)
   personaSeed    Json?
   energyProfile  Json?
-
   joinedAt  DateTime?
   createdAt DateTime     @default(now())
 
@@ -135,37 +129,33 @@ model ItinerarySlot {
   tripId          String
   trip            Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
   activityNodeId  String?
+  activityNode    ActivityNode? @relation(fields: [activityNodeId], references: [id])
   dayNumber       Int
   sortOrder       Int
-  slotType        SlotType   // anchor | flex | meal | break | transit
-  status          SlotStatus // proposed | voted | confirmed | active | completed | skipped
+  slotType        SlotType
+  status          SlotStatus @default(proposed)
   startTime       DateTime?
   endTime         DateTime?
   durationMinutes Int?
   isLocked        Boolean    @default(false)
-
-  // Track 4 group fields
   voteState       Json?
   isContested     Boolean    @default(false)
-
-  // Track 5 pivot fields
   swappedFromId   String?
   pivotEventId    String?
   wasSwapped      Boolean    @default(false)
-
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 }
 
 // ============================================================================
-// WORLD KNOWLEDGE MODELS
+// WORLD KNOWLEDGE (ActivityNodes + Vibe Tags)
 // ============================================================================
 
 model ActivityNode {
   id                String           @id @default(uuid())
   name              String
   slug              String           @unique
-  canonicalName     String           // normalized for dedup
+  canonicalName     String
   city              String
   country           String
   neighborhood      String?
@@ -173,83 +163,69 @@ model ActivityNode {
   longitude         Float
   category          ActivityCategory
   subcategory       String?
-  priceLevel        Int?             // 1-4
+  priceLevel        Int?
   hours             Json?
   address           String?
   phoneNumber       String?
   websiteUrl        String?
-
-  // Entity resolution fields
   foursquareId      String?          @unique
   googlePlaceId     String?          @unique
-  resolvedToId      String?          // points to canonical node if duplicate
-  isCanonical       Boolean          @default(true)
-
-  // Images
   primaryImageUrl   String?
   imageSource       String?
   imageValidated    Boolean          @default(false)
-
-  // Quality metrics
   sourceCount       Int              @default(0)
   convergenceScore  Float?
   authorityScore    Float?
-
-  // Content
   descriptionShort  String?
   descriptionLong   String?
   contentHash       String?
-
-  // Admin
   lastScrapedAt     DateTime?
   lastValidatedAt   DateTime?
-  status            NodeStatus
+  status            NodeStatus       @default(pending)
   flagReason        String?
-
+  resolvedToId      String?
+  isCanonical       Boolean          @default(true)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
-  // Relations
-  vibeTags          ActivityNodeVibeTag[]
-  aliases           ActivityAlias[]
-  qualitySignals    QualitySignal[]
+  vibeTags         ActivityNodeVibeTag[]
+  aliases          ActivityAlias[]
+  qualitySignals   QualitySignal[]
+  slots            ItinerarySlot[]
 }
 
 model VibeTag {
-  id          String   @id @default(uuid())
-  slug        String   @unique    // "hole-in-the-wall", "late-night"
-  name        String              // "Hole in the Wall", "Late Night"
-  category    String              // "dining-character", "atmosphere", "activity-type"
-  isActive    Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  category  String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 
-  // Relations
   activityNodeVibeTags ActivityNodeVibeTag[]
 }
 
 model ActivityNodeVibeTag {
-  id              String       @id @default(uuid())
-  activityNodeId  String
-  activityNode    ActivityNode @relation(fields: [activityNodeId], references: [id], onDelete: Cascade)
-  vibeTagId       String
-  vibeTag         VibeTag      @relation(fields: [vibeTagId], references: [id])
-  score           Float        // [0-1]
-  source          String       // "llm_extraction" | "rule_inference" | "cross_reference"
-  createdAt       DateTime     @default(now())
+  id             String       @id @default(uuid())
+  activityNodeId String
+  activityNode   ActivityNode @relation(fields: [activityNodeId], references: [id], onDelete: Cascade)
+  vibeTagId      String
+  vibeTag        VibeTag      @relation(fields: [vibeTagId], references: [id], onDelete: Cascade)
+  score          Float
+  source         String
+  createdAt      DateTime     @default(now())
 
   @@unique([activityNodeId, vibeTagId, source])
-  @@index([activityNodeId])
-  @@index([vibeTagId])
 }
 
 model ActivityAlias {
-  id              String       @id @default(uuid())
-  activityNodeId  String
-  activityNode    ActivityNode @relation(fields: [activityNodeId], references: [id], onDelete: Cascade)
-  alias           String
-  source          String       // which scraper produced this name
-  createdAt       DateTime     @default(now())
+  id             String       @id @default(uuid())
+  activityNodeId String
+  activityNode   ActivityNode @relation(fields: [activityNodeId], references: [id], onDelete: Cascade)
+  alias          String
+  source         String
+  createdAt      DateTime     @default(now())
 
   @@index([alias])
   @@index([activityNodeId])
@@ -261,9 +237,9 @@ model QualitySignal {
   activityNode    ActivityNode @relation(fields: [activityNodeId], references: [id], onDelete: Cascade)
   sourceName      String
   sourceUrl       String?
-  sourceAuthority Float        // [0-1]
-  signalType      String       // "mention" | "recommendation" | "overrated_flag" | "hidden_gem" | "negative"
-  rawExcerpt      String?      // purged after 30 days (compliance)
+  sourceAuthority Float
+  signalType      String
+  rawExcerpt      String?
   extractedAt     DateTime
   createdAt       DateTime     @default(now())
 
@@ -271,23 +247,23 @@ model QualitySignal {
 }
 
 // ============================================================================
-// BEHAVIORAL SIGNALS & EVENTS
+// SIGNALS (Behavioral + Intention + Raw Events)
 // ============================================================================
 
 model BehavioralSignal {
-  id              String     @id @default(uuid())
-  userId          String
-  tripId          String?
-  slotId          String?
-  activityNodeId  String?
-  signalType      SignalType
-  signalValue     Float      // [-1.0, 1.0]
-  tripPhase       TripPhase  // pre_trip | active | post_trip
-  rawAction       String     // literal action for audit trail
-  weatherContext  String?    // clear | rain | snow | extreme_heat | extreme_cold
-  modelVersion    String?
-  promptVersion   String?
-  createdAt       DateTime   @default(now())
+  id             String     @id @default(uuid())
+  userId         String
+  tripId         String?
+  slotId         String?
+  activityNodeId String?
+  signalType     SignalType
+  signalValue    Float
+  tripPhase      TripPhase
+  rawAction      String
+  weatherContext String?
+  modelVersion   String?
+  promptVersion  String?
+  createdAt      DateTime   @default(now())
 
   @@index([userId, createdAt])
   @@index([userId, tripId, signalType])
@@ -295,38 +271,35 @@ model BehavioralSignal {
 }
 
 model IntentionSignal {
-  id                  String   @id @default(uuid())
-  behavioralSignalId  String
-  rawEventId          String?
-  userId              String
-  intentionType       String   // "not_interested" | "bad_timing" | "too_far" | "already_visited" | "price_mismatch" | "vibe_mismatch" | "weather_dependent" | "group_conflict"
-  confidence          Float    // [0-1]
-  source              String   // "rule_heuristic" | "ml_model" | "user_explicit" | "post_trip_feedback"
-  userProvided        Boolean  @default(false)
-  createdAt           DateTime @default(now())
+  id                 String   @id @default(uuid())
+  behavioralSignalId String
+  rawEventId         String?
+  userId             String
+  intentionType      String
+  confidence         Float
+  source             String
+  userProvided       Boolean  @default(false)
+  createdAt          DateTime @default(now())
 
   @@index([behavioralSignalId])
   @@index([userId, intentionType])
 }
 
 model RawEvent {
-  id              String     @id @default(uuid())
-  userId          String
-  sessionId       String
-  clientEventId   String?    // UUID generated on device, dedup key for mobile retries
-  tripId          String?
-  activityNodeId  String?    // extracted for queryability, nullable
-
-  eventType       String
-  intentClass     IntentClass  // explicit | implicit | contextual
-  surface         String?    // "discover_feed" | "day_view" | "map_view" | "detail_card" | "search"
-
-  payload         Json
-  platform        String?    // "ios" | "android" | "web"
-  screenWidth     Int?
-  networkType     String?    // "wifi" | "cellular" | "offline"
-
-  createdAt       DateTime   @default(now())
+  id             String   @id @default(uuid())
+  userId         String
+  sessionId      String
+  tripId         String?
+  activityNodeId String?
+  clientEventId  String?
+  eventType      String
+  intentClass    IntentClass
+  surface        String?
+  payload        Json
+  platform       String?
+  screenWidth    Int?
+  networkType    String?
+  createdAt      DateTime @default(now())
 
   @@unique([userId, clientEventId])
   @@index([userId, eventType, createdAt])
@@ -337,25 +310,25 @@ model RawEvent {
 }
 
 // ============================================================================
-// ML & ADMIN MODELS
+// ML + ADMIN
 // ============================================================================
 
 model ModelRegistry {
   id                 String     @id @default(uuid())
-  modelName          String     // "vibe_tagger" | "ranking_bpr" | "ranking_two_tower" | "convergence_scorer"
-  modelVersion       String     // semver
-  stage              ModelStage // staging | ab_test | production | archived
-  modelType          String     // "classification" | "ranking" | "extraction" | "scoring"
+  modelName          String
+  modelVersion       String
+  stage              ModelStage
+  modelType          String
   description        String?
-  artifactPath       String?    // GCS path
-  artifactHash       String?    // SHA-256 of model binary, verified at load time
-  configSnapshot     Json?      // hyperparams frozen at registration
-  metrics            Json?      // {"precision": 0.87, "recall": 0.82}
+  artifactPath       String?
+  artifactHash       String?
+  configSnapshot     Json?
+  metrics            Json?
   evaluatedAt        DateTime?
-  trainingDataRange  Json?      // {"from": "...", "to": "...", "signal_count": N}
+  trainingDataRange  Json?
   parentVersionId    String?
   promotedAt         DateTime?
-  promotedBy         String?    // "auto_eval" | "admin_manual" | admin user ID
+  promotedBy         String?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
@@ -364,50 +337,50 @@ model ModelRegistry {
 }
 
 model PivotEvent {
-  id              String       @id @default(uuid())
+  id              String        @id @default(uuid())
   tripId          String
   slotId          String
-  triggerType     PivotTrigger // weather_change | venue_closed | time_overrun | user_mood | user_request
+  triggerType     PivotTrigger
   triggerPayload  Json?
   originalNodeId  String
-  alternativeIds  String[]     // ranked alternatives shown
-  selectedNodeId  String?      // null = rejected all
-  status          PivotStatus  // proposed | accepted | rejected | expired
+  alternativeIds  String[]
+  selectedNodeId  String?
+  status          PivotStatus   @default(proposed)
   resolvedAt      DateTime?
-  responseTimeMs  Int?         // UX metric
-  createdAt       DateTime     @default(now())
+  responseTimeMs  Int?
+  createdAt       DateTime      @default(now())
 
   @@index([tripId, createdAt])
   @@index([status])
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  actorId     String
-  action      String   // "model_promote" | "user_flag_override" | "node_edit" | "token_revoke" | "user_lookup"
-  targetType  String   // "ModelRegistry" | "User" | "ActivityNode" | "SharedTripToken"
-  targetId    String
-  before      Json?
-  after       Json?
-  ipAddress   String
-  userAgent   String
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  before     Json?
+  after      Json?
+  ipAddress  String
+  userAgent  String
+  createdAt  DateTime @default(now())
 
   @@index([actorId, createdAt])
   @@index([targetType, targetId])
 }
 
 // ============================================================================
-// SECURITY TOKENS
+// TOKENS (Shared Trip + Invite)
 // ============================================================================
 
 model SharedTripToken {
   id          String    @id @default(uuid())
   tripId      String
   trip        Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  token       String    @unique   // crypto.randomBytes(32).toString('base64url')
+  token       String    @unique
   createdBy   String
-  expiresAt   DateTime            // default 90 days
+  expiresAt   DateTime
   revokedAt   DateTime?
   viewCount   Int       @default(0)
   importCount Int       @default(0)
@@ -417,17 +390,17 @@ model SharedTripToken {
 }
 
 model InviteToken {
-  id          String    @id @default(uuid())
-  tripId      String
-  trip        Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  token       String    @unique   // crypto.randomBytes(32).toString('base64url')
-  createdBy   String              // organizer user ID
-  maxUses     Int       @default(1)
-  usedCount   Int       @default(0)
-  role        TripRole  @default(member) // never organizer via link
-  expiresAt   DateTime            // default 7 days, max 30
-  revokedAt   DateTime?
-  createdAt   DateTime  @default(now())
+  id        String    @id @default(uuid())
+  tripId    String
+  trip      Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  createdBy String
+  maxUses   Int       @default(1)
+  usedCount Int       @default(0)
+  role      TripRole  @default(member)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([token])
 }
@@ -476,7 +449,7 @@ enum SlotType {
   anchor
   flex
   meal
-  break
+  rest
   transit
 }
 
@@ -505,15 +478,9 @@ enum ActivityCategory {
 
 enum NodeStatus {
   pending
-  active
+  approved
   flagged
   archived
-}
-
-enum TripPhase {
-  pre_trip
-  active
-  post_trip
 }
 
 enum SignalType {
@@ -548,13 +515,19 @@ enum SignalType {
   scroll_depth
   return_visit
   share_action
-  // Promoted implicit (written by batch pipeline, Month 5+)
+  // Promoted implicit (Month 5+)
   considered_not_chosen
   soft_positive
   category_preference
   time_preference
   geographic_preference
   pace_signal
+}
+
+enum TripPhase {
+  pre_trip
+  active
+  post_trip
 }
 
 enum IntentClass {

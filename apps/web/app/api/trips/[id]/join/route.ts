@@ -13,7 +13,7 @@ import { authOptions } from "@/lib/auth/config";
 const API_BASE =
   process.env.INTERNAL_API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8000";
+  "";
 
 export async function POST(
   request: NextRequest,

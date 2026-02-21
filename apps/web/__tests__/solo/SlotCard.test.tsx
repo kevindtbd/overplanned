@@ -23,7 +23,7 @@ interface SlotCardProps {
     category: string;
     dayNumber: number;
     sortOrder: number;
-    slotType: 'anchor' | 'flex' | 'meal' | 'break' | 'transit';
+    slotType: 'anchor' | 'flex' | 'meal' | 'rest' | 'transit';
     status: 'proposed' | 'confirmed' | 'skipped' | 'completed';
     startTime: string | null;
     endTime: string | null;
@@ -98,7 +98,7 @@ describe('SlotCard', () => {
       ['anchor', 'anchor'],
       ['flex', 'flex'],
       ['meal', 'meal'],
-      ['break', 'break'],
+      ['rest', 'rest'],
       ['transit', 'transit'],
     ] as const)('renders %s variant correctly', (slotType) => {
       const slot = makeSlotProps({ slotType });

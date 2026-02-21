@@ -205,7 +205,7 @@ async def trigger_seed(
     await redis.sadd("admin:seeding:active_jobs", job_id)
 
     # Audit log
-    from middleware.audit import audit_action
+    from services.api.middleware.audit import audit_action
 
     actor_id = getattr(request.state, "admin_user_id", "unknown")
     await audit_action(

@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from pydantic import BaseModel, Field
 from prisma import Prisma
 
-from middleware.audit import audit_action
+from services.api.middleware.audit import audit_action
 
 router = APIRouter(prefix="/admin/sources", tags=["admin-sources"])
 

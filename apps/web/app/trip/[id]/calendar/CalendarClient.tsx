@@ -426,7 +426,7 @@ export default function CalendarClient({ trip }: CalendarClientProps) {
   }, [tripStart, tripEnd]);
 
   const totalSlots = trip.slots.filter(
-    (s) => s.slotType !== "break" && s.slotType !== "transit"
+    (s) => s.slotType !== "rest" && s.slotType !== "transit"
   ).length;
 
   function prevMonth() {
