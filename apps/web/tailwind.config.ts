@@ -9,53 +9,71 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        terracotta: {
-          DEFAULT: "var(--color-terracotta)",
-          50: "#FDF5F2",
-          100: "#FAEAE4",
-          200: "#F2CFC2",
-          300: "#E8B09D",
-          400: "#D68D73",
-          500: "#C4694F",
-          600: "#A8553D",
-          700: "#8B4332",
-          800: "#6E3528",
-          900: "#52281E",
+        ink: {
+          100: "var(--ink-100)",
+          200: "var(--ink-200)",
+          300: "var(--ink-300)",
+          400: "var(--ink-400)",
+          500: "var(--ink-500)",
+          600: "var(--ink-600)",
+          700: "var(--ink-700)",
+          800: "var(--ink-800)",
+          900: "var(--ink-900)",
         },
+        accent: {
+          DEFAULT: "var(--accent)",
+          light: "var(--accent-light)",
+          muted: "var(--accent-muted)",
+          fg: "var(--accent-fg)",
+        },
+        gold: { DEFAULT: "var(--gold)", light: "var(--gold-light)" },
+        success: { DEFAULT: "var(--success)", bg: "var(--success-bg)" },
+        info: { DEFAULT: "var(--info)", bg: "var(--info-bg)" },
+        warning: { DEFAULT: "var(--warning)", bg: "var(--warning-bg)" },
+        error: { DEFAULT: "var(--error)", bg: "var(--error-bg)" },
+        // Backward-compat (REMOVE IN PHASE 2)
+        terracotta: { DEFAULT: "var(--accent)" },
         warm: {
-          background: "var(--color-warm-background)",
-          surface: "var(--color-warm-surface)",
-          border: "var(--color-warm-border)",
-          "text-primary": "var(--color-warm-text-primary)",
-          "text-secondary": "var(--color-warm-text-secondary)",
+          background: "var(--bg-base)",
+          surface: "var(--bg-surface)",
+          border: "var(--ink-700)",
+          "text-primary": "var(--ink-100)",
+          "text-secondary": "var(--ink-400)",
         },
+      },
+      backgroundColor: {
+        base: "var(--bg-base)",
+        surface: "var(--bg-surface)",
+        raised: "var(--bg-raised)",
+        overlay: "var(--bg-overlay)",
+        input: "var(--bg-input)",
+        stone: "var(--bg-stone)",
+        warm: "var(--bg-warm)",
+        app: "var(--bg-base)", // Backward-compat (REMOVE IN PHASE 2)
+      },
+      borderColor: {
+        DEFAULT: "var(--ink-700)",
+      },
+      textColor: {
+        primary: "var(--ink-100)", // Backward-compat (REMOVE IN PHASE 2)
+        secondary: "var(--ink-400)", // Backward-compat (REMOVE IN PHASE 2)
+      },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        card: "var(--shadow-card)",
+        xl: "var(--shadow-xl)",
       },
       fontFamily: {
         sora: ["var(--font-sora)", "system-ui", "sans-serif"],
         "dm-mono": ["var(--font-dm-mono)", "monospace"],
         lora: ["var(--font-lora)", "Georgia", "serif"],
       },
-      backgroundColor: {
-        app: "var(--color-warm-background)",
-        surface: "var(--color-warm-surface)",
-      },
-      borderColor: {
-        warm: "var(--color-warm-border)",
-      },
-      textColor: {
-        primary: "var(--color-warm-text-primary)",
-        secondary: "var(--color-warm-text-secondary)",
-      },
       keyframes: {
         "slot-reveal": {
-          "0%": {
-            opacity: "0",
-            transform: "translateY(12px) scale(0.97)",
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translateY(0) scale(1)",
-          },
+          "0%": { opacity: "0", transform: "translateY(12px) scale(0.97)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
         },
       },
       animation: {
