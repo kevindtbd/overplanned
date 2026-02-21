@@ -1,15 +1,21 @@
 /** @type {import('next').NextConfig} */
 
+const isDev = process.env.NODE_ENV !== "production";
+
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      // Dev mode: Next.js HMR + React hydration requires unsafe-eval
+      isDev
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+        : "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' https://images.unsplash.com https://lh3.googleusercontent.com data: blob:",
-      "connect-src 'self' https://accounts.google.com http://localhost:8000 https://*.overplanned.app",
+      "connect-src 'self' https://accounts.google.com http://localhost:8000 https://*.overplanned.app" +
+        (isDev ? " ws://localhost:3000" : ""),
       "frame-src 'self' https://accounts.google.com",
       "object-src 'none'",
       "base-uri 'self'",

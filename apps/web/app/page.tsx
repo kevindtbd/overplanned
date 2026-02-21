@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import LandingNav from "@/components/landing/LandingNav";
 import RevealOnScroll from "@/components/landing/RevealOnScroll";
 import WaitlistForm from "@/components/landing/WaitlistForm";
+import GlobeCanvas from "@/components/landing/GlobeCanvas";
 
 export const metadata: Metadata = {
   title: "overplanned. -- Travel that knows you",
@@ -476,10 +477,7 @@ export default function LandingPage() {
           <div className="absolute left-0 top-0 w-20 h-full bg-gradient-to-r from-base to-transparent z-[2] pointer-events-none" />
           {/* Bottom gradient fade */}
           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base to-transparent z-[2] pointer-events-none" />
-          {/* TODO: Globe component -- lazy-loaded Three.js, separate subtask */}
-          <div className="w-full h-full min-h-[400px] flex items-center justify-center">
-            <div className="w-[300px] h-[300px] rounded-full border border-ink-700 opacity-20" />
-          </div>
+          <GlobeCanvas />
 
           {/* Floating cards */}
           <div className="absolute z-[3] top-[20%] left-[7%] card rounded-[14px] shadow-lg p-[10px_14px] animate-[floatCard_7s_ease-in-out_infinite]">
@@ -526,45 +524,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Globe banner -- mobile only, gradient fallback */}
+      {/* Globe banner -- mobile only */}
       <div className="lg:hidden relative h-[280px] bg-warm border-b border-ink-700 overflow-hidden">
         <div className="absolute bottom-0 left-0 right-0 h-[60px] bg-gradient-to-t from-base to-transparent pointer-events-none z-[2]" />
-        {/* TODO: Globe component -- lazy-loaded Three.js, separate subtask */}
-        <div className="absolute inset-0 z-[3] flex items-center justify-around pointer-events-none px-8">
-          <div className="card rounded-xl p-2 px-3 shadow-md">
-            <div className="font-dm-mono text-[7px] tracking-[0.1em] uppercase text-accent-fg mb-0.5">
-              Tokyo &middot; Day 1
-            </div>
-            <div className="text-[11px] font-medium text-ink-100 mb-[1px]">
-              Tsukiji market
-            </div>
-            <span className="font-dm-mono text-[7px] text-info bg-info-bg px-[5px] py-[1px] rounded-full inline-block mt-[3px]">
-              Tabelog &middot; 8.1k
-            </span>
-          </div>
-          <div className="card rounded-xl p-2 px-3 shadow-md">
-            <div className="font-dm-mono text-[7px] tracking-[0.1em] uppercase text-accent-fg mb-0.5">
-              Kyoto &middot; Day 3
-            </div>
-            <div className="text-[11px] font-medium text-ink-100 mb-[1px]">
-              Kinkaku-ji
-            </div>
-            <span className="font-dm-mono text-[7px] text-info bg-info-bg px-[5px] py-[1px] rounded-full inline-block mt-[3px]">
-              Tabelog &middot; 4.2k
-            </span>
-          </div>
-          <div className="card rounded-xl p-2 px-3 shadow-md">
-            <div className="font-dm-mono text-[7px] tracking-[0.1em] uppercase text-accent-fg mb-0.5">
-              Seoul &middot; Pivot
-            </div>
-            <div className="text-[11px] font-medium text-ink-100 mb-[1px]">
-              Rain &rarr; swap
-            </div>
-            <span className="font-dm-mono text-[7px] text-info bg-info-bg px-[5px] py-[1px] rounded-full inline-block mt-[3px]">
-              Live adaptation
-            </span>
-          </div>
-        </div>
+        <GlobeCanvas />
       </div>
 
       {/* ==================== THE OUTPUT ==================== */}

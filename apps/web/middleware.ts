@@ -1,5 +1,5 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 // Public paths — no auth required
 const PUBLIC_PATHS = [
@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   "/terms",
   "/s/",
   "/invite/",
+  "/api/auth/",
 ];
 
 function isPublicPath(pathname: string): boolean {
@@ -19,45 +20,30 @@ function isPublicPath(pathname: string): boolean {
   );
 }
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token;
-    const path = req.nextUrl.pathname;
+export function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
 
-    if (isPublicPath(path)) {
-      return NextResponse.next();
-    }
-
-    // Admin-only paths
-    if (path.startsWith("/admin")) {
-      if (token?.systemRole !== "admin") {
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-    }
-
-    // Access control check
-    const hasAccess =
-      token?.subscriptionTier &&
-      ["beta", "lifetime", "pro"].includes(token.subscriptionTier);
-
-    if (!hasAccess) {
-      return NextResponse.redirect(new URL("/auth/signin", req.url));
-    }
-
+  if (isPublicPath(path)) {
     return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        // Allow public paths through without a token
-        if (isPublicPath(req.nextUrl.pathname)) {
-          return true;
-        }
-        return !!token;
-      },
-    },
   }
-);
+
+  // Database sessions use a session cookie — check for its presence.
+  // In production (HTTPS), NextAuth prefixes with __Secure-.
+  const sessionToken =
+    req.cookies.get("next-auth.session-token") ||
+    req.cookies.get("__Secure-next-auth.session-token");
+
+  if (!sessionToken) {
+    const signInUrl = new URL("/auth/signin", req.url);
+    signInUrl.searchParams.set("callbackUrl", path);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  // Admin and subscription-tier checks happen server-side via
+  // getServerSession() in pages/API routes — the session cookie
+  // doesn't carry claims like a JWT would.
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [

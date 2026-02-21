@@ -6,6 +6,10 @@ const config: Config = {
     "./components/**/*.{ts,tsx}",
     "./lib/**/*.{ts,tsx}",
   ],
+  safelist: [
+    "opacity-0", "opacity-100",
+    "translate-y-0", "translate-y-[18px]",
+  ],
   theme: {
     extend: {
       colors: {
