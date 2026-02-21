@@ -4,13 +4,17 @@
  * Loads itinerary slots for the trip and renders them on an interactive
  * Leaflet map with day filtering and slot detail interactions.
  *
- * Server component that fetches trip data, then delegates to the
- * client-side MapView for interactivity.
+ * Server component that fetches trip data via Prisma (auth-gated, IDOR-checked),
+ * then delegates to the client-side MapView for interactivity.
  */
 
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth/config";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
 // Dynamic import for MapView since Leaflet requires window/document
 const MapView = dynamic(
@@ -49,100 +53,111 @@ export const metadata: Metadata = {
   title: "Trip Map | Overplanned",
 };
 
-/**
- * In a real implementation this would fetch from the database via Prisma.
- * For now, define the data shape and use a placeholder fetch.
- */
 async function getTripData(tripId: string) {
-  // TODO: Replace with actual Prisma query
-  // const trip = await prisma.trip.findUnique({
-  //   where: { id: tripId },
-  //   include: {
-  //     itinerarySlots: {
-  //       include: { activityNode: true },
-  //       orderBy: [{ dayIndex: "asc" }, { sortOrder: "asc" }],
-  //     },
-  //   },
-  // });
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    redirect("/auth/signin");
+  }
+
+  const userId = (session.user as { id: string }).id;
+
+  // IDOR check — caller must be a joined member of this trip
+  const membership = await prisma.tripMember.findUnique({
+    where: { tripId_userId: { tripId, userId } },
+    select: { status: true },
+  });
+
+  if (!membership || membership.status !== "joined") {
+    redirect("/dashboard");
+  }
+
+  const trip = await prisma.trip.findUnique({
+    where: { id: tripId },
+    select: {
+      id: true,
+      name: true,
+      destination: true,
+      startDate: true,
+      endDate: true,
+      slots: {
+        orderBy: [{ dayNumber: "asc" }, { sortOrder: "asc" }],
+        select: {
+          id: true,
+          dayNumber: true,
+          sortOrder: true,
+          slotType: true,
+          startTime: true,
+          activityNode: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+              latitude: true,
+              longitude: true,
+              address: true,
+              descriptionShort: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!trip) {
+    redirect("/dashboard");
+  }
+
+  const totalDays = Math.max(
+    Math.ceil(
+      (new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) /
+        (1000 * 60 * 60 * 24)
+    ),
+    1
+  );
+
+  // Compute map center from the average of all geocoded slot coordinates
+  const slotsWithCoords = trip.slots.filter(
+    (s) => s.activityNode?.latitude && s.activityNode?.longitude
+  );
+  const center: [number, number] =
+    slotsWithCoords.length > 0
+      ? [
+          slotsWithCoords.reduce(
+            (sum, s) => sum + s.activityNode!.latitude,
+            0
+          ) / slotsWithCoords.length,
+          slotsWithCoords.reduce(
+            (sum, s) => sum + s.activityNode!.longitude,
+            0
+          ) / slotsWithCoords.length,
+        ]
+      : [0, 0];
 
   return {
-    id: tripId,
-    name: "Tokyo Adventure",
-    totalDays: 3,
-    slots: [
-      {
-        id: "slot-1",
-        activityNodeId: "an-1",
-        name: "Tsukiji Outer Market",
-        slotType: "dining" as const,
-        lat: 35.6654,
-        lng: 139.7707,
-        dayIndex: 0,
-        timeLabel: "08:00",
-        description: "Fresh sushi breakfast at the legendary fish market. Walk the narrow alleys for tamagoyaki and fresh uni.",
-        address: "4-16-2 Tsukiji, Chuo City",
-      },
-      {
-        id: "slot-2",
-        activityNodeId: "an-2",
-        name: "TeamLab Borderless",
-        slotType: "culture" as const,
-        lat: 35.6267,
-        lng: 139.7840,
-        dayIndex: 0,
-        timeLabel: "11:00",
-        description: "Immersive digital art museum. Allow 2-3 hours to fully explore.",
-        address: "Azabudai Hills, Minato City",
-      },
-      {
-        id: "slot-3",
-        activityNodeId: "an-3",
-        name: "Shinjuku Gyoen",
-        slotType: "outdoors" as const,
-        lat: 35.6852,
-        lng: 139.7100,
-        dayIndex: 0,
-        timeLabel: "15:00",
-        description: "Sprawling garden with Japanese, English, and French landscape sections.",
-        address: "11 Naitomachi, Shinjuku City",
-      },
-      {
-        id: "slot-4",
-        activityNodeId: "an-4",
-        name: "Afuri Ramen",
-        slotType: "dining" as const,
-        lat: 35.6580,
-        lng: 139.7030,
-        dayIndex: 1,
-        timeLabel: "12:00",
-        description: "Yuzu shio ramen with a clear, citrus-forward broth.",
-        address: "1-1-7 Ebisu, Shibuya City",
-      },
-      {
-        id: "slot-5",
-        activityNodeId: "an-5",
-        name: "Meiji Jingu",
-        slotType: "culture" as const,
-        lat: 35.6764,
-        lng: 139.6993,
-        dayIndex: 1,
-        timeLabel: "14:00",
-        description: "Serene Shinto shrine surrounded by an ancient forest in the heart of Shibuya.",
-        address: "1-1 Yoyogikamizonocho, Shibuya City",
-      },
-      {
-        id: "slot-6",
-        activityNodeId: "an-6",
-        name: "Yanaka District Walk",
-        slotType: "outdoors" as const,
-        lat: 35.7260,
-        lng: 139.7670,
-        dayIndex: 2,
-        timeLabel: "10:00",
-        description: "Old-town Tokyo. Temple cats, craft shops, and the famous Yanaka Ginza shopping street.",
-        address: "Yanaka, Taito City",
-      },
-    ],
+    id: trip.id,
+    name: trip.name || trip.destination,
+    totalDays,
+    center,
+    slots: trip.slots
+      .filter((s) => s.activityNode)
+      .map((s) => ({
+        id: s.id,
+        activityNodeId: s.activityNode!.id,
+        name: s.activityNode!.name,
+        slotType: s.slotType.toLowerCase() as "dining" | "culture" | "outdoors",
+        lat: s.activityNode!.latitude,
+        lng: s.activityNode!.longitude,
+        dayIndex: s.dayNumber - 1, // MapView uses 0-indexed days
+        timeLabel: s.startTime
+          ? new Date(s.startTime).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            })
+          : undefined,
+        description: s.activityNode!.descriptionShort ?? undefined,
+        address: s.activityNode!.address ?? undefined,
+      })),
   };
 }
 
@@ -226,7 +241,7 @@ export default async function TripMapPage({
           slots={trip.slots}
           tripId={trip.id}
           totalDays={trip.totalDays}
-          initialCenter={[35.6762, 139.6503]}
+          initialCenter={trip.center}
           initialZoom={13}
         />
       </main>

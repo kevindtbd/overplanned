@@ -33,6 +33,10 @@ export async function GET(
       return NextResponse.json({ error: "Trip not found" }, { status: 404 });
     }
 
+    if (membership.status !== "joined") {
+      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
+    }
+
     const trip = await prisma.trip.findUnique({
       where: { id: tripId },
       include: {
@@ -116,11 +120,15 @@ export async function PATCH(
     // IDOR prevention: require organizer role to mutate trip
     const membership = await prisma.tripMember.findUnique({
       where: { tripId_userId: { tripId, userId } },
-      select: { role: true },
+      select: { role: true, status: true },
     });
 
     if (!membership) {
       // Caller is not a member — return 404 to avoid leaking IDs
+      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
+    }
+
+    if (membership.status !== "joined") {
       return NextResponse.json({ error: "Trip not found" }, { status: 404 });
     }
 

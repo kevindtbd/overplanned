@@ -56,7 +56,7 @@ export async function PATCH(
       trip: {
         select: {
           members: {
-            where: { userId },
+            where: { userId, status: "joined" },
             select: { id: true },
           },
         },

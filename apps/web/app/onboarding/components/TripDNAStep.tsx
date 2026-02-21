@@ -46,18 +46,22 @@ interface TripDNAStepProps {
   pace: Pace | null;
   morningPreference: MorningPreference | null;
   foodPreferences: string[];
+  freeformVibes: string;
   onPaceChange: (pace: Pace) => void;
   onMorningChange: (pref: MorningPreference) => void;
   onFoodToggle: (chip: string) => void;
+  onFreeformChange: (value: string) => void;
 }
 
 export function TripDNAStep({
   pace,
   morningPreference,
   foodPreferences,
+  freeformVibes,
   onPaceChange,
   onMorningChange,
   onFoodToggle,
+  onFreeformChange,
 }: TripDNAStepProps) {
   return (
     <div className="mx-auto w-full max-w-lg">
@@ -148,6 +152,27 @@ export function TripDNAStep({
             );
           })}
         </div>
+      </div>
+
+      {/* Free-form vibes */}
+      <div className="mt-8">
+        <h3 className="font-sora text-base font-medium text-primary">
+          Anything else?
+        </h3>
+        <p className="mt-1 font-dm-mono text-xs text-secondary">
+          Hidden gems, local markets, avoiding crowds, whatever
+        </p>
+        <textarea
+          value={freeformVibes}
+          onChange={(e) => onFreeformChange(e.target.value)}
+          placeholder="I love hole-in-the-wall spots and hate tourist traps..."
+          maxLength={300}
+          rows={3}
+          className="mt-3 w-full rounded-xl border-[1.5px] border-ink-700 bg-input py-3 px-4 font-dm-mono text-sm text-primary placeholder:text-secondary resize-none focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+        />
+        <p className="mt-1 text-right font-dm-mono text-xs text-secondary">
+          {freeformVibes.length}/300
+        </p>
       </div>
     </div>
   );

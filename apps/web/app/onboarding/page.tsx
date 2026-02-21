@@ -122,6 +122,7 @@ export default function OnboardingPage() {
   const [morningPreference, setMorningPreference] =
     useState<MorningPreference | null>(null);
   const [foodPreferences, setFoodPreferences] = useState<string[]>([]);
+  const [freeformVibes, setFreeformVibes] = useState("");
   const [template, setTemplate] = useState<string | null>(null);
 
   const stepIndex = STEP_ORDER.indexOf(step);
@@ -195,6 +196,7 @@ export default function OnboardingPage() {
           pace,
           morningPreference,
           foodPreferences,
+          freeformVibes: freeformVibes.trim() || undefined,
           template,
         },
       };
@@ -305,9 +307,11 @@ export default function OnboardingPage() {
               pace={pace}
               morningPreference={morningPreference}
               foodPreferences={foodPreferences}
+              freeformVibes={freeformVibes}
               onPaceChange={setPace}
               onMorningChange={setMorningPreference}
               onFoodToggle={handleFoodToggle}
+              onFreeformChange={setFreeformVibes}
             />
           </div>
         )}

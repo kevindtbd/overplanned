@@ -20,6 +20,6 @@ export const createTripSchema = z.object({
 
 export const updateTripSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  status: z.enum(["draft", "active", "completed", "cancelled"]).optional(),
+  status: z.enum(["draft", "planning", "active", "completed", "archived"]).optional(),
   planningProgress: z.number().min(0).max(1).optional(),
 });

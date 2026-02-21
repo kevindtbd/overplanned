@@ -10,7 +10,7 @@
 //     timezone="Asia/Tokyo"
 //   />
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface DayNavigationProps {
   totalDays: number;
@@ -48,6 +48,7 @@ export function DayNavigation({
   const [swiping, setSwiping] = useState(false);
 
   const days = Array.from({ length: totalDays }, (_, i) => i + 1);
+  const tabRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
   const handlePrev = useCallback(() => {
     if (currentDay > 1) onDayChange(currentDay - 1);
@@ -78,6 +79,17 @@ export function DayNavigation({
     },
     [swiping, currentDay, totalDays, onDayChange]
   );
+
+  useEffect(() => {
+    const activeTab = tabRefs.current.get(currentDay);
+    if (activeTab) {
+      activeTab.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }
+  }, [currentDay]);
 
   return (
     <nav
@@ -125,6 +137,7 @@ export function DayNavigation({
             flex-1 overflow-x-auto scrollbar-none
             flex gap-0
             scroll-smooth
+            overscroll-x-contain
           "
           role="tablist"
           aria-label="Trip days"
@@ -136,6 +149,10 @@ export function DayNavigation({
             return (
               <button
                 key={day}
+                ref={(el) => {
+                  if (el) tabRefs.current.set(day, el);
+                  else tabRefs.current.delete(day);
+                }}
                 type="button"
                 role="tab"
                 aria-selected={isActive}

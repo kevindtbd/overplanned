@@ -350,9 +350,23 @@ export default function DiscoverClient({
             sessionId={sessionId}
             tripId={tripId}
             onRemove={handleShortlistRemove}
-            onAddToTrip={tripId ? (card) => {
-              // Placeholder — real implementation adds to trip via API
-              console.log("Add to trip:", card.id, tripId);
+            onAddToTrip={tripId ? async (card) => {
+              try {
+                const res = await fetch(`/api/trips/${tripId}/slots`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ activityNodeId: card.id }),
+                });
+                if (res.ok) {
+                  // Remove from shortlist after successfully adding to trip
+                  handleShortlistRemove(card);
+                } else {
+                  const data = await res.json().catch(() => ({}));
+                  console.error("Failed to add to trip:", data.error);
+                }
+              } catch (err) {
+                console.error("Failed to add to trip:", err);
+              }
             } : undefined}
           />
         )}

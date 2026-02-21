@@ -9,6 +9,7 @@ import { authOptions } from "@/lib/auth/config";
 import { createTripSchema } from "@/lib/validations/trip";
 import { v4 as uuidv4 } from "uuid";
 import { prisma } from "@/lib/prisma";
+import { generateItinerary } from "@/lib/generation/generate-itinerary";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
         endDate: new Date(endDate),
         mode,
         presetTemplate: presetTemplate ?? null,
-        personaSeed: personaSeed ?? undefined,
+        personaSeed: (personaSeed ?? undefined) as any,
         members: {
           create: {
             id: memberId,
@@ -85,7 +86,60 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ trip }, { status: 201 });
+    // Generate itinerary slots
+    let generationResult: { slotsCreated: number; source: "seeded" | "empty" } = { slotsCreated: 0, source: "empty" };
+    try {
+      const seed = {
+        pace: (personaSeed as any)?.pace ?? "moderate",
+        morningPreference: (personaSeed as any)?.morningPreference ?? "mid",
+        foodPreferences: (personaSeed as any)?.foodPreferences ?? [],
+        freeformVibes: (personaSeed as any)?.freeformVibes,
+        template: presetTemplate ?? (personaSeed as any)?.template,
+      };
+      generationResult = await generateItinerary(
+        tripId,
+        userId,
+        city,
+        country,
+        new Date(startDate),
+        new Date(endDate),
+        seed,
+      );
+    } catch (err) {
+      // Generation failure should not block trip creation
+      console.error("[POST /api/trips] Generation error:", err);
+    }
+
+    // Re-fetch trip with slots included if generation produced results
+    if (generationResult.slotsCreated > 0) {
+      const fullTrip = await prisma.trip.findUnique({
+        where: { id: tripId },
+        include: {
+          members: {
+            select: { id: true, userId: true, role: true, status: true },
+          },
+          slots: {
+            orderBy: [{ dayNumber: "asc" }, { sortOrder: "asc" }],
+            include: {
+              activityNode: {
+                select: {
+                  id: true,
+                  name: true,
+                  category: true,
+                  latitude: true,
+                  longitude: true,
+                  priceLevel: true,
+                  primaryImageUrl: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      return NextResponse.json({ trip: fullTrip, generated: generationResult }, { status: 201 });
+    }
+
+    return NextResponse.json({ trip, generated: generationResult }, { status: 201 });
   } catch (err) {
     console.error("[POST /api/trips] DB error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

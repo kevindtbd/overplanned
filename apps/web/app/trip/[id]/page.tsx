@@ -34,8 +34,6 @@ interface ApiSlot {
     latitude: number;
     longitude: number;
     priceLevel: number | null;
-    durationMinutes: number | null;
-    source: string;
     primaryImageUrl?: string | null;
   } | null;
 }
@@ -62,7 +60,7 @@ interface ApiTrip {
     user: {
       id: string;
       name: string | null;
-      image: string | null;
+      avatarUrl: string | null;
     };
   }[];
 }
@@ -78,7 +76,7 @@ function apiSlotToSlotData(slot: ApiSlot): SlotData {
     imageUrl: slot.activityNode?.primaryImageUrl ?? undefined,
     startTime: slot.startTime ?? undefined,
     endTime: slot.endTime ?? undefined,
-    durationMinutes: slot.durationMinutes ?? slot.activityNode?.durationMinutes ?? undefined,
+    durationMinutes: slot.durationMinutes ?? undefined,
     slotType: slot.slotType as SlotData["slotType"],
     status: slot.status as SlotData["status"],
     isLocked: slot.isLocked,
@@ -103,6 +101,7 @@ export default function TripDetailPage() {
   const tripId = params.id;
 
   const [trip, setTrip] = useState<ApiTrip | null>(null);
+  const [myRole, setMyRole] = useState<string | null>(null);
   const [fetchState, setFetchState] = useState<FetchState>("loading");
   const [errorMessage, setErrorMessage] = useState("Failed to load trip");
   const [currentDay, setCurrentDay] = useState(1);
@@ -121,8 +120,9 @@ export default function TripDetailPage() {
         }
         throw new Error(data.error || "Failed to load trip");
       }
-      const { trip: tripData } = await res.json();
+      const { trip: tripData, myRole: role } = await res.json();
       setTrip(tripData);
+      setMyRole(role);
       setFetchState("success");
     } catch (err) {
       setErrorMessage(
@@ -159,15 +159,44 @@ export default function TripDetailPage() {
   );
 
   const handleSlotAction = useCallback(
-    (event: SlotActionEvent) => {
-      // In production: POST to /api/behavioral-signals
-      console.log("[BehavioralSignal]", {
-        tripId,
-        ...event,
-        surface: "day_view",
+    async (event: SlotActionEvent) => {
+      // Optimistic update
+      setTrip((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          slots: prev.slots.map((s) => {
+            if (s.id !== event.slotId) return s;
+            if (event.action === "lock") {
+              return { ...s, isLocked: !s.isLocked };
+            }
+            if (event.action === "confirm") {
+              return { ...s, status: "confirmed" };
+            }
+            if (event.action === "skip") {
+              return { ...s, status: "skipped" };
+            }
+            return s;
+          }),
+        };
       });
+
+      // Fire API call
+      try {
+        const res = await fetch(`/api/slots/${event.slotId}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: event.action }),
+        });
+        if (!res.ok) {
+          // Revert on failure
+          fetchTrip();
+        }
+      } catch {
+        fetchTrip();
+      }
     },
-    [tripId]
+    [fetchTrip]
   );
 
   // Status summary across all days
@@ -187,6 +216,9 @@ export default function TripDetailPage() {
 
   const tripPhoto = trip ? getCityPhoto(trip.city) : undefined;
   const tripName = trip?.name || trip?.destination || "";
+  const discoverUrl = trip
+    ? `/discover?city=${encodeURIComponent(trip.city)}&tripId=${trip.id}`
+    : "/discover";
 
   // -- Loading --
   if (fetchState === "loading") {
@@ -311,6 +343,39 @@ export default function TripDetailPage() {
           />
         </div>
       </div>
+
+      {/* Add activity FAB — organizer only */}
+      {myRole === "organizer" && (
+        <Link
+          href={discoverUrl}
+          className="
+            fixed z-30
+            bottom-24 right-5
+            lg:bottom-8 lg:right-8
+            w-14 h-14 rounded-full
+            bg-accent hover:bg-accent/90
+            text-white shadow-lg
+            flex items-center justify-center
+            transition-all duration-150
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
+          "
+          aria-label="Add activity"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </Link>
+      )}
     </AppShell>
   );
 }

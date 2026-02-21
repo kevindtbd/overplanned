@@ -5,7 +5,7 @@
 // Writes BehavioralSignals: post_loved, post_skipped, post_missed, post_disliked.
 // Feedback can override slot status (completed → skipped if user says they didn't go).
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { SlotRating, type SlotRatingEvent, type SlotRatingValue } from "./components/SlotRating";
 
@@ -23,75 +23,6 @@ interface SlotFeedback {
   rating: SlotRatingValue;
   overrideStatus?: "skipped"; // post-trip can override completed → skipped
 }
-
-// ---------- Mock data (replaced by API/Prisma in production) ----------
-
-const MOCK_TRIP = {
-  id: "trip-001",
-  destination: "Tokyo",
-  city: "Tokyo",
-  country: "Japan",
-  completedAt: "2026-03-19T23:59:00+09:00",
-  totalDays: 5,
-};
-
-const MOCK_SLOTS: ReflectionSlot[] = [
-  {
-    id: "slot-001",
-    activityName: "Tsukiji Outer Market",
-    imageUrl: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80",
-    activityNodeId: "node-001",
-    originalStatus: "completed",
-  },
-  {
-    id: "slot-002",
-    activityName: "TeamLab Borderless",
-    imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&q=80",
-    activityNodeId: "node-002",
-    originalStatus: "completed",
-  },
-  {
-    id: "slot-003",
-    activityName: "Shibuya Evening Walk",
-    imageUrl: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800&q=80",
-    activityNodeId: "node-003",
-    originalStatus: "skipped",
-  },
-  {
-    id: "slot-004",
-    activityName: "Omoide Yokocho",
-    imageUrl: "https://images.unsplash.com/photo-1554797589-7241bb691973?w=800&q=80",
-    activityNodeId: "node-004",
-    originalStatus: "completed",
-  },
-  {
-    id: "slot-005",
-    activityName: "Meiji Shrine Morning",
-    imageUrl: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80",
-    activityNodeId: "node-005",
-    originalStatus: "completed",
-  },
-  {
-    id: "slot-006",
-    activityName: "Harajuku Backstreets",
-    imageUrl: "https://images.unsplash.com/photo-1480796927426-f609979314bd?w=800&q=80",
-    activityNodeId: "node-006",
-    originalStatus: "completed",
-  },
-  {
-    id: "slot-007",
-    activityName: "Akihabara Deep Dive",
-    activityNodeId: "node-007",
-    originalStatus: "skipped",
-  },
-  {
-    id: "slot-008",
-    activityName: "Shinjuku Gyoen Farewell Walk",
-    imageUrl: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80",
-    activityNodeId: "node-008",
-    originalStatus: "completed",
-  },
-];
 
 // ---------- Signal helper ----------
 
@@ -124,12 +55,63 @@ export default function ReflectionPage({
 }: {
   params: { id: string };
 }) {
-  const trip = MOCK_TRIP;
-  const slots = MOCK_SLOTS;
+  const [trip, setTrip] = useState<{
+    id: string;
+    destination: string;
+    city: string;
+    country: string;
+    totalDays: number;
+  } | null>(null);
+  const [slots, setSlots] = useState<ReflectionSlot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [feedback, setFeedback] = useState<Record<string, SlotFeedback>>({});
   const [freeText, setFreeText] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(`/api/trips/${params.id}`);
+        if (!res.ok) throw new Error("Failed to load trip");
+        const { trip: tripData } = await res.json();
+
+        const totalDays = Math.max(
+          Math.ceil(
+            (new Date(tripData.endDate).getTime() -
+              new Date(tripData.startDate).getTime()) /
+              (1000 * 60 * 60 * 24)
+          ),
+          1
+        );
+
+        setTrip({
+          id: tripData.id,
+          destination: tripData.destination,
+          city: tripData.city,
+          country: tripData.country,
+          totalDays,
+        });
+
+        setSlots(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (tripData.slots ?? []).map((s: any) => ({
+            id: s.id,
+            activityName: s.activityNode?.name ?? "Unnamed Activity",
+            imageUrl: s.activityNode?.primaryImageUrl ?? undefined,
+            activityNodeId: s.activityNode?.id,
+            originalStatus: s.status as ReflectionSlot["originalStatus"],
+          }))
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load trip");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [params.id]);
 
   // Track how many slots have been rated
   const ratedCount = useMemo(
@@ -139,11 +121,9 @@ export default function ReflectionPage({
 
   const handleRate = useCallback(
     (event: SlotRatingEvent) => {
-      // Update local state
-      const prev = feedback[event.slotId];
       const isSkippedRating = event.rating === "skipped";
 
-      // Find the original slot to check if this overrides status
+      // Check if this rating overrides the slot's original completed status
       const slot = slots.find((s) => s.id === event.slotId);
       const overridesStatus =
         isSkippedRating && slot?.originalStatus === "completed";
@@ -156,7 +136,7 @@ export default function ReflectionPage({
         },
       }));
 
-      // Fire behavioral signal
+      // Fire behavioral signal for the rating
       sendBehavioralSignal({
         tripId: params.id,
         slotId: event.slotId,
@@ -204,6 +184,45 @@ export default function ReflectionPage({
       freeText: freeText.trim(),
     });
   }, [params.id, feedback, freeText, submitted]);
+
+  // ---------- Loading state ----------
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          <span className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
+            Loading reflection
+          </span>
+        </div>
+      </AppShell>
+    );
+  }
+
+  // ---------- Error state ----------
+  if (error || !trip) {
+    return (
+      <AppShell>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-4">
+          <p className="font-sora text-lg font-semibold text-ink-100">
+            Could not load trip
+          </p>
+          <p className="font-dm-mono text-sm text-ink-400">{error}</p>
+          <a
+            href="/dashboard"
+            className="
+              inline-flex items-center gap-2 px-5 py-2.5 rounded-lg
+              bg-accent text-white
+              font-dm-mono text-sm uppercase tracking-wider
+              hover:bg-accent/90 transition-colors duration-150
+            "
+          >
+            Back to dashboard
+          </a>
+        </div>
+      </AppShell>
+    );
+  }
 
   // ---------- Submitted state ----------
   if (submitted) {

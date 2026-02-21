@@ -90,10 +90,8 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Home", href: "/dashboard", Icon: HomeIcon },
   { label: "Trips", href: "/dashboard", Icon: TripsIcon },
-  { label: "Explore", href: "/dashboard", Icon: ExploreIcon },
-  { label: "Profile", href: "/dashboard", Icon: ProfileIcon },
+  { label: "Explore", href: "/discover", Icon: ExploreIcon },
 ];
 
 // ---------- Component ----------
@@ -120,7 +118,7 @@ export function MobileNav() {
               : pathname.startsWith(item.href);
 
           return (
-            <li key={item.href}>
+            <li key={item.label}>
               <Link
                 href={item.href}
                 className={`

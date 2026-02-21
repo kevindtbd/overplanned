@@ -61,38 +61,27 @@ function getTimelineDotClass(slotType: SlotData["slotType"]): string {
 
 function EmptyDayState({ dayNumber }: { dayNumber: number }) {
   return (
-    <div
-      className="
-        flex flex-col items-center justify-center
-        py-16 px-6
-        rounded-xl border-2 border-dashed border-ink-700
-        bg-surface
-      "
-    >
-      <svg
-        width="48"
-        height="48"
-        viewBox="0 0 48 48"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-ink-400 opacity-40 mb-4"
-        aria-hidden="true"
-      >
-        <rect x="8" y="8" width="32" height="32" rx="4" />
-        <line x1="8" y1="16" x2="40" y2="16" />
-        <line x1="16" y1="8" x2="16" y2="16" />
-        <line x1="32" y1="8" x2="32" y2="16" />
-        <line x1="20" y1="26" x2="28" y2="26" />
-        <line x1="24" y1="22" x2="24" y2="30" />
-      </svg>
-      <h3 className="font-sora text-base font-medium text-ink-100 mb-1">
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-4">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </div>
+      <h3 className="font-sora text-base font-medium text-ink-100">
         No plans yet for Day {dayNumber}
       </h3>
-      <p className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
-        Activities will appear here once generated
+      <p className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider mt-1">
+        Browse and add activities
       </p>
     </div>
   );
