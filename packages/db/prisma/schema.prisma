@@ -271,6 +271,7 @@ model BehavioralSignal {
   @@index([userId, createdAt])
   @@index([userId, tripId, signalType])
   @@index([activityNodeId, signalType])
+  @@index([slotId])
 }
 
 model IntentionSignal {

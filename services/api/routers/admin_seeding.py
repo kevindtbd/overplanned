@@ -306,6 +306,39 @@ async def seed_training_data(request: Request):
     )
 
 
+class EnrichmentResponse(BaseModel):
+    pivot_events_created: int
+    intention_signals_created: int
+    discovery_signals_created: int
+    weather_signals_updated: int
+    trips_made_abandoned: int
+    trips_made_recent: int
+    errors: list[str]
+
+
+@router.post("/enrich", response_model=EnrichmentResponse)
+async def enrich_training_data(request: Request):
+    """
+    Run training data enrichments: PivotEvents, IntentionSignals,
+    Discovery swipes, WeatherContext, Trip realism.
+
+    Operates on existing shadow users. Idempotent — safe to re-run.
+    """
+    from services.api.pipeline.training_data_seeder import enrich_training_data as run_enrich
+
+    db_pool = request.app.state.db
+    result = await run_enrich(db_pool)
+    return EnrichmentResponse(
+        pivot_events_created=result.pivot_events_created,
+        intention_signals_created=result.intention_signals_created,
+        discovery_signals_created=result.discovery_signals_created,
+        weather_signals_updated=result.weather_signals_updated,
+        trips_made_abandoned=result.trips_made_abandoned,
+        trips_made_recent=result.trips_made_recent,
+        errors=result.errors,
+    )
+
+
 @router.get("/progress", response_model=ProgressResponse)
 async def get_progress(request: Request):
     """Return progress for all active and recent seed jobs."""
