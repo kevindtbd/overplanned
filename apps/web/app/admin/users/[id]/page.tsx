@@ -55,18 +55,18 @@ interface UserDetailResponse {
 }
 
 const TIER_COLORS: Record<string, string> = {
-  free: 'bg-gray-100 text-gray-600',
+  free: 'bg-ink-800 text-ink-500',
   beta: 'bg-blue-100 text-blue-800',
   pro: 'bg-purple-100 text-purple-800',
   lifetime: 'bg-amber-100 text-amber-800',
 };
 
 const TRIP_STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-600',
+  draft: 'bg-ink-800 text-ink-500',
   planning: 'bg-yellow-100 text-yellow-800',
   active: 'bg-green-100 text-green-800',
   completed: 'bg-blue-100 text-blue-800',
-  archived: 'bg-gray-100 text-gray-500',
+  archived: 'bg-ink-800 text-ink-500',
 };
 
 const VALID_TIERS = ['free', 'beta', 'pro', 'lifetime'] as const;
@@ -184,7 +184,7 @@ export default function AdminUserDetailPage() {
 
   if (loading && !data) {
     return (
-      <div className="py-12 text-center font-mono text-sm text-gray-400">
+      <div className="py-12 text-center font-mono text-sm text-ink-600">
         Loading user...
       </div>
     );
@@ -192,11 +192,11 @@ export default function AdminUserDetailPage() {
 
   if (error && !data) {
     return (
-      <div className="rounded border border-red-200 bg-red-50 px-4 py-3">
-        <p className="font-mono text-sm text-red-700">{error}</p>
+      <div className="rounded border border-error/30 bg-error-bg px-4 py-3">
+        <p className="font-mono text-sm text-error">{error}</p>
         <a
           href="/admin/users"
-          className="mt-2 inline-block font-mono text-xs text-terracotta hover:underline"
+          className="mt-2 inline-block font-mono text-xs text-accent hover:underline"
         >
           Back to Users
         </a>
@@ -211,12 +211,12 @@ export default function AdminUserDetailPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="font-mono text-xs text-gray-400">
-        <a href="/admin/users" className="hover:text-terracotta">
+      <div className="font-mono text-xs text-ink-600">
+        <a href="/admin/users" className="hover:text-accent">
           Users
         </a>
         <span className="mx-1">/</span>
-        <span className="text-gray-600">{user.email}</span>
+        <span className="text-ink-500">{user.email}</span>
       </div>
 
       {/* Header */}
@@ -228,25 +228,25 @@ export default function AdminUserDetailPage() {
             className="h-16 w-16 rounded-full"
           />
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-warm-background font-display text-xl text-gray-400">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-base font-display text-xl text-ink-600">
             {(user.name ?? user.email)[0].toUpperCase()}
           </div>
         )}
         <div className="flex-1">
-          <h2 className="font-display text-2xl text-gray-900">
+          <h2 className="font-display text-2xl text-ink-100">
             {user.name ?? 'Unnamed User'}
           </h2>
-          <p className="font-mono text-sm text-gray-500">{user.email}</p>
+          <p className="font-mono text-sm text-ink-500">{user.email}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <span
               className={`rounded px-2 py-0.5 text-xs ${
-                TIER_COLORS[user.subscriptionTier] ?? 'bg-gray-100 text-gray-600'
+                TIER_COLORS[user.subscriptionTier] ?? 'bg-ink-800 text-ink-500'
               }`}
             >
               {user.subscriptionTier}
             </span>
             {user.systemRole === 'admin' && (
-              <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-red-700">
+              <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-error">
                 admin
               </span>
             )}
@@ -257,58 +257,58 @@ export default function AdminUserDetailPage() {
             )}
           </div>
         </div>
-        <span className="font-mono text-xs text-gray-400">
+        <span className="font-mono text-xs text-ink-600">
           ID: {user.id.slice(0, 8)}
         </span>
       </div>
 
       {/* Info grid */}
-      <div className="grid grid-cols-2 gap-4 rounded-lg border border-warm-border bg-warm-surface p-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 rounded-lg border border-ink-700 bg-surface p-4 lg:grid-cols-4">
         <div>
-          <span className="font-mono text-xs text-gray-400">Joined</span>
-          <p className="font-mono text-sm text-gray-900">
+          <span className="font-mono text-xs text-ink-600">Joined</span>
+          <p className="font-mono text-sm text-ink-100">
             {new Date(user.createdAt).toLocaleDateString()}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-gray-400">Last Active</span>
-          <p className="font-mono text-sm text-gray-900">
+          <span className="font-mono text-xs text-ink-600">Last Active</span>
+          <p className="font-mono text-sm text-ink-100">
             {user.lastActiveAt
               ? new Date(user.lastActiveAt).toLocaleDateString()
               : '--'}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-gray-400">Trips</span>
-          <p className="font-mono text-sm text-gray-900">{trips.length}</p>
+          <span className="font-mono text-xs text-ink-600">Trips</span>
+          <p className="font-mono text-sm text-ink-100">{trips.length}</p>
         </div>
         <div>
-          <span className="font-mono text-xs text-gray-400">Signals</span>
-          <p className="font-mono text-sm text-gray-900">
+          <span className="font-mono text-xs text-ink-600">Signals</span>
+          <p className="font-mono text-sm text-ink-100">
             {signalCount.toLocaleString()}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-gray-400">Google ID</span>
-          <p className="font-mono text-sm text-gray-900 truncate">
+          <span className="font-mono text-xs text-ink-600">Google ID</span>
+          <p className="font-mono text-sm text-ink-100 truncate">
             {user.googleId ?? '--'}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-gray-400">Stripe</span>
-          <p className="font-mono text-sm text-gray-900 truncate">
+          <span className="font-mono text-xs text-ink-600">Stripe</span>
+          <p className="font-mono text-sm text-ink-100 truncate">
             {user.stripeCustomerId ?? '--'}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-gray-400">Access Cohort</span>
-          <p className="font-mono text-sm text-gray-900">
+          <span className="font-mono text-xs text-ink-600">Access Cohort</span>
+          <p className="font-mono text-sm text-ink-100">
             {user.accessCohort ?? '--'}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-gray-400">Email Verified</span>
-          <p className="font-mono text-sm text-gray-900">
+          <span className="font-mono text-xs text-ink-600">Email Verified</span>
+          <p className="font-mono text-sm text-ink-100">
             {user.emailVerified
               ? new Date(user.emailVerified).toLocaleDateString()
               : '--'}
@@ -317,15 +317,15 @@ export default function AdminUserDetailPage() {
       </div>
 
       {/* Subscription Tier */}
-      <section className="rounded-lg border border-warm-border bg-warm-surface p-4">
+      <section className="rounded-lg border border-ink-700 bg-surface p-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-display text-lg text-gray-900">
+          <h3 className="font-display text-lg text-ink-100">
             Subscription Tier
           </h3>
           {!tierEditing && (
             <button
               onClick={() => setTierEditing(true)}
-              className="font-mono text-xs text-terracotta hover:underline"
+              className="font-mono text-xs text-accent hover:underline"
             >
               Change
             </button>
@@ -341,8 +341,8 @@ export default function AdminUserDetailPage() {
                   onClick={() => setTierDraft(t)}
                   className={`rounded px-3 py-1.5 font-mono text-xs capitalize transition-colors ${
                     tierDraft === t
-                      ? 'bg-terracotta text-white'
-                      : 'border border-warm-border bg-warm-background text-gray-600 hover:bg-gray-100'
+                      ? 'bg-accent text-white'
+                      : 'border border-ink-700 bg-base text-ink-500 hover:bg-ink-800'
                   }`}
                 >
                   {t}
@@ -353,7 +353,7 @@ export default function AdminUserDetailPage() {
               <button
                 onClick={saveTier}
                 disabled={tierSaving || tierDraft === user.subscriptionTier}
-                className="rounded bg-gray-800 px-3 py-1.5 font-mono text-xs text-white hover:bg-gray-700 disabled:opacity-40"
+                className="rounded bg-ink-200 px-3 py-1.5 font-mono text-xs text-white hover:bg-ink-300 disabled:opacity-40"
               >
                 {tierSaving ? 'Saving...' : 'Save Tier'}
               </button>
@@ -362,7 +362,7 @@ export default function AdminUserDetailPage() {
                   setTierEditing(false);
                   setTierDraft(user.subscriptionTier);
                 }}
-                className="font-mono text-xs text-gray-500 hover:text-gray-700"
+                className="font-mono text-xs text-ink-500 hover:text-ink-300"
               >
                 Cancel
               </button>
@@ -370,7 +370,7 @@ export default function AdminUserDetailPage() {
             {tierMessage && (
               <p
                 className={`font-mono text-xs ${
-                  tierMessage.startsWith('Error') ? 'text-red-600' : 'text-green-600'
+                  tierMessage.startsWith('Error') ? 'text-error' : 'text-green-600'
                 }`}
               >
                 {tierMessage}
@@ -381,7 +381,7 @@ export default function AdminUserDetailPage() {
           <div className="mt-2">
             <span
               className={`rounded px-2 py-1 text-sm ${
-                TIER_COLORS[user.subscriptionTier] ?? 'bg-gray-100 text-gray-600'
+                TIER_COLORS[user.subscriptionTier] ?? 'bg-ink-800 text-ink-500'
               }`}
             >
               {user.subscriptionTier}
@@ -396,9 +396,9 @@ export default function AdminUserDetailPage() {
       </section>
 
       {/* Feature Flags */}
-      <section className="rounded-lg border border-warm-border bg-warm-surface p-4">
+      <section className="rounded-lg border border-ink-700 bg-surface p-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-display text-lg text-gray-900">
+          <h3 className="font-display text-lg text-ink-100">
             Feature Flags
           </h3>
           {!flagEditing && (
@@ -407,7 +407,7 @@ export default function AdminUserDetailPage() {
                 setFlagEditing(true);
                 setFlagDraft(user.featureFlags ?? {});
               }}
-              className="font-mono text-xs text-terracotta hover:underline"
+              className="font-mono text-xs text-accent hover:underline"
             >
               Edit
             </button>
@@ -422,13 +422,13 @@ export default function AdminUserDetailPage() {
                 {Object.entries(flagDraft).map(([name, enabled]) => (
                   <div
                     key={name}
-                    className="flex items-center justify-between rounded bg-warm-background px-3 py-1.5"
+                    className="flex items-center justify-between rounded bg-base px-3 py-1.5"
                   >
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleFlagToggle(name)}
                         className={`h-4 w-8 rounded-full transition-colors ${
-                          enabled ? 'bg-green-500' : 'bg-gray-300'
+                          enabled ? 'bg-green-500' : 'bg-ink-700'
                         }`}
                       >
                         <span
@@ -437,13 +437,13 @@ export default function AdminUserDetailPage() {
                           }`}
                         />
                       </button>
-                      <span className="font-mono text-sm text-gray-700">
+                      <span className="font-mono text-sm text-ink-300">
                         {name}
                       </span>
                     </div>
                     <button
                       onClick={() => handleRemoveFlag(name)}
-                      className="font-mono text-xs text-red-500 hover:text-red-700"
+                      className="font-mono text-xs text-red-500 hover:text-error"
                     >
                       Remove
                     </button>
@@ -451,7 +451,7 @@ export default function AdminUserDetailPage() {
                 ))}
               </div>
             ) : (
-              <p className="font-mono text-xs text-gray-400">
+              <p className="font-mono text-xs text-ink-600">
                 No flags set
               </p>
             )}
@@ -464,12 +464,12 @@ export default function AdminUserDetailPage() {
                 value={newFlagName}
                 onChange={(e) => setNewFlagName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddFlag()}
-                className="flex-1 rounded border border-warm-border bg-warm-background px-2 py-1 font-mono text-sm focus:border-terracotta focus:outline-none"
+                className="flex-1 rounded border border-ink-700 bg-base px-2 py-1 font-mono text-sm focus:border-accent focus:outline-none"
               />
               <button
                 onClick={handleAddFlag}
                 disabled={!newFlagName.trim()}
-                className="rounded border border-warm-border bg-warm-background px-2 py-1 font-mono text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                className="rounded border border-ink-700 bg-base px-2 py-1 font-mono text-xs text-ink-500 hover:bg-ink-800 disabled:opacity-40"
               >
                 Add Flag
               </button>
@@ -480,7 +480,7 @@ export default function AdminUserDetailPage() {
               <button
                 onClick={saveFlags}
                 disabled={flagSaving}
-                className="rounded bg-gray-800 px-3 py-1.5 font-mono text-xs text-white hover:bg-gray-700 disabled:opacity-40"
+                className="rounded bg-ink-200 px-3 py-1.5 font-mono text-xs text-white hover:bg-ink-300 disabled:opacity-40"
               >
                 {flagSaving ? 'Saving...' : 'Save Flags'}
               </button>
@@ -489,7 +489,7 @@ export default function AdminUserDetailPage() {
                   setFlagEditing(false);
                   setFlagDraft(user.featureFlags ?? {});
                 }}
-                className="font-mono text-xs text-gray-500 hover:text-gray-700"
+                className="font-mono text-xs text-ink-500 hover:text-ink-300"
               >
                 Cancel
               </button>
@@ -497,7 +497,7 @@ export default function AdminUserDetailPage() {
             {flagMessage && (
               <p
                 className={`font-mono text-xs ${
-                  flagMessage.startsWith('Error') ? 'text-red-600' : 'text-green-600'
+                  flagMessage.startsWith('Error') ? 'text-error' : 'text-green-600'
                 }`}
               >
                 {flagMessage}
@@ -515,7 +515,7 @@ export default function AdminUserDetailPage() {
                     className={`rounded px-2 py-0.5 font-mono text-xs ${
                       enabled
                         ? 'bg-green-50 text-green-700'
-                        : 'bg-gray-100 text-gray-400 line-through'
+                        : 'bg-ink-800 text-ink-600 line-through'
                     }`}
                   >
                     {name}
@@ -523,7 +523,7 @@ export default function AdminUserDetailPage() {
                 ))}
               </div>
             ) : (
-              <p className="font-mono text-xs text-gray-400">No flags set</p>
+              <p className="font-mono text-xs text-ink-600">No flags set</p>
             )}
             {flagMessage && (
               <p className="mt-2 font-mono text-xs text-green-600">
@@ -535,39 +535,39 @@ export default function AdminUserDetailPage() {
       </section>
 
       {/* Trips */}
-      <section className="rounded-lg border border-warm-border bg-warm-surface p-4">
-        <h3 className="mb-3 font-display text-lg text-gray-900">
+      <section className="rounded-lg border border-ink-700 bg-surface p-4">
+        <h3 className="mb-3 font-display text-lg text-ink-100">
           Trips ({trips.length})
         </h3>
         {trips.length === 0 ? (
-          <p className="font-mono text-xs text-gray-400">No trips yet</p>
+          <p className="font-mono text-xs text-ink-600">No trips yet</p>
         ) : (
           <div className="space-y-2">
             {trips.map((trip) => (
               <div
                 key={trip.id}
-                className="flex items-center justify-between rounded bg-warm-background px-3 py-2"
+                className="flex items-center justify-between rounded bg-base px-3 py-2"
               >
                 <div>
-                  <span className="font-mono text-sm text-gray-900">
+                  <span className="font-mono text-sm text-ink-100">
                     {trip.destination}
                   </span>
-                  <span className="ml-2 font-mono text-xs text-gray-400">
+                  <span className="ml-2 font-mono text-xs text-ink-600">
                     {trip.city}, {trip.country}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs text-gray-400">
+                  <span className="font-mono text-xs text-ink-600">
                     {trip.mode}
                   </span>
                   <span
                     className={`rounded px-1.5 py-0.5 text-xs ${
-                      TRIP_STATUS_COLORS[trip.status] ?? 'bg-gray-100 text-gray-600'
+                      TRIP_STATUS_COLORS[trip.status] ?? 'bg-ink-800 text-ink-500'
                     }`}
                   >
                     {trip.status}
                   </span>
-                  <span className="font-mono text-xs text-gray-400">
+                  <span className="font-mono text-xs text-ink-600">
                     {new Date(trip.startDate).toLocaleDateString()} --{' '}
                     {new Date(trip.endDate).toLocaleDateString()}
                   </span>
@@ -579,19 +579,19 @@ export default function AdminUserDetailPage() {
       </section>
 
       {/* Recent Signals */}
-      <section className="rounded-lg border border-warm-border bg-warm-surface p-4">
-        <h3 className="mb-3 font-display text-lg text-gray-900">
+      <section className="rounded-lg border border-ink-700 bg-surface p-4">
+        <h3 className="mb-3 font-display text-lg text-ink-100">
           Recent Signals ({signalCount.toLocaleString()} total)
         </h3>
         {recentSignals.length === 0 ? (
-          <p className="font-mono text-xs text-gray-400">
+          <p className="font-mono text-xs text-ink-600">
             No behavioral signals recorded
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full font-mono text-xs">
               <thead>
-                <tr className="border-b border-warm-border text-left text-gray-400">
+                <tr className="border-b border-ink-700 text-left text-ink-600">
                   <th className="px-2 py-1.5">Type</th>
                   <th className="px-2 py-1.5">Value</th>
                   <th className="px-2 py-1.5">Phase</th>
@@ -603,7 +603,7 @@ export default function AdminUserDetailPage() {
                 {recentSignals.map((s) => (
                   <tr
                     key={s.id}
-                    className="border-b border-warm-border/30 text-gray-600"
+                    className="border-b border-ink-700/30 text-ink-500"
                   >
                     <td className="px-2 py-1.5">{s.signalType}</td>
                     <td className="px-2 py-1.5">
@@ -612,7 +612,7 @@ export default function AdminUserDetailPage() {
                           s.signalValue > 0
                             ? 'text-green-600'
                             : s.signalValue < 0
-                              ? 'text-red-600'
+                              ? 'text-error'
                               : ''
                         }
                       >
@@ -623,7 +623,7 @@ export default function AdminUserDetailPage() {
                     <td className="max-w-[200px] truncate px-2 py-1.5">
                       {s.rawAction}
                     </td>
-                    <td className="px-2 py-1.5 text-gray-400">
+                    <td className="px-2 py-1.5 text-ink-600">
                       {new Date(s.createdAt).toLocaleString()}
                     </td>
                   </tr>

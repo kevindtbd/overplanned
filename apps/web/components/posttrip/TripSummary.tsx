@@ -54,10 +54,10 @@ function StatPill({
   color: "terracotta" | "emerald" | "amber" | "gray";
 }) {
   const colorMap = {
-    terracotta: "bg-terracotta-50 text-terracotta-700",
-    emerald: "bg-emerald-50 text-emerald-700",
-    amber: "bg-amber-50 text-amber-700",
-    gray: "bg-gray-100 text-gray-600",
+    terracotta: "bg-accent-light text-accent-fg",
+    emerald: "bg-success-bg text-success",
+    amber: "bg-warning-bg text-warning",
+    gray: "bg-ink-800 text-ink-500",
   };
 
   return (
@@ -81,12 +81,12 @@ export function TripSummary({ trip }: TripSummaryProps) {
 
   return (
     <article
-      className="rounded-xl border border-warm-border bg-warm-surface overflow-hidden"
+      className="rounded-xl border border-ink-700 bg-surface overflow-hidden"
       aria-label={`Trip summary for ${trip.destination}`}
     >
       {/* Cover image */}
       {trip.coverImageUrl && (
-        <div className="relative h-40 w-full overflow-hidden bg-warm-background">
+        <div className="relative h-40 w-full overflow-hidden bg-base">
           <img
             src={trip.coverImageUrl}
             alt=""
@@ -101,17 +101,17 @@ export function TripSummary({ trip }: TripSummaryProps) {
       <div className={`p-5 space-y-4 ${trip.coverImageUrl ? "-mt-10 relative" : ""}`}>
         {/* Destination header */}
         <div className="space-y-1">
-          <h2 className="font-sora text-2xl font-bold text-warm-text-primary">
+          <h2 className="font-sora text-2xl font-bold text-ink-100">
             {trip.destination}
           </h2>
           <div className="flex items-center gap-2">
-            <span className="font-dm-mono text-xs text-warm-text-secondary uppercase tracking-wider">
+            <span className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
               {trip.country}
             </span>
             {dateRange && (
               <>
-                <span className="text-warm-border" aria-hidden="true">/</span>
-                <span className="font-dm-mono text-xs text-warm-text-secondary">
+                <span className="text-ink-700" aria-hidden="true">/</span>
+                <span className="font-dm-mono text-xs text-ink-400">
                   {dateRange}
                 </span>
               </>
@@ -122,16 +122,16 @@ export function TripSummary({ trip }: TripSummaryProps) {
         {/* Completion bar */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider">
+            <span className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider">
               Trip completion
             </span>
-            <span className="font-dm-mono text-xs text-warm-text-primary font-medium">
+            <span className="font-dm-mono text-xs text-ink-100 font-medium">
               {completionRate}%
             </span>
           </div>
-          <div className="h-1.5 bg-warm-border rounded-full overflow-hidden">
+          <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-terracotta-500 rounded-full transition-all duration-500"
+              className="h-full bg-accent-light0 rounded-full transition-all duration-500"
               style={{ width: `${completionRate}%` }}
             />
           </div>

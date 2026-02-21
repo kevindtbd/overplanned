@@ -136,14 +136,14 @@ function TabBar({
   ];
 
   return (
-    <div className="flex gap-1 rounded-xl bg-warm-surface p-1">
+    <div className="flex gap-1 rounded-xl bg-surface p-1">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
           className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 font-dm-mono text-xs transition-colors ${
             mode === tab.key
-              ? "bg-terracotta text-white shadow-sm"
+              ? "bg-accent text-white shadow-sm"
               : "text-secondary hover:text-primary"
           }`}
         >
@@ -154,7 +154,7 @@ function TabBar({
               className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-dm-mono text-xs ${
                 mode === "shortlist"
                   ? "bg-white/30 text-white"
-                  : "bg-terracotta text-white"
+                  : "bg-accent text-white"
               }`}
             >
               {shortlistCount}
@@ -278,14 +278,14 @@ export default function DiscoverClient({
   );
 
   return (
-    <div className="min-h-screen bg-app">
+    <div className="min-h-screen bg-base">
       {/* Top bar */}
-      <div className="sticky top-0 z-20 border-b border-warm bg-app/90 backdrop-blur-sm">
+      <div className="sticky top-0 z-20 border-b border-ink-700 bg-base/90 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-4 py-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => window.history.back()}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-secondary transition-colors hover:bg-warm-surface hover:text-primary"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-secondary transition-colors hover:bg-surface hover:text-primary"
               aria-label="Go back"
             >
               <ArrowLeftIcon className="h-4 w-4" />
@@ -326,7 +326,7 @@ export default function DiscoverClient({
           <div className="py-4">
             {!swipeDeckReady ? (
               <div className="flex flex-col items-center py-16 gap-3">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-warm-border border-t-terracotta" />
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-ink-700 border-t-accent" />
                 <p className="label-mono">Loading cards...</p>
               </div>
             ) : (

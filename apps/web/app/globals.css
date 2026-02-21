@@ -62,13 +62,6 @@
   --transition-normal: 200ms ease;
   --transition-slow:   300ms ease-out;
 
-  /* Backward-compatible aliases (REMOVE IN PHASE 2) */
-  --color-terracotta:          var(--accent);
-  --color-warm-background:     var(--bg-base);
-  --color-warm-surface:        var(--bg-surface);
-  --color-warm-border:         var(--ink-700);
-  --color-warm-text-primary:   var(--ink-100);
-  --color-warm-text-secondary: var(--ink-400);
 }
 
 [data-theme="dark"] {
@@ -117,13 +110,6 @@
   --transition-normal: 200ms ease;
   --transition-slow:   300ms ease-out;
 
-  /* Backward-compatible aliases (REMOVE IN PHASE 2) */
-  --color-terracotta:          var(--accent);
-  --color-warm-background:     var(--bg-base);
-  --color-warm-surface:        var(--bg-surface);
-  --color-warm-border:         var(--ink-700);
-  --color-warm-text-primary:   var(--ink-100);
-  --color-warm-text-secondary: var(--ink-400);
 }
 
 /* No-JS fallback: use prefers-color-scheme to set dark tokens */
@@ -167,12 +153,6 @@
     --transition-fast:   150ms ease;
     --transition-normal: 200ms ease;
     --transition-slow:   300ms ease-out;
-    --color-terracotta:          var(--accent);
-    --color-warm-background:     var(--bg-base);
-    --color-warm-surface:        var(--bg-surface);
-    --color-warm-border:         var(--ink-700);
-    --color-warm-text-primary:   var(--ink-100);
-    --color-warm-text-secondary: var(--ink-400);
   }
 }
 
@@ -216,12 +196,6 @@
   --transition-fast:   150ms ease;
   --transition-normal: 200ms ease;
   --transition-slow:   300ms ease-out;
-  --color-terracotta:          var(--accent);
-  --color-warm-background:     var(--bg-base);
-  --color-warm-surface:        var(--bg-surface);
-  --color-warm-border:         var(--ink-700);
-  --color-warm-text-primary:   var(--ink-100);
-  --color-warm-text-secondary: var(--ink-400);
 }
 
 /* ================================================================

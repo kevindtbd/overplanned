@@ -225,10 +225,10 @@ export default function ReflectionPage({
               <polyline points="7 17 13 23 25 9" />
             </svg>
           </div>
-          <h1 className="font-sora text-2xl font-bold text-warm-text-primary">
+          <h1 className="font-sora text-2xl font-bold text-ink-100">
             Thanks for reflecting
           </h1>
-          <p className="font-dm-mono text-sm text-warm-text-secondary max-w-sm">
+          <p className="font-dm-mono text-sm text-ink-400 max-w-sm">
             Your feedback helps us learn what you love so future trips feel even
             more you.
           </p>
@@ -236,10 +236,10 @@ export default function ReflectionPage({
             href={`/trip/${params.id}`}
             className="
               inline-flex items-center gap-2 px-5 py-2.5 rounded-lg
-              bg-terracotta-500 text-white
+              bg-accent text-white
               font-dm-mono text-sm uppercase tracking-wider
-              hover:bg-terracotta-600 transition-colors duration-150
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400 focus-visible:ring-offset-2
+              hover:bg-accent/90 transition-colors duration-150
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
             "
           >
             Back to trip
@@ -255,10 +255,10 @@ export default function ReflectionPage({
       <div className="space-y-8 max-w-2xl mx-auto pb-12">
         {/* Header */}
         <header className="space-y-2">
-          <h1 className="font-sora text-2xl sm:text-3xl font-bold text-warm-text-primary">
+          <h1 className="font-sora text-2xl sm:text-3xl font-bold text-ink-100">
             How was {trip.destination}?
           </h1>
-          <p className="font-dm-mono text-xs text-warm-text-secondary uppercase tracking-wider">
+          <p className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
             {trip.totalDays} days -- {slots.length} activities -- Tap to rate
             each highlight
           </p>
@@ -281,22 +281,22 @@ export default function ReflectionPage({
 
         {/* Progress indicator */}
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-1 bg-warm-border rounded-full overflow-hidden">
+          <div className="flex-1 h-1 bg-ink-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-terracotta-500 rounded-full transition-all duration-300"
+              className="h-full bg-accent rounded-full transition-all duration-300"
               style={{
                 width: `${slots.length > 0 ? (ratedCount / slots.length) * 100 : 0}%`,
               }}
             />
           </div>
-          <span className="font-dm-mono text-xs text-warm-text-secondary shrink-0">
+          <span className="font-dm-mono text-xs text-ink-400 shrink-0">
             {ratedCount}/{slots.length}
           </span>
         </div>
 
         {/* Free-text question */}
         <section className="space-y-3" aria-label="Additional feedback">
-          <h2 className="font-sora text-lg font-semibold text-warm-text-primary">
+          <h2 className="font-sora text-lg font-semibold text-ink-100">
             What would you do differently?
           </h2>
           <textarea
@@ -307,15 +307,15 @@ export default function ReflectionPage({
             rows={3}
             className="
               w-full px-4 py-3 rounded-xl
-              border border-warm-border bg-warm-surface
-              font-dm-mono text-sm text-warm-text-primary
-              placeholder:text-warm-text-secondary placeholder:opacity-50
+              border border-ink-700 bg-surface
+              font-dm-mono text-sm text-ink-100
+              placeholder:text-ink-400 placeholder:opacity-50
               resize-none
               transition-colors duration-150
-              focus:border-terracotta-400 focus:outline-none focus:ring-2 focus:ring-terracotta-400/20
+              focus:border-accent-muted focus:outline-none focus:ring-2 focus:ring-accent-muted/20
             "
           />
-          <div className="text-right font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider">
+          <div className="text-right font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider">
             {freeText.length}/500
           </div>
         </section>
@@ -326,10 +326,10 @@ export default function ReflectionPage({
           onClick={handleSubmit}
           className="
             w-full py-3 rounded-xl
-            bg-terracotta-500 text-white
+            bg-accent text-white
             font-sora font-semibold text-base
-            hover:bg-terracotta-600 transition-colors duration-150
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400 focus-visible:ring-offset-2
+            hover:bg-accent/90 transition-colors duration-150
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
             disabled:opacity-40 disabled:cursor-not-allowed
           "
           disabled={ratedCount === 0}

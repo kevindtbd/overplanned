@@ -216,22 +216,22 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-app">
+    <div className="min-h-screen bg-base">
       {/* Progress bar — hidden on fork screen */}
       {step !== "fork" && (
-        <div className="fixed left-0 right-0 top-0 z-20 bg-app/80 backdrop-blur-sm">
+        <div className="fixed left-0 right-0 top-0 z-20 bg-base/80 backdrop-blur-sm">
           <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
             <button
               onClick={goBack}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-secondary transition-colors hover:bg-warm-surface hover:text-primary"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-secondary transition-colors hover:bg-surface hover:text-primary"
               aria-label="Go back"
             >
               <ArrowLeftIcon className="h-4 w-4" />
             </button>
             <div className="flex-1">
-              <div className="h-1 overflow-hidden rounded-full bg-warm-border">
+              <div className="h-1 overflow-hidden rounded-full bg-ink-700">
                 <div
-                  className="h-full rounded-full bg-terracotta transition-all duration-300"
+                  className="h-full rounded-full bg-accenttransition-all duration-300"
                   style={{
                     width: `${(progressStep / totalSteps) * 100}%`,
                   }}
@@ -286,7 +286,7 @@ export default function OnboardingPage() {
               }}
               placeholder="e.g. Tokyo Golden Week"
               maxLength={80}
-              className="mt-6 w-full rounded-lg border border-warm bg-warm-surface py-3 px-4 font-sora text-primary placeholder:text-secondary focus:border-terracotta focus:outline-none focus:ring-2 focus:ring-terracotta/30"
+              className="mt-6 w-full rounded-lg border border-ink-700 bg-surface py-3 px-4 font-sora text-primary placeholder:text-secondary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
             <p className="mt-2 text-right font-dm-mono text-xs text-secondary">
               {tripName.length}/80
@@ -316,7 +316,7 @@ export default function OnboardingPage() {
 
       {/* Bottom navigation — hidden on fork screen */}
       {step !== "fork" && (
-        <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-warm bg-app/90 backdrop-blur-sm">
+        <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-ink-700 bg-base/90 backdrop-blur-sm">
           <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-4">
             {step === "template" ? (
               <>

@@ -46,11 +46,11 @@ export interface AffinityMatrixProps {
 
 function affinityToColor(score: number): string {
   // Warm gradient: low = warm-background, high = terracotta
-  if (score >= 0.8) return "#C4694F"; // terracotta-500
+  if (score >= 0.8) return "#C4694F"; // accent
   if (score >= 0.6) return "#D68D73"; // terracotta-400
   if (score >= 0.4) return "#E8B09D"; // terracotta-300
-  if (score >= 0.2) return "#F2CFC2"; // terracotta-200
-  return "#FAEAE4"; // terracotta-100
+  if (score >= 0.2) return "#F2CFC2"; // accent/20
+  return "#FAEAE4"; // accent-light
 }
 
 function affinityTextColor(score: number): string {
@@ -78,14 +78,14 @@ function SplitCard({
   return (
     <div
       className="
-        rounded-xl border border-terracotta-200 bg-terracotta-50
+        rounded-xl border border-accent/20 bg-accent-light
         p-4 space-y-3
       "
       aria-label={`Split suggestion: ${names}`}
     >
       <div className="flex items-start gap-3">
         {/* Affinity icon */}
-        <div className="shrink-0 w-8 h-8 rounded-full bg-terracotta-100 flex items-center justify-center mt-0.5">
+        <div className="shrink-0 w-8 h-8 rounded-full bg-accent-light flex items-center justify-center mt-0.5">
           <svg
             width="16"
             height="16"
@@ -104,10 +104,10 @@ function SplitCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-sora text-sm font-semibold text-terracotta-700 leading-snug">
+          <p className="font-sora text-sm font-semibold text-accent-fg leading-snug">
             {names} both want{" "}
             {vibeText ? (
-              <span className="text-terracotta-500">{vibeText}</span>
+              <span className="text-accent">{vibeText}</span>
             ) : (
               "similar things"
             )}
@@ -121,7 +121,7 @@ function SplitCard({
                 className="
                   font-dm-mono text-[10px] uppercase tracking-wider
                   px-2 py-0.5 rounded-full
-                  bg-terracotta-100 text-terracotta-600
+                  bg-accent-light text-accent-fg
                 "
               >
                 {vibe}
@@ -137,9 +137,9 @@ function SplitCard({
           onClick={onAccept}
           className="
             flex-1 py-2 px-3 rounded-lg
-            bg-terracotta-500 text-white
+            bg-accent text-white
             font-dm-mono text-[11px] uppercase tracking-wider
-            hover:bg-terracotta-600
+            hover:bg-accent-fg
             transition-colors duration-150
           "
         >
@@ -149,10 +149,10 @@ function SplitCard({
           onClick={onDismiss}
           className="
             py-2 px-3 rounded-lg
-            border border-warm-border
-            text-warm-text-secondary
+            border border-ink-700
+            text-ink-400
             font-dm-mono text-[11px] uppercase tracking-wider
-            hover:text-warm-text-primary
+            hover:text-ink-100
             transition-colors duration-150
           "
         >
@@ -176,10 +176,10 @@ function HeatCell({
     return (
       <div
         className="w-full h-full flex items-center justify-center"
-        style={{ backgroundColor: "var(--color-warm-background)" }}
+        style={{ backgroundColor: "var(--bg-base)" }}
         aria-label="Same member"
       >
-        <div className="w-2 h-2 rounded-full bg-warm-border" aria-hidden="true" />
+        <div className="w-2 h-2 rounded-full bg-ink-700" aria-hidden="true" />
       </div>
     );
   }
@@ -257,7 +257,7 @@ export function AffinityMatrix({
       <div
         className={`
           flex items-center justify-center py-8
-          font-dm-mono text-xs text-warm-text-secondary uppercase tracking-wider
+          font-dm-mono text-xs text-ink-400 uppercase tracking-wider
           ${className}
         `}
         aria-label="No affinity data"
@@ -300,7 +300,7 @@ export function AffinityMatrix({
               <span
                 className="
                   font-dm-mono text-[9px] uppercase tracking-wider
-                  text-warm-text-secondary
+                  text-ink-400
                   writing-mode-vertical
                 "
                 style={{
@@ -329,7 +329,7 @@ export function AffinityMatrix({
                 <span
                   className="
                     font-dm-mono text-[9px] uppercase tracking-wider
-                    text-warm-text-secondary truncate
+                    text-ink-400 truncate
                   "
                   style={{ maxWidth: CELL_SIZE - 4 }}
                 >
@@ -367,7 +367,7 @@ export function AffinityMatrix({
 
       {/* Color scale legend */}
       <div className="flex items-center gap-2">
-        <span className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider shrink-0">
+        <span className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider shrink-0">
           Low
         </span>
         <div
@@ -377,7 +377,7 @@ export function AffinityMatrix({
           }}
           aria-hidden="true"
         />
-        <span className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider shrink-0">
+        <span className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider shrink-0">
           High
         </span>
       </div>
@@ -385,7 +385,7 @@ export function AffinityMatrix({
       {/* Split suggestions */}
       {splitSuggestions.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-sora text-sm font-semibold text-warm-text-primary">
+          <h3 className="font-sora text-sm font-semibold text-ink-100">
             Subgroup suggestions
           </h3>
           {splitSuggestions.map((suggestion) => {

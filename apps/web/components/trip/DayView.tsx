@@ -46,15 +46,15 @@ function getTimelineDotClass(status: SlotData["status"]): string {
   switch (status) {
     case "confirmed":
     case "active":
-      return "bg-emerald-400 border-emerald-200";
+      return "bg-success border-emerald-200";
     case "proposed":
     case "voted":
-      return "bg-amber-400 border-amber-200";
+      return "bg-warning border-amber-200";
     case "completed":
     case "skipped":
-      return "bg-gray-400 border-gray-200";
+      return "bg-ink-600 border-ink-800";
     default:
-      return "bg-warm-border border-warm-background";
+      return "bg-ink-700 border-base";
   }
 }
 
@@ -64,8 +64,8 @@ function EmptyDayState({ dayNumber }: { dayNumber: number }) {
       className="
         flex flex-col items-center justify-center
         py-16 px-6
-        rounded-xl border-2 border-dashed border-warm-border
-        bg-warm-surface
+        rounded-xl border-2 border-dashed border-ink-700
+        bg-surface
       "
     >
       <svg
@@ -77,7 +77,7 @@ function EmptyDayState({ dayNumber }: { dayNumber: number }) {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="text-warm-text-secondary opacity-40 mb-4"
+        className="text-ink-400 opacity-40 mb-4"
         aria-hidden="true"
       >
         <rect x="8" y="8" width="32" height="32" rx="4" />
@@ -87,10 +87,10 @@ function EmptyDayState({ dayNumber }: { dayNumber: number }) {
         <line x1="20" y1="26" x2="28" y2="26" />
         <line x1="24" y1="22" x2="24" y2="30" />
       </svg>
-      <h3 className="font-sora text-base font-semibold text-warm-text-primary mb-1">
+      <h3 className="font-sora text-base font-semibold text-ink-100 mb-1">
         No plans yet for Day {dayNumber}
       </h3>
-      <p className="font-dm-mono text-xs text-warm-text-secondary uppercase tracking-wider">
+      <p className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
         Activities will appear here once generated
       </p>
     </div>
@@ -140,11 +140,11 @@ export function DayView({
             <div className="flex flex-col items-center shrink-0 w-16 sm:w-20">
               {/* Time label */}
               {timeMarker ? (
-                <span className="font-dm-mono text-xs text-warm-text-secondary mb-2 text-center">
+                <span className="font-dm-mono text-xs text-ink-400 mb-2 text-center">
                   {timeMarker}
                 </span>
               ) : (
-                <span className="font-dm-mono text-xs text-warm-text-secondary mb-2 opacity-40">
+                <span className="font-dm-mono text-xs text-ink-400 mb-2 opacity-40">
                   --:--
                 </span>
               )}
@@ -161,7 +161,7 @@ export function DayView({
               {/* Connecting line */}
               {!isLast && (
                 <div
-                  className="w-px flex-1 min-h-[2rem] bg-warm-border"
+                  className="w-px flex-1 min-h-[2rem] bg-ink-700"
                   aria-hidden="true"
                 />
               )}

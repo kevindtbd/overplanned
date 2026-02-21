@@ -9,7 +9,7 @@ const STAGE_STYLES: Record<string, { bg: string; text: string; label: string }> 
   staging: { bg: 'bg-yellow-50', text: 'text-yellow-700', label: 'Staging' },
   ab_test: { bg: 'bg-blue-50', text: 'text-blue-700', label: 'A/B Test' },
   production: { bg: 'bg-green-50', text: 'text-green-700', label: 'Production' },
-  archived: { bg: 'bg-gray-100', text: 'text-gray-500', label: 'Archived' },
+  archived: { bg: 'bg-ink-800', text: 'text-ink-500', label: 'Archived' },
 };
 
 const PROMOTION_PATH: Record<string, string> = {
@@ -71,13 +71,13 @@ export function StageBadge({ stage }: { stage: string }) {
 export function ArtifactHashDisplay({ hash }: { hash: string | null }) {
   if (!hash) {
     return (
-      <span className="font-mono text-xs text-gray-400">
+      <span className="font-mono text-xs text-ink-600">
         No hash recorded
       </span>
     );
   }
   return (
-    <span className="font-mono text-xs text-gray-600" title={hash}>
+    <span className="font-mono text-xs text-ink-500" title={hash}>
       SHA-256: {hash.slice(0, 12)}...
     </span>
   );
@@ -101,11 +101,11 @@ function MetricsTable({
   return (
     <table className="w-full font-mono text-sm">
       <thead>
-        <tr className="border-b border-warm-border text-left">
-          <th className="pb-2 pr-4 text-gray-600">Metric</th>
-          <th className="pb-2 pr-4 text-gray-600">Candidate</th>
-          <th className="pb-2 pr-4 text-gray-600">Current</th>
-          <th className="pb-2 text-gray-600">Delta</th>
+        <tr className="border-b border-ink-700 text-left">
+          <th className="pb-2 pr-4 text-ink-500">Metric</th>
+          <th className="pb-2 pr-4 text-ink-500">Candidate</th>
+          <th className="pb-2 pr-4 text-ink-500">Current</th>
+          <th className="pb-2 text-ink-500">Delta</th>
         </tr>
       </thead>
       <tbody>
@@ -124,12 +124,12 @@ function MetricsTable({
           return (
             <tr
               key={key}
-              className={`border-b border-warm-border/50 ${isPrimary ? 'bg-warm-surface font-semibold' : ''}`}
+              className={`border-b border-ink-700/50 ${isPrimary ? 'bg-surface font-semibold' : ''}`}
             >
-              <td className="py-1.5 pr-4 text-gray-800">
+              <td className="py-1.5 pr-4 text-ink-200">
                 {key}
                 {isPrimary && (
-                  <span className="ml-1.5 text-xs text-terracotta">
+                  <span className="ml-1.5 text-xs text-accent">
                     (primary)
                   </span>
                 )}
@@ -140,7 +140,7 @@ function MetricsTable({
                 {delta != null ? (
                   <span
                     className={
-                      isImprovement ? 'text-green-700' : 'text-red-600'
+                      isImprovement ? 'text-green-700' : 'text-error'
                     }
                   >
                     {delta > 0 ? '+' : ''}
@@ -218,11 +218,11 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
   if (!canPromote) return null;
 
   return (
-    <div className="mt-4 rounded-lg border border-warm-border bg-warm-surface p-4">
+    <div className="mt-4 rounded-lg border border-ink-700 bg-surface p-4">
       <div className="flex items-center justify-between">
-        <h4 className="font-display text-sm font-semibold text-gray-800">
+        <h4 className="font-display text-sm font-semibold text-ink-200">
           Promote to{' '}
-          <span className="text-terracotta">
+          <span className="text-accent">
             {STAGE_STYLES[nextStage]?.label || nextStage}
           </span>
         </h4>
@@ -231,7 +231,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
           <button
             onClick={fetchComparison}
             disabled={loading}
-            className="rounded-md bg-warm-background px-3 py-1.5 font-mono text-xs text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50"
+            className="rounded-md bg-base px-3 py-1.5 font-mono text-xs text-ink-300 transition-colors hover:bg-ink-800 disabled:opacity-50"
           >
             {loading ? 'Loading...' : 'Compare Metrics'}
           </button>
@@ -239,7 +239,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
       </div>
 
       {error && (
-        <p className="mt-2 font-mono text-xs text-red-600">{error}</p>
+        <p className="mt-2 font-mono text-xs text-error">{error}</p>
       )}
 
       {comparison && (
@@ -252,7 +252,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
           />
 
           {comparison.current.id && (
-            <p className="font-mono text-xs text-gray-500">
+            <p className="font-mono text-xs text-ink-500">
               Current {STAGE_STYLES[comparison.target_stage]?.label}:{' '}
               {comparison.current.version}
               {' — will be archived on promotion'}
@@ -260,25 +260,25 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
           )}
 
           {!comparison.current.id && (
-            <p className="font-mono text-xs text-gray-500">
+            <p className="font-mono text-xs text-ink-500">
               No model currently in {STAGE_STYLES[comparison.target_stage]?.label}.
               This will be the first.
             </p>
           )}
 
-          <div className="flex items-center gap-3 border-t border-warm-border pt-3">
+          <div className="flex items-center gap-3 border-t border-ink-700 pt-3">
             {comparison.comparison.passes_gate ? (
               <>
                 {!showConfirm ? (
                   <button
                     onClick={() => setShowConfirm(true)}
-                    className="rounded-md bg-terracotta px-4 py-2 font-mono text-sm text-white transition-colors hover:bg-[#B85C3F]"
+                    className="rounded-md bg-accent px-4 py-2 font-mono text-sm text-white transition-colors hover:bg-[#B85C3F]"
                   >
                     Promote to {STAGE_STYLES[nextStage]?.label}
                   </button>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-gray-600">
+                    <span className="font-mono text-xs text-ink-500">
                       Confirm promotion?
                     </span>
                     <button
@@ -290,7 +290,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
                     </button>
                     <button
                       onClick={() => setShowConfirm(false)}
-                      className="rounded-md border border-warm-border px-3 py-2 font-mono text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                      className="rounded-md border border-ink-700 px-3 py-2 font-mono text-xs text-ink-500 transition-colors hover:bg-ink-800"
                     >
                       Cancel
                     </button>
@@ -298,7 +298,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
                 )}
               </>
             ) : (
-              <p className="font-mono text-sm text-red-600">
+              <p className="font-mono text-sm text-error">
                 Gate blocked: candidate does not beat current on{' '}
                 {comparison.comparison.primary_metric}
               </p>
@@ -308,7 +308,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
                 setComparison(null);
                 setShowConfirm(false);
               }}
-              className="ml-auto font-mono text-xs text-gray-400 hover:text-gray-600"
+              className="ml-auto font-mono text-xs text-ink-600 hover:text-ink-500"
             >
               Dismiss
             </button>

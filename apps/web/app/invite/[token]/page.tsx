@@ -116,7 +116,7 @@ export default async function InvitePage({ params }: PageProps) {
     <main
       style={{
         minHeight: "100vh",
-        backgroundColor: "var(--color-warm-background)",
+        backgroundColor: "var(--bg-base)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -131,7 +131,7 @@ export default async function InvitePage({ params }: PageProps) {
             fontFamily: "var(--font-sora), system-ui, sans-serif",
             fontWeight: 700,
             fontSize: "1.125rem",
-            color: "var(--color-terracotta)",
+            color: "var(--accent)",
             letterSpacing: "-0.01em",
           }}
         >
@@ -144,8 +144,8 @@ export default async function InvitePage({ params }: PageProps) {
         style={{
           width: "100%",
           maxWidth: "440px",
-          backgroundColor: "var(--color-warm-surface)",
-          border: "1px solid var(--color-warm-border)",
+          backgroundColor: "var(--bg-surface)",
+          border: "1px solid var(--ink-700)",
           borderRadius: "1rem",
           padding: "2rem",
           boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
@@ -159,7 +159,7 @@ export default async function InvitePage({ params }: PageProps) {
             fontWeight: 500,
             textTransform: "uppercase",
             letterSpacing: "0.1em",
-            color: "var(--color-warm-text-secondary)",
+            color: "var(--ink-400)",
             marginBottom: "1rem",
           }}
         >
@@ -173,7 +173,7 @@ export default async function InvitePage({ params }: PageProps) {
             fontWeight: 700,
             fontSize: "1.875rem",
             lineHeight: 1.15,
-            color: "var(--color-warm-text-primary)",
+            color: "var(--ink-100)",
             marginBottom: "0.375rem",
           }}
         >
@@ -185,7 +185,7 @@ export default async function InvitePage({ params }: PageProps) {
           style={{
             fontFamily: "var(--font-dm-mono), monospace",
             fontSize: "0.875rem",
-            color: "var(--color-warm-text-secondary)",
+            color: "var(--ink-400)",
             marginBottom: "1.5rem",
           }}
         >
@@ -196,7 +196,7 @@ export default async function InvitePage({ params }: PageProps) {
         <div
           style={{
             height: "1px",
-            backgroundColor: "var(--color-warm-border)",
+            backgroundColor: "var(--ink-700)",
             marginBottom: "1.5rem",
           }}
         />
@@ -235,7 +235,7 @@ export default async function InvitePage({ params }: PageProps) {
               marginTop: "1rem",
               fontFamily: "var(--font-dm-mono), monospace",
               fontSize: "0.6875rem",
-              color: "var(--color-warm-text-secondary)",
+              color: "var(--ink-400)",
               textAlign: "center",
               lineHeight: 1.5,
             }}
@@ -252,7 +252,7 @@ export default async function InvitePage({ params }: PageProps) {
           marginTop: "2rem",
           fontFamily: "var(--font-dm-mono), monospace",
           fontSize: "0.6875rem",
-          color: "var(--color-warm-text-secondary)",
+          color: "var(--ink-400)",
           textAlign: "center",
         }}
       >
@@ -276,7 +276,7 @@ function MetaCell({ label, value }: { label: string; value: string }) {
           fontWeight: 500,
           textTransform: "uppercase",
           letterSpacing: "0.08em",
-          color: "var(--color-warm-text-secondary)",
+          color: "var(--ink-400)",
           marginBottom: "0.25rem",
         }}
       >
@@ -287,7 +287,7 @@ function MetaCell({ label, value }: { label: string; value: string }) {
           fontFamily: "var(--font-sora), system-ui, sans-serif",
           fontSize: "0.9375rem",
           fontWeight: 500,
-          color: "var(--color-warm-text-primary)",
+          color: "var(--ink-100)",
         }}
       >
         {value}
@@ -301,7 +301,7 @@ function InvalidInvite() {
     <main
       style={{
         minHeight: "100vh",
-        backgroundColor: "var(--color-warm-background)",
+        backgroundColor: "var(--bg-base)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -315,7 +315,7 @@ function InvalidInvite() {
           fontFamily: "var(--font-sora), system-ui, sans-serif",
           fontWeight: 700,
           fontSize: "1.125rem",
-          color: "var(--color-terracotta)",
+          color: "var(--accent)",
           letterSpacing: "-0.01em",
           marginBottom: "3rem",
           display: "block",
@@ -329,7 +329,7 @@ function InvalidInvite() {
           fontFamily: "var(--font-sora), system-ui, sans-serif",
           fontWeight: 700,
           fontSize: "1.5rem",
-          color: "var(--color-warm-text-primary)",
+          color: "var(--ink-100)",
           marginBottom: "0.75rem",
         }}
       >
@@ -339,7 +339,7 @@ function InvalidInvite() {
         style={{
           fontFamily: "var(--font-dm-mono), monospace",
           fontSize: "0.875rem",
-          color: "var(--color-warm-text-secondary)",
+          color: "var(--ink-400)",
           maxWidth: "340px",
         }}
       >

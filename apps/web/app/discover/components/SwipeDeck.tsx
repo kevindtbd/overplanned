@@ -224,7 +224,7 @@ function DraggableCard({
   return (
     <div
       ref={cardRef}
-      className="absolute inset-0 select-none touch-none overflow-hidden rounded-2xl border border-warm bg-warm-surface shadow-lg"
+      className="absolute inset-0 select-none touch-none overflow-hidden rounded-2xl border border-ink-700 bg-surface shadow-lg"
       style={{
         transform: `translateX(${translateX}) translateY(${translateY}) rotate(${rotation}deg) scale(${scale})`,
         opacity,
@@ -238,7 +238,7 @@ function DraggableCard({
       onPointerCancel={onPointerUp}
     >
       {/* Image */}
-      <div className="relative h-64 w-full overflow-hidden bg-warm-border">
+      <div className="relative h-64 w-full overflow-hidden bg-ink-700">
         {card.primaryImageUrl ? (
           <img
             src={card.primaryImageUrl}
@@ -248,7 +248,7 @@ function DraggableCard({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <TagIcon className="h-10 w-10 text-warm-border" />
+            <TagIcon className="h-10 w-10 text-ink-700" />
           </div>
         )}
 
@@ -304,7 +304,7 @@ function DraggableCard({
             {card.vibeTags.slice(0, 4).map((vt) => (
               <span
                 key={vt.slug}
-                className="rounded-full bg-terracotta/10 px-2 py-0.5 font-dm-mono text-xs text-terracotta"
+                className="rounded-full bg-accent/10 px-2 py-0.5 font-dm-mono text-xs text-accent"
               >
                 {vt.name}
               </span>
@@ -376,8 +376,8 @@ export function SwipeDeck({
   if (deck.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-terracotta/10">
-          <HeartIcon className="h-6 w-6 text-terracotta" />
+        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-accent/10">
+          <HeartIcon className="h-6 w-6 text-accent" />
         </div>
         <h3 className="font-sora text-lg font-semibold text-primary">
           You&apos;ve seen everything
@@ -419,7 +419,7 @@ export function SwipeDeck({
       <div className="flex items-center gap-8">
         <button
           onClick={() => handleButtonSwipe("left")}
-          className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-300 bg-warm-surface text-red-400 shadow-sm transition-all hover:border-red-400 hover:bg-red-50 hover:shadow-md active:scale-95"
+          className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-300 bg-surface text-red-400 shadow-sm transition-all hover:border-red-400 hover:bg-error-bg hover:shadow-md active:scale-95"
           aria-label="Not interested"
         >
           <XIcon className="h-6 w-6" />
@@ -427,7 +427,7 @@ export function SwipeDeck({
 
         <button
           onClick={() => handleButtonSwipe("right")}
-          className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-emerald-300 bg-warm-surface text-emerald-500 shadow-sm transition-all hover:border-emerald-400 hover:bg-emerald-50 hover:shadow-md active:scale-95"
+          className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-emerald-300 bg-surface text-emerald-500 shadow-sm transition-all hover:border-emerald-400 hover:bg-success-bg hover:shadow-md active:scale-95"
           aria-label="Interested"
         >
           <HeartIcon className="h-6 w-6" />

@@ -164,14 +164,14 @@ function SlotUploadCard({
         className={`
           relative w-36 h-36 rounded-xl overflow-hidden
           border-2 border-dashed transition-all duration-150
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400 focus-visible:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
           disabled:cursor-wait
           ${
             state === "done"
-              ? "border-emerald-400 bg-emerald-50"
+              ? "border-emerald-400 bg-success-bg"
               : state === "error"
-                ? "border-red-400 bg-red-50"
-                : "border-warm-border bg-warm-background hover:border-terracotta-400 hover:bg-warm-surface"
+                ? "border-red-400 bg-error-bg"
+                : "border-ink-700 bg-base hover:border-accent-muted hover:bg-surface"
           }
         `}
         aria-label={
@@ -199,13 +199,13 @@ function SlotUploadCard({
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-warm-text-secondary"
+              className="text-ink-400"
               aria-hidden="true"
             >
               <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
               <circle cx="12" cy="13" r="4" />
             </svg>
-            <span className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider text-center">
+            <span className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider text-center">
               Add photo
             </span>
           </div>
@@ -213,7 +213,7 @@ function SlotUploadCard({
 
         {/* Uploading overlay */}
         {state === "uploading" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-warm-background/80">
+          <div className="absolute inset-0 flex items-center justify-center bg-base/80">
             <svg
               width="24"
               height="24"
@@ -221,7 +221,7 @@ function SlotUploadCard({
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              className="text-terracotta-500 animate-spin"
+              className="text-accent animate-spin"
               aria-hidden="true"
             >
               <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
@@ -232,7 +232,7 @@ function SlotUploadCard({
         {/* Done checkmark overlay */}
         {state === "done" && (
           <div className="absolute bottom-2 right-2">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500">
+            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-success-bg0">
               <svg
                 width="14"
                 height="14"
@@ -262,13 +262,13 @@ function SlotUploadCard({
       />
 
       {/* Activity label */}
-      <p className="font-sora text-xs text-warm-text-primary font-medium truncate text-center">
+      <p className="font-sora text-xs text-ink-100 font-medium truncate text-center">
         {slot.activityName}
       </p>
 
       {/* Error message */}
       {error && (
-        <p className="font-dm-mono text-[10px] text-red-600 text-center" role="alert">
+        <p className="font-dm-mono text-[10px] text-error text-center" role="alert">
           {error}
         </p>
       )}
@@ -284,14 +284,14 @@ export function PhotoStrip({ tripId, slots, onUpload }: PhotoStripProps) {
   return (
     <section className="space-y-3" aria-label="Upload trip photos">
       <div className="flex items-center justify-between">
-        <h2 className="font-sora text-lg font-semibold text-warm-text-primary">
+        <h2 className="font-sora text-lg font-semibold text-ink-100">
           Trip Photos
         </h2>
-        <span className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider">
+        <span className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider">
           {slots.length} slot{slots.length !== 1 ? "s" : ""}
         </span>
       </div>
-      <p className="font-dm-mono text-xs text-warm-text-secondary">
+      <p className="font-dm-mono text-xs text-ink-400">
         Add a photo from each activity -- max 10MB, JPEG / PNG / WebP
       </p>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">

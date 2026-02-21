@@ -29,15 +29,15 @@ interface UsersResponse {
 type TierFilter = 'all' | 'free' | 'beta' | 'pro' | 'lifetime';
 
 const TIER_COLORS: Record<string, string> = {
-  free: 'bg-gray-100 text-gray-600',
+  free: 'bg-ink-800 text-ink-500',
   beta: 'bg-blue-100 text-blue-800',
   pro: 'bg-purple-100 text-purple-800',
   lifetime: 'bg-amber-100 text-amber-800',
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  user: 'bg-gray-100 text-gray-600',
-  admin: 'bg-red-100 text-red-700',
+  user: 'bg-ink-800 text-ink-500',
+  admin: 'bg-red-100 text-error',
 };
 
 // ---------------------------------------------------------------------------
@@ -116,12 +116,12 @@ export default function AdminUsersPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="font-display text-2xl text-gray-900">Users</h2>
-          <p className="font-mono text-sm text-gray-500">
+          <h2 className="font-display text-2xl text-ink-100">Users</h2>
+          <p className="font-mono text-sm text-ink-500">
             Search, view, and manage user accounts
           </p>
         </div>
-        <span className="rounded bg-warm-background px-3 py-1 font-mono text-sm text-gray-600">
+        <span className="rounded bg-base px-3 py-1 font-mono text-sm text-ink-500">
           {total} user{total !== 1 ? 's' : ''}
         </span>
       </div>
@@ -129,15 +129,15 @@ export default function AdminUsersPage() {
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-end gap-3">
         {/* Tier tabs */}
-        <div className="flex rounded border border-warm-border">
+        <div className="flex rounded border border-ink-700">
           {(['all', 'beta', 'free', 'pro', 'lifetime'] as TierFilter[]).map((t) => (
             <button
               key={t}
               onClick={() => setTierFilter(t)}
               className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${
                 tierFilter === t
-                  ? 'bg-terracotta text-white'
-                  : 'bg-warm-surface text-gray-600 hover:bg-warm-background'
+                  ? 'bg-accent text-white'
+                  : 'bg-surface text-ink-500 hover:bg-base'
               } ${t === 'all' ? 'rounded-l' : ''} ${t === 'lifetime' ? 'rounded-r' : ''}`}
             >
               {t}
@@ -151,22 +151,22 @@ export default function AdminUsersPage() {
           placeholder="Search email or name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="min-w-[240px] rounded border border-warm-border bg-warm-background px-3 py-1.5 font-mono text-sm focus:border-terracotta focus:outline-none"
+          className="min-w-[240px] rounded border border-ink-700 bg-base px-3 py-1.5 font-mono text-sm focus:border-accent focus:outline-none"
         />
       </div>
 
       {/* Error */}
       {error && (
-        <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-2">
-          <p className="font-mono text-sm text-red-700">{error}</p>
+        <div className="mb-4 rounded border border-error/30 bg-error-bg px-4 py-2">
+          <p className="font-mono text-sm text-error">{error}</p>
         </div>
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto rounded border border-warm-border">
+      <div className="overflow-x-auto rounded border border-ink-700">
         <table className="w-full font-mono text-sm">
           <thead>
-            <tr className="border-b border-warm-border bg-warm-background text-left text-xs text-gray-500">
+            <tr className="border-b border-ink-700 bg-base text-left text-xs text-ink-500">
               <th className="px-3 py-2">User</th>
               <th
                 className="cursor-pointer px-3 py-2"
@@ -195,13 +195,13 @@ export default function AdminUsersPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-gray-400">
+                <td colSpan={8} className="px-3 py-8 text-center text-ink-600">
                   Loading...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-gray-400">
+                <td colSpan={8} className="px-3 py-8 text-center text-ink-600">
                   No users match filters
                 </td>
               </tr>
@@ -209,7 +209,7 @@ export default function AdminUsersPage() {
               users.map((user) => (
                 <tr
                   key={user.id}
-                  className="border-b border-warm-border/50 transition-colors hover:bg-warm-background/50"
+                  className="border-b border-ink-700/50 transition-colors hover:bg-base/50"
                 >
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
@@ -220,20 +220,20 @@ export default function AdminUsersPage() {
                           className="h-6 w-6 rounded-full"
                         />
                       ) : (
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-warm-background text-xs text-gray-400">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-base text-xs text-ink-600">
                           {(user.name ?? user.email)[0].toUpperCase()}
                         </div>
                       )}
-                      <span className="text-gray-900">
+                      <span className="text-ink-100">
                         {user.name ?? '--'}
                       </span>
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-gray-600">{user.email}</td>
+                  <td className="px-3 py-2 text-ink-500">{user.email}</td>
                   <td className="px-3 py-2">
                     <span
                       className={`rounded px-1.5 py-0.5 text-xs ${
-                        TIER_COLORS[user.subscriptionTier] ?? 'bg-gray-100 text-gray-600'
+                        TIER_COLORS[user.subscriptionTier] ?? 'bg-ink-800 text-ink-500'
                       }`}
                     >
                       {user.subscriptionTier}
@@ -242,33 +242,33 @@ export default function AdminUsersPage() {
                   <td className="px-3 py-2">
                     <span
                       className={`rounded px-1.5 py-0.5 text-xs ${
-                        ROLE_COLORS[user.systemRole] ?? 'bg-gray-100 text-gray-600'
+                        ROLE_COLORS[user.systemRole] ?? 'bg-ink-800 text-ink-500'
                       }`}
                     >
                       {user.systemRole}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-gray-600">
+                  <td className="px-3 py-2 text-ink-500">
                     {flagCount(user.featureFlags) > 0 ? (
                       <span className="rounded bg-green-50 px-1.5 py-0.5 text-xs text-green-700">
                         {flagCount(user.featureFlags)} active
                       </span>
                     ) : (
-                      <span className="text-xs text-gray-400">--</span>
+                      <span className="text-xs text-ink-600">--</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-xs text-gray-400">
+                  <td className="px-3 py-2 text-xs text-ink-600">
                     {user.lastActiveAt
                       ? new Date(user.lastActiveAt).toLocaleDateString()
                       : '--'}
                   </td>
-                  <td className="px-3 py-2 text-xs text-gray-400">
+                  <td className="px-3 py-2 text-xs text-ink-600">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-3 py-2">
                     <a
                       href={`/admin/users/${user.id}`}
-                      className="text-xs text-terracotta hover:underline"
+                      className="text-xs text-accent hover:underline"
                     >
                       View
                     </a>
@@ -283,7 +283,7 @@ export default function AdminUsersPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="font-mono text-xs text-gray-400">
+          <p className="font-mono text-xs text-ink-600">
             Showing {page * pageSize + 1}--{Math.min((page + 1) * pageSize, total)} of{' '}
             {total}
           </p>
@@ -291,14 +291,14 @@ export default function AdminUsersPage() {
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="rounded border border-warm-border px-2 py-1 font-mono text-xs text-gray-600 hover:bg-warm-background disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Prev
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="rounded border border-warm-border px-2 py-1 font-mono text-xs text-gray-600 hover:bg-warm-background disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Next
             </button>

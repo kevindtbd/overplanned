@@ -39,13 +39,13 @@ describe("CSS token resolution", () => {
     expect(css).toContain("prefers-color-scheme: dark");
   });
 
-  it("keeps backward-compatible aliases", () => {
-    const aliases = [
+  it("has no backward-compatible aliases (removed in Phase 2)", () => {
+    const oldAliases = [
       "--color-terracotta", "--color-warm-background", "--color-warm-surface",
       "--color-warm-border", "--color-warm-text-primary", "--color-warm-text-secondary",
     ];
-    for (const alias of aliases) {
-      expect(css, `Missing alias: ${alias}`).toContain(`${alias}:`);
+    for (const alias of oldAliases) {
+      expect(css, `Stale alias still present: ${alias}`).not.toContain(`${alias}:`);
     }
   });
 

@@ -82,15 +82,15 @@ export function VisitedMap({ slots, className }: VisitedMapProps) {
 
   if (slots.length === 0) {
     return (
-      <div className={`flex items-center justify-center bg-warm-background rounded-xl ${className ?? ""}`}>
-        <p className="font-dm-mono text-xs text-warm-text-secondary">No visited locations</p>
+      <div className={`flex items-center justify-center bg-base rounded-xl ${className ?? ""}`}>
+        <p className="font-dm-mono text-xs text-ink-400">No visited locations</p>
       </div>
     );
   }
 
   return (
     <section
-      className={`rounded-xl overflow-hidden border border-warm-border ${className ?? ""}`}
+      className={`rounded-xl overflow-hidden border border-ink-700 ${className ?? ""}`}
       aria-label="Map of visited locations"
     >
       <MapContainer
@@ -150,7 +150,7 @@ export function VisitedMap({ slots, className }: VisitedMapProps) {
                   </span>
                   {slot.timeLabel && (
                     <>
-                      <span className="text-warm-border" aria-hidden="true">/</span>
+                      <span className="text-ink-700" aria-hidden="true">/</span>
                       <span className="font-dm-mono text-xs text-secondary">
                         {slot.timeLabel}
                       </span>
@@ -163,8 +163,8 @@ export function VisitedMap({ slots, className }: VisitedMapProps) {
                     px-1.5 py-0.5 rounded
                     ${
                       slot.status === "completed"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-gray-100 text-gray-500"
+                        ? "bg-success-bg text-success"
+                        : "bg-ink-800 text-ink-500"
                     }
                   `}
                 >

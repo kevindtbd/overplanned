@@ -95,11 +95,11 @@ export function DayNavigation({
           disabled={currentDay <= 1}
           className="
             shrink-0 p-2 rounded-lg
-            text-warm-text-secondary hover:text-warm-text-primary
-            hover:bg-warm-surface
+            text-ink-400 hover:text-ink-100
+            hover:bg-surface
             transition-colors duration-150
             disabled:opacity-30 disabled:cursor-not-allowed
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400
           "
           aria-label="Previous day"
         >
@@ -147,11 +147,11 @@ export function DayNavigation({
                   flex flex-col items-center gap-0.5
                   px-3 py-2 rounded-lg
                   transition-all duration-150
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400
                   ${
                     isActive
-                      ? "bg-terracotta text-white shadow-sm"
-                      : "bg-warm-surface text-warm-text-secondary hover:bg-warm-background hover:text-warm-text-primary border border-warm-border"
+                      ? "bg-accent text-white shadow-sm"
+                      : "bg-surface text-ink-400 hover:bg-base hover:text-ink-100 border border-ink-700"
                   }
                 `}
               >
@@ -173,11 +173,11 @@ export function DayNavigation({
           disabled={currentDay >= totalDays}
           className="
             shrink-0 p-2 rounded-lg
-            text-warm-text-secondary hover:text-warm-text-primary
-            hover:bg-warm-surface
+            text-ink-400 hover:text-ink-100
+            hover:bg-surface
             transition-colors duration-150
             disabled:opacity-30 disabled:cursor-not-allowed
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400
           "
           aria-label="Next day"
         >
@@ -198,7 +198,7 @@ export function DayNavigation({
       </div>
 
       {/* Mobile swipe hint */}
-      <p className="mt-1 text-center font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider sm:hidden">
+      <p className="mt-1 text-center font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider sm:hidden">
         Swipe to change day
       </p>
     </nav>

@@ -232,14 +232,14 @@ export default function TripDetailPage({
       <div className="space-y-6">
         {/* Trip header */}
         <header className="space-y-1">
-          <h1 className="font-sora text-2xl sm:text-3xl font-bold text-warm-text-primary">
+          <h1 className="font-sora text-2xl sm:text-3xl font-bold text-ink-100">
             {trip.destination}
           </h1>
-          <div className="flex items-center gap-3 font-dm-mono text-xs text-warm-text-secondary uppercase tracking-wider">
+          <div className="flex items-center gap-3 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
             <span>{trip.city}, {trip.country}</span>
-            <span aria-hidden="true" className="text-warm-border">|</span>
+            <span aria-hidden="true" className="text-ink-700">|</span>
             <span>{trip.totalDays} days</span>
-            <span aria-hidden="true" className="text-warm-border">|</span>
+            <span aria-hidden="true" className="text-ink-700">|</span>
             <span>
               {statusSummary.confirmed}/{statusSummary.total} confirmed
             </span>
@@ -257,10 +257,10 @@ export default function TripDetailPage({
 
         {/* Day header */}
         <div className="flex items-center justify-between">
-          <h2 className="font-sora text-lg font-semibold text-warm-text-primary">
+          <h2 className="font-sora text-lg font-semibold text-ink-100">
             Day {currentDay}
           </h2>
-          <span className="font-dm-mono text-xs text-warm-text-secondary uppercase tracking-wider">
+          <span className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
             {slotsForDay.length} {slotsForDay.length === 1 ? "activity" : "activities"}
           </span>
         </div>

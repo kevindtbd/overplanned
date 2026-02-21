@@ -23,8 +23,8 @@ type ReviewFilter = 'all' | 'pending' | 'dismissed' | 'confirmed';
 
 const REVIEW_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
-  dismissed: 'bg-gray-100 text-gray-600',
-  confirmed: 'bg-red-100 text-red-700',
+  dismissed: 'bg-ink-800 text-ink-500',
+  confirmed: 'bg-red-100 text-error',
 };
 
 // ---------------------------------------------------------------------------
@@ -97,15 +97,15 @@ export default function InjectionQueue() {
     <div>
       {/* Filter tabs */}
       <div className="mb-4 flex items-center gap-4">
-        <div className="flex rounded border border-warm-border">
+        <div className="flex rounded border border-ink-700">
           {(['pending', 'confirmed', 'dismissed', 'all'] as ReviewFilter[]).map((f, i, arr) => (
             <button
               key={f}
               onClick={() => setReviewFilter(f)}
               className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${
                 reviewFilter === f
-                  ? 'bg-terracotta text-white'
-                  : 'bg-warm-surface text-gray-600 hover:bg-warm-background'
+                  ? 'bg-accent text-white'
+                  : 'bg-surface text-ink-500 hover:bg-base'
               } ${i === 0 ? 'rounded-l' : ''} ${i === arr.length - 1 ? 'rounded-r' : ''}`}
             >
               {f}
@@ -113,33 +113,33 @@ export default function InjectionQueue() {
           ))}
         </div>
 
-        <span className="rounded bg-warm-background px-3 py-1 font-mono text-sm text-gray-600">
+        <span className="rounded bg-base px-3 py-1 font-mono text-sm text-ink-500">
           {total} flagged input{total !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-2">
-          <p className="font-mono text-sm text-red-700">{error}</p>
+        <div className="mb-4 rounded border border-error/30 bg-error-bg px-4 py-2">
+          <p className="font-mono text-sm text-error">{error}</p>
         </div>
       )}
 
       {/* Queue */}
       <div className="space-y-2">
         {loading ? (
-          <div className="py-8 text-center font-mono text-sm text-gray-400">
+          <div className="py-8 text-center font-mono text-sm text-ink-600">
             Loading...
           </div>
         ) : items.length === 0 ? (
-          <div className="py-8 text-center font-mono text-sm text-gray-400">
+          <div className="py-8 text-center font-mono text-sm text-ink-600">
             No flagged inputs match filters
           </div>
         ) : (
           items.map((item) => (
             <div
               key={item.id}
-              className="rounded border border-warm-border bg-warm-surface"
+              className="rounded border border-ink-700 bg-surface"
             >
               {/* Header row */}
               <div className="flex items-center justify-between px-4 py-3">
@@ -147,7 +147,7 @@ export default function InjectionQueue() {
                   <span className={`rounded px-1.5 py-0.5 font-mono text-xs ${REVIEW_COLORS[item.reviewStatus]}`}>
                     {item.reviewStatus}
                   </span>
-                  <span className="font-mono text-sm text-gray-900">
+                  <span className="font-mono text-sm text-ink-100">
                     {item.userEmail ?? item.userId.slice(0, 8)}
                   </span>
                   {item.surface && (
@@ -155,7 +155,7 @@ export default function InjectionQueue() {
                       {item.surface}
                     </span>
                   )}
-                  <span className="font-mono text-xs text-gray-400">
+                  <span className="font-mono text-xs text-ink-600">
                     {new Date(item.createdAt).toLocaleString()}
                   </span>
                 </div>
@@ -163,7 +163,7 @@ export default function InjectionQueue() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                    className="font-mono text-xs text-terracotta hover:underline"
+                    className="font-mono text-xs text-accent hover:underline"
                   >
                     {expandedId === item.id ? 'Collapse' : 'Details'}
                   </button>
@@ -172,7 +172,7 @@ export default function InjectionQueue() {
                       <button
                         onClick={() => handleReview(item.id, 'dismissed')}
                         disabled={actioning === item.id}
-                        className="rounded border border-warm-border px-2 py-1 font-mono text-xs text-gray-600 hover:bg-warm-background disabled:opacity-40"
+                        className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
                       >
                         Dismiss
                       </button>
@@ -189,8 +189,8 @@ export default function InjectionQueue() {
               </div>
 
               {/* Flagged content preview */}
-              <div className="border-t border-warm-border/50 px-4 py-2">
-                <p className="font-mono text-sm text-gray-700">
+              <div className="border-t border-ink-700/50 px-4 py-2">
+                <p className="font-mono text-sm text-ink-300">
                   {item.payload?.inputText
                     ? String(item.payload.inputText).slice(0, 200)
                     : JSON.stringify(item.payload).slice(0, 200)}
@@ -201,42 +201,42 @@ export default function InjectionQueue() {
 
               {/* Expanded details */}
               {expandedId === item.id && (
-                <div className="border-t border-warm-border/50 px-4 py-3">
+                <div className="border-t border-ink-700/50 px-4 py-3">
                   <div className="grid grid-cols-2 gap-4 font-mono text-xs">
                     <div>
-                      <span className="text-gray-400">Event ID:</span>{' '}
-                      <span className="text-gray-600">{item.id}</span>
+                      <span className="text-ink-600">Event ID:</span>{' '}
+                      <span className="text-ink-500">{item.id}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400">User ID:</span>{' '}
-                      <span className="text-gray-600">{item.userId}</span>
+                      <span className="text-ink-600">User ID:</span>{' '}
+                      <span className="text-ink-500">{item.userId}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400">Session:</span>{' '}
-                      <span className="text-gray-600">{item.sessionId.slice(0, 12)}...</span>
+                      <span className="text-ink-600">Session:</span>{' '}
+                      <span className="text-ink-500">{item.sessionId.slice(0, 12)}...</span>
                     </div>
                     {item.tripId && (
                       <div>
-                        <span className="text-gray-400">Trip:</span>{' '}
-                        <span className="text-gray-600">{item.tripId.slice(0, 12)}...</span>
+                        <span className="text-ink-600">Trip:</span>{' '}
+                        <span className="text-ink-500">{item.tripId.slice(0, 12)}...</span>
                       </div>
                     )}
                     {item.payload?.detectionReason && (
                       <div className="col-span-2">
-                        <span className="text-gray-400">Detection reason:</span>{' '}
-                        <span className="text-gray-600">{String(item.payload.detectionReason)}</span>
+                        <span className="text-ink-600">Detection reason:</span>{' '}
+                        <span className="text-ink-500">{String(item.payload.detectionReason)}</span>
                       </div>
                     )}
                     {item.payload?.confidenceScore !== undefined && (
                       <div>
-                        <span className="text-gray-400">Confidence:</span>{' '}
-                        <span className="text-gray-600">{item.payload.confidenceScore}</span>
+                        <span className="text-ink-600">Confidence:</span>{' '}
+                        <span className="text-ink-500">{item.payload.confidenceScore}</span>
                       </div>
                     )}
                   </div>
                   <div className="mt-3">
-                    <p className="mb-1 font-mono text-xs text-gray-400">Full payload:</p>
-                    <pre className="max-h-40 overflow-auto rounded bg-warm-background p-2 font-mono text-xs text-gray-600">
+                    <p className="mb-1 font-mono text-xs text-ink-600">Full payload:</p>
+                    <pre className="max-h-40 overflow-auto rounded bg-base p-2 font-mono text-xs text-ink-500">
                       {JSON.stringify(item.payload, null, 2)}
                     </pre>
                   </div>
@@ -250,21 +250,21 @@ export default function InjectionQueue() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="font-mono text-xs text-gray-400">
+          <p className="font-mono text-xs text-ink-600">
             Showing {page * pageSize + 1}--{Math.min((page + 1) * pageSize, total)} of {total}
           </p>
           <div className="flex gap-1">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="rounded border border-warm-border px-2 py-1 font-mono text-xs text-gray-600 hover:bg-warm-background disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Prev
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="rounded border border-warm-border px-2 py-1 font-mono text-xs text-gray-600 hover:bg-warm-background disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Next
             </button>

@@ -35,7 +35,7 @@ const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
   approved: 'bg-green-100 text-green-800',
   flagged: 'bg-red-100 text-red-800',
-  archived: 'bg-gray-100 text-gray-600',
+  archived: 'bg-ink-800 text-ink-500',
 };
 
 // ---------------------------------------------------------------------------
@@ -116,12 +116,12 @@ export default function AdminNodesPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="font-display text-2xl text-gray-900">Node Queue</h2>
-          <p className="font-mono text-sm text-gray-500">
+          <h2 className="font-display text-2xl text-ink-100">Node Queue</h2>
+          <p className="font-mono text-sm text-ink-500">
             Flagged and low-convergence nodes requiring admin review
           </p>
         </div>
-        <span className="rounded bg-warm-background px-3 py-1 font-mono text-sm text-gray-600">
+        <span className="rounded bg-base px-3 py-1 font-mono text-sm text-ink-500">
           {total} node{total !== 1 ? 's' : ''}
         </span>
       </div>
@@ -129,15 +129,15 @@ export default function AdminNodesPage() {
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-end gap-3">
         {/* Status tabs */}
-        <div className="flex rounded border border-warm-border">
+        <div className="flex rounded border border-ink-700">
           {(['all', 'flagged', 'pending', 'approved', 'archived'] as StatusFilter[]).map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${
                 statusFilter === s
-                  ? 'bg-terracotta text-white'
-                  : 'bg-warm-surface text-gray-600 hover:bg-warm-background'
+                  ? 'bg-accent text-white'
+                  : 'bg-surface text-ink-500 hover:bg-base'
               } ${s === 'all' ? 'rounded-l' : ''} ${s === 'archived' ? 'rounded-r' : ''}`}
             >
               {s}
@@ -151,7 +151,7 @@ export default function AdminNodesPage() {
           placeholder="Search name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="rounded border border-warm-border bg-warm-background px-3 py-1.5 font-mono text-sm focus:border-terracotta focus:outline-none"
+          className="rounded border border-ink-700 bg-base px-3 py-1.5 font-mono text-sm focus:border-accent focus:outline-none"
         />
 
         {/* City */}
@@ -160,12 +160,12 @@ export default function AdminNodesPage() {
           placeholder="City..."
           value={cityFilter}
           onChange={(e) => setCityFilter(e.target.value)}
-          className="w-32 rounded border border-warm-border bg-warm-background px-3 py-1.5 font-mono text-sm focus:border-terracotta focus:outline-none"
+          className="w-32 rounded border border-ink-700 bg-base px-3 py-1.5 font-mono text-sm focus:border-accent focus:outline-none"
         />
 
         {/* Max convergence */}
         <label className="flex items-center gap-1">
-          <span className="font-mono text-xs text-gray-500">Conv &le;</span>
+          <span className="font-mono text-xs text-ink-500">Conv &le;</span>
           <input
             type="number"
             step="0.1"
@@ -174,23 +174,23 @@ export default function AdminNodesPage() {
             placeholder="1.0"
             value={maxConvergence}
             onChange={(e) => setMaxConvergence(e.target.value)}
-            className="w-20 rounded border border-warm-border bg-warm-background px-2 py-1.5 font-mono text-sm focus:border-terracotta focus:outline-none"
+            className="w-20 rounded border border-ink-700 bg-base px-2 py-1.5 font-mono text-sm focus:border-accent focus:outline-none"
           />
         </label>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-2">
-          <p className="font-mono text-sm text-red-700">{error}</p>
+        <div className="mb-4 rounded border border-error/30 bg-error-bg px-4 py-2">
+          <p className="font-mono text-sm text-error">{error}</p>
         </div>
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto rounded border border-warm-border">
+      <div className="overflow-x-auto rounded border border-ink-700">
         <table className="w-full font-mono text-sm">
           <thead>
-            <tr className="border-b border-warm-border bg-warm-background text-left text-xs text-gray-500">
+            <tr className="border-b border-ink-700 bg-base text-left text-xs text-ink-500">
               <th className="cursor-pointer px-3 py-2" onClick={() => handleSort('name')}>
                 Name{sortIndicator('name')}
               </th>
@@ -213,13 +213,13 @@ export default function AdminNodesPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-gray-400">
+                <td colSpan={9} className="px-3 py-8 text-center text-ink-600">
                   Loading...
                 </td>
               </tr>
             ) : nodes.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-gray-400">
+                <td colSpan={9} className="px-3 py-8 text-center text-ink-600">
                   No nodes match filters
                 </td>
               </tr>
@@ -227,40 +227,40 @@ export default function AdminNodesPage() {
               nodes.map((node) => (
                 <tr
                   key={node.id}
-                  className="border-b border-warm-border/50 hover:bg-warm-background/50 transition-colors"
+                  className="border-b border-ink-700/50 hover:bg-base/50 transition-colors"
                 >
                   <td className="px-3 py-2">
                     <button
                       onClick={() => setEditingNodeId(node.id)}
-                      className="text-left text-gray-900 hover:text-terracotta"
+                      className="text-left text-ink-100 hover:text-accent"
                     >
                       {node.name}
                     </button>
                     {node.aliasCount > 0 && (
-                      <span className="ml-1 text-xs text-gray-400">+{node.aliasCount}</span>
+                      <span className="ml-1 text-xs text-ink-600">+{node.aliasCount}</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-gray-600">{node.city}</td>
-                  <td className="px-3 py-2 text-gray-600">{node.category}</td>
+                  <td className="px-3 py-2 text-ink-500">{node.city}</td>
+                  <td className="px-3 py-2 text-ink-500">{node.category}</td>
                   <td className="px-3 py-2">
-                    <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS_COLORS[node.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS_COLORS[node.status] ?? 'bg-ink-800 text-ink-500'}`}>
                       {node.status}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-gray-600">
+                  <td className="px-3 py-2 text-ink-500">
                     {node.convergenceScore !== null ? node.convergenceScore.toFixed(3) : '--'}
                   </td>
-                  <td className="px-3 py-2 text-gray-600">{node.sourceCount}</td>
-                  <td className="max-w-[200px] truncate px-3 py-2 text-xs text-gray-500">
+                  <td className="px-3 py-2 text-ink-500">{node.sourceCount}</td>
+                  <td className="max-w-[200px] truncate px-3 py-2 text-xs text-ink-500">
                     {node.flagReason ?? '--'}
                   </td>
-                  <td className="px-3 py-2 text-xs text-gray-400">
+                  <td className="px-3 py-2 text-xs text-ink-600">
                     {new Date(node.updatedAt).toLocaleDateString()}
                   </td>
                   <td className="px-3 py-2">
                     <button
                       onClick={() => setEditingNodeId(node.id)}
-                      className="text-xs text-terracotta hover:underline"
+                      className="text-xs text-accent hover:underline"
                     >
                       Edit
                     </button>
@@ -275,21 +275,21 @@ export default function AdminNodesPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="font-mono text-xs text-gray-400">
+          <p className="font-mono text-xs text-ink-600">
             Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} of {total}
           </p>
           <div className="flex gap-1">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="rounded border border-warm-border px-2 py-1 font-mono text-xs text-gray-600 hover:bg-warm-background disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Prev
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="rounded border border-warm-border px-2 py-1 font-mono text-xs text-gray-600 hover:bg-warm-background disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Next
             </button>

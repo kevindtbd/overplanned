@@ -60,9 +60,9 @@ export function ForkScreen({ onPlanTrip, onExplore }: ForkScreenProps) {
       <div className="mt-10 grid w-full max-w-lg gap-4 sm:grid-cols-2">
         <button
           onClick={onPlanTrip}
-          className="group card flex flex-col items-center gap-4 p-6 transition-all duration-150 hover:border-terracotta hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta"
+          className="group card flex flex-col items-center gap-4 p-6 transition-all duration-150 hover:border-accent hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent"
         >
-          <CompassIcon className="h-10 w-10 text-terracotta transition-transform duration-150 group-hover:scale-110" />
+          <CompassIcon className="h-10 w-10 text-accent transition-transform duration-150 group-hover:scale-110" />
           <div className="text-center">
             <span className="block font-sora text-lg font-semibold text-primary">
               Plan a trip
@@ -73,9 +73,9 @@ export function ForkScreen({ onPlanTrip, onExplore }: ForkScreenProps) {
 
         <button
           onClick={onExplore}
-          className="group card flex flex-col items-center gap-4 p-6 transition-all duration-150 hover:border-terracotta hover:shadow-md focus-visible:ring-2 focus-visible:ring-terracotta"
+          className="group card flex flex-col items-center gap-4 p-6 transition-all duration-150 hover:border-accent hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent"
         >
-          <MapIcon className="h-10 w-10 text-terracotta transition-transform duration-150 group-hover:scale-110" />
+          <MapIcon className="h-10 w-10 text-accent transition-transform duration-150 group-hover:scale-110" />
           <div className="text-center">
             <span className="block font-sora text-lg font-semibold text-primary">
               Just exploring

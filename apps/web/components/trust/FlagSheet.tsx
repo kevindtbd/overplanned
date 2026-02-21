@@ -286,20 +286,20 @@ export function FlagSheet({
         aria-label={`Flag issue with ${slot.activityName}`}
         className="
           fixed bottom-0 left-0 right-0 z-50
-          rounded-t-2xl border-t border-warm-border
-          bg-warm-surface shadow-xl
+          rounded-t-2xl border-t border-ink-700
+          bg-surface shadow-xl
           max-w-lg mx-auto
           safe-area-inset-bottom
         "
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-warm-border" aria-hidden="true" />
+          <div className="w-10 h-1 rounded-full bg-ink-700" aria-hidden="true" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pb-4 pt-2 border-b border-warm-border">
-          <div className="flex items-center gap-2 text-warm-text-secondary">
+        <div className="flex items-center justify-between px-5 pb-4 pt-2 border-b border-ink-700">
+          <div className="flex items-center gap-2 text-ink-400">
             <FlagIcon />
             <span className="font-dm-mono text-[11px] uppercase tracking-wider">
               Report an issue
@@ -310,8 +310,8 @@ export function FlagSheet({
             onClick={onDismiss}
             aria-label="Close flag sheet"
             className="
-              p-1.5 rounded-lg text-warm-text-secondary
-              hover:bg-warm-background hover:text-warm-text-primary
+              p-1.5 rounded-lg text-ink-400
+              hover:bg-base hover:text-ink-100
               transition-colors
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F]
             "
@@ -339,7 +339,7 @@ export function FlagSheet({
               aria-busy="true"
             >
               <div className="w-8 h-8 border-2 border-[#C4694F] border-t-transparent rounded-full animate-spin" />
-              <p className="font-dm-mono text-xs text-warm-text-secondary uppercase tracking-wider">
+              <p className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
                 {state.path === "wrong_for_me"
                   ? "Updating your preferences..."
                   : "Sending to review queue..."}
@@ -356,12 +356,12 @@ export function FlagSheet({
                 <CheckCircleIcon />
               </span>
               <div className="space-y-1">
-                <p className="font-sora font-medium text-warm-text-primary text-sm">
+                <p className="font-sora font-medium text-ink-100 text-sm">
                   {state.path === "wrong_for_me"
                     ? "Got it. We'll adjust your recommendations."
                     : "Thanks. This has been sent for review."}
                 </p>
-                <p className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider">
+                <p className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider">
                   {state.path === "wrong_for_me"
                     ? "Your preferences have been updated"
                     : "Our team will look into this"}
@@ -372,7 +372,7 @@ export function FlagSheet({
 
           {state.phase === "error" && (
             <div className="space-y-4" aria-live="polite">
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+              <div className="rounded-lg border border-red-200 bg-error-bg px-4 py-3">
                 <p className="font-dm-mono text-xs text-red-700">{state.message}</p>
               </div>
               <div className="flex gap-2">
@@ -392,10 +392,10 @@ export function FlagSheet({
                   type="button"
                   onClick={onDismiss}
                   className="
-                    flex-1 py-2.5 rounded-lg border border-warm-border bg-warm-surface
-                    text-warm-text-secondary font-dm-mono text-xs uppercase tracking-wider
-                    hover:bg-warm-background transition-colors
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm-border
+                    flex-1 py-2.5 rounded-lg border border-ink-700 bg-surface
+                    text-ink-400 font-dm-mono text-xs uppercase tracking-wider
+                    hover:bg-base transition-colors
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-700
                   "
                 >
                   Dismiss
@@ -425,10 +425,10 @@ export function FlagTrigger({ onClick, disabled = false }: FlagTriggerProps) {
       aria-label="Report an issue with this slot"
       className="
         flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-        border border-warm-border bg-warm-surface
-        text-warm-text-secondary
+        border border-ink-700 bg-surface
+        text-ink-400
         font-dm-mono text-[10px] uppercase tracking-wider
-        hover:border-amber-400/60 hover:text-amber-700
+        hover:border-amber-400/60 hover:text-warning
         transition-all duration-150
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2
         disabled:opacity-40 disabled:cursor-not-allowed

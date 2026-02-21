@@ -43,16 +43,16 @@ function groupByModel(models: ModelEntry[]): Record<string, ModelEntry[]> {
 
 function MetricsPills({ metrics }: { metrics: Record<string, number> | null }) {
   if (!metrics || Object.keys(metrics).length === 0) {
-    return <span className="font-mono text-xs text-gray-400">No metrics</span>;
+    return <span className="font-mono text-xs text-ink-600">No metrics</span>;
   }
   return (
     <div className="flex flex-wrap gap-1.5">
       {Object.entries(metrics).map(([key, val]) => (
         <span
           key={key}
-          className="inline-flex items-center gap-1 rounded-full bg-warm-background px-2 py-0.5 font-mono text-xs text-gray-600"
+          className="inline-flex items-center gap-1 rounded-full bg-base px-2 py-0.5 font-mono text-xs text-ink-500"
         >
-          <span className="text-gray-400">{key}:</span>
+          <span className="text-ink-600">{key}:</span>
           <span className="font-medium">{typeof val === 'number' ? val.toFixed(4) : String(val)}</span>
         </span>
       ))}
@@ -67,7 +67,7 @@ function TrainingRange({
 }) {
   if (!range) return null;
   return (
-    <span className="font-mono text-xs text-gray-500">
+    <span className="font-mono text-xs text-ink-500">
       {range.from && range.to
         ? `${range.from.slice(0, 10)} to ${range.to.slice(0, 10)}`
         : 'Range unknown'}
@@ -111,10 +111,10 @@ export default function ModelsPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="font-display text-2xl font-semibold text-gray-900">
+          <h2 className="font-display text-2xl font-semibold text-ink-100">
             Model Registry
           </h2>
-          <p className="mt-1 font-mono text-sm text-gray-500">
+          <p className="mt-1 font-mono text-sm text-ink-500">
             Manage ML model lifecycle and promotions
           </p>
         </div>
@@ -122,7 +122,7 @@ export default function ModelsPage() {
           <select
             value={filterStage}
             onChange={(e) => setFilterStage(e.target.value)}
-            className="rounded-md border border-warm-border bg-warm-surface px-3 py-1.5 font-mono text-sm text-gray-700"
+            className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-mono text-sm text-ink-300"
           >
             <option value="">All stages</option>
             <option value="staging">Staging</option>
@@ -133,7 +133,7 @@ export default function ModelsPage() {
           <button
             onClick={fetchModels}
             disabled={loading}
-            className="rounded-md border border-warm-border bg-warm-surface px-3 py-1.5 font-mono text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-50"
+            className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-mono text-sm text-ink-500 transition-colors hover:bg-ink-800 disabled:opacity-50"
           >
             Refresh
           </button>
@@ -142,25 +142,25 @@ export default function ModelsPage() {
 
       {/* Error state */}
       {error && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 font-mono text-sm text-red-700">
+        <div className="mb-4 rounded-md border border-error/30 bg-error-bg p-3 font-mono text-sm text-error">
           {error}
         </div>
       )}
 
       {/* Loading state */}
       {loading && models.length === 0 && (
-        <div className="py-12 text-center font-mono text-sm text-gray-400">
+        <div className="py-12 text-center font-mono text-sm text-ink-600">
           Loading models...
         </div>
       )}
 
       {/* Empty state */}
       {!loading && models.length === 0 && !error && (
-        <div className="rounded-lg border border-warm-border bg-warm-surface p-12 text-center">
-          <p className="font-mono text-sm text-gray-500">
+        <div className="rounded-lg border border-ink-700 bg-surface p-12 text-center">
+          <p className="font-mono text-sm text-ink-500">
             No models registered yet.
           </p>
-          <p className="mt-1 font-mono text-xs text-gray-400">
+          <p className="mt-1 font-mono text-xs text-ink-600">
             Models appear here once registered via the ML pipeline.
           </p>
         </div>
@@ -170,9 +170,9 @@ export default function ModelsPage() {
       <div className="space-y-8">
         {Object.entries(grouped).map(([modelName, versions]) => (
           <div key={modelName}>
-            <h3 className="mb-3 font-display text-lg font-semibold text-gray-800">
+            <h3 className="mb-3 font-display text-lg font-semibold text-ink-200">
               {modelName}
-              <span className="ml-2 font-mono text-xs font-normal text-gray-400">
+              <span className="ml-2 font-mono text-xs font-normal text-ink-600">
                 {versions.length} version{versions.length !== 1 && 's'}
               </span>
             </h3>
@@ -183,21 +183,21 @@ export default function ModelsPage() {
                 return (
                   <div
                     key={m.id}
-                    className="rounded-lg border border-warm-border bg-warm-surface shadow-sm"
+                    className="rounded-lg border border-ink-700 bg-surface shadow-sm"
                   >
                     {/* Row summary */}
                     <button
                       type="button"
                       onClick={() => setExpandedId(isExpanded ? null : m.id)}
-                      className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-warm-background/50"
+                      className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-base/50"
                     >
                       <StageBadge stage={m.stage} />
 
-                      <span className="font-mono text-sm font-medium text-gray-800">
+                      <span className="font-mono text-sm font-medium text-ink-200">
                         v{m.model_version}
                       </span>
 
-                      <span className="font-mono text-xs text-gray-500">
+                      <span className="font-mono text-xs text-ink-500">
                         {m.model_type}
                       </span>
 
@@ -205,7 +205,7 @@ export default function ModelsPage() {
                         <ArtifactHashDisplay hash={m.artifact_hash} />
 
                         {m.promoted_at && (
-                          <span className="font-mono text-xs text-gray-400">
+                          <span className="font-mono text-xs text-ink-600">
                             Promoted{' '}
                             {new Date(m.promoted_at).toLocaleDateString('en-US', {
                               month: 'short',
@@ -216,7 +216,7 @@ export default function ModelsPage() {
                         )}
 
                         <svg
-                          className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          className={`h-4 w-4 text-ink-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                           viewBox="0 0 20 20"
                           fill="currentColor"
                         >
@@ -231,16 +231,16 @@ export default function ModelsPage() {
 
                     {/* Expanded details */}
                     {isExpanded && (
-                      <div className="border-t border-warm-border px-4 py-4">
+                      <div className="border-t border-ink-700 px-4 py-4">
                         <div className="grid grid-cols-2 gap-4">
                           {/* Left column: info */}
                           <div className="space-y-3">
                             {m.description && (
                               <div>
-                                <span className="font-mono text-xs text-gray-400">
+                                <span className="font-mono text-xs text-ink-600">
                                   Description
                                 </span>
-                                <p className="text-sm text-gray-700">
+                                <p className="text-sm text-ink-300">
                                   {m.description}
                                 </p>
                               </div>
@@ -248,26 +248,26 @@ export default function ModelsPage() {
 
                             {m.artifact_path && (
                               <div>
-                                <span className="font-mono text-xs text-gray-400">
+                                <span className="font-mono text-xs text-ink-600">
                                   Artifact
                                 </span>
-                                <p className="font-mono text-xs text-gray-600 break-all">
+                                <p className="font-mono text-xs text-ink-500 break-all">
                                   {m.artifact_path}
                                 </p>
                               </div>
                             )}
 
                             <div>
-                              <span className="font-mono text-xs text-gray-400">
+                              <span className="font-mono text-xs text-ink-600">
                                 Artifact Hash
                               </span>
-                              <p className="font-mono text-xs text-gray-600 break-all">
+                              <p className="font-mono text-xs text-ink-500 break-all">
                                 {m.artifact_hash || 'Not recorded'}
                               </p>
                             </div>
 
                             <div>
-                              <span className="font-mono text-xs text-gray-400">
+                              <span className="font-mono text-xs text-ink-600">
                                 Training Data
                               </span>
                               <div>
@@ -277,20 +277,20 @@ export default function ModelsPage() {
 
                             {m.evaluated_at && (
                               <div>
-                                <span className="font-mono text-xs text-gray-400">
+                                <span className="font-mono text-xs text-ink-600">
                                   Evaluated
                                 </span>
-                                <p className="font-mono text-xs text-gray-600">
+                                <p className="font-mono text-xs text-ink-500">
                                   {new Date(m.evaluated_at).toLocaleString()}
                                 </p>
                               </div>
                             )}
 
                             <div>
-                              <span className="font-mono text-xs text-gray-400">
+                              <span className="font-mono text-xs text-ink-600">
                                 Registered
                               </span>
-                              <p className="font-mono text-xs text-gray-600">
+                              <p className="font-mono text-xs text-ink-500">
                                 {new Date(m.created_at).toLocaleString()}
                               </p>
                             </div>
@@ -298,7 +298,7 @@ export default function ModelsPage() {
 
                           {/* Right column: metrics */}
                           <div>
-                            <span className="font-mono text-xs text-gray-400">
+                            <span className="font-mono text-xs text-ink-600">
                               Metrics
                             </span>
                             <div className="mt-1">

@@ -31,15 +31,6 @@ const config: Config = {
         info: { DEFAULT: "var(--info)", bg: "var(--info-bg)" },
         warning: { DEFAULT: "var(--warning)", bg: "var(--warning-bg)" },
         error: { DEFAULT: "var(--error)", bg: "var(--error-bg)" },
-        // Backward-compat (REMOVE IN PHASE 2)
-        terracotta: { DEFAULT: "var(--accent)" },
-        warm: {
-          background: "var(--bg-base)",
-          surface: "var(--bg-surface)",
-          border: "var(--ink-700)",
-          "text-primary": "var(--ink-100)",
-          "text-secondary": "var(--ink-400)",
-        },
       },
       backgroundColor: {
         base: "var(--bg-base)",
@@ -49,14 +40,13 @@ const config: Config = {
         input: "var(--bg-input)",
         stone: "var(--bg-stone)",
         warm: "var(--bg-warm)",
-        app: "var(--bg-base)", // Backward-compat (REMOVE IN PHASE 2)
       },
       borderColor: {
         DEFAULT: "var(--ink-700)",
       },
       textColor: {
-        primary: "var(--ink-100)", // Backward-compat (REMOVE IN PHASE 2)
-        secondary: "var(--ink-400)", // Backward-compat (REMOVE IN PHASE 2)
+        primary: "var(--ink-100)",
+        secondary: "var(--ink-400)",
       },
       boxShadow: {
         sm: "var(--shadow-sm)",

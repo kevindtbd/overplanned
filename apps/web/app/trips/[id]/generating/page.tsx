@@ -162,9 +162,9 @@ export default function GeneratingPage() {
   // ── Loading state ──
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-app">
+      <div className="flex min-h-screen items-center justify-center bg-base">
         <div className="flex flex-col items-center gap-3">
-          <SpinnerIcon className="h-8 w-8 text-terracotta" />
+          <SpinnerIcon className="h-8 w-8 text-accent" />
           <p className="font-dm-mono text-sm text-secondary">
             Loading trip...
           </p>
@@ -176,7 +176,7 @@ export default function GeneratingPage() {
   // ── Error loading trip metadata ──
   if (loadError || !tripMeta) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-app">
+      <div className="flex min-h-screen items-center justify-center bg-base">
         <div className="flex flex-col items-center gap-4 px-4 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/30">
             <AlertIcon className="h-7 w-7 text-red-500" />

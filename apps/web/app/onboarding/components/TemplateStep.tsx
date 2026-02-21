@@ -136,15 +136,15 @@ export function TemplateStep({ selected, onSelect }: TemplateStepProps) {
             }
             className={`group rounded-xl border p-5 text-left transition-all duration-150 ${
               selected === tpl.id
-                ? "border-terracotta bg-terracotta/10 ring-1 ring-terracotta"
-                : "border-warm bg-warm-surface hover:border-terracotta/50 hover:shadow-sm"
+                ? "border-accent bg-accent/10 ring-1 ring-accent"
+                : "border-ink-700 bg-surface hover:border-accent/50 hover:shadow-sm"
             }`}
           >
             <div
               className={`transition-colors ${
                 selected === tpl.id
-                  ? "text-terracotta"
-                  : "text-secondary group-hover:text-terracotta"
+                  ? "text-accent"
+                  : "text-secondary group-hover:text-accent"
               }`}
             >
               {tpl.icon}

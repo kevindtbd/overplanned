@@ -74,7 +74,7 @@ export function DatesStep({
               value={startDate}
               min={today}
               onChange={(e) => onStartDateChange(e.target.value)}
-              className="w-full rounded-lg border border-warm bg-warm-surface py-3 pl-10 pr-4 font-dm-mono text-sm text-primary focus:border-terracotta focus:outline-none focus:ring-2 focus:ring-terracotta/30"
+              className="w-full rounded-lg border border-ink-700 bg-surface py-3 pl-10 pr-4 font-dm-mono text-sm text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
         </div>
@@ -94,14 +94,14 @@ export function DatesStep({
               value={endDate}
               min={startDate || today}
               onChange={(e) => onEndDateChange(e.target.value)}
-              className="w-full rounded-lg border border-warm bg-warm-surface py-3 pl-10 pr-4 font-dm-mono text-sm text-primary focus:border-terracotta focus:outline-none focus:ring-2 focus:ring-terracotta/30"
+              className="w-full rounded-lg border border-ink-700 bg-surface py-3 pl-10 pr-4 font-dm-mono text-sm text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
         </div>
       </div>
 
       {tripLength !== null && tripLength > 0 && (
-        <div className="mt-4 rounded-lg border border-terracotta/30 bg-terracotta/5 px-4 py-3">
+        <div className="mt-4 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3">
           <span className="label-mono">trip length</span>
           <p className="mt-1 font-sora text-lg font-medium text-primary">
             {tripLength} {tripLength === 1 ? "night" : "nights"}

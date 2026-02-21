@@ -159,14 +159,14 @@ export function SlotRating({
 
   return (
     <div
-      className="rounded-xl border border-warm-border bg-warm-surface p-4 space-y-3"
+      className="rounded-xl border border-ink-700 bg-surface p-4 space-y-3"
       role="group"
       aria-label={`Rate ${activityName}`}
     >
       {/* Slot identity */}
       <div className="flex items-center gap-3">
         {imageUrl ? (
-          <div className="w-10 h-10 rounded-lg overflow-hidden bg-warm-background shrink-0">
+          <div className="w-10 h-10 rounded-lg overflow-hidden bg-base shrink-0">
             <img
               src={imageUrl}
               alt=""
@@ -175,7 +175,7 @@ export function SlotRating({
             />
           </div>
         ) : (
-          <div className="w-10 h-10 rounded-lg bg-warm-background flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-base flex items-center justify-center shrink-0">
             <svg
               width="20"
               height="20"
@@ -183,7 +183,7 @@ export function SlotRating({
               fill="none"
               stroke="currentColor"
               strokeWidth="1"
-              className="text-warm-text-secondary opacity-40"
+              className="text-ink-400 opacity-40"
               aria-hidden="true"
             >
               <rect x="2" y="4" width="16" height="12" rx="2" />
@@ -192,7 +192,7 @@ export function SlotRating({
             </svg>
           </div>
         )}
-        <h3 className="font-sora font-semibold text-warm-text-primary text-sm leading-tight">
+        <h3 className="font-sora font-semibold text-ink-100 text-sm leading-tight">
           {activityName}
         </h3>
       </div>
@@ -213,12 +213,12 @@ export function SlotRating({
                   flex items-center gap-1.5 px-3 py-1.5 rounded-lg
                   font-dm-mono text-xs uppercase tracking-wider
                   border transition-all duration-150
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400 focus-visible:ring-offset-2
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
                   disabled:opacity-40 disabled:cursor-not-allowed
                   ${
                     isActive
                       ? config.activeClass
-                      : `bg-warm-surface text-warm-text-secondary border-warm-border ${config.hoverClass}`
+                      : `bg-surface text-ink-400 border-ink-700 ${config.hoverClass}`
                   }
                 `}
                 aria-pressed={isActive}

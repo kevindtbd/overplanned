@@ -119,7 +119,7 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search cities..."
-          className="w-full rounded-lg border border-warm bg-warm-surface py-3 pl-10 pr-4 font-sora text-primary placeholder:text-secondary focus:border-terracotta focus:outline-none focus:ring-2 focus:ring-terracotta/30"
+          className="w-full rounded-lg border border-ink-700 bg-surface py-3 pl-10 pr-4 font-sora text-primary placeholder:text-secondary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
           role="combobox"
           aria-expanded={isOpen}
           aria-controls="city-listbox"
@@ -134,7 +134,7 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
             id="city-listbox"
             ref={listRef}
             role="listbox"
-            className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-warm bg-warm-surface shadow-lg"
+            className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-ink-700 bg-surface shadow-lg"
           >
             {filtered.map((city, i) => (
               <li
@@ -144,9 +144,9 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
                 aria-selected={value?.city === city.city}
                 className={`cursor-pointer px-4 py-3 transition-colors ${
                   i === focusIndex
-                    ? "bg-terracotta/10 text-primary"
-                    : "text-primary hover:bg-warm-border/50"
-                } ${value?.city === city.city ? "border-l-2 border-terracotta" : ""}`}
+                    ? "bg-accent/10 text-primary"
+                    : "text-primary hover:bg-ink-700/50"
+                } ${value?.city === city.city ? "border-l-2 border-accent" : ""}`}
                 onMouseDown={() => handleSelect(city)}
                 onMouseEnter={() => setFocusIndex(i)}
               >
@@ -160,7 +160,7 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
         )}
 
         {isOpen && filtered.length === 0 && query.trim() && (
-          <div className="absolute z-10 mt-1 w-full rounded-lg border border-warm bg-warm-surface p-4 shadow-lg">
+          <div className="absolute z-10 mt-1 w-full rounded-lg border border-ink-700 bg-surface p-4 shadow-lg">
             <p className="text-center text-sm text-secondary">
               No matching launch city. We're expanding soon.
             </p>
@@ -169,7 +169,7 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
       </div>
 
       {value && (
-        <div className="mt-4 rounded-lg border border-terracotta/30 bg-terracotta/5 px-4 py-3">
+        <div className="mt-4 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3">
           <span className="label-mono">selected</span>
           <p className="mt-1 font-sora font-medium text-primary">
             {value.destination}

@@ -92,8 +92,8 @@ export default function SlotBottomSheet({
         role="dialog"
         aria-modal="true"
         aria-label={`Details for ${slot.name}`}
-        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-warm-surface
-                   border-t border-warm shadow-lg lg:hidden
+        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-surface
+                   border-t border-ink-700 shadow-lg lg:hidden
                    transition-transform duration-200 ease-out"
         style={{
           transform: `translateY(${translateY}px)`,
@@ -105,7 +105,7 @@ export default function SlotBottomSheet({
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2">
-          <div className="h-1 w-10 rounded-full bg-warm-border" />
+          <div className="h-1 w-10 rounded-full bg-ink-700" />
         </div>
 
         {/* Content */}

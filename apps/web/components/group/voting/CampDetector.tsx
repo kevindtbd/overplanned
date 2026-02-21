@@ -124,9 +124,9 @@ function computeCampSplit(
 function CampBlock({ camp }: { camp: Camp }) {
   const isFor = camp.side === "for";
   const bgClass = isFor
-    ? "bg-emerald-50 border-emerald-200"
-    : "bg-red-50 border-red-200";
-  const textClass = isFor ? "text-emerald-700" : "text-red-600";
+    ? "bg-success-bg border-emerald-200"
+    : "bg-error-bg border-red-200";
+  const textClass = isFor ? "text-success" : "text-error";
   const label = isFor ? "In favor" : "Against";
   const pct = Math.round(camp.fraction * 100);
 
@@ -143,7 +143,7 @@ function CampBlock({ camp }: { camp: Camp }) {
         {camp.members.map((mv) => (
           <li
             key={mv.memberId}
-            className="flex items-center gap-2 font-dm-mono text-xs text-warm-text-primary"
+            className="flex items-center gap-2 font-dm-mono text-xs text-ink-100"
           >
             {mv.avatarUrl ? (
               /* eslint-disable-next-line @next/next/no-img-element */
@@ -156,7 +156,7 @@ function CampBlock({ camp }: { camp: Camp }) {
               <div
                 className="
                   w-5 h-5 rounded-full shrink-0 flex items-center justify-center
-                  bg-terracotta-100 text-terracotta-600
+                  bg-accent-light text-accent-fg
                   font-sora text-[9px] font-semibold
                 "
                 aria-hidden="true"
@@ -184,12 +184,12 @@ function SplitBar({
 
   return (
     <div
-      className="h-1.5 w-full rounded-full overflow-hidden bg-warm-border flex"
+      className="h-1.5 w-full rounded-full overflow-hidden bg-ink-700 flex"
       role="meter"
       aria-label={`${forPct}% for, ${againstPct}% against`}
     >
       <div
-        className="h-full bg-emerald-400 transition-all duration-300"
+        className="h-full bg-success transition-all duration-300"
         style={{ width: `${forPct}%` }}
       />
       <div
@@ -236,7 +236,7 @@ export function CampDetector({
       aria-label="Camp split detected"
       className="
         mt-3 rounded-xl border border-red-200
-        bg-red-50/40 overflow-hidden
+        bg-error-bg/40 overflow-hidden
       "
     >
       {/* Header */}
@@ -273,7 +273,7 @@ export function CampDetector({
             <CampBlock key={camp.side} camp={camp} />
           ))}
         </div>
-        <p className="font-dm-mono text-xs text-warm-text-secondary">
+        <p className="font-dm-mono text-xs text-ink-400">
           Alternatives will load below for a re-vote.
         </p>
       </div>

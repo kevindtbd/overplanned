@@ -75,7 +75,7 @@ const STATUS_OPTIONS: { value: NodeStatus; label: string; color: string }[] = [
   { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
   { value: 'approved', label: 'Approved', color: 'bg-green-100 text-green-800' },
   { value: 'flagged', label: 'Flagged', color: 'bg-red-100 text-red-800' },
-  { value: 'archived', label: 'Archived', color: 'bg-gray-100 text-gray-600' },
+  { value: 'archived', label: 'Archived', color: 'bg-ink-800 text-ink-500' },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -207,8 +207,8 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-        <div className="rounded-lg bg-warm-surface p-8 shadow-xl">
-          <p className="font-mono text-sm text-gray-600">Loading node...</p>
+        <div className="rounded-lg bg-surface p-8 shadow-xl">
+          <p className="font-mono text-sm text-ink-500">Loading node...</p>
         </div>
       </div>
     );
@@ -217,9 +217,9 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
   if (!node) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-        <div className="rounded-lg bg-warm-surface p-8 shadow-xl">
-          <p className="font-mono text-sm text-red-600">{error || 'Node not found'}</p>
-          <button onClick={onClose} className="mt-4 font-mono text-sm text-terracotta">
+        <div className="rounded-lg bg-surface p-8 shadow-xl">
+          <p className="font-mono text-sm text-error">{error || 'Node not found'}</p>
+          <button onClick={onClose} className="mt-4 font-mono text-sm text-accent">
             Close
           </button>
         </div>
@@ -233,12 +233,12 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 pt-8 pb-8">
-      <div className="w-full max-w-3xl rounded-lg border border-warm-border bg-warm-surface shadow-xl">
+      <div className="w-full max-w-3xl rounded-lg border border-ink-700 bg-surface shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-warm-border px-6 py-4">
+        <div className="flex items-center justify-between border-b border-ink-700 px-6 py-4">
           <div>
-            <h2 className="font-display text-lg text-gray-900">{node.name}</h2>
-            <p className="font-mono text-xs text-gray-500">
+            <h2 className="font-display text-lg text-ink-100">{node.name}</h2>
+            <p className="font-mono text-xs text-ink-500">
               {node.city}, {node.country} &middot; {node.slug}
             </p>
           </div>
@@ -250,7 +250,7 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
             )}
             <button
               onClick={onClose}
-              className="font-mono text-sm text-gray-500 hover:text-gray-800"
+              className="font-mono text-sm text-ink-500 hover:text-ink-200"
             >
               Close
             </button>
@@ -259,13 +259,13 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
 
         {/* Error banner */}
         {error && (
-          <div className="border-b border-red-200 bg-red-50 px-6 py-2">
-            <p className="font-mono text-xs text-red-700">{error}</p>
+          <div className="border-b border-error/30 bg-error-bg px-6 py-2">
+            <p className="font-mono text-xs text-error">{error}</p>
           </div>
         )}
 
         {/* Status actions */}
-        <div className="flex gap-2 border-b border-warm-border px-6 py-3">
+        <div className="flex gap-2 border-b border-ink-700 px-6 py-3">
           {STATUS_OPTIONS.filter((s) => s.value !== node.status).map((s) => (
             <button
               key={s.value}
@@ -279,20 +279,20 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-4 border-b border-warm-border px-6">
+        <div className="flex gap-4 border-b border-ink-700 px-6">
           {(['details', 'aliases', 'signals'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`border-b-2 px-1 py-2 font-mono text-sm capitalize transition-colors ${
                 activeTab === tab
-                  ? 'border-terracotta text-terracotta'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-ink-500 hover:text-ink-300'
               }`}
             >
               {tab}
               {tab === 'aliases' && node.aliases.length > 0 && (
-                <span className="ml-1 text-xs text-gray-400">({node.aliases.length})</span>
+                <span className="ml-1 text-xs text-ink-600">({node.aliases.length})</span>
               )}
             </button>
           ))}
@@ -320,7 +320,7 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
               </div>
 
               {/* Read-only metadata */}
-              <div className="col-span-2 mt-2 grid grid-cols-3 gap-2 rounded border border-warm-border bg-warm-background p-3">
+              <div className="col-span-2 mt-2 grid grid-cols-3 gap-2 rounded border border-ink-700 bg-base p-3">
                 <ReadonlyField label="Convergence" value={node.convergenceScore?.toFixed(3) ?? 'n/a'} />
                 <ReadonlyField label="Sources" value={String(node.sourceCount)} />
                 <ReadonlyField label="Canonical" value={node.isCanonical ? 'Yes' : 'No'} />
@@ -341,12 +341,12 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
                   onChange={(e) => setNewAlias(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddAlias()}
                   placeholder="Add alias..."
-                  className="flex-1 rounded border border-warm-border bg-warm-background px-3 py-1.5 font-mono text-sm focus:border-terracotta focus:outline-none"
+                  className="flex-1 rounded border border-ink-700 bg-base px-3 py-1.5 font-mono text-sm focus:border-accent focus:outline-none"
                 />
                 <button
                   onClick={handleAddAlias}
                   disabled={!newAlias.trim()}
-                  className="rounded bg-terracotta px-3 py-1.5 font-mono text-sm text-white hover:opacity-90 disabled:opacity-40"
+                  className="rounded bg-accent px-3 py-1.5 font-mono text-sm text-white hover:opacity-90 disabled:opacity-40"
                 >
                   Add
                 </button>
@@ -354,18 +354,18 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
 
               {/* Alias list */}
               {node.aliases.length === 0 ? (
-                <p className="font-mono text-sm text-gray-400">No aliases</p>
+                <p className="font-mono text-sm text-ink-600">No aliases</p>
               ) : (
                 <ul className="space-y-1">
                   {node.aliases.map((a) => (
-                    <li key={a.id} className="flex items-center justify-between rounded border border-warm-border px-3 py-2">
+                    <li key={a.id} className="flex items-center justify-between rounded border border-ink-700 px-3 py-2">
                       <div>
-                        <span className="font-mono text-sm text-gray-900">{a.alias}</span>
-                        <span className="ml-2 font-mono text-xs text-gray-400">({a.source})</span>
+                        <span className="font-mono text-sm text-ink-100">{a.alias}</span>
+                        <span className="ml-2 font-mono text-xs text-ink-600">({a.source})</span>
                       </div>
                       <button
                         onClick={() => handleRemoveAlias(a.id)}
-                        className="font-mono text-xs text-red-500 hover:text-red-700"
+                        className="font-mono text-xs text-error hover:text-error"
                       >
                         Remove
                       </button>
@@ -381,10 +381,10 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
               {/* Vibe tags */}
               {node.vibeTags.length > 0 && (
                 <div>
-                  <h4 className="mb-2 font-mono text-xs font-semibold uppercase text-gray-500">Vibe Tags</h4>
+                  <h4 className="mb-2 font-mono text-xs font-semibold uppercase text-ink-500">Vibe Tags</h4>
                   <div className="flex flex-wrap gap-1">
                     {node.vibeTags.map((vt) => (
-                      <span key={vt.id} className="rounded bg-warm-background px-2 py-0.5 font-mono text-xs text-gray-700">
+                      <span key={vt.id} className="rounded bg-base px-2 py-0.5 font-mono text-xs text-ink-300">
                         {vt.tagName} ({vt.score.toFixed(2)})
                       </span>
                     ))}
@@ -394,13 +394,13 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
 
               {/* Quality signals */}
               <div>
-                <h4 className="mb-2 font-mono text-xs font-semibold uppercase text-gray-500">Quality Signals</h4>
+                <h4 className="mb-2 font-mono text-xs font-semibold uppercase text-ink-500">Quality Signals</h4>
                 {node.qualitySignals.length === 0 ? (
-                  <p className="font-mono text-sm text-gray-400">No signals</p>
+                  <p className="font-mono text-sm text-ink-600">No signals</p>
                 ) : (
                   <table className="w-full font-mono text-xs">
                     <thead>
-                      <tr className="border-b border-warm-border text-left text-gray-500">
+                      <tr className="border-b border-ink-700 text-left text-ink-500">
                         <th className="py-1">Source</th>
                         <th className="py-1">Authority</th>
                         <th className="py-1">Type</th>
@@ -409,11 +409,11 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
                     </thead>
                     <tbody>
                       {node.qualitySignals.map((qs) => (
-                        <tr key={qs.id} className="border-b border-warm-border/50">
-                          <td className="py-1 text-gray-900">{qs.sourceName}</td>
-                          <td className="py-1 text-gray-600">{qs.sourceAuthority.toFixed(2)}</td>
-                          <td className="py-1 text-gray-600">{qs.signalType}</td>
-                          <td className="py-1 text-gray-400">{new Date(qs.extractedAt).toLocaleDateString()}</td>
+                        <tr key={qs.id} className="border-b border-ink-700/50">
+                          <td className="py-1 text-ink-100">{qs.sourceName}</td>
+                          <td className="py-1 text-ink-500">{qs.sourceAuthority.toFixed(2)}</td>
+                          <td className="py-1 text-ink-500">{qs.signalType}</td>
+                          <td className="py-1 text-ink-600">{new Date(qs.extractedAt).toLocaleDateString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -425,21 +425,21 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
         </div>
 
         {/* Footer actions */}
-        <div className="flex items-center justify-between border-t border-warm-border px-6 py-3">
-          <p className="font-mono text-xs text-gray-400">
+        <div className="flex items-center justify-between border-t border-ink-700 px-6 py-3">
+          <p className="font-mono text-xs text-ink-600">
             Updated {new Date(node.updatedAt).toLocaleString()}
           </p>
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="rounded border border-warm-border px-4 py-1.5 font-mono text-sm text-gray-600 hover:bg-warm-background"
+              className="rounded border border-ink-700 px-4 py-1.5 font-mono text-sm text-ink-500 hover:bg-base"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={!hasChanges || saving}
-              className="rounded bg-terracotta px-4 py-1.5 font-mono text-sm text-white hover:opacity-90 disabled:opacity-40"
+              className="rounded bg-accent px-4 py-1.5 font-mono text-sm text-white hover:opacity-90 disabled:opacity-40"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -465,12 +465,12 @@ function FieldInput({
 }) {
   return (
     <label className="block">
-      <span className="font-mono text-xs text-gray-500">{label}</span>
+      <span className="font-mono text-xs text-ink-500">{label}</span>
       <input
         type="text"
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-0.5 block w-full rounded border border-warm-border bg-warm-background px-2 py-1 font-mono text-sm focus:border-terracotta focus:outline-none"
+        className="mt-0.5 block w-full rounded border border-ink-700 bg-base px-2 py-1 font-mono text-sm focus:border-accent focus:outline-none"
       />
     </label>
   );
@@ -487,12 +487,12 @@ function FieldTextarea({
 }) {
   return (
     <label className="block">
-      <span className="font-mono text-xs text-gray-500">{label}</span>
+      <span className="font-mono text-xs text-ink-500">{label}</span>
       <textarea
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
         rows={3}
-        className="mt-0.5 block w-full rounded border border-warm-border bg-warm-background px-2 py-1 font-mono text-sm focus:border-terracotta focus:outline-none"
+        className="mt-0.5 block w-full rounded border border-ink-700 bg-base px-2 py-1 font-mono text-sm focus:border-accent focus:outline-none"
       />
     </label>
   );
@@ -511,11 +511,11 @@ function FieldSelect({
 }) {
   return (
     <label className="block">
-      <span className="font-mono text-xs text-gray-500">{label}</span>
+      <span className="font-mono text-xs text-ink-500">{label}</span>
       <select
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-0.5 block w-full rounded border border-warm-border bg-warm-background px-2 py-1 font-mono text-sm focus:border-terracotta focus:outline-none"
+        className="mt-0.5 block w-full rounded border border-ink-700 bg-base px-2 py-1 font-mono text-sm focus:border-accent focus:outline-none"
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
@@ -530,8 +530,8 @@ function FieldSelect({
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <span className="font-mono text-xs text-gray-400">{label}</span>
-      <p className="font-mono text-sm text-gray-700">{value}</p>
+      <span className="font-mono text-xs text-ink-600">{label}</span>
+      <p className="font-mono text-sm text-ink-300">{value}</p>
     </div>
   );
 }

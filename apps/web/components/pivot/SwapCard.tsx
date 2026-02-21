@@ -111,12 +111,12 @@ export function SwapCard({
       className={`
         relative flex flex-col rounded-xl border overflow-hidden
         transition-all duration-200
-        ${onClick ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400 focus-visible:ring-offset-2" : ""}
+        ${onClick ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2" : ""}
         ${isSelected
-          ? "border-terracotta-500 shadow-[0_0_0_2px_#C4694F20]"
+          ? "border-accent shadow-[0_0_0_2px_#C4694F20]"
           : isOriginal
-          ? "border-warm-border bg-warm-surface opacity-75"
-          : "border-warm-border bg-warm-surface hover:border-terracotta-300"
+          ? "border-ink-700 bg-surface opacity-75"
+          : "border-ink-700 bg-surface hover:border-accent/30"
         }
       `}
     >
@@ -127,10 +127,10 @@ export function SwapCard({
           px-2 py-0.5 rounded-full
           font-dm-mono text-[10px] uppercase tracking-wider
           ${isOriginal
-            ? "bg-warm-background text-warm-text-secondary border border-warm-border"
+            ? "bg-base text-ink-400 border border-ink-700"
             : isSelected
-            ? "bg-terracotta-500 text-white"
-            : "bg-terracotta-100 text-terracotta-700 border border-terracotta-200"
+            ? "bg-accent text-white"
+            : "bg-accent-light text-accent-fg border border-accent/20"
           }
         `}
       >
@@ -138,7 +138,7 @@ export function SwapCard({
       </div>
 
       {/* Image */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-warm-background">
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-base">
         {candidate.imageUrl ? (
           <Image
             src={candidate.imageUrl}
@@ -157,7 +157,7 @@ export function SwapCard({
               fill="none"
               stroke="currentColor"
               strokeWidth="1"
-              className="text-warm-text-secondary opacity-25"
+              className="text-ink-400 opacity-25"
               aria-hidden="true"
             >
               <rect x="6" y="10" width="36" height="28" rx="3" />
@@ -173,8 +173,8 @@ export function SwapCard({
             <span className="
               px-2 py-0.5 rounded-full
               font-dm-mono text-[10px] uppercase tracking-wider
-              bg-warm-surface/90 backdrop-blur-sm
-              text-terracotta-600 border border-terracotta-200
+              bg-surface/90 backdrop-blur-sm
+              text-accent-fg border border-accent/20
             ">
               {convergenceLabel(candidate.convergenceScore)}
             </span>
@@ -185,28 +185,28 @@ export function SwapCard({
       {/* Content */}
       <div className="p-3 space-y-2 flex-1">
         {/* Name */}
-        <h4 className="font-sora font-semibold text-sm text-warm-text-primary leading-tight line-clamp-2">
+        <h4 className="font-sora font-semibold text-sm text-ink-100 leading-tight line-clamp-2">
           {candidate.activityName}
         </h4>
 
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           {/* Category */}
-          <span className="flex items-center gap-1 font-dm-mono text-[11px] text-warm-text-secondary uppercase tracking-wider">
+          <span className="flex items-center gap-1 font-dm-mono text-[11px] text-ink-400 uppercase tracking-wider">
             <CategoryIcon category={candidate.category} />
             {candidate.category.replace("_", " ")}
           </span>
 
           {/* Price level */}
           {candidate.priceLevel && (
-            <span className="font-dm-mono text-[11px] text-warm-text-secondary">
+            <span className="font-dm-mono text-[11px] text-ink-400">
               {priceLevelLabel(candidate.priceLevel)}
             </span>
           )}
 
           {/* Duration */}
           {candidate.durationMinutes && (
-            <span className="font-dm-mono text-[11px] text-warm-text-secondary">
+            <span className="font-dm-mono text-[11px] text-ink-400">
               {durationLabel(candidate.durationMinutes)}
             </span>
           )}
@@ -214,14 +214,14 @@ export function SwapCard({
 
         {/* Neighborhood */}
         {candidate.neighborhood && (
-          <p className="font-dm-mono text-[11px] text-warm-text-secondary truncate">
+          <p className="font-dm-mono text-[11px] text-ink-400 truncate">
             {candidate.neighborhood}
           </p>
         )}
 
         {/* Short description */}
         {candidate.descriptionShort && (
-          <p className="font-sora text-[12px] text-warm-text-secondary leading-relaxed line-clamp-3">
+          <p className="font-sora text-[12px] text-ink-400 leading-relaxed line-clamp-3">
             {candidate.descriptionShort}
           </p>
         )}
@@ -235,7 +235,7 @@ export function SwapCard({
                 className="
                   inline-flex items-center px-1.5 py-0.5 rounded-full
                   font-dm-mono text-[10px] uppercase tracking-wider
-                  bg-warm-background text-warm-text-secondary border border-warm-border
+                  bg-base text-ink-400 border border-ink-700
                 "
               >
                 {tag.name}
@@ -250,7 +250,7 @@ export function SwapCard({
         <div className="
           absolute top-2 right-2 z-10
           w-5 h-5 rounded-full
-          bg-terracotta-500 flex items-center justify-center
+          bg-accent flex items-center justify-center
         ">
           <svg
             width="10"

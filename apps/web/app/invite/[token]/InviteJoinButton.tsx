@@ -81,9 +81,9 @@ export function InviteJoinButton({
           padding: "0.75rem 1.5rem",
           backgroundColor:
             state === "loading"
-              ? "var(--color-warm-border)"
-              : "var(--color-terracotta)",
-          color: state === "loading" ? "var(--color-warm-text-secondary)" : "#fff",
+              ? "var(--ink-700)"
+              : "var(--accent)",
+          color: state === "loading" ? "var(--ink-400)" : "#fff",
           border: "none",
           borderRadius: "0.625rem",
           fontFamily: "var(--font-sora), system-ui, sans-serif",

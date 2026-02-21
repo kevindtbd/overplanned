@@ -18,7 +18,7 @@ const MapView = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex items-center justify-center h-full bg-warm-background">
+      <div className="flex items-center justify-center h-full bg-base">
         <div className="flex flex-col items-center gap-3">
           <svg
             width="32"
@@ -31,10 +31,10 @@ const MapView = dynamic(
           >
             <path
               d="M16 2C9.373 2 4 7.373 4 14c0 9 12 16 12 16s12-7 12-16c0-6.627-5.373-12-12-12z"
-              fill="var(--color-terracotta)"
+              fill="var(--accent)"
               opacity="0.3"
             />
-            <circle cx="16" cy="13" r="4" fill="var(--color-terracotta)" opacity="0.5" />
+            <circle cx="16" cy="13" r="4" fill="var(--accent)" opacity="0.5" />
           </svg>
           <span className="font-dm-mono text-xs text-secondary uppercase tracking-wider">
             Loading map
@@ -154,15 +154,15 @@ export default async function TripMapPage({
   const trip = await getTripData(params.id);
 
   return (
-    <div className="flex flex-col h-screen bg-warm-background">
+    <div className="flex flex-col h-screen bg-base">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-4 py-3 bg-warm-surface border-b border-warm">
+      <header className="flex items-center justify-between px-4 py-3 bg-surface border-b border-ink-700">
         <div className="flex items-center gap-3">
           <Link
             href={`/trip/${params.id}`}
             className="flex items-center justify-center w-8 h-8 rounded-lg
-                       bg-warm-background border border-warm
-                       hover:bg-warm-border transition-colors duration-150"
+                       bg-base border border-ink-700
+                       hover:bg-ink-700 transition-colors duration-150"
             aria-label="Back to trip"
           >
             <svg

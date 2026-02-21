@@ -169,7 +169,7 @@ export default function MapView({
     <div className="flex flex-col h-full w-full">
       {/* Day filter bar */}
       <nav
-        className="flex items-center gap-2 px-4 py-3 bg-warm-surface border-b border-warm
+        className="flex items-center gap-2 px-4 py-3 bg-surface border-b border-ink-700
                    overflow-x-auto scrollbar-none"
         role="tablist"
         aria-label="Day filter"
@@ -186,8 +186,8 @@ export default function MapView({
               transition-colors duration-150
               ${
                 activeDay === i
-                  ? "bg-terracotta text-white"
-                  : "bg-warm-background text-secondary hover:text-primary hover:bg-warm-border"
+                  ? "bg-accent text-white"
+                  : "bg-base text-secondary hover:text-primary hover:bg-ink-700"
               }
             `}
           >
@@ -202,7 +202,7 @@ export default function MapView({
       <div id="map-panel" role="tabpanel" className="flex flex-1 min-h-0">
         {/* Sidebar — desktop only */}
         <aside
-          className="hidden lg:flex flex-col w-80 border-r border-warm bg-warm-surface
+          className="hidden lg:flex flex-col w-80 border-r border-ink-700 bg-surface
                      overflow-y-auto"
           aria-label="Itinerary slots"
         >
@@ -221,8 +221,8 @@ export default function MapView({
                       border
                       ${
                         selectedSlot?.id === slot.id
-                          ? "bg-terracotta-50 border-terracotta-200"
-                          : "bg-warm-background border-warm hover:bg-warm-border"
+                          ? "bg-accent-50 border-accent/20"
+                          : "bg-base border-ink-700 hover:bg-ink-700"
                       }
                     `}
                     aria-label={`View ${slot.name} on map`}
@@ -232,7 +232,7 @@ export default function MapView({
                       {/* Index badge */}
                       <span
                         className="shrink-0 flex items-center justify-center w-6 h-6
-                                   rounded-full bg-warm-border font-dm-mono text-xs text-secondary"
+                                   rounded-full bg-ink-700 font-dm-mono text-xs text-secondary"
                       >
                         {idx + 1}
                       </span>
@@ -250,7 +250,7 @@ export default function MapView({
                           </span>
                           {slot.timeLabel && (
                             <>
-                              <span className="text-warm-border" aria-hidden="true">
+                              <span className="text-ink-700" aria-hidden="true">
                                 /
                               </span>
                               <span className="font-dm-mono text-xs text-secondary">
@@ -326,7 +326,7 @@ export default function MapView({
           {/* Slot count badge — mobile */}
           <div
             className="absolute top-3 right-3 z-10 lg:hidden
-                       px-3 py-1.5 rounded-full bg-warm-surface border border-warm
+                       px-3 py-1.5 rounded-full bg-surface border border-ink-700
                        shadow-sm"
             aria-live="polite"
           >

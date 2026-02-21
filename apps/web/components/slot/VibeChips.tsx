@@ -40,8 +40,8 @@ export function VibeChips({
               transition-colors duration-150
               ${
                 isPrimary
-                  ? "bg-terracotta-100 text-terracotta-700 border border-terracotta-300"
-                  : "bg-warm-surface text-warm-text-secondary border border-warm-border"
+                  ? "bg-accent-light text-accent-fg border border-accent/30"
+                  : "bg-surface text-ink-400 border border-ink-700"
               }
             `}
           >
@@ -55,7 +55,7 @@ export function VibeChips({
           className="
             inline-flex items-center px-2 py-0.5 rounded-full
             font-dm-mono text-[11px] uppercase tracking-wider
-            bg-warm-surface text-warm-text-secondary border border-warm-border
+            bg-surface text-ink-400 border border-ink-700
           "
           aria-label={`${overflowCount} more tags`}
         >

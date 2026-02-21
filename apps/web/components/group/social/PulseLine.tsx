@@ -177,8 +177,8 @@ export function PulseLine({
       <div
         className={`
           flex items-center justify-center
-          rounded-xl border border-warm-border bg-warm-surface
-          font-dm-mono text-xs text-warm-text-secondary uppercase tracking-wider
+          rounded-xl border border-ink-700 bg-surface
+          font-dm-mono text-xs text-ink-400 uppercase tracking-wider
           ${className}
         `}
         style={{ height }}
@@ -191,7 +191,7 @@ export function PulseLine({
 
   return (
     <div
-      className={`rounded-xl border border-warm-border bg-warm-surface overflow-hidden ${className}`}
+      className={`rounded-xl border border-ink-700 bg-surface overflow-hidden ${className}`}
       aria-label="Group activity pulse chart"
     >
       <svg
@@ -221,7 +221,7 @@ export function PulseLine({
                 y1={y}
                 x2={VW - PAD_RIGHT}
                 y2={y}
-                stroke="var(--color-warm-border)"
+                stroke="var(--ink-700)"
                 strokeWidth="0.5"
                 strokeDasharray="3 3"
               />
@@ -230,7 +230,7 @@ export function PulseLine({
                 y={y + 3}
                 textAnchor="end"
                 fontSize="7"
-                fill="var(--color-warm-text-secondary)"
+                fill="var(--ink-400)"
                 fontFamily="var(--font-dm-mono, monospace)"
               >
                 {val}
@@ -252,7 +252,7 @@ export function PulseLine({
               y={height - 4}
               textAnchor="middle"
               fontSize="7"
-              fill="var(--color-warm-text-secondary)"
+              fill="var(--ink-400)"
               fontFamily="var(--font-dm-mono, monospace)"
             >
               {label.length > 5 ? label.slice(0, 5) : label}
@@ -298,7 +298,7 @@ export function PulseLine({
             cy={y}
             r="2.5"
             fill={accentColor}
-            stroke="var(--color-warm-surface)"
+            stroke="var(--bg-surface)"
             strokeWidth="1.5"
           />
         ))}
@@ -318,7 +318,7 @@ export function PulseLine({
               strokeLinecap="round"
             />
           </svg>
-          <span className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider">
+          <span className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider">
             Activity
           </span>
         </div>
@@ -335,7 +335,7 @@ export function PulseLine({
               strokeLinecap="round"
             />
           </svg>
-          <span className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider">
+          <span className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider">
             Contested
           </span>
         </div>

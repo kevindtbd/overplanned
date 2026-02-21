@@ -44,8 +44,8 @@ type StatusFilter = 'all' | 'active' | 'revoked' | 'expired';
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'bg-green-100 text-green-800',
-  revoked: 'bg-red-100 text-red-700',
-  expired: 'bg-gray-100 text-gray-600',
+  revoked: 'bg-red-100 text-error',
+  expired: 'bg-ink-800 text-ink-500',
 };
 
 function tokenStatus(isRevoked: boolean, isExpired: boolean): string {
@@ -134,15 +134,15 @@ export default function TokenManager() {
     <div>
       {/* Token type tabs */}
       <div className="mb-4 flex items-center gap-4">
-        <div className="flex rounded border border-warm-border">
+        <div className="flex rounded border border-ink-700">
           {(['shared', 'invite'] as TokenType[]).map((t) => (
             <button
               key={t}
               onClick={() => setTokenType(t)}
               className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${
                 tokenType === t
-                  ? 'bg-terracotta text-white'
-                  : 'bg-warm-surface text-gray-600 hover:bg-warm-background'
+                  ? 'bg-accent text-white'
+                  : 'bg-surface text-ink-500 hover:bg-base'
               } ${t === 'shared' ? 'rounded-l' : 'rounded-r'}`}
             >
               {t === 'shared' ? 'Shared Trip' : 'Invite'} Tokens
@@ -151,15 +151,15 @@ export default function TokenManager() {
         </div>
 
         {/* Status filter */}
-        <div className="flex rounded border border-warm-border">
+        <div className="flex rounded border border-ink-700">
           {(['all', 'active', 'revoked', 'expired'] as StatusFilter[]).map((s, i, arr) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${
                 statusFilter === s
-                  ? 'bg-terracotta text-white'
-                  : 'bg-warm-surface text-gray-600 hover:bg-warm-background'
+                  ? 'bg-accent text-white'
+                  : 'bg-surface text-ink-500 hover:bg-base'
               } ${i === 0 ? 'rounded-l' : ''} ${i === arr.length - 1 ? 'rounded-r' : ''}`}
             >
               {s}
@@ -167,23 +167,23 @@ export default function TokenManager() {
           ))}
         </div>
 
-        <span className="rounded bg-warm-background px-3 py-1 font-mono text-sm text-gray-600">
+        <span className="rounded bg-base px-3 py-1 font-mono text-sm text-ink-500">
           {total} token{total !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-2">
-          <p className="font-mono text-sm text-red-700">{error}</p>
+        <div className="mb-4 rounded border border-error/30 bg-error-bg px-4 py-2">
+          <p className="font-mono text-sm text-error">{error}</p>
         </div>
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto rounded border border-warm-border">
+      <div className="overflow-x-auto rounded border border-ink-700">
         <table className="w-full font-mono text-sm">
           <thead>
-            <tr className="border-b border-warm-border bg-warm-background text-left text-xs text-gray-500">
+            <tr className="border-b border-ink-700 bg-base text-left text-xs text-ink-500">
               <th className="px-3 py-2">Token</th>
               <th className="px-3 py-2">Trip</th>
               <th className="px-3 py-2">Created By</th>
@@ -207,14 +207,14 @@ export default function TokenManager() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-gray-400">
+                <td colSpan={9} className="px-3 py-8 text-center text-ink-600">
                   Loading...
                 </td>
               </tr>
             ) : tokenType === 'shared' ? (
               sharedTokens.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={9} className="px-3 py-8 text-center text-ink-600">
                     No shared tokens match filters
                   </td>
                 </tr>
@@ -224,24 +224,24 @@ export default function TokenManager() {
                   return (
                     <tr
                       key={t.id}
-                      className="border-b border-warm-border/50 transition-colors hover:bg-warm-background/50"
+                      className="border-b border-ink-700/50 transition-colors hover:bg-base/50"
                     >
-                      <td className="px-3 py-2 text-gray-600">{t.token}</td>
+                      <td className="px-3 py-2 text-ink-500">{t.token}</td>
                       <td className="px-3 py-2">
-                        <span className="text-gray-900">{t.tripDestination ?? t.tripId.slice(0, 8)}</span>
+                        <span className="text-ink-100">{t.tripDestination ?? t.tripId.slice(0, 8)}</span>
                       </td>
-                      <td className="px-3 py-2 text-gray-600">{t.creatorEmail ?? t.createdBy.slice(0, 8)}</td>
+                      <td className="px-3 py-2 text-ink-500">{t.creatorEmail ?? t.createdBy.slice(0, 8)}</td>
                       <td className="px-3 py-2">
                         <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS_COLORS[status]}`}>
                           {status}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-gray-600">{t.viewCount}</td>
-                      <td className="px-3 py-2 text-gray-600">{t.importCount}</td>
-                      <td className="px-3 py-2 text-xs text-gray-400">
+                      <td className="px-3 py-2 text-ink-500">{t.viewCount}</td>
+                      <td className="px-3 py-2 text-ink-500">{t.importCount}</td>
+                      <td className="px-3 py-2 text-xs text-ink-600">
                         {new Date(t.expiresAt).toLocaleDateString()}
                       </td>
-                      <td className="px-3 py-2 text-xs text-gray-400">
+                      <td className="px-3 py-2 text-xs text-ink-600">
                         {new Date(t.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-3 py-2">
@@ -249,7 +249,7 @@ export default function TokenManager() {
                           <button
                             onClick={() => handleRevoke(t.id)}
                             disabled={revoking === t.id}
-                            className="text-xs text-red-600 hover:underline disabled:opacity-40"
+                            className="text-xs text-error hover:underline disabled:opacity-40"
                           >
                             {revoking === t.id ? 'Revoking...' : 'Revoke'}
                           </button>
@@ -262,7 +262,7 @@ export default function TokenManager() {
             ) : (
               inviteTokens.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={9} className="px-3 py-8 text-center text-ink-600">
                     No invite tokens match filters
                   </td>
                 </tr>
@@ -272,28 +272,28 @@ export default function TokenManager() {
                   return (
                     <tr
                       key={t.id}
-                      className="border-b border-warm-border/50 transition-colors hover:bg-warm-background/50"
+                      className="border-b border-ink-700/50 transition-colors hover:bg-base/50"
                     >
-                      <td className="px-3 py-2 text-gray-600">{t.token}</td>
+                      <td className="px-3 py-2 text-ink-500">{t.token}</td>
                       <td className="px-3 py-2">
-                        <span className="text-gray-900">{t.tripDestination ?? t.tripId.slice(0, 8)}</span>
+                        <span className="text-ink-100">{t.tripDestination ?? t.tripId.slice(0, 8)}</span>
                       </td>
-                      <td className="px-3 py-2 text-gray-600">{t.creatorEmail ?? t.createdBy.slice(0, 8)}</td>
+                      <td className="px-3 py-2 text-ink-500">{t.creatorEmail ?? t.createdBy.slice(0, 8)}</td>
                       <td className="px-3 py-2">
                         <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS_COLORS[status]}`}>
                           {status}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-gray-600">{t.usedCount}/{t.maxUses}</td>
+                      <td className="px-3 py-2 text-ink-500">{t.usedCount}/{t.maxUses}</td>
                       <td className="px-3 py-2">
                         <span className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-700">
                           {t.role}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-xs text-gray-400">
+                      <td className="px-3 py-2 text-xs text-ink-600">
                         {new Date(t.expiresAt).toLocaleDateString()}
                       </td>
-                      <td className="px-3 py-2 text-xs text-gray-400">
+                      <td className="px-3 py-2 text-xs text-ink-600">
                         {new Date(t.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-3 py-2">
@@ -301,7 +301,7 @@ export default function TokenManager() {
                           <button
                             onClick={() => handleRevoke(t.id)}
                             disabled={revoking === t.id}
-                            className="text-xs text-red-600 hover:underline disabled:opacity-40"
+                            className="text-xs text-error hover:underline disabled:opacity-40"
                           >
                             {revoking === t.id ? 'Revoking...' : 'Revoke'}
                           </button>
@@ -319,21 +319,21 @@ export default function TokenManager() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="font-mono text-xs text-gray-400">
+          <p className="font-mono text-xs text-ink-600">
             Showing {page * pageSize + 1}--{Math.min((page + 1) * pageSize, total)} of {total}
           </p>
           <div className="flex gap-1">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="rounded border border-warm-border px-2 py-1 font-mono text-xs text-gray-600 hover:bg-warm-background disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Prev
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="rounded border border-warm-border px-2 py-1 font-mono text-xs text-gray-600 hover:bg-warm-background disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Next
             </button>

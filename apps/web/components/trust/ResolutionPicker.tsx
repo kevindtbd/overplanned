@@ -103,10 +103,10 @@ export function ResolutionPicker({
     <div className="space-y-3" role="group" aria-label="Choose what's wrong">
       {/* Heading */}
       <div className="space-y-1">
-        <p className="font-sora font-semibold text-warm-text-primary text-sm">
+        <p className="font-sora font-semibold text-ink-100 text-sm">
           What's the issue with {activityName}?
         </p>
-        <p className="font-dm-mono text-[11px] text-warm-text-secondary uppercase tracking-wider">
+        <p className="font-dm-mono text-[11px] text-ink-400 uppercase tracking-wider">
           Your feedback improves future recommendations
         </p>
       </div>
@@ -117,28 +117,28 @@ export function ResolutionPicker({
         onClick={() => onChoose("wrong_for_me")}
         className="
           w-full flex items-center gap-3 p-4 rounded-xl
-          border border-warm-border bg-warm-surface
-          hover:border-[#C4694F]/40 hover:bg-warm-background
+          border border-ink-700 bg-surface
+          hover:border-[#C4694F]/40 hover:bg-base
           transition-all duration-150
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F] focus-visible:ring-offset-2
           text-left group
         "
         aria-label="Flag as wrong for me — not my style"
       >
-        <span className="text-warm-text-secondary group-hover:text-[#C4694F] transition-colors">
+        <span className="text-ink-400 group-hover:text-[#C4694F] transition-colors">
           <PersonIcon />
         </span>
 
         <div className="flex-1 space-y-0.5">
-          <p className="font-sora font-medium text-warm-text-primary text-sm">
+          <p className="font-sora font-medium text-ink-100 text-sm">
             Wrong for me
           </p>
-          <p className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider">
+          <p className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider">
             Not my style, not what I'm into right now
           </p>
         </div>
 
-        <span className="text-warm-text-secondary group-hover:text-[#C4694F] transition-colors">
+        <span className="text-ink-400 group-hover:text-[#C4694F] transition-colors">
           <ChevronRightIcon />
         </span>
       </button>
@@ -149,28 +149,28 @@ export function ResolutionPicker({
         onClick={() => onChoose("wrong_information")}
         className="
           w-full flex items-center gap-3 p-4 rounded-xl
-          border border-warm-border bg-warm-surface
-          hover:border-amber-400/60 hover:bg-amber-50/30
+          border border-ink-700 bg-surface
+          hover:border-amber-400/60 hover:bg-warning-bg/30
           transition-all duration-150
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2
           text-left group
         "
         aria-label="Flag as wrong information — factual error"
       >
-        <span className="text-warm-text-secondary group-hover:text-amber-600 transition-colors">
+        <span className="text-ink-400 group-hover:text-warning transition-colors">
           <AlertIcon />
         </span>
 
         <div className="flex-1 space-y-0.5">
-          <p className="font-sora font-medium text-warm-text-primary text-sm">
+          <p className="font-sora font-medium text-ink-100 text-sm">
             Wrong information
           </p>
-          <p className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider">
+          <p className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider">
             Wrong hours, closed, wrong location, factual error
           </p>
         </div>
 
-        <span className="text-warm-text-secondary group-hover:text-amber-600 transition-colors">
+        <span className="text-ink-400 group-hover:text-warning transition-colors">
           <ChevronRightIcon />
         </span>
       </button>
@@ -180,9 +180,9 @@ export function ResolutionPicker({
         type="button"
         onClick={onDismiss}
         className="
-          w-full py-2 font-dm-mono text-[11px] text-warm-text-secondary uppercase tracking-wider
-          hover:text-warm-text-primary transition-colors
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warm-border focus-visible:ring-offset-2
+          w-full py-2 font-dm-mono text-[11px] text-ink-400 uppercase tracking-wider
+          hover:text-ink-100 transition-colors
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-700 focus-visible:ring-offset-2
           rounded
         "
       >

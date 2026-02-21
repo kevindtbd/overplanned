@@ -19,67 +19,67 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-warm-background">
+    <div className="min-h-screen bg-base">
       {/* Admin navigation */}
-      <nav className="border-b border-warm-border bg-warm-surface">
+      <nav className="border-b border-ink-700 bg-surface">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-8">
-              <h1 className="font-display text-xl text-gray-900">
+              <h1 className="font-display text-xl text-ink-100">
                 Admin Panel
               </h1>
               <div className="flex gap-4 font-mono text-sm">
                 <a
                   href="/admin/users"
-                  className="text-gray-600 hover:text-terracotta transition-colors"
+                  className="text-ink-500 hover:text-accent transition-colors"
                 >
                   Users
                 </a>
                 <a
                   href="/admin/trips"
-                  className="text-gray-600 hover:text-terracotta transition-colors"
+                  className="text-ink-500 hover:text-accent transition-colors"
                 >
                   Trips
                 </a>
                 <a
                   href="/admin/activity-nodes"
-                  className="text-gray-600 hover:text-terracotta transition-colors"
+                  className="text-ink-500 hover:text-accent transition-colors"
                 >
                   Activity Nodes
                 </a>
                 <a
                   href="/admin/audit-log"
-                  className="text-gray-600 hover:text-terracotta transition-colors"
+                  className="text-ink-500 hover:text-accent transition-colors"
                 >
                   Audit Log
                 </a>
                 <a
                   href="/admin/sources"
-                  className="text-gray-600 hover:text-terracotta transition-colors"
+                  className="text-ink-500 hover:text-accent transition-colors"
                 >
                   Sources
                 </a>
                 <a
                   href="/admin/seeding"
-                  className="text-gray-600 hover:text-terracotta transition-colors"
+                  className="text-ink-500 hover:text-accent transition-colors"
                 >
                   Seeding
                 </a>
                 <a
                   href="/admin/models"
-                  className="text-gray-600 hover:text-terracotta transition-colors"
+                  className="text-ink-500 hover:text-accent transition-colors"
                 >
                   Model Registry
                 </a>
                 <a
                   href="/admin/pipeline"
-                  className="text-gray-600 hover:text-terracotta transition-colors"
+                  className="text-ink-500 hover:text-accent transition-colors"
                 >
                   Pipeline Health
                 </a>
                 <a
                   href="/admin/safety"
-                  className="text-gray-600 hover:text-terracotta transition-colors"
+                  className="text-ink-500 hover:text-accent transition-colors"
                 >
                   Safety
                 </a>
@@ -87,7 +87,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
             </div>
             <a
               href="/"
-              className="font-mono text-sm text-gray-600 hover:text-terracotta transition-colors"
+              className="font-mono text-sm text-ink-500 hover:text-accent transition-colors"
             >
               ← Back to App
             </a>

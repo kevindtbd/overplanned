@@ -87,7 +87,7 @@ const DAYS_OPTIONS = [
 
 const JOB_STATUS_COLORS: Record<string, string> = {
   completed: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-800',
+  failed: 'bg-red-100 text-error',
   running: 'bg-blue-100 text-blue-800',
   pending: 'bg-yellow-100 text-yellow-800',
 };
@@ -123,9 +123,9 @@ function formatDuration(seconds: number | null): string {
 }
 
 function pctBar(pct: number): string {
-  if (pct >= 100) return 'bg-red-500';
+  if (pct >= 100) return 'bg-error-bg0';
   if (pct >= 80) return 'bg-yellow-500';
-  return 'bg-terracotta';
+  return 'bg-accent';
 }
 
 // ---------------------------------------------------------------------------
@@ -142,13 +142,13 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <div className="rounded-lg border border-warm-border bg-warm-surface p-4">
-      <span className="block font-mono text-xs text-gray-500">{label}</span>
-      <span className="block font-display text-2xl font-semibold text-gray-900 mt-1">
+    <div className="rounded-lg border border-ink-700 bg-surface p-4">
+      <span className="block font-mono text-xs text-ink-500">{label}</span>
+      <span className="block font-display text-2xl font-semibold text-ink-100 mt-1">
         {value}
       </span>
       {sub && (
-        <span className="block font-mono text-xs text-gray-400 mt-0.5">
+        <span className="block font-mono text-xs text-ink-600 mt-0.5">
           {sub}
         </span>
       )}
@@ -165,7 +165,7 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between mb-4">
-      <h3 className="font-display text-lg font-semibold text-gray-900">
+      <h3 className="font-display text-lg font-semibold text-ink-100">
         {title}
       </h3>
       {children}
@@ -175,7 +175,7 @@ function SectionHeader({
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="rounded-md border border-red-200 bg-red-50 p-3 font-mono text-sm text-red-700">
+    <div className="rounded-md border border-error/30 bg-error-bg p-3 font-mono text-sm text-error">
       {message}
     </div>
   );
@@ -183,8 +183,8 @@ function ErrorBanner({ message }: { message: string }) {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-warm-border bg-warm-surface p-8 text-center">
-      <p className="font-mono text-sm text-gray-400">{message}</p>
+    <div className="rounded-lg border border-ink-700 bg-surface p-8 text-center">
+      <p className="font-mono text-sm text-ink-600">{message}</p>
     </div>
   );
 }
@@ -364,10 +364,10 @@ export default function PipelineHealthPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-display text-2xl font-semibold text-gray-900">
+          <h2 className="font-display text-2xl font-semibold text-ink-100">
             Pipeline Health
           </h2>
-          <p className="mt-1 font-mono text-sm text-gray-500">
+          <p className="mt-1 font-mono text-sm text-ink-500">
             LLM costs, API usage, job health, and cost alerts
           </p>
         </div>
@@ -375,7 +375,7 @@ export default function PipelineHealthPage() {
           <select
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
-            className="rounded-md border border-warm-border bg-warm-surface px-3 py-1.5 font-mono text-sm text-gray-700"
+            className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-mono text-sm text-ink-300"
           >
             {DAYS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -386,7 +386,7 @@ export default function PipelineHealthPage() {
           <button
             onClick={fetchAll}
             disabled={loading}
-            className="rounded-md border border-warm-border bg-warm-surface px-3 py-1.5 font-mono text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-50"
+            className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-mono text-sm text-ink-500 transition-colors hover:bg-ink-800 disabled:opacity-50"
           >
             Refresh
           </button>
@@ -398,13 +398,13 @@ export default function PipelineHealthPage() {
 
       {/* Cost alert warnings */}
       {exceededAlerts.length > 0 && (
-        <div className="rounded-md border border-red-300 bg-red-50 p-4">
-          <p className="font-display text-sm font-semibold text-red-800 mb-2">
+        <div className="rounded-md border border-error/50 bg-error-bg p-4">
+          <p className="font-display text-sm font-semibold text-error mb-2">
             Cost Alerts Exceeded
           </p>
           <div className="space-y-1">
             {exceededAlerts.map((a) => (
-              <p key={a.pipeline_stage} className="font-mono text-xs text-red-700">
+              <p key={a.pipeline_stage} className="font-mono text-xs text-error">
                 {a.pipeline_stage}: {formatUSD(a.current_spend_usd)} /{' '}
                 {formatUSD(a.daily_limit_usd)} daily limit ({a.pct_used}%)
               </p>
@@ -415,7 +415,7 @@ export default function PipelineHealthPage() {
 
       {/* Loading state */}
       {loading && !llmCosts && (
-        <div className="py-12 text-center font-mono text-sm text-gray-400">
+        <div className="py-12 text-center font-mono text-sm text-ink-600">
           Loading pipeline data...
         </div>
       )}
@@ -461,29 +461,29 @@ export default function PipelineHealthPage() {
 
           {/* Cost by model */}
           {llmCosts.rows.length > 0 ? (
-            <div className="rounded-lg border border-warm-border overflow-hidden">
+            <div className="rounded-lg border border-ink-700 overflow-hidden">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-warm-border bg-warm-background">
-                    <th className="px-4 py-2 text-left font-mono text-xs text-gray-500">
+                  <tr className="border-b border-ink-700 bg-base">
+                    <th className="px-4 py-2 text-left font-mono text-xs text-ink-500">
                       Model
                     </th>
-                    <th className="px-4 py-2 text-left font-mono text-xs text-gray-500">
+                    <th className="px-4 py-2 text-left font-mono text-xs text-ink-500">
                       Stage
                     </th>
-                    <th className="px-4 py-2 text-left font-mono text-xs text-gray-500">
+                    <th className="px-4 py-2 text-left font-mono text-xs text-ink-500">
                       Date
                     </th>
-                    <th className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                    <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                       Calls
                     </th>
-                    <th className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                    <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                       Cost
                     </th>
-                    <th className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                    <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                       Avg Latency
                     </th>
-                    <th className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                    <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                       Tokens (in/out)
                     </th>
                   </tr>
@@ -493,30 +493,30 @@ export default function PipelineHealthPage() {
                     <tr
                       key={`${row.model}-${row.date}-${row.pipeline_stage}`}
                       className={
-                        i % 2 === 0 ? 'bg-warm-surface' : 'bg-warm-background/30'
+                        i % 2 === 0 ? 'bg-surface' : 'bg-base/30'
                       }
                     >
-                      <td className="px-4 py-2 font-mono text-sm text-gray-800">
+                      <td className="px-4 py-2 font-mono text-sm text-ink-200">
                         {row.model}
                       </td>
                       <td className="px-4 py-2">
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-600">
+                        <span className="rounded-full bg-ink-800 px-2 py-0.5 font-mono text-xs text-ink-500">
                           {row.pipeline_stage}
                         </span>
                       </td>
-                      <td className="px-4 py-2 font-mono text-xs text-gray-500">
+                      <td className="px-4 py-2 font-mono text-xs text-ink-500">
                         {row.date}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-sm text-gray-700">
+                      <td className="px-4 py-2 text-right font-mono text-sm text-ink-300">
                         {formatNumber(row.call_count)}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-sm font-medium text-gray-900">
+                      <td className="px-4 py-2 text-right font-mono text-sm font-medium text-ink-100">
                         {formatUSD(row.total_cost_usd)}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                      <td className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                         {formatLatency(row.avg_latency_ms)}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                      <td className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                         {formatNumber(row.total_input_tokens)} /{' '}
                         {formatNumber(row.total_output_tokens)}
                       </td>
@@ -553,23 +553,23 @@ export default function PipelineHealthPage() {
                   {providers.map(([provider, stats]) => (
                     <div
                       key={provider}
-                      className="rounded-lg border border-warm-border bg-warm-surface p-4"
+                      className="rounded-lg border border-ink-700 bg-surface p-4"
                     >
-                      <span className="block font-mono text-xs text-gray-500">
+                      <span className="block font-mono text-xs text-ink-500">
                         {PROVIDER_LABELS[provider] ?? provider}
                       </span>
-                      <span className="block font-display text-xl font-semibold text-gray-900 mt-1">
+                      <span className="block font-display text-xl font-semibold text-ink-100 mt-1">
                         {formatNumber(stats.calls)}
                       </span>
                       <div className="flex items-center gap-3 mt-1 font-mono text-xs">
                         <span
                           className={
-                            stats.errors > 0 ? 'text-red-600' : 'text-gray-400'
+                            stats.errors > 0 ? 'text-error' : 'text-ink-600'
                           }
                         >
                           {stats.errors} errors
                         </span>
-                        <span className="text-gray-400">
+                        <span className="text-ink-600">
                           {formatLatency(stats.avgLatency)} avg
                         </span>
                       </div>
@@ -578,26 +578,26 @@ export default function PipelineHealthPage() {
                 </div>
 
                 {/* Daily breakdown table */}
-                <div className="rounded-lg border border-warm-border overflow-hidden">
+                <div className="rounded-lg border border-ink-700 overflow-hidden">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-warm-border bg-warm-background">
-                        <th className="px-4 py-2 text-left font-mono text-xs text-gray-500">
+                      <tr className="border-b border-ink-700 bg-base">
+                        <th className="px-4 py-2 text-left font-mono text-xs text-ink-500">
                           Provider
                         </th>
-                        <th className="px-4 py-2 text-left font-mono text-xs text-gray-500">
+                        <th className="px-4 py-2 text-left font-mono text-xs text-ink-500">
                           Date
                         </th>
-                        <th className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                        <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                           Calls
                         </th>
-                        <th className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                        <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                           Errors
                         </th>
-                        <th className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                        <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                           Error Rate
                         </th>
-                        <th className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                        <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                           Avg Latency
                         </th>
                       </tr>
@@ -608,28 +608,28 @@ export default function PipelineHealthPage() {
                           key={`${row.provider}-${row.date}`}
                           className={
                             i % 2 === 0
-                              ? 'bg-warm-surface'
-                              : 'bg-warm-background/30'
+                              ? 'bg-surface'
+                              : 'bg-base/30'
                           }
                         >
-                          <td className="px-4 py-2 font-mono text-sm text-gray-800">
+                          <td className="px-4 py-2 font-mono text-sm text-ink-200">
                             {PROVIDER_LABELS[row.provider] ?? row.provider}
                           </td>
-                          <td className="px-4 py-2 font-mono text-xs text-gray-500">
+                          <td className="px-4 py-2 font-mono text-xs text-ink-500">
                             {row.date}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-sm text-gray-700">
+                          <td className="px-4 py-2 text-right font-mono text-sm text-ink-300">
                             {formatNumber(row.call_count)}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-sm text-red-600">
+                          <td className="px-4 py-2 text-right font-mono text-sm text-error">
                             {row.error_count > 0 ? row.error_count : '-'}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                          <td className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                             {row.call_count > 0
                               ? `${((row.error_count / row.call_count) * 100).toFixed(1)}%`
                               : '-'}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-xs text-gray-500">
+                          <td className="px-4 py-2 text-right font-mono text-xs text-ink-500">
                             {formatLatency(row.avg_latency_ms)}
                           </td>
                         </tr>
@@ -668,41 +668,41 @@ export default function PipelineHealthPage() {
               {jobs.jobs.map((job) => (
                 <div
                   key={job.job_id}
-                  className="flex items-center gap-4 rounded-lg border border-warm-border bg-warm-surface px-4 py-3"
+                  className="flex items-center gap-4 rounded-lg border border-ink-700 bg-surface px-4 py-3"
                 >
                   <span
                     className={`rounded-full px-2 py-0.5 font-mono text-xs ${
-                      JOB_STATUS_COLORS[job.status] ?? 'bg-gray-100 text-gray-600'
+                      JOB_STATUS_COLORS[job.status] ?? 'bg-ink-800 text-ink-500'
                     }`}
                   >
                     {job.status}
                   </span>
 
-                  <span className="font-mono text-sm text-gray-800">
+                  <span className="font-mono text-sm text-ink-200">
                     {job.job_type}
                   </span>
 
                   {job.city && (
-                    <span className="font-mono text-xs text-gray-500">
+                    <span className="font-mono text-xs text-ink-500">
                       {job.city}
                     </span>
                   )}
 
                   <div className="ml-auto flex items-center gap-4">
-                    <span className="font-mono text-xs text-gray-500">
+                    <span className="font-mono text-xs text-ink-500">
                       {job.items_processed} processed
                       {job.items_failed > 0 && (
-                        <span className="text-red-500">
+                        <span className="text-error">
                           {' '}/ {job.items_failed} failed
                         </span>
                       )}
                     </span>
 
-                    <span className="font-mono text-xs text-gray-400">
+                    <span className="font-mono text-xs text-ink-600">
                       {formatDuration(job.duration_seconds)}
                     </span>
 
-                    <span className="font-mono text-[10px] text-gray-300">
+                    <span className="font-mono text-[10px] text-ink-700">
                       {job.job_id.slice(0, 8)}
                     </span>
                   </div>
@@ -723,7 +723,7 @@ export default function PipelineHealthPage() {
           {!editingAlerts && alerts.length > 0 && (
             <button
               onClick={startEditingAlerts}
-              className="rounded-md border border-warm-border bg-warm-surface px-3 py-1.5 font-mono text-sm text-gray-600 transition-colors hover:bg-gray-100"
+              className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-mono text-sm text-ink-500 transition-colors hover:bg-ink-800"
             >
               Edit Thresholds
             </button>
@@ -741,40 +741,40 @@ export default function PipelineHealthPage() {
                 key={a.pipeline_stage}
                 className={`rounded-lg border p-4 ${
                   a.exceeded
-                    ? 'border-red-300 bg-red-50'
-                    : 'border-warm-border bg-warm-surface'
+                    ? 'border-error/50 bg-error-bg'
+                    : 'border-ink-700 bg-surface'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-medium text-gray-800">
+                    <span className="font-mono text-sm font-medium text-ink-200">
                       {a.pipeline_stage}
                     </span>
                     {!a.enabled && (
-                      <span className="rounded-full bg-gray-200 px-2 py-0.5 font-mono text-[10px] text-gray-500">
+                      <span className="rounded-full bg-ink-800 px-2 py-0.5 font-mono text-[10px] text-ink-500">
                         disabled
                       </span>
                     )}
                     {a.exceeded && (
-                      <span className="rounded-full bg-red-200 px-2 py-0.5 font-mono text-[10px] text-red-700">
+                      <span className="rounded-full bg-red-200 px-2 py-0.5 font-mono text-[10px] text-error">
                         exceeded
                       </span>
                     )}
                   </div>
-                  <span className="font-mono text-sm text-gray-600">
+                  <span className="font-mono text-sm text-ink-500">
                     {formatUSD(a.current_spend_usd)} /{' '}
                     {formatUSD(a.daily_limit_usd)}
                   </span>
                 </div>
 
                 {/* Progress bar */}
-                <div className="h-2 w-full rounded-full bg-gray-200">
+                <div className="h-2 w-full rounded-full bg-ink-800">
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${pctBar(a.pct_used)}`}
                     style={{ width: `${Math.min(a.pct_used, 100)}%` }}
                   />
                 </div>
-                <span className="block mt-1 font-mono text-[10px] text-gray-400 text-right">
+                <span className="block mt-1 font-mono text-[10px] text-ink-600 text-right">
                   {a.pct_used.toFixed(1)}%
                 </span>
               </div>
@@ -784,17 +784,17 @@ export default function PipelineHealthPage() {
 
         {/* Editing mode */}
         {editingAlerts && (
-          <div className="rounded-lg border border-warm-border bg-warm-surface p-4 space-y-4">
+          <div className="rounded-lg border border-ink-700 bg-surface p-4 space-y-4">
             {alertDrafts.map((draft, idx) => (
               <div
                 key={draft.pipeline_stage}
                 className="flex items-center gap-4"
               >
-                <span className="font-mono text-sm text-gray-800 w-40">
+                <span className="font-mono text-sm text-ink-200 w-40">
                   {draft.pipeline_stage}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-gray-500">$</span>
+                  <span className="font-mono text-xs text-ink-500">$</span>
                   <input
                     type="number"
                     min={0}
@@ -808,9 +808,9 @@ export default function PipelineHealthPage() {
                       };
                       setAlertDrafts(next);
                     }}
-                    className="w-24 rounded border border-warm-border bg-white px-2 py-1 font-mono text-sm text-gray-900 focus:border-terracotta focus:outline-none focus:ring-1 focus:ring-terracotta"
+                    className="w-24 rounded border border-ink-700 bg-white px-2 py-1 font-mono text-sm text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                   />
-                  <span className="font-mono text-xs text-gray-500">
+                  <span className="font-mono text-xs text-ink-500">
                     /day
                   </span>
                 </div>
@@ -823,26 +823,26 @@ export default function PipelineHealthPage() {
                       next[idx] = { ...next[idx], enabled: e.target.checked };
                       setAlertDrafts(next);
                     }}
-                    className="h-4 w-4 rounded border-warm-border text-terracotta focus:ring-terracotta"
+                    className="h-4 w-4 rounded border-ink-700 text-accent focus:ring-accent"
                   />
-                  <span className="font-mono text-xs text-gray-500">
+                  <span className="font-mono text-xs text-ink-500">
                     Enabled
                   </span>
                 </label>
               </div>
             ))}
 
-            <div className="flex items-center gap-3 pt-3 border-t border-warm-border">
+            <div className="flex items-center gap-3 pt-3 border-t border-ink-700">
               <button
                 onClick={saveAlerts}
                 disabled={alertSaving}
-                className="rounded bg-terracotta px-4 py-2 font-mono text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                className="rounded bg-accent px-4 py-2 font-mono text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 {alertSaving ? 'Saving...' : 'Save Thresholds'}
               </button>
               <button
                 onClick={() => setEditingAlerts(false)}
-                className="font-mono text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                className="font-mono text-sm text-ink-500 hover:text-ink-300 transition-colors"
               >
                 Cancel
               </button>

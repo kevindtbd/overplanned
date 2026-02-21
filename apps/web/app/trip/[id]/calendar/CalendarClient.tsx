@@ -181,10 +181,10 @@ function LockIcon({ className }: { className?: string }) {
 // ---------------------------------------------------------------------------
 
 const SLOT_TYPE_COLORS: Record<string, string> = {
-  anchor: "bg-terracotta/80",
-  flex: "bg-terracotta/40",
-  meal: "bg-amber-400/70",
-  break: "bg-warm-border",
+  anchor: "bg-accent/80",
+  flex: "bg-accent/40",
+  meal: "bg-warning/70",
+  break: "bg-ink-700",
   transit: "bg-blue-300/60",
 };
 
@@ -226,17 +226,17 @@ function DayCell({
       className={`
         relative flex min-h-[72px] flex-col rounded-lg border p-1.5 text-left transition-colors
         ${isTripDay
-          ? "border-terracotta/30 bg-terracotta/5 hover:bg-terracotta/10 cursor-pointer"
-          : "border-warm bg-warm-surface cursor-default"
+          ? "border-accent/30 bg-accent/5 hover:bg-accent/10 cursor-pointer"
+          : "border-ink-700 bg-surface cursor-default"
         }
-        ${isToday ? "ring-2 ring-terracotta ring-inset" : ""}
+        ${isToday ? "ring-2 ring-accent ring-inset" : ""}
         ${!isCurrentMonth ? "opacity-40" : ""}
       `}
     >
       {/* Day number */}
       <span
         className={`font-dm-mono text-xs font-medium ${
-          isToday ? "text-terracotta" : isTripDay ? "text-primary" : "text-secondary"
+          isToday ? "text-accent" : isTripDay ? "text-primary" : "text-secondary"
         }`}
       >
         {date.getDate()}
@@ -244,7 +244,7 @@ function DayCell({
 
       {/* Trip day indicator */}
       {isTripDay && dayNumber !== null && (
-        <span className="mt-0.5 font-dm-mono text-[10px] text-terracotta/70">
+        <span className="mt-0.5 font-dm-mono text-[10px] text-accent/70">
           Day {dayNumber}
         </span>
       )}
@@ -254,7 +254,7 @@ function DayCell({
         <div className="mt-1 flex items-center gap-0.5">
           <div
             className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-              SLOT_TYPE_COLORS[firstSlot.slotType] ?? "bg-terracotta/40"
+              SLOT_TYPE_COLORS[firstSlot.slotType] ?? "bg-accent/40"
             }`}
           />
           {firstSlot.isLocked && (
@@ -375,10 +375,10 @@ function MonthGrid({
 
 function SlotLegend() {
   const items = [
-    { label: "Anchor", color: "bg-terracotta/80" },
-    { label: "Flex", color: "bg-terracotta/40" },
-    { label: "Meal", color: "bg-amber-400/70" },
-    { label: "Break", color: "bg-warm-border" },
+    { label: "Anchor", color: "bg-accent/80" },
+    { label: "Flex", color: "bg-accent/40" },
+    { label: "Meal", color: "bg-warning/70" },
+    { label: "Break", color: "bg-ink-700" },
     { label: "Transit", color: "bg-blue-300/60" },
   ];
 
@@ -449,14 +449,14 @@ export default function CalendarClient({ trip }: CalendarClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-app">
+    <div className="min-h-screen bg-base">
       {/* Top bar */}
-      <div className="sticky top-0 z-10 border-b border-warm bg-app/90 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 border-b border-ink-700 bg-base/90 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-4 py-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push(`/trip/${trip.id}`)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-secondary transition-colors hover:bg-warm-surface hover:text-primary"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-secondary transition-colors hover:bg-surface hover:text-primary"
               aria-label="Back to trip"
             >
               <ArrowLeftIcon className="h-4 w-4" />
@@ -472,7 +472,7 @@ export default function CalendarClient({ trip }: CalendarClientProps) {
 
             <button
               onClick={handleDownloadIcs}
-              className="flex items-center gap-1.5 rounded-lg border border-warm bg-warm-surface px-3 py-1.5 font-dm-mono text-xs text-secondary transition-colors hover:border-terracotta/40 hover:text-primary"
+              className="flex items-center gap-1.5 rounded-lg border border-ink-700 bg-surface px-3 py-1.5 font-dm-mono text-xs text-secondary transition-colors hover:border-accent/40 hover:text-primary"
               title="Download .ics calendar file"
             >
               <DownloadIcon className="h-3.5 w-3.5" />
@@ -487,7 +487,7 @@ export default function CalendarClient({ trip }: CalendarClientProps) {
         <div className="flex items-center justify-between">
           <button
             onClick={prevMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-secondary transition-colors hover:bg-warm-surface hover:text-primary"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-secondary transition-colors hover:bg-surface hover:text-primary"
             aria-label="Previous month"
           >
             <ChevronLeftIcon className="h-4 w-4" />
@@ -499,7 +499,7 @@ export default function CalendarClient({ trip }: CalendarClientProps) {
 
           <button
             onClick={nextMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-secondary transition-colors hover:bg-warm-surface hover:text-primary"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-secondary transition-colors hover:bg-surface hover:text-primary"
             aria-label="Next month"
           >
             <ChevronRightIcon className="h-4 w-4" />
@@ -516,7 +516,7 @@ export default function CalendarClient({ trip }: CalendarClientProps) {
         />
 
         {/* Legend */}
-        <div className="rounded-xl border border-warm bg-warm-surface p-3">
+        <div className="rounded-xl border border-ink-700 bg-surface p-3">
           <SlotLegend />
         </div>
 
@@ -539,11 +539,11 @@ export default function CalendarClient({ trip }: CalendarClientProps) {
                 <button
                   key={day}
                   onClick={() => handleDayClick(day)}
-                  className="group flex w-full items-start gap-3 rounded-lg border border-warm bg-warm-surface px-3 py-2.5 text-left transition-colors hover:border-terracotta/30 hover:bg-terracotta/5"
+                  className="group flex w-full items-start gap-3 rounded-lg border border-ink-700 bg-surface px-3 py-2.5 text-left transition-colors hover:border-accent/30 hover:bg-accent/5"
                 >
                   {/* Day label */}
                   <div className="w-20 shrink-0">
-                    <div className="font-dm-mono text-xs font-medium text-terracotta">
+                    <div className="font-dm-mono text-xs font-medium text-accent">
                       Day {day}
                     </div>
                     <div className="font-dm-mono text-xs text-secondary">{dateLabel}</div>
@@ -559,7 +559,7 @@ export default function CalendarClient({ trip }: CalendarClientProps) {
                           <div key={slot.id} className="flex items-center gap-1">
                             <div
                               className={`h-1.5 w-1.5 rounded-full ${
-                                SLOT_TYPE_COLORS[slot.slotType] ?? "bg-terracotta/40"
+                                SLOT_TYPE_COLORS[slot.slotType] ?? "bg-accent/40"
                               }`}
                             />
                             <span className="font-dm-mono text-xs text-primary line-clamp-1 max-w-[120px]">
@@ -578,7 +578,7 @@ export default function CalendarClient({ trip }: CalendarClientProps) {
 
                   {/* Slot count */}
                   <div className="shrink-0">
-                    <span className="rounded-full bg-terracotta/10 px-2 py-0.5 font-dm-mono text-xs text-terracotta">
+                    <span className="rounded-full bg-accent/10 px-2 py-0.5 font-dm-mono text-xs text-accent">
                       {daySlots.length}
                     </span>
                   </div>

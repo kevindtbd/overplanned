@@ -136,12 +136,12 @@ export function SlotActions({
           flex items-center gap-1.5 px-3 py-1.5 rounded-lg
           font-dm-mono text-xs uppercase tracking-wider
           transition-all duration-150
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400 focus-visible:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
           disabled:opacity-40 disabled:cursor-not-allowed
           ${
             status === "confirmed"
-              ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
-              : "bg-warm-surface text-warm-text-primary border border-warm-border hover:border-emerald-400 hover:text-emerald-700"
+              ? "bg-emerald-100 text-success border border-emerald-300"
+              : "bg-surface text-ink-100 border border-ink-700 hover:border-emerald-400 hover:text-success"
           }
         `}
         aria-label="Confirm this slot"
@@ -158,10 +158,10 @@ export function SlotActions({
         className="
           flex items-center gap-1.5 px-3 py-1.5 rounded-lg
           font-dm-mono text-xs uppercase tracking-wider
-          bg-warm-surface text-warm-text-secondary border border-warm-border
-          hover:border-red-400 hover:text-red-600
+          bg-surface text-ink-400 border border-ink-700
+          hover:border-red-400 hover:text-error
           transition-all duration-150
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400 focus-visible:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
           disabled:opacity-40 disabled:cursor-not-allowed
         "
         aria-label="Skip this slot"
@@ -179,12 +179,12 @@ export function SlotActions({
           flex items-center gap-1.5 px-3 py-1.5 rounded-lg
           font-dm-mono text-xs uppercase tracking-wider
           transition-all duration-150
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400 focus-visible:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
           disabled:opacity-40 disabled:cursor-not-allowed
           ${
             isLocked
-              ? "bg-amber-100 text-amber-700 border border-amber-300"
-              : "bg-warm-surface text-warm-text-secondary border border-warm-border hover:border-amber-400 hover:text-amber-700"
+              ? "bg-amber-100 text-warning border border-amber-300"
+              : "bg-surface text-ink-400 border border-ink-700 hover:border-amber-400 hover:text-warning"
           }
         `}
         aria-label={isLocked ? "Unlock this slot" : "Lock this slot"}

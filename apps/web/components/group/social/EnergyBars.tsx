@@ -60,17 +60,17 @@ const ENERGY_CONFIG: Record<
   },
   medium: {
     barColor: "#f59e0b",
-    labelClass: "text-amber-600",
+    labelClass: "text-warning",
     label: "Mid",
   },
   low: {
     barColor: "#C4694F",
-    labelClass: "text-terracotta-500",
+    labelClass: "text-accent",
     label: "Low",
   },
   absent: {
     barColor: "#9ca3af",
-    labelClass: "text-gray-400",
+    labelClass: "text-ink-600",
     label: "Away",
   },
 };
@@ -109,7 +109,7 @@ function MemberAvatar({
     <div
       className="
         shrink-0 rounded-full
-        bg-terracotta-100 text-terracotta-600
+        bg-accent-light text-accent-fg
         flex items-center justify-center
         font-sora font-semibold
       "
@@ -124,7 +124,7 @@ function MemberAvatar({
 function DebtBadge({ delta }: { delta: number }) {
   if (Math.abs(delta) < 0.01) {
     return (
-      <span className="font-dm-mono text-[10px] text-warm-text-secondary px-1.5 py-0.5 rounded bg-warm-background">
+      <span className="font-dm-mono text-[10px] text-ink-400 px-1.5 py-0.5 rounded bg-base">
         Even
       </span>
     );
@@ -137,8 +137,8 @@ function DebtBadge({ delta }: { delta: number }) {
         font-dm-mono text-[10px] px-1.5 py-0.5 rounded
         ${
           positive
-            ? "bg-amber-50 text-amber-700"
-            : "bg-emerald-50 text-emerald-700"
+            ? "bg-warning-bg text-warning"
+            : "bg-success-bg text-success"
         }
       `}
       title={positive ? "Owes the group" : "Group owes them"}
@@ -174,10 +174,10 @@ function EnergyBar({
       <div className="flex-1 min-w-0">
         {showName && (
           <div className="flex items-center justify-between mb-1 gap-2">
-            <span className="font-sora text-sm font-medium text-warm-text-primary truncate">
+            <span className="font-sora text-sm font-medium text-ink-100 truncate">
               {member.name}
               {member.isOrganizer && (
-                <span className="ml-1.5 font-dm-mono text-[9px] uppercase tracking-wider text-warm-text-secondary">
+                <span className="ml-1.5 font-dm-mono text-[9px] uppercase tracking-wider text-ink-400">
                   organizer
                 </span>
               )}
@@ -193,7 +193,7 @@ function EnergyBar({
 
         {/* Bar track */}
         <div
-          className="h-2 rounded-full bg-warm-background overflow-hidden"
+          className="h-2 rounded-full bg-base overflow-hidden"
           role="progressbar"
           aria-valuenow={pct}
           aria-valuemin={0}
@@ -231,7 +231,7 @@ export function EnergyBars({
       <div
         className={`
           flex items-center justify-center py-8
-          font-dm-mono text-xs text-warm-text-secondary uppercase tracking-wider
+          font-dm-mono text-xs text-ink-400 uppercase tracking-wider
           ${className}
         `}
         aria-label="No members to display"
@@ -257,8 +257,8 @@ export function EnergyBars({
       ))}
 
       {/* Group summary footer */}
-      <div className="pt-2 border-t border-warm-border">
-        <p className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider">
+      <div className="pt-2 border-t border-ink-700">
+        <p className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider">
           {highCount} of {members.length} members fully engaged
         </p>
       </div>

@@ -179,9 +179,9 @@ function ShortlistItem({
   onAddToTrip?: (card: ActivityCard) => void;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-warm bg-warm-surface p-3 transition-colors hover:border-terracotta/30">
+    <div className="flex items-start gap-3 rounded-xl border border-ink-700 bg-surface p-3 transition-colors hover:border-accent/30">
       {/* Thumbnail */}
-      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-warm-border">
+      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-ink-700">
         {card.primaryImageUrl ? (
           <img
             src={card.primaryImageUrl}
@@ -191,7 +191,7 @@ function ShortlistItem({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <TagIcon className="h-5 w-5 text-warm-border" />
+            <TagIcon className="h-5 w-5 text-ink-700" />
           </div>
         )}
       </div>
@@ -219,7 +219,7 @@ function ShortlistItem({
             {card.vibeTags.slice(0, 3).map((vt) => (
               <span
                 key={vt.slug}
-                className="rounded-full bg-terracotta/10 px-1.5 py-0.5 font-dm-mono text-xs text-terracotta"
+                className="rounded-full bg-accent/10 px-1.5 py-0.5 font-dm-mono text-xs text-accent"
               >
                 {vt.name}
               </span>
@@ -232,7 +232,7 @@ function ShortlistItem({
       <div className="flex shrink-0 flex-col items-end gap-1.5">
         <button
           onClick={() => onRemove(card)}
-          className="flex h-7 w-7 items-center justify-center rounded-full text-secondary transition-colors hover:bg-warm-border hover:text-primary"
+          className="flex h-7 w-7 items-center justify-center rounded-full text-secondary transition-colors hover:bg-ink-700 hover:text-primary"
           aria-label={`Remove ${card.name} from shortlist`}
         >
           <XIcon className="h-4 w-4" />
@@ -241,7 +241,7 @@ function ShortlistItem({
         {onAddToTrip && (
           <button
             onClick={() => onAddToTrip(card)}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-terracotta/10 text-terracotta transition-colors hover:bg-terracotta hover:text-white"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/10 text-accent transition-colors hover:bg-accent hover:text-white"
             aria-label={`Add ${card.name} to trip`}
           >
             <PlusIcon className="h-4 w-4" />
@@ -275,8 +275,8 @@ export function Shortlist({
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-terracotta/10">
-          <BookmarkIcon className="h-5 w-5 text-terracotta" />
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/10">
+          <BookmarkIcon className="h-5 w-5 text-accent" />
         </div>
         <h3 className="font-sora text-base font-semibold text-primary">
           Your shortlist is empty
@@ -293,9 +293,9 @@ export function Shortlist({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <BookmarkIcon className="h-4 w-4 text-terracotta" />
+          <BookmarkIcon className="h-4 w-4 text-accent" />
           <h2 className="font-sora text-base font-semibold text-primary">Shortlist</h2>
-          <span className="rounded-full bg-terracotta/10 px-2 py-0.5 font-dm-mono text-xs text-terracotta">
+          <span className="rounded-full bg-accent/10 px-2 py-0.5 font-dm-mono text-xs text-accent">
             {items.length}
           </span>
         </div>

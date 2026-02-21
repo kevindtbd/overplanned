@@ -57,8 +57,8 @@ function FairnessIndicator({ score }: { score: number }) {
     score >= 0.75
       ? "text-emerald-600"
       : score >= 0.5
-      ? "text-amber-600"
-      : "text-red-600";
+      ? "text-warning"
+      : "text-error";
 
   const arcRadius = 28;
   const circumference = Math.PI * arcRadius; // half-circle
@@ -76,7 +76,7 @@ function FairnessIndicator({ score }: { score: number }) {
         {/* Background arc */}
         <path
           d="M 8 36 A 28 28 0 0 1 64 36"
-          stroke="var(--color-warm-border)"
+          stroke="var(--ink-700)"
           strokeWidth="5"
           strokeLinecap="round"
           fill="none"
@@ -96,7 +96,7 @@ function FairnessIndicator({ score }: { score: number }) {
       <span className={`font-dm-mono text-lg font-semibold tabular-nums ${colorClass}`}>
         {pct}%
       </span>
-      <span className="font-dm-mono text-[10px] uppercase tracking-wider text-warm-text-secondary">
+      <span className="font-dm-mono text-[10px] uppercase tracking-wider text-ink-400">
         Fairness
       </span>
     </div>
@@ -113,15 +113,15 @@ function StatPill({
   accent?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center gap-0.5 px-4 py-3 rounded-xl bg-warm-surface border border-warm-border">
+    <div className="flex flex-col items-center gap-0.5 px-4 py-3 rounded-xl bg-surface border border-ink-700">
       <span
         className={`font-sora font-semibold text-xl ${
-          accent ? "text-terracotta-500" : "text-warm-text-primary"
+          accent ? "text-accent" : "text-ink-100"
         }`}
       >
         {value}
       </span>
-      <span className="font-dm-mono text-[10px] uppercase tracking-wider text-warm-text-secondary">
+      <span className="font-dm-mono text-[10px] uppercase tracking-wider text-ink-400">
         {label}
       </span>
     </div>
@@ -143,7 +143,7 @@ function ContestBanner({
       className="
         flex items-center justify-between gap-3
         px-4 py-3 rounded-xl
-        bg-amber-50 border border-amber-200
+        bg-warning-bg border border-amber-200
       "
     >
       <div className="flex items-center gap-2.5">
@@ -171,7 +171,7 @@ function ContestBanner({
           onClick={onResolve}
           className="
             font-dm-mono text-[11px] uppercase tracking-wider
-            text-terracotta-500 hover:text-terracotta-600
+            text-accent hover:text-accent-fg
             transition-colors duration-150 shrink-0
           "
         >
@@ -185,11 +185,11 @@ function ContestBanner({
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="mb-4">
-      <h2 className="font-sora font-semibold text-base text-warm-text-primary">
+      <h2 className="font-sora font-semibold text-base text-ink-100">
         {title}
       </h2>
       {subtitle && (
-        <p className="font-dm-mono text-xs text-warm-text-secondary mt-0.5">
+        <p className="font-dm-mono text-xs text-ink-400 mt-0.5">
           {subtitle}
         </p>
       )}
@@ -230,10 +230,10 @@ export function GroupDashboard({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-sora font-bold text-xl text-warm-text-primary">
+          <h1 className="font-sora font-bold text-xl text-ink-100">
             {trip.destination}
           </h1>
-          <p className="font-dm-mono text-xs text-warm-text-secondary mt-0.5">
+          <p className="font-dm-mono text-xs text-ink-400 mt-0.5">
             Day {trip.currentDay} of {trip.totalDays} —{" "}
             {members.length} travelers
           </p>
@@ -266,7 +266,7 @@ export function GroupDashboard({
       <div
         role="tablist"
         aria-label="Dashboard views"
-        className="flex gap-1 p-1 rounded-xl bg-warm-surface border border-warm-border"
+        className="flex gap-1 p-1 rounded-xl bg-surface border border-ink-700"
       >
         {tabs.map((tab) => (
           <button
@@ -282,8 +282,8 @@ export function GroupDashboard({
               transition-all duration-150
               ${
                 activeTab === tab.id
-                  ? "bg-warm-background text-terracotta-500 shadow-sm"
-                  : "text-warm-text-secondary hover:text-warm-text-primary"
+                  ? "bg-base text-accent shadow-sm"
+                  : "text-ink-400 hover:text-ink-100"
               }
             `}
           >

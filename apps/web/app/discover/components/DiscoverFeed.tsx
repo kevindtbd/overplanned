@@ -232,11 +232,11 @@ function ActivityCardTile({
   return (
     <div
       ref={tileRef}
-      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-warm bg-warm-surface transition-all duration-200 hover:border-terracotta/40 hover:shadow-md"
+      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-ink-700 bg-surface transition-all duration-200 hover:border-accent/40 hover:shadow-md"
       onClick={() => onSelect(card)}
     >
       {/* Image */}
-      <div className="relative h-44 w-full overflow-hidden bg-warm-border">
+      <div className="relative h-44 w-full overflow-hidden bg-ink-700">
         {card.primaryImageUrl ? (
           <img
             src={card.primaryImageUrl}
@@ -246,7 +246,7 @@ function ActivityCardTile({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <TagIcon className="h-8 w-8 text-warm-border" />
+            <TagIcon className="h-8 w-8 text-ink-700" />
           </div>
         )}
 
@@ -261,8 +261,8 @@ function ActivityCardTile({
         <button
           className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition-colors ${
             isShortlisted
-              ? "bg-terracotta text-white"
-              : "bg-black/40 text-white hover:bg-terracotta"
+              ? "bg-accent text-white"
+              : "bg-black/40 text-white hover:bg-accent"
           }`}
           onClick={(e) => {
             e.stopPropagation();
@@ -309,7 +309,7 @@ function ActivityCardTile({
             {card.vibeTags.slice(0, 3).map((vt) => (
               <span
                 key={vt.slug}
-                className="rounded-full bg-terracotta/10 px-2 py-0.5 font-dm-mono text-xs text-terracotta"
+                className="rounded-full bg-accent/10 px-2 py-0.5 font-dm-mono text-xs text-accent"
               >
                 {vt.name}
               </span>
@@ -336,7 +336,7 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-4 flex items-start gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-terracotta/10 text-terracotta">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
         {icon}
       </div>
       <div>
@@ -364,8 +364,8 @@ function CategoryStrip({
         onClick={() => onSelect(null)}
         className={`shrink-0 rounded-full border px-3 py-1.5 font-dm-mono text-xs transition-colors ${
           selectedCategory === null
-            ? "border-terracotta bg-terracotta text-white"
-            : "border-warm bg-warm-surface text-secondary hover:border-terracotta/40 hover:text-primary"
+            ? "border-accent bg-accent text-white"
+            : "border-ink-700 bg-surface text-secondary hover:border-accent/40 hover:text-primary"
         }`}
       >
         All
@@ -376,8 +376,8 @@ function CategoryStrip({
           onClick={() => onSelect(cat === selectedCategory ? null : cat)}
           className={`shrink-0 rounded-full border px-3 py-1.5 font-dm-mono text-xs transition-colors ${
             selectedCategory === cat
-              ? "border-terracotta bg-terracotta text-white"
-              : "border-warm bg-warm-surface text-secondary hover:border-terracotta/40 hover:text-primary"
+              ? "border-accent bg-accent text-white"
+              : "border-ink-700 bg-surface text-secondary hover:border-accent/40 hover:text-primary"
           }`}
         >
           {CATEGORY_LABELS[cat]}
@@ -393,12 +393,12 @@ function CategoryStrip({
 
 function CardSkeleton() {
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-warm bg-warm-surface">
-      <div className="h-44 animate-pulse bg-warm-border" />
+    <div className="flex flex-col overflow-hidden rounded-xl border border-ink-700 bg-surface">
+      <div className="h-44 animate-pulse bg-ink-700" />
       <div className="space-y-2 p-3">
-        <div className="h-4 w-3/4 animate-pulse rounded bg-warm-border" />
-        <div className="h-3 w-1/2 animate-pulse rounded bg-warm-border" />
-        <div className="h-3 w-full animate-pulse rounded bg-warm-border" />
+        <div className="h-4 w-3/4 animate-pulse rounded bg-ink-700" />
+        <div className="h-3 w-1/2 animate-pulse rounded bg-ink-700" />
+        <div className="h-3 w-full animate-pulse rounded bg-ink-700" />
       </div>
     </div>
   );
@@ -519,7 +519,7 @@ export function DiscoverFeed({
   return (
     <div className="space-y-8">
       {/* Category browsing strip */}
-      <div className="sticky top-14 z-10 -mx-4 bg-app/90 px-4 py-3 backdrop-blur-sm">
+      <div className="sticky top-14 z-10 -mx-4 bg-base/90 px-4 py-3 backdrop-blur-sm">
         <CategoryStrip
           selectedCategory={selectedCategory}
           onSelect={setSelectedCategory}
@@ -535,7 +535,7 @@ export function DiscoverFeed({
       )}
 
       {error && (
-        <div className="rounded-xl border border-warm bg-warm-surface p-6 text-center">
+        <div className="rounded-xl border border-ink-700 bg-surface p-6 text-center">
           <p className="font-dm-mono text-xs text-secondary">Could not load feed. Try again later.</p>
         </div>
       )}

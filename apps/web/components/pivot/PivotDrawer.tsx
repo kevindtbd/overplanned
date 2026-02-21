@@ -138,7 +138,7 @@ function TriggerBanner({ triggerType }: { triggerType?: string }) {
   return (
     <div className="
       flex items-center gap-2 px-4 py-2
-      bg-amber-50 border-b border-amber-200
+      bg-warning-bg border-b border-amber-200
     ">
       <svg
         width="14"
@@ -149,14 +149,14 @@ function TriggerBanner({ triggerType }: { triggerType?: string }) {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="text-amber-600 shrink-0"
+        className="text-warning shrink-0"
         aria-hidden="true"
       >
         <path d="M8 2L1.5 13.5h13L8 2z" />
         <line x1="8" y1="7" x2="8" y2="10" />
         <circle cx="8" cy="12" r="0.5" fill="currentColor" />
       </svg>
-      <span className="font-dm-mono text-[11px] uppercase tracking-wider text-amber-700">
+      <span className="font-dm-mono text-[11px] uppercase tracking-wider text-warning">
         {label}
       </span>
     </div>
@@ -179,7 +179,7 @@ function ActionBar({
   return (
     <div className="
       flex items-center gap-3 p-4
-      border-t border-warm-border bg-warm-surface
+      border-t border-ink-700 bg-surface
     ">
       {/* Reject */}
       <button
@@ -189,11 +189,11 @@ function ActionBar({
         className="
           flex items-center gap-1.5 px-4 py-2 rounded-lg
           font-dm-mono text-xs uppercase tracking-wider
-          border border-warm-border
-          bg-warm-background text-warm-text-secondary
-          hover:border-red-300 hover:text-red-600
+          border border-ink-700
+          bg-base text-ink-400
+          hover:border-red-300 hover:text-error
           transition-all duration-150
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400 focus-visible:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
           disabled:opacity-40 disabled:cursor-not-allowed
         "
         aria-label="Keep current slot"
@@ -224,11 +224,11 @@ function ActionBar({
           flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg
           font-dm-mono text-xs uppercase tracking-wider
           transition-all duration-150
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400 focus-visible:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
           disabled:opacity-40 disabled:cursor-not-allowed
           ${hasSelection
-            ? "bg-terracotta-500 text-white hover:bg-terracotta-600 border border-terracotta-600"
-            : "bg-warm-background text-warm-text-secondary border border-warm-border"
+            ? "bg-accent text-white hover:bg-accent-fg border border-accent-fg"
+            : "bg-base text-ink-400 border border-ink-700"
           }
         `}
         aria-label={hasSelection ? "Accept selected alternative" : "Select an alternative first"}
@@ -479,7 +479,7 @@ export function PivotDrawer({
           fixed bottom-0 left-0 right-0 z-50
           md:top-0 md:bottom-0 md:right-0 md:left-auto md:w-[480px]
           flex flex-col
-          bg-warm-background
+          bg-base
           rounded-t-2xl md:rounded-l-2xl md:rounded-r-none
           shadow-[0_-4px_40px_rgba(0,0,0,0.16)] md:shadow-[-4px_0_40px_rgba(0,0,0,0.12)]
           max-h-[90dvh] md:max-h-full
@@ -488,12 +488,12 @@ export function PivotDrawer({
         "
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-warm-border shrink-0">
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-ink-700 shrink-0">
           <div>
-            <h2 className="font-sora font-semibold text-base text-warm-text-primary">
+            <h2 className="font-sora font-semibold text-base text-ink-100">
               Swap this stop?
             </h2>
-            <p className="font-dm-mono text-[11px] uppercase tracking-wider text-warm-text-secondary mt-0.5">
+            <p className="font-dm-mono text-[11px] uppercase tracking-wider text-ink-400 mt-0.5">
               {alternatives.length} alternative{alternatives.length !== 1 ? "s" : ""} found
             </p>
           </div>
@@ -502,10 +502,10 @@ export function PivotDrawer({
             onClick={() => handleReject()}
             className="
               p-2 rounded-lg
-              text-warm-text-secondary
-              hover:text-warm-text-primary hover:bg-warm-surface
+              text-ink-400
+              hover:text-ink-100 hover:bg-surface
               transition-colors duration-150
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-400
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400
             "
             aria-label="Close pivot drawer"
           >
@@ -533,7 +533,7 @@ export function PivotDrawer({
         {error && (
           <div
             role="alert"
-            className="mx-4 mt-3 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-700 font-dm-mono text-[11px]"
+            className="mx-4 mt-3 px-3 py-2 rounded-lg bg-error-bg border border-red-200 text-red-700 font-dm-mono text-[11px]"
           >
             {error}
           </div>
@@ -546,7 +546,7 @@ export function PivotDrawer({
             <section aria-labelledby="current-heading">
               <h3
                 id="current-heading"
-                className="font-dm-mono text-[10px] uppercase tracking-wider text-warm-text-secondary mb-2"
+                className="font-dm-mono text-[10px] uppercase tracking-wider text-ink-400 mb-2"
               >
                 Currently scheduled
               </h3>
@@ -558,12 +558,12 @@ export function PivotDrawer({
 
             {/* Divider with swap icon */}
             <div className="flex items-center gap-3">
-              <div className="flex-1 border-t border-warm-border" />
+              <div className="flex-1 border-t border-ink-700" />
               <div className="
                 w-7 h-7 rounded-full
-                border border-warm-border bg-warm-surface
+                border border-ink-700 bg-surface
                 flex items-center justify-center
-                text-warm-text-secondary
+                text-ink-400
               ">
                 <svg
                   width="14"
@@ -581,23 +581,23 @@ export function PivotDrawer({
                   <line x1="8" y1="3" x2="8" y2="13" />
                 </svg>
               </div>
-              <div className="flex-1 border-t border-warm-border" />
+              <div className="flex-1 border-t border-ink-700" />
             </div>
 
             {/* Alternatives */}
             <section aria-labelledby="alternatives-heading">
               <h3
                 id="alternatives-heading"
-                className="font-dm-mono text-[10px] uppercase tracking-wider text-warm-text-secondary mb-2"
+                className="font-dm-mono text-[10px] uppercase tracking-wider text-ink-400 mb-2"
               >
                 Alternatives nearby
               </h3>
 
               {alternatives.length === 0 ? (
                 <div className="
-                  p-6 rounded-xl border border-dashed border-warm-border
+                  p-6 rounded-xl border border-dashed border-ink-700
                   text-center
-                  font-dm-mono text-[12px] text-warm-text-secondary uppercase tracking-wider
+                  font-dm-mono text-[12px] text-ink-400 uppercase tracking-wider
                 ">
                   No alternatives available right now
                 </div>

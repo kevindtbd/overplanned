@@ -50,8 +50,8 @@ const VOTE_CONFIG: Record<
 > = {
   yes: {
     label: "Yes",
-    activeClass: "bg-emerald-100 text-emerald-700 border-emerald-400",
-    hoverClass: "hover:border-emerald-400 hover:text-emerald-700",
+    activeClass: "bg-emerald-100 text-success border-emerald-400",
+    hoverClass: "hover:border-emerald-400 hover:text-success",
     icon: (
       <svg
         width="14"
@@ -70,8 +70,8 @@ const VOTE_CONFIG: Record<
   },
   maybe: {
     label: "Maybe",
-    activeClass: "bg-amber-100 text-amber-700 border-amber-400",
-    hoverClass: "hover:border-amber-400 hover:text-amber-700",
+    activeClass: "bg-amber-100 text-warning border-amber-400",
+    hoverClass: "hover:border-amber-400 hover:text-warning",
     icon: (
       <svg
         width="14"
@@ -92,8 +92,8 @@ const VOTE_CONFIG: Record<
   },
   no: {
     label: "No",
-    activeClass: "bg-red-50 text-red-600 border-red-400",
-    hoverClass: "hover:border-red-400 hover:text-red-600",
+    activeClass: "bg-error-bg text-error border-red-400",
+    hoverClass: "hover:border-red-400 hover:text-error",
     icon: (
       <svg
         width="14"
@@ -119,23 +119,23 @@ const VOTE_STATE_BADGE: Record<
 > = {
   proposed: {
     label: "Awaiting votes",
-    dotClass: "bg-warm-border",
-    textClass: "text-warm-text-secondary",
+    dotClass: "bg-ink-700",
+    textClass: "text-ink-400",
   },
   voting: {
     label: "Voting in progress",
-    dotClass: "bg-amber-400",
-    textClass: "text-amber-700",
+    dotClass: "bg-warning",
+    textClass: "text-warning",
   },
   confirmed: {
     label: "Confirmed",
-    dotClass: "bg-emerald-400",
-    textClass: "text-emerald-700",
+    dotClass: "bg-success",
+    textClass: "text-success",
   },
   contested: {
     label: "Contested",
     dotClass: "bg-red-400",
-    textClass: "text-red-600",
+    textClass: "text-error",
   },
 };
 
@@ -152,18 +152,18 @@ function VoteCountSummary({ memberVotes }: { memberVotes: MemberVote[] }) {
   const voted = memberVotes.filter((mv) => mv.vote !== null).length;
 
   return (
-    <div className="flex items-center gap-4 font-dm-mono text-xs text-warm-text-secondary">
+    <div className="flex items-center gap-4 font-dm-mono text-xs text-ink-400">
       <span className="uppercase tracking-wider">
         {voted}/{total} voted
       </span>
       {(counts.yes ?? 0) > 0 && (
-        <span className="text-emerald-700">{counts.yes} yes</span>
+        <span className="text-success">{counts.yes} yes</span>
       )}
       {(counts.maybe ?? 0) > 0 && (
-        <span className="text-amber-700">{counts.maybe} maybe</span>
+        <span className="text-warning">{counts.maybe} maybe</span>
       )}
       {(counts.no ?? 0) > 0 && (
-        <span className="text-red-600">{counts.no} no</span>
+        <span className="text-error">{counts.no} no</span>
       )}
     </div>
   );
@@ -184,7 +184,7 @@ function MemberVoteRow({
     <div
       className={`
         flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg
-        ${isCurrentUser ? "bg-warm-background" : ""}
+        ${isCurrentUser ? "bg-base" : ""}
       `}
     >
       {/* Member identity */}
@@ -200,7 +200,7 @@ function MemberVoteRow({
           <div
             className="
               w-7 h-7 rounded-full shrink-0
-              bg-terracotta-100 text-terracotta-600
+              bg-accent-light text-accent-fg
               flex items-center justify-center
               font-sora text-xs font-semibold
             "
@@ -212,7 +212,7 @@ function MemberVoteRow({
         <span
           className={`
             font-dm-mono text-xs truncate
-            ${isCurrentUser ? "text-warm-text-primary font-medium" : "text-warm-text-secondary"}
+            ${isCurrentUser ? "text-ink-100 font-medium" : "text-ink-400"}
           `}
         >
           {isCurrentUser ? "You" : mv.memberName}
@@ -242,12 +242,12 @@ function MemberVoteRow({
                   font-dm-mono text-[10px] uppercase tracking-wider
                   border transition-all duration-150
                   focus-visible:outline-none focus-visible:ring-2
-                  focus-visible:ring-terracotta-400 focus-visible:ring-offset-1
+                  focus-visible:ring-accent-400 focus-visible:ring-offset-1
                   disabled:opacity-50 disabled:cursor-not-allowed
                   ${
                     isSelected
                       ? cfg.activeClass
-                      : `bg-warm-surface text-warm-text-secondary border-warm-border ${cfg.hoverClass}`
+                      : `bg-surface text-ink-400 border-ink-700 ${cfg.hoverClass}`
                   }
                 `}
               >
@@ -271,7 +271,7 @@ function MemberVoteRow({
               {VOTE_CONFIG[mv.vote].label}
             </span>
           ) : (
-            <span className="text-warm-text-secondary uppercase tracking-wider opacity-60">
+            <span className="text-ink-400 uppercase tracking-wider opacity-60">
               Pending
             </span>
           )}
@@ -311,13 +311,13 @@ export function VotePanel({
     <section
       aria-label="Group vote"
       className="
-        mt-3 rounded-xl border border-warm-border
-        bg-warm-surface overflow-hidden
+        mt-3 rounded-xl border border-ink-700
+        bg-surface overflow-hidden
       "
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-warm-border">
-        <h4 className="font-sora text-sm font-semibold text-warm-text-primary">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-ink-700">
+        <h4 className="font-sora text-sm font-semibold text-ink-100">
           Group Vote
         </h4>
         <div className="flex items-center gap-1.5">
@@ -334,7 +334,7 @@ export function VotePanel({
       </div>
 
       {/* Member vote rows */}
-      <div className="divide-y divide-warm-border">
+      <div className="divide-y divide-ink-700">
         {memberVotes.map((mv) => (
           <MemberVoteRow
             key={mv.memberId}
@@ -348,15 +348,15 @@ export function VotePanel({
 
       {/* Summary footer */}
       {memberVotes.length > 0 && (
-        <div className="px-4 py-3 border-t border-warm-border bg-warm-background">
+        <div className="px-4 py-3 border-t border-ink-700 bg-base">
           <VoteCountSummary memberVotes={memberVotes} />
           {isComplete && voteState === "contested" && (
-            <p className="font-dm-mono text-[10px] uppercase tracking-wider text-red-600 mt-1.5">
+            <p className="font-dm-mono text-[10px] uppercase tracking-wider text-error mt-1.5">
               Votes are divided. See alternatives below.
             </p>
           )}
           {isComplete && voteState === "confirmed" && (
-            <p className="font-dm-mono text-[10px] uppercase tracking-wider text-emerald-700 mt-1.5">
+            <p className="font-dm-mono text-[10px] uppercase tracking-wider text-success mt-1.5">
               Everyone is in. This one is locked.
             </p>
           )}

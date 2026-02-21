@@ -205,8 +205,8 @@ export function PromptBar({
       {/* Input area */}
       <div
         className={`
-          relative rounded-xl border bg-warm-surface transition-all duration-150
-          ${error ? "border-red-300" : "border-warm-border focus-within:border-[#C4694F]/60"}
+          relative rounded-xl border bg-surface transition-all duration-150
+          ${error ? "border-red-300" : "border-ink-700 focus-within:border-[#C4694F]/60"}
           ${disabled ? "opacity-60" : ""}
         `}
       >
@@ -231,7 +231,7 @@ export function PromptBar({
           }
           className="
             w-full resize-none rounded-xl bg-transparent px-4 pt-3 pb-8
-            font-sora text-sm text-warm-text-primary placeholder:text-warm-text-secondary
+            font-sora text-sm text-ink-100 placeholder:text-ink-400
             focus:outline-none disabled:cursor-not-allowed
           "
         />
@@ -244,7 +244,7 @@ export function PromptBar({
             aria-atomic="true"
             className={`
               font-dm-mono text-[10px] uppercase tracking-wider transition-colors
-              ${isAtLimit ? "text-red-500" : isNearLimit ? "text-amber-500" : "text-warm-text-secondary"}
+              ${isAtLimit ? "text-red-500" : isNearLimit ? "text-amber-500" : "text-ink-400"}
             `}
           >
             {charsRemaining} left
@@ -281,7 +281,7 @@ export function PromptBar({
       </div>
 
       {/* Keyboard hint */}
-      <p className="font-dm-mono text-[10px] text-warm-text-secondary uppercase tracking-wider">
+      <p className="font-dm-mono text-[10px] text-ink-400 uppercase tracking-wider">
         Cmd + Enter to send
       </p>
 
@@ -291,7 +291,7 @@ export function PromptBar({
           id={`${inputId}-error`}
           role="alert"
           className="
-            rounded-lg border border-red-200 bg-red-50 px-3 py-2
+            rounded-lg border border-red-200 bg-error-bg px-3 py-2
             font-dm-mono text-xs text-red-700
           "
         >
@@ -304,15 +304,15 @@ export function PromptBar({
         <div
           aria-live="polite"
           className="
-            rounded-lg border border-warm-border bg-warm-background px-3 py-2
+            rounded-lg border border-ink-700 bg-base px-3 py-2
             flex items-center justify-between
           "
         >
           <div className="flex items-center gap-2">
-            <span className="font-dm-mono text-[10px] uppercase tracking-wider text-warm-text-secondary">
+            <span className="font-dm-mono text-[10px] uppercase tracking-wider text-ink-400">
               Detected
             </span>
-            <span className="font-dm-mono text-xs text-warm-text-primary">
+            <span className="font-dm-mono text-xs text-ink-100">
               {CLASSIFICATION_LABELS[lastResult.classification]}
             </span>
           </div>
@@ -321,10 +321,10 @@ export function PromptBar({
               font-dm-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded
               ${
                 lastResult.confidence >= 0.7
-                  ? "bg-emerald-50 text-emerald-700"
+                  ? "bg-success-bg text-success"
                   : lastResult.confidence >= 0.5
-                  ? "bg-amber-50 text-amber-700"
-                  : "bg-gray-100 text-gray-500"
+                  ? "bg-warning-bg text-warning"
+                  : "bg-ink-800 text-ink-500"
               }
             `}
             title={`Confidence: ${(lastResult.confidence * 100).toFixed(0)}%`}

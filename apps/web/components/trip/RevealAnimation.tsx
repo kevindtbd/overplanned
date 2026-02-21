@@ -158,13 +158,13 @@ function SkeletonCard({ index }: { index: number }) {
       aria-hidden="true"
     >
       <div className="flex items-start gap-3">
-        <div className="h-10 w-10 rounded-lg bg-warm-border" />
+        <div className="h-10 w-10 rounded-lg bg-ink-700" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 w-3/4 rounded bg-warm-border" />
-          <div className="h-3 w-1/2 rounded bg-warm-border" />
+          <div className="h-4 w-3/4 rounded bg-ink-700" />
+          <div className="h-3 w-1/2 rounded bg-ink-700" />
           <div className="flex gap-2">
-            <div className="h-3 w-16 rounded bg-warm-border" />
-            <div className="h-3 w-20 rounded bg-warm-border" />
+            <div className="h-3 w-16 rounded bg-ink-700" />
+            <div className="h-3 w-20 rounded bg-ink-700" />
           </div>
         </div>
       </div>
@@ -203,7 +203,7 @@ function SlotCard({
     >
       <div className="flex items-start gap-3">
         {/* Time slot indicator */}
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-terracotta/10 text-terracotta">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
           <span className="font-dm-mono text-xs font-medium">
             {slot.timeSlot}
           </span>
@@ -225,7 +225,7 @@ function SlotCard({
             </span>
           </div>
 
-          <span className="mt-2 inline-block rounded-full bg-warm-border px-2 py-0.5 font-dm-mono text-[10px] uppercase tracking-wider text-secondary">
+          <span className="mt-2 inline-block rounded-full bg-ink-700 px-2 py-0.5 font-dm-mono text-[10px] uppercase tracking-wider text-secondary">
             {slot.category}
           </span>
         </div>
@@ -241,13 +241,13 @@ function ProgressBar({ progress }: { progress: number }) {
     <div className="w-full" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
       <div className="flex items-center justify-between mb-2">
         <span className="label-mono">Building your itinerary</span>
-        <span className="font-dm-mono text-xs text-terracotta font-medium">
+        <span className="font-dm-mono text-xs text-accent font-medium">
           {progress}%
         </span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-warm-border">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink-700">
         <div
-          className="h-full rounded-full bg-terracotta transition-all duration-700 ease-out"
+          className="h-full rounded-full bg-accent transition-all duration-700 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -300,7 +300,7 @@ function ErrorState({
 }) {
   return (
     <div className="flex flex-col items-center gap-4 py-12 text-center" role="alert">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/30">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-error-bg dark:bg-red-950/30">
         <AlertIcon className="h-7 w-7 text-red-500" />
       </div>
       <div>
@@ -326,8 +326,8 @@ function ErrorState({
 
 function CompletionBanner({ slotCount }: { slotCount: number }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-terracotta/20 bg-terracotta/5 p-4">
-      <CheckCircleIcon className="h-5 w-5 flex-shrink-0 text-terracotta" />
+    <div className="flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/5 p-4">
+      <CheckCircleIcon className="h-5 w-5 flex-shrink-0 text-accent" />
       <div>
         <p className="font-sora text-sm font-semibold text-primary">
           Itinerary ready
@@ -461,11 +461,11 @@ export function RevealAnimation({
   const skeletonCount = Math.max(0, expectedTotal - status.slots.length);
 
   return (
-    <div className="min-h-screen bg-app">
+    <div className="min-h-screen bg-base">
       {/* Header */}
       <header className="px-4 pt-8 pb-6 sm:px-6">
         <div className="mx-auto max-w-lg">
-          <div className="flex items-center gap-2 text-terracotta">
+          <div className="flex items-center gap-2 text-accent">
             {status.status === "generating" && (
               <SpinnerIcon className="h-5 w-5" />
             )}

@@ -7,6 +7,7 @@
 //   <SlotCard
 //     slot={slotData}
 //     onAction={handleBehavioralSignal}
+//     whyThis="you prefer early entry — this is when it breathes"
 //     showVoting={false}   // Track 4: group voting UI
 //     showPivot={false}    // Track 5: pivot swap UI
 //     showFlag={false}     // Track 5: flag for review
@@ -61,6 +62,8 @@ export interface SlotCardProps {
   onAction: (event: SlotActionEvent) => void;
   /** Trip timezone (IANA) for time display */
   timezone?: string;
+  /** One-liner explaining why this activity was chosen */
+  whyThis?: string;
   /** Track 4: show group voting controls */
   showVoting?: boolean;
   /** Track 5: show pivot/swap controls */
@@ -77,33 +80,33 @@ const STATUS_CONFIG: Record<
 > = {
   proposed: {
     label: "Proposed",
-    dotClass: "bg-amber-400",
-    bgClass: "bg-amber-50 text-amber-700",
+    dotClass: "bg-warning",
+    bgClass: "bg-warning-bg text-warning",
   },
   voted: {
     label: "Voted",
-    dotClass: "bg-amber-400",
-    bgClass: "bg-amber-50 text-amber-700",
+    dotClass: "bg-warning",
+    bgClass: "bg-warning-bg text-warning",
   },
   confirmed: {
     label: "Confirmed",
-    dotClass: "bg-emerald-400",
-    bgClass: "bg-emerald-50 text-emerald-700",
+    dotClass: "bg-success",
+    bgClass: "bg-success-bg text-success",
   },
   active: {
     label: "Active",
-    dotClass: "bg-emerald-400",
-    bgClass: "bg-emerald-50 text-emerald-700",
+    dotClass: "bg-accent",
+    bgClass: "bg-accent-light text-accent",
   },
   completed: {
     label: "Completed",
-    dotClass: "bg-gray-400",
-    bgClass: "bg-gray-100 text-gray-500",
+    dotClass: "bg-ink-500",
+    bgClass: "bg-ink-800 text-ink-500",
   },
   skipped: {
     label: "Skipped",
-    dotClass: "bg-gray-400",
-    bgClass: "bg-gray-100 text-gray-500",
+    dotClass: "bg-ink-500",
+    bgClass: "bg-ink-800 text-ink-500",
   },
 };
 
@@ -135,6 +138,7 @@ export function SlotCard({
   slot,
   onAction,
   timezone,
+  whyThis,
   showVoting = false,
   showPivot = false,
   showFlag = false,
@@ -151,29 +155,35 @@ export function SlotCard({
   const timeDisplay = slot.startTime ? formatTime(slot.startTime, timezone) : null;
   const endTimeDisplay = slot.endTime ? formatTime(slot.endTime, timezone) : null;
   const durationDisplay = formatDuration(slot.durationMinutes);
+  const isDimmed = slot.status === "completed" || slot.status === "skipped";
 
   return (
     <article
       className={`
-        group relative rounded-xl border border-warm-border
-        bg-warm-surface overflow-hidden
-        transition-shadow duration-200
+        group relative rounded-2xl
+        bg-surface shadow-card overflow-hidden
+        transition-all duration-200
         hover:shadow-md
-        ${slot.status === "completed" || slot.status === "skipped" ? "opacity-60" : ""}
+        [will-change:transform] hover:scale-[1.01]
+        ${isDimmed ? "opacity-60" : ""}
       `}
       aria-label={`${slot.activityName} - ${statusConfig.label}`}
     >
       {/* Photo + Status overlay */}
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-warm-background">
+      <div className="relative aspect-[16/9] w-full overflow-hidden bg-base">
         {slot.imageUrl ? (
-          <Image
-            src={slot.imageUrl}
-            alt={slot.activityName}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
+          <>
+            <Image
+              src={slot.imageUrl}
+              alt={slot.activityName}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              loading="lazy"
+            />
+            {/* Warm photo overlay */}
+            <div className="photo-overlay-warm absolute inset-0" aria-hidden="true" />
+          </>
         ) : (
           <div className="flex items-center justify-center h-full">
             <svg
@@ -183,7 +193,7 @@ export function SlotCard({
               fill="none"
               stroke="currentColor"
               strokeWidth="1"
-              className="text-warm-text-secondary opacity-30"
+              className="text-ink-500 opacity-30"
               aria-hidden="true"
             >
               <rect x="6" y="10" width="36" height="28" rx="3" />
@@ -217,7 +227,7 @@ export function SlotCard({
             <span
               className="
                 inline-flex items-center gap-1 px-2 py-1 rounded-full
-                bg-amber-50 text-amber-700
+                bg-warning-bg text-warning
                 font-dm-mono text-[10px] uppercase tracking-wider
                 backdrop-blur-sm
               "
@@ -241,7 +251,7 @@ export function SlotCard({
           </div>
         )}
 
-        {/* Booking badge placeholder */}
+        {/* Booking badge */}
         {slot.bookingStatus && slot.bookingStatus !== "none" && (
           <div className="absolute bottom-3 right-3">
             <span
@@ -251,8 +261,8 @@ export function SlotCard({
                 backdrop-blur-sm
                 ${
                   slot.bookingStatus === "confirmed"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-amber-50 text-amber-700"
+                    ? "bg-success-bg text-success"
+                    : "bg-warning-bg text-warning"
                 }
               `}
             >
@@ -266,14 +276,20 @@ export function SlotCard({
       <div className="p-4 space-y-3">
         {/* Activity name + slot type */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-sora font-semibold text-warm-text-primary text-base leading-tight">
-            {slot.activityName}
-          </h3>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-sora font-semibold text-ink-100 text-base leading-tight">
+              {slot.activityName}
+            </h3>
+            {whyThis && (
+              <p className="font-lora italic text-ink-300 text-sm mt-1 leading-snug">
+                {whyThis}
+              </p>
+            )}
+          </div>
           <span
             className="
-              shrink-0 font-dm-mono text-[10px] uppercase tracking-wider
-              text-warm-text-secondary bg-warm-background
-              px-1.5 py-0.5 rounded
+              shrink-0 label-mono
+              bg-base px-1.5 py-0.5 rounded
             "
           >
             {slot.slotType}
@@ -282,7 +298,7 @@ export function SlotCard({
 
         {/* Time + Duration */}
         {(timeDisplay || durationDisplay) && (
-          <div className="flex items-center gap-2 font-dm-mono text-xs text-warm-text-secondary">
+          <div className="flex items-center gap-2 label-mono text-ink-400">
             {timeDisplay && (
               <span className="flex items-center gap-1">
                 <svg
@@ -309,7 +325,7 @@ export function SlotCard({
               </span>
             )}
             {timeDisplay && durationDisplay && (
-              <span aria-hidden="true" className="text-warm-border">|</span>
+              <span aria-hidden="true" className="text-ink-700">|</span>
             )}
             {durationDisplay && <span>{durationDisplay}</span>}
           </div>
@@ -333,9 +349,8 @@ export function SlotCard({
         {showVoting && (
           <div
             className="
-              mt-2 p-3 rounded-lg border border-dashed border-warm-border
-              font-dm-mono text-[11px] text-warm-text-secondary uppercase tracking-wider
-              text-center
+              mt-2 p-3 rounded-lg border border-dashed border-ink-700
+              label-mono text-center
             "
             aria-label="Group voting controls (coming soon)"
           >
@@ -349,9 +364,8 @@ export function SlotCard({
             {showPivot && (
               <div
                 className="
-                  flex-1 p-2 rounded-lg border border-dashed border-warm-border
-                  font-dm-mono text-[11px] text-warm-text-secondary uppercase tracking-wider
-                  text-center
+                  flex-1 p-2 rounded-lg border border-dashed border-ink-700
+                  label-mono text-center
                 "
                 aria-label="Pivot swap controls (coming soon)"
               >
@@ -361,9 +375,8 @@ export function SlotCard({
             {showFlag && (
               <div
                 className="
-                  flex-1 p-2 rounded-lg border border-dashed border-warm-border
-                  font-dm-mono text-[11px] text-warm-text-secondary uppercase tracking-wider
-                  text-center
+                  flex-1 p-2 rounded-lg border border-dashed border-ink-700
+                  label-mono text-center
                 "
                 aria-label="Flag for review (coming soon)"
               >

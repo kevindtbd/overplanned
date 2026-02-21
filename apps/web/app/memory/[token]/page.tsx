@@ -207,16 +207,16 @@ export default async function TripMemoryPage({
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "var(--color-warm-background)",
-        color: "var(--color-warm-text-primary)",
+        backgroundColor: "var(--bg-base)",
+        color: "var(--ink-100)",
         fontFamily: "var(--font-sora), system-ui, sans-serif",
       }}
     >
       {/* Header */}
       <header
         style={{
-          borderBottom: "1px solid var(--color-warm-border)",
-          backgroundColor: "var(--color-warm-surface)",
+          borderBottom: "1px solid var(--ink-700)",
+          backgroundColor: "var(--bg-surface)",
           padding: "1.25rem 1.5rem",
           position: "sticky",
           top: 0,
@@ -237,7 +237,7 @@ export default async function TripMemoryPage({
               fontFamily: "var(--font-sora), system-ui, sans-serif",
               fontWeight: 700,
               fontSize: "1rem",
-              color: "var(--color-terracotta)",
+              color: "var(--accent)",
               letterSpacing: "-0.01em",
             }}
           >
@@ -250,7 +250,7 @@ export default async function TripMemoryPage({
               fontWeight: 500,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
-              color: "var(--color-warm-text-secondary)",
+              color: "var(--ink-400)",
             }}
           >
             Trip memory
@@ -282,7 +282,7 @@ export default async function TripMemoryPage({
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(to top, var(--color-warm-background) 0%, transparent 60%)",
+                "linear-gradient(to top, var(--bg-base) 0%, transparent 60%)",
             }}
           />
         </div>
@@ -306,7 +306,7 @@ export default async function TripMemoryPage({
             fontWeight: 500,
             textTransform: "uppercase",
             letterSpacing: "0.1em",
-            color: "var(--color-terracotta)",
+            color: "var(--accent)",
             marginBottom: "0.625rem",
           }}
         >
@@ -319,7 +319,7 @@ export default async function TripMemoryPage({
             fontWeight: 700,
             lineHeight: 1.1,
             letterSpacing: "-0.02em",
-            color: "var(--color-warm-text-primary)",
+            color: "var(--ink-100)",
             marginBottom: "1rem",
           }}
         >
@@ -393,8 +393,8 @@ export default async function TripMemoryPage({
                     height: "144px",
                     borderRadius: "0.75rem",
                     overflow: "hidden",
-                    border: "1px solid var(--color-warm-border)",
-                    backgroundColor: "var(--color-warm-surface)",
+                    border: "1px solid var(--ink-700)",
+                    backgroundColor: "var(--bg-surface)",
                   }}
                 >
                   <Image
@@ -410,7 +410,7 @@ export default async function TripMemoryPage({
                     fontFamily: "var(--font-sora), system-ui, sans-serif",
                     fontSize: "0.75rem",
                     fontWeight: 500,
-                    color: "var(--color-warm-text-primary)",
+                    color: "var(--ink-100)",
                     textAlign: "center",
                     marginTop: "0.5rem",
                     overflow: "hidden",
@@ -459,7 +459,7 @@ export default async function TripMemoryPage({
                     fontWeight: 500,
                     textTransform: "uppercase",
                     letterSpacing: "0.1em",
-                    color: "var(--color-terracotta)",
+                    color: "var(--accent)",
                   }}
                 >
                   Day {dayNumber}
@@ -487,7 +487,7 @@ export default async function TripMemoryPage({
             style={{
               fontFamily: "var(--font-dm-mono), monospace",
               fontSize: "0.875rem",
-              color: "var(--color-warm-text-secondary)",
+              color: "var(--ink-400)",
               textAlign: "center",
               paddingTop: "2rem",
             }}
@@ -500,7 +500,7 @@ export default async function TripMemoryPage({
       {/* Footer */}
       <footer
         style={{
-          borderTop: "1px solid var(--color-warm-border)",
+          borderTop: "1px solid var(--ink-700)",
           padding: "1.5rem",
           textAlign: "center",
         }}
@@ -509,11 +509,11 @@ export default async function TripMemoryPage({
           style={{
             fontFamily: "var(--font-dm-mono), monospace",
             fontSize: "0.6875rem",
-            color: "var(--color-warm-text-secondary)",
+            color: "var(--ink-400)",
           }}
         >
           Shared via{" "}
-          <span style={{ color: "var(--color-terracotta)" }}>overplanned</span>{" "}
+          <span style={{ color: "var(--accent)" }}>overplanned</span>{" "}
           &mdash; behavioral-driven travel planning
         </p>
       </footer>
@@ -535,7 +535,7 @@ function MetaItem({ label, value }: { label: string; value: string }) {
           fontWeight: 500,
           textTransform: "uppercase",
           letterSpacing: "0.08em",
-          color: "var(--color-warm-text-secondary)",
+          color: "var(--ink-400)",
           marginBottom: "0.2rem",
         }}
       >
@@ -546,7 +546,7 @@ function MetaItem({ label, value }: { label: string; value: string }) {
           fontFamily: "var(--font-sora), system-ui, sans-serif",
           fontSize: "0.9375rem",
           fontWeight: 500,
-          color: "var(--color-warm-text-primary)",
+          color: "var(--ink-100)",
         }}
       >
         {value}
@@ -565,16 +565,16 @@ function StatCard({
   variant: "default" | "success" | "warn" | "accent";
 }) {
   const bgMap = {
-    default: "var(--color-warm-surface)",
+    default: "var(--bg-surface)",
     success: "#ecfdf5",
     warn: "#fffbeb",
     accent: "#fdf2f0",
   };
   const colorMap = {
-    default: "var(--color-warm-text-primary)",
+    default: "var(--ink-100)",
     success: "#047857",
     warn: "#b45309",
-    accent: "var(--color-terracotta)",
+    accent: "var(--accent)",
   };
 
   return (
@@ -586,7 +586,7 @@ function StatCard({
         padding: "0.75rem 0.5rem",
         borderRadius: "0.75rem",
         backgroundColor: bgMap[variant],
-        border: "1px solid var(--color-warm-border)",
+        border: "1px solid var(--ink-700)",
       }}
     >
       <span
@@ -607,7 +607,7 @@ function StatCard({
           fontWeight: 500,
           textTransform: "uppercase",
           letterSpacing: "0.08em",
-          color: "var(--color-warm-text-secondary)",
+          color: "var(--ink-400)",
           marginTop: "0.375rem",
         }}
       >
@@ -624,7 +624,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
         fontFamily: "var(--font-sora), system-ui, sans-serif",
         fontSize: "1.125rem",
         fontWeight: 600,
-        color: "var(--color-warm-text-primary)",
+        color: "var(--ink-100)",
         marginBottom: "1.25rem",
       }}
     >
@@ -647,7 +647,7 @@ function Divider({ inline }: { inline?: boolean }) {
       <div
         style={{
           height: "1px",
-          backgroundColor: "var(--color-warm-border)",
+          backgroundColor: "var(--ink-700)",
         }}
       />
     </div>
@@ -671,7 +671,7 @@ function HighlightCard({ highlight }: { highlight: MemoryHighlight }) {
     },
     loved: {
       bg: "#fdf2f0",
-      color: "var(--color-terracotta)",
+      color: "var(--accent)",
       label: "loved",
     },
   }[highlight.status] ?? {
@@ -683,8 +683,8 @@ function HighlightCard({ highlight }: { highlight: MemoryHighlight }) {
   return (
     <div
       style={{
-        backgroundColor: "var(--color-warm-surface)",
-        border: "1px solid var(--color-warm-border)",
+        backgroundColor: "var(--bg-surface)",
+        border: "1px solid var(--ink-700)",
         borderRadius: "0.875rem",
         overflow: "hidden",
         display: "flex",
@@ -744,8 +744,8 @@ function HighlightCard({ highlight }: { highlight: MemoryHighlight }) {
                 fontWeight: 500,
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                color: "var(--color-warm-text-secondary)",
-                backgroundColor: "var(--color-warm-border)",
+                color: "var(--ink-400)",
+                backgroundColor: "var(--ink-700)",
                 padding: "0.1rem 0.4rem",
                 borderRadius: "0.25rem",
               }}
@@ -761,7 +761,7 @@ function HighlightCard({ highlight }: { highlight: MemoryHighlight }) {
             fontFamily: "var(--font-sora), system-ui, sans-serif",
             fontWeight: 600,
             fontSize: "0.9375rem",
-            color: "var(--color-warm-text-primary)",
+            color: "var(--ink-100)",
             marginBottom: "0.25rem",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -777,7 +777,7 @@ function HighlightCard({ highlight }: { highlight: MemoryHighlight }) {
             style={{
               fontFamily: "var(--font-dm-mono), monospace",
               fontSize: "0.6875rem",
-              color: "var(--color-warm-text-secondary)",
+              color: "var(--ink-400)",
             }}
           >
             {highlight.neighborhood}
@@ -790,7 +790,7 @@ function HighlightCard({ highlight }: { highlight: MemoryHighlight }) {
             style={{
               fontFamily: "var(--font-sora), system-ui, sans-serif",
               fontSize: "0.8125rem",
-              color: "var(--color-warm-text-secondary)",
+              color: "var(--ink-400)",
               lineHeight: 1.5,
               marginTop: "0.5rem",
               display: "-webkit-box",
@@ -812,7 +812,7 @@ function NotFound() {
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "var(--color-warm-background)",
+        backgroundColor: "var(--bg-base)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -826,7 +826,7 @@ function NotFound() {
         style={{
           fontWeight: 700,
           fontSize: "1.125rem",
-          color: "var(--color-terracotta)",
+          color: "var(--accent)",
           letterSpacing: "-0.01em",
           marginBottom: "2.5rem",
           display: "block",
@@ -838,7 +838,7 @@ function NotFound() {
         style={{
           fontSize: "1.5rem",
           fontWeight: 700,
-          color: "var(--color-warm-text-primary)",
+          color: "var(--ink-100)",
           marginBottom: "0.75rem",
         }}
       >
@@ -848,7 +848,7 @@ function NotFound() {
         style={{
           fontFamily: "var(--font-dm-mono), monospace",
           fontSize: "0.875rem",
-          color: "var(--color-warm-text-secondary)",
+          color: "var(--ink-400)",
           maxWidth: "360px",
           lineHeight: 1.6,
         }}
