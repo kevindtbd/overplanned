@@ -1,23 +1,30 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+
+// Public paths — no auth required
+const PUBLIC_PATHS = [
+  "/",
+  "/auth/signin",
+  "/auth/error",
+  "/about",
+  "/privacy",
+  "/terms",
+  "/s/",
+  "/invite/",
+];
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some(
+    (p) => pathname === p || (p.endsWith("/") && pathname.startsWith(p))
+  );
+}
 
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Public paths that don't require auth
-    const publicPaths = [
-      "/",
-      "/auth/signin",
-      "/auth/error",
-      "/about",
-      "/privacy",
-      "/terms",
-    ];
-
-    if (publicPaths.some((p) => path.startsWith(p))) {
+    if (isPublicPath(path)) {
       return NextResponse.next();
     }
 
@@ -33,7 +40,7 @@ export default withAuth(
       token?.subscriptionTier &&
       ["beta", "lifetime", "pro"].includes(token.subscriptionTier);
 
-    if (!hasAccess && !publicPaths.some((p) => path.startsWith(p))) {
+    if (!hasAccess) {
       return NextResponse.redirect(new URL("/auth/signin", req.url));
     }
 
@@ -41,20 +48,19 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        // Allow public paths through without a token
+        if (isPublicPath(req.nextUrl.pathname)) {
+          return true;
+        }
+        return !!token;
+      },
     },
   }
 );
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (public folder)
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
