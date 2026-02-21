@@ -12,6 +12,8 @@ const PUBLIC_PATHS = [
   "/s/",
   "/invite/",
   "/api/auth/",
+  "/dashboard",
+  "/dashboard/",
 ];
 
 function isPublicPath(pathname: string): boolean {
