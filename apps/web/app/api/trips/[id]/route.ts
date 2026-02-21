@@ -47,7 +47,7 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
-                image: true,
+                avatarUrl: true,
               },
             },
           },
@@ -63,8 +63,7 @@ export async function GET(
                 latitude: true,
                 longitude: true,
                 priceLevel: true,
-                durationMinutes: true,
-                source: true,
+                primaryImageUrl: true,
               },
             },
           },

@@ -23,6 +23,7 @@ model User {
   id                  String           @id @default(uuid())
   email               String           @unique
   name                String?
+  image               String?
   avatarUrl           String?
   googleId            String?          @unique
   emailVerified       DateTime?
@@ -335,6 +336,44 @@ model ModelRegistry {
 
   @@unique([modelName, modelVersion])
   @@index([modelName, stage])
+}
+
+model PersonaDimension {
+  id         String   @id @default(uuid())
+  userId     String
+  dimension  String
+  value      String
+  confidence Float    @default(1.0)
+  source     String   @default("onboarding")
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, dimension])
+  @@index([userId])
+  @@index([dimension, value])
+}
+
+model RankingEvent {
+  id                 String   @id @default(uuid())
+  userId             String
+  tripId             String
+  sessionId          String?
+  dayNumber          Int
+  modelName          String
+  modelVersion       String
+  candidateIds       String[]
+  rankedIds          String[]
+  selectedIds        String[]
+  surface            String
+  shadowModelName    String?
+  shadowModelVersion String?
+  shadowRankedIds    String[]
+  latencyMs          Int?
+  createdAt          DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([tripId, dayNumber])
+  @@index([modelName, modelVersion])
 }
 
 model PivotEvent {

@@ -61,11 +61,37 @@ function EmailIcon() {
   );
 }
 
+const DEV_USERS = [
+  { email: "test@overplanned.app", label: "Test User (beta)" },
+  { email: "admin@overplanned.app", label: "Admin User (lifetime)" },
+];
+
 function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [showEmail, setShowEmail] = useState(false);
   const [email, setEmail] = useState("");
+  const [devLoading, setDevLoading] = useState(false);
+  const isDev = process.env.NODE_ENV === "development";
+
+  async function devLogin(devEmail: string) {
+    setDevLoading(true);
+    try {
+      const res = await fetch("/api/auth/dev-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: devEmail }),
+      });
+      if (res.ok) {
+        window.location.href = callbackUrl;
+      } else {
+        const data = await res.json();
+        alert(data.error || "Dev login failed");
+      }
+    } finally {
+      setDevLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-base flex flex-col items-center justify-center px-4 relative overflow-hidden">
@@ -86,7 +112,7 @@ function SignInContent() {
         </div>
 
         {/* Heading */}
-        <h1 className="font-lora text-[28px] font-medium italic text-ink-100 leading-tight mb-2">
+        <h1 className="font-sora text-[28px] font-medium italic text-ink-100 leading-tight mb-2">
           Welcome back
         </h1>
 
@@ -196,6 +222,28 @@ function SignInContent() {
               Send magic link
             </button>
           </form>
+        )}
+
+        {/* Dev-only quick login */}
+        {isDev && (
+          <div className="mt-6 border-t border-dashed border-ink-700 pt-5">
+            <span className="font-dm-mono text-[9px] tracking-[0.1em] uppercase text-amber-500 block mb-3">
+              Dev Login
+            </span>
+            <div className="flex flex-col gap-2">
+              {DEV_USERS.map((u) => (
+                <button
+                  key={u.email}
+                  onClick={() => devLogin(u.email)}
+                  disabled={devLoading}
+                  className="w-full flex items-center justify-between rounded-lg py-2.5 px-4 text-[13px] text-ink-300 bg-raised border border-ink-700 hover:border-amber-500/40 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <span>{u.label}</span>
+                  <span className="font-dm-mono text-[10px] text-ink-500">{u.email}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Disclaimer */}
