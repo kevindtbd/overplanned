@@ -15,8 +15,8 @@ export interface ProjectedPoint {
   vis: boolean;
 }
 
-/* Fixed X-axis tilt: -20 degrees */
-const TILT_X = -20 * (Math.PI / 180);
+/* Fixed X-axis tilt: +15 degrees (north pole tilted toward viewer) */
+const TILT_X = 15 * (Math.PI / 180);
 const cTilt = Math.cos(TILT_X);
 const sTilt = Math.sin(TILT_X);
 
@@ -127,7 +127,7 @@ export function resolveCardPositions(
   // Clamp to bounds
   for (const card of result) {
     card.x = Math.max(0, Math.min(card.x, bounds.width - card.width));
-    card.y = Math.max(0, Math.min(card.y, bounds.height - card.height));
+    card.y = Math.max(0, Math.min(card.y, bounds.height * 0.85 - card.height));
   }
 
   return result;
