@@ -1,10 +1,8 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
 import { enforceConcurrentSessionLimit } from "./session";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,

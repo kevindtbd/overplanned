@@ -6,37 +6,14 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { DayNavigation } from "@/components/trip/DayNavigation";
 import { DayView } from "@/components/trip/DayView";
 import { type SlotData } from "@/components/slot/SlotCard";
 import { type SlotActionEvent } from "@/components/slot/SlotActions";
 import { SlotSkeleton, ErrorState } from "@/components/states";
-
-// ---------- City photos for hero ----------
-
-const CITY_PHOTOS: Record<string, string> = {
-  Tokyo:
-    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200&q=80",
-  Kyoto:
-    "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&q=80",
-  Osaka:
-    "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=1200&q=80",
-  Bangkok:
-    "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=1200&q=80",
-  Seoul:
-    "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=1200&q=80",
-  Lisbon:
-    "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1200&q=80",
-  Barcelona:
-    "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1200&q=80",
-  Paris:
-    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200&q=80",
-  London:
-    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=80",
-  Berlin:
-    "https://images.unsplash.com/photo-1560969184-10fe8719e047?w=1200&q=80",
-};
+import { getCityPhoto } from "@/lib/city-photos";
 
 // ---------- Types for API response ----------
 
@@ -85,7 +62,6 @@ interface ApiTrip {
     user: {
       id: string;
       name: string | null;
-      email: string;
       image: string | null;
     };
   }[];
@@ -209,7 +185,7 @@ export default function TripDetailPage() {
     };
   }, [trip]);
 
-  const tripPhoto = trip ? CITY_PHOTOS[trip.city] : undefined;
+  const tripPhoto = trip ? getCityPhoto(trip.city) : undefined;
   const tripName = trip?.name || trip?.destination || "";
 
   // -- Loading --
@@ -262,6 +238,28 @@ export default function TripDetailPage() {
     >
       <div className="bg-surface rounded-[22px] border border-ink-800 shadow-lg overflow-hidden">
         <div className="space-y-6 p-5 sm:p-6">
+          {/* Back to trips */}
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 font-dm-mono text-xs text-ink-400 uppercase tracking-wider hover:text-terracotta transition-colors focus:outline-none focus:ring-2 focus:ring-terracotta focus:ring-offset-2 focus:ring-offset-surface rounded"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            <span>Back to trips</span>
+          </Link>
+
           {/* Trip header */}
           <header className="space-y-1">
             <h1 className="font-sora text-2xl sm:text-3xl font-medium text-ink-100">

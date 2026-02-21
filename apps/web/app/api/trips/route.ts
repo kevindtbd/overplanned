@@ -6,11 +6,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { PrismaClient } from "@prisma/client";
 import { createTripSchema } from "@/lib/validations/trip";
 import { v4 as uuidv4 } from "uuid";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -63,15 +61,15 @@ export async function POST(req: NextRequest) {
         timezone,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        mode: mode as never,
+        mode,
         presetTemplate: presetTemplate ?? null,
         personaSeed: personaSeed ?? undefined,
         members: {
           create: {
             id: memberId,
             userId,
-            role: "organizer" as never,
-            status: "active" as never,
+            role: "organizer",
+            status: "joined",
           },
         },
       },

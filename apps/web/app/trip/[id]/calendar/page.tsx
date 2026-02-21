@@ -1,10 +1,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { redirect, notFound } from "next/navigation";
-import { PrismaClient } from "@prisma/client";
 import CalendarClient from "./CalendarClient";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 interface PageProps {
   params: { id: string };

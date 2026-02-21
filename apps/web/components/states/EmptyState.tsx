@@ -30,7 +30,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
       </div>
 
       {/* Title */}
-      <h3 className="font-lora italic text-xl text-ink-200 mb-2 leading-snug">
+      <h3 className="font-sora italic text-xl text-ink-200 mb-2 leading-snug">
         {title}
       </h3>
 

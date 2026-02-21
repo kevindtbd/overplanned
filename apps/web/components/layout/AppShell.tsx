@@ -41,7 +41,7 @@ function TripHero({ tripPhoto, tripName }: { tripPhoto?: string; tripName?: stri
           Active trip
         </p>
         {tripName && (
-          <h1 className="font-lora text-xl font-medium text-white tracking-[-0.02em] leading-tight">
+          <h1 className="font-sora text-xl font-medium text-white tracking-[-0.02em] leading-tight">
             {tripName}
           </h1>
         )}

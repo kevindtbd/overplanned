@@ -19,6 +19,7 @@ describe("CSS token resolution", () => {
     "--warning", "--warning-bg", "--error", "--error-bg",
     "--shadow-sm", "--shadow-md", "--shadow-lg", "--shadow-card", "--shadow-xl",
     "--transition-fast", "--transition-normal", "--transition-slow",
+    "--bg-base-92", "--bg-base-60", "--bg-base-50",
   ];
 
   it("defines all required tokens in light theme", () => {

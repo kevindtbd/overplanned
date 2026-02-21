@@ -8,40 +8,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-
-// ---------- Unsplash city photos ----------
-
-const CITY_PHOTOS: Record<string, string> = {
-  Tokyo:
-    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200&q=80",
-  Kyoto:
-    "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&q=80",
-  Osaka:
-    "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=1200&q=80",
-  Bangkok:
-    "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=1200&q=80",
-  Seoul:
-    "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=1200&q=80",
-  Taipei:
-    "https://images.unsplash.com/photo-1470004914212-05527e49370b?w=1200&q=80",
-  Lisbon:
-    "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1200&q=80",
-  Barcelona:
-    "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1200&q=80",
-  "Mexico City":
-    "https://images.unsplash.com/photo-1585464231875-d9ef1f5ad396?w=1200&q=80",
-  "New York":
-    "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1200&q=80",
-  London:
-    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=80",
-  Paris:
-    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1200&q=80",
-  Berlin:
-    "https://images.unsplash.com/photo-1560969184-10fe8719e047?w=1200&q=80",
-};
-
-const FALLBACK_PHOTO =
-  "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&q=80";
+import { getCityPhoto } from "@/lib/city-photos";
 
 // ---------- Types ----------
 
@@ -71,10 +38,6 @@ function formatDateRange(start: string, end: string): string {
   return `${startStr} - ${endStr}`;
 }
 
-function getCityPhoto(city: string): string {
-  return CITY_PHOTOS[city] ?? FALLBACK_PHOTO;
-}
-
 // ---------- Component ----------
 
 export function TripHeroCard({ trip }: { trip: TripSummary }) {
@@ -86,6 +49,7 @@ export function TripHeroCard({ trip }: { trip: TripSummary }) {
     <Link
       href={`/trip/${trip.id}`}
       className="group block rounded-[20px] shadow-lg overflow-hidden relative"
+      aria-label={`View trip to ${displayName}, ${formatDateRange(trip.startDate, trip.endDate)}`}
     >
       {/* Background photo */}
       <div className="relative h-[340px] w-full">
@@ -94,7 +58,7 @@ export function TripHeroCard({ trip }: { trip: TripSummary }) {
           alt={displayName}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.03] focus-visible:scale-[1.03]"
         />
         <div className="photo-overlay-warm absolute inset-0" aria-hidden="true" />
 
@@ -129,7 +93,14 @@ export function TripHeroCard({ trip }: { trip: TripSummary }) {
                   {progress}%
                 </span>
               </div>
-              <div className="h-1 w-full rounded-full bg-white/20 overflow-hidden">
+              <div
+                className="h-1 w-full rounded-full bg-white/20 overflow-hidden"
+                role="progressbar"
+                aria-valuenow={progress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Planning progress"
+              >
                 <div
                   className="h-full rounded-full bg-accent transition-all duration-500"
                   style={{ width: `${progress}%` }}

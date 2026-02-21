@@ -90,10 +90,10 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Home", href: "/", Icon: HomeIcon },
-  { label: "Trips", href: "/trips", Icon: TripsIcon },
-  { label: "Explore", href: "/explore", Icon: ExploreIcon },
-  { label: "Profile", href: "/profile", Icon: ProfileIcon },
+  { label: "Home", href: "/dashboard", Icon: HomeIcon },
+  { label: "Trips", href: "/dashboard", Icon: TripsIcon },
+  { label: "Explore", href: "/dashboard", Icon: ExploreIcon },
+  { label: "Profile", href: "/dashboard", Icon: ProfileIcon },
 ];
 
 // ---------- Component ----------

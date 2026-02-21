@@ -8,33 +8,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { type TripSummary } from "./TripHeroCard";
-
-// Same city photo map (could be extracted to shared util later)
-const CITY_PHOTOS: Record<string, string> = {
-  Tokyo:
-    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=80",
-  Kyoto:
-    "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&q=80",
-  Osaka:
-    "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80",
-  Bangkok:
-    "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=400&q=80",
-  Seoul:
-    "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=400&q=80",
-  Lisbon:
-    "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=80",
-  Barcelona:
-    "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=400&q=80",
-  Paris:
-    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80",
-  London:
-    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&q=80",
-  Berlin:
-    "https://images.unsplash.com/photo-1560969184-10fe8719e047?w=400&q=80",
-};
-
-const FALLBACK_PHOTO =
-  "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&q=80";
+import { getCityPhoto } from "@/lib/city-photos";
 
 function formatShortDateRange(start: string, end: string): string {
   const s = new Date(start);
@@ -44,7 +18,7 @@ function formatShortDateRange(start: string, end: string): string {
 }
 
 export function PastTripRow({ trip }: { trip: TripSummary }) {
-  const photo = CITY_PHOTOS[trip.city] ?? FALLBACK_PHOTO;
+  const photo = getCityPhoto(trip.city, 400);
   const displayName = trip.name || trip.destination;
 
   return (

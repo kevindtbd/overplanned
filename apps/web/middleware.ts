@@ -12,8 +12,8 @@ const PUBLIC_PATHS = [
   "/s/",
   "/invite/",
   "/api/auth/",
-  "/dashboard",
-  "/dashboard/",
+  // Dev-mode dashboard access (bypasses auth in local development)
+  ...(process.env.NODE_ENV === "development" ? ["/dashboard", "/dashboard/"] : []),
 ];
 
 function isPublicPath(pathname: string): boolean {

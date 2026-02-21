@@ -6,10 +6,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { PrismaClient } from "@prisma/client";
 import { updateTripSchema } from "@/lib/validations/trip";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _req: NextRequest,
@@ -49,7 +47,6 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
-                email: true,
                 image: true,
               },
             },
@@ -141,7 +138,7 @@ export async function PATCH(
       where: { id: tripId },
       data: {
         ...(name !== undefined && { name }),
-        ...(status !== undefined && { status: status as never }),
+        ...(status !== undefined && { status }),
         ...(planningProgress !== undefined && { planningProgress }),
       },
       select: {

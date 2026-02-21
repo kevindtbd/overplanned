@@ -10,7 +10,12 @@ export const createTripSchema = z.object({
   endDate: z.string().datetime(),
   mode: z.enum(["solo", "group"]),
   presetTemplate: z.string().optional(),
-  personaSeed: z.record(z.unknown()).optional(),
+  personaSeed: z.record(z.unknown())
+    .refine(
+      (val) => JSON.stringify(val).length <= 10_000,
+      { message: "personaSeed must be under 10KB" }
+    )
+    .optional(),
 });
 
 export const updateTripSchema = z.object({

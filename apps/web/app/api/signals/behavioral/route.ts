@@ -8,10 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { PrismaClient } from "@prisma/client";
 import { v4 as uuidv4 } from "uuid";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 const VALID_SIGNAL_TYPES = new Set([
   "discover_swipe_right",
