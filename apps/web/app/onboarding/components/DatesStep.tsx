@@ -74,7 +74,7 @@ export function DatesStep({
               value={startDate}
               min={today}
               onChange={(e) => onStartDateChange(e.target.value)}
-              className="w-full rounded-lg border border-ink-700 bg-surface py-3 pl-10 pr-4 font-dm-mono text-sm text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              className="w-full rounded-xl border-[1.5px] border-ink-700 bg-input py-3 pl-10 pr-4 font-dm-mono text-sm text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
         </div>
@@ -94,7 +94,7 @@ export function DatesStep({
               value={endDate}
               min={startDate || today}
               onChange={(e) => onEndDateChange(e.target.value)}
-              className="w-full rounded-lg border border-ink-700 bg-surface py-3 pl-10 pr-4 font-dm-mono text-sm text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              className="w-full rounded-xl border-[1.5px] border-ink-700 bg-input py-3 pl-10 pr-4 font-dm-mono text-sm text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
         </div>

@@ -50,52 +50,12 @@ function TripHero({ tripPhoto, tripName }: { tripPhoto?: string; tripName?: stri
   );
 }
 
-// ---------- Day Strip ----------
-
-function DayStrip() {
-  // Placeholder day strip — will be wired to trip state in Track 3/5
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const activeIndex = 3; // placeholder
-
-  return (
-    <div
-      className="
-        flex gap-0 overflow-x-auto scrollbar-none
-        bg-raised border-b border-ink-700 px-4
-      "
-      role="tablist"
-      aria-label="Trip days"
-    >
-      {days.map((day, i) => (
-        <button
-          key={day}
-          type="button"
-          role="tab"
-          aria-selected={i === activeIndex}
-          className={`
-            font-dm-mono text-[8px] uppercase tracking-[0.06em]
-            px-3 py-2 whitespace-nowrap flex-shrink-0
-            border-b-2 transition-colors duration-150
-            ${
-              i === activeIndex
-                ? "text-ink-100 border-accent"
-                : "text-ink-500 border-transparent hover:text-ink-300"
-            }
-          `}
-        >
-          {day}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // ---------- Wordmark (mobile top bar, app context only) ----------
 
 function MobileTopBar() {
   return (
     <div className="flex items-center justify-between px-5 py-3 border-b border-ink-900 lg:hidden">
-      <span className="font-sora font-bold text-base tracking-[-0.04em] text-ink-100">
+      <span className="font-sora font-semibold text-base tracking-[-0.04em] text-ink-100">
         overplanned<span className="text-accent">.</span>
       </span>
       {/* Avatar slot — placeholder circle */}
@@ -131,8 +91,7 @@ export function AppShell({
           <>
             {/* Trip context: hero + day strip, no bottom nav */}
             <TripHero tripPhoto={tripPhoto} tripName={tripName} />
-            <DayStrip />
-            <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
+            <div className="mx-auto max-w-[1100px] px-6 py-12 lg:px-10 lg:py-16">
               {children}
             </div>
           </>
@@ -140,7 +99,7 @@ export function AppShell({
           <>
             {/* App context: top bar + standard padding */}
             <MobileTopBar />
-            <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <div className="mx-auto max-w-[1100px] px-6 py-12 lg:px-10 lg:py-16">
               {children}
             </div>
           </>

@@ -101,7 +101,7 @@ const NAV_ITEMS: NavItem[] = [
 function Wordmark() {
   return (
     <div className="flex items-center px-4 py-6">
-      <span className="font-sora font-bold text-lg tracking-[-0.04em] text-ink-100">
+      <span className="font-sora font-semibold text-lg tracking-[-0.04em] text-ink-100">
         overplanned<span className="text-accent">.</span>
       </span>
     </div>

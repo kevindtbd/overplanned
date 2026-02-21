@@ -77,7 +77,7 @@ export default function DashboardPage() {
       <div className="space-y-8">
         {/* Page header */}
         <header>
-          <h1 className="font-sora text-2xl font-bold text-ink-100 sm:text-3xl">
+          <h1 className="font-sora text-2xl font-medium text-ink-100 sm:text-3xl">
             Your trips
           </h1>
           <p className="mt-1 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
@@ -116,7 +116,7 @@ export default function DashboardPage() {
           <section aria-labelledby="active-trips-heading">
             <h2
               id="active-trips-heading"
-              className="section-eyebrow mb-4"
+              className="sec-label mb-4"
             >
               Active
             </h2>
@@ -133,7 +133,7 @@ export default function DashboardPage() {
           <section aria-labelledby="past-trips-heading">
             <h2
               id="past-trips-heading"
-              className="section-eyebrow mb-4"
+              className="sec-label mb-4"
             >
               Past trips
             </h2>

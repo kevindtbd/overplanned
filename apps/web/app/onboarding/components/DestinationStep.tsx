@@ -119,7 +119,7 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search cities..."
-          className="w-full rounded-lg border border-ink-700 bg-surface py-3 pl-10 pr-4 font-sora text-primary placeholder:text-secondary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          className="w-full rounded-xl border-[1.5px] border-ink-700 bg-input py-3 pl-10 pr-4 font-sora text-primary placeholder:text-secondary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
           role="combobox"
           aria-expanded={isOpen}
           aria-controls="city-listbox"

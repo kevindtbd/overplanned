@@ -471,56 +471,13 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Right: Globe placeholder (desktop only) */}
+        {/* Right: Globe (desktop only) */}
         <div className="hidden lg:flex relative bg-warm items-center justify-center overflow-hidden">
           {/* Left-edge gradient fade */}
-          <div className="absolute left-0 top-0 w-20 h-full bg-gradient-to-r from-base to-transparent z-[2] pointer-events-none" />
+          <div className="absolute left-0 top-0 w-20 h-full bg-gradient-to-r from-base to-transparent z-[5] pointer-events-none" />
           {/* Bottom gradient fade */}
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base to-transparent z-[2] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-base to-transparent z-[5] pointer-events-none" />
           <GlobeCanvas />
-
-          {/* Floating cards */}
-          <div className="absolute z-[3] top-[20%] left-[7%] card rounded-[14px] shadow-lg p-[10px_14px] animate-[floatCard_7s_ease-in-out_infinite]">
-            <div className="font-dm-mono text-[8px] tracking-[0.1em] uppercase text-accent-fg mb-[3px]">
-              Kyoto &middot; Day 3
-            </div>
-            <div className="text-[12px] font-medium text-ink-100 mb-[2px]">
-              Kinkaku-ji
-            </div>
-            <div className="text-[10px] text-ink-400 font-light italic">
-              weekday &middot; thins out by 15:00
-            </div>
-            <span className="font-dm-mono text-[8px] text-info bg-info-bg px-1.5 py-0.5 rounded-full inline-block mt-[5px]">
-              Tabelog &middot; 4.2k
-            </span>
-          </div>
-
-          <div className="absolute z-[3] bottom-[26%] right-[7%] card rounded-[14px] shadow-lg p-[10px_14px] animate-[floatCard_7s_ease-in-out_infinite_-2.5s]">
-            <div className="font-dm-mono text-[8px] tracking-[0.1em] uppercase text-accent-fg mb-[3px]">
-              Tokyo &middot; Day 1
-            </div>
-            <div className="text-[12px] font-medium text-ink-100 mb-[2px]">
-              Tsukiji outer market
-            </div>
-            <div className="text-[10px] text-ink-400 font-light italic">
-              locals-only &middot; 06:00 counter
-            </div>
-            <span className="font-dm-mono text-[8px] text-info bg-info-bg px-1.5 py-0.5 rounded-full inline-block mt-[5px]">
-              Tabelog &middot; 8.1k
-            </span>
-          </div>
-
-          <div className="absolute z-[3] top-[54%] left-[5%] card rounded-[14px] shadow-lg p-[10px_14px] animate-[floatCard_7s_ease-in-out_infinite_-5s]">
-            <div className="font-dm-mono text-[8px] tracking-[0.1em] uppercase text-accent-fg mb-[3px]">
-              Seoul &middot; Pivot
-            </div>
-            <div className="text-[12px] font-medium text-ink-100 mb-[2px]">
-              Rain at 14:00 &rarr;
-            </div>
-            <div className="text-[10px] text-ink-400 font-light italic">
-              swapping to indoor alternative
-            </div>
-          </div>
         </div>
       </section>
 

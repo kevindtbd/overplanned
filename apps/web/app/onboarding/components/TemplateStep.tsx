@@ -136,8 +136,8 @@ export function TemplateStep({ selected, onSelect }: TemplateStepProps) {
             }
             className={`group rounded-xl border p-5 text-left transition-all duration-150 ${
               selected === tpl.id
-                ? "border-accent bg-accent/10 ring-1 ring-accent"
-                : "border-ink-700 bg-surface hover:border-accent/50 hover:shadow-sm"
+                ? "border-accent bg-accent-light text-accent-fg"
+                : "border-ink-700 bg-raised text-ink-300 hover:border-accent/50 hover:shadow-sm"
             }`}
           >
             <div

@@ -80,8 +80,8 @@ export function TripDNAStep({
               onClick={() => onPaceChange(opt.id)}
               className={`rounded-lg border px-4 py-3 text-left transition-all duration-150 ${
                 pace === opt.id
-                  ? "border-accent bg-accent/10 ring-1 ring-accent"
-                  : "border-ink-700 bg-surface hover:border-accent/50"
+                  ? "border-accent bg-accent-light text-accent-fg"
+                  : "border-ink-700 bg-raised text-ink-300 hover:border-accent/50"
               }`}
             >
               <span className="block font-sora text-sm font-medium text-primary">
@@ -107,8 +107,8 @@ export function TripDNAStep({
               onClick={() => onMorningChange(opt.id)}
               className={`rounded-lg border px-4 py-3 text-left transition-all duration-150 ${
                 morningPreference === opt.id
-                  ? "border-accent bg-accent/10 ring-1 ring-accent"
-                  : "border-ink-700 bg-surface hover:border-accent/50"
+                  ? "border-accent bg-accent-light text-accent-fg"
+                  : "border-ink-700 bg-raised text-ink-300 hover:border-accent/50"
               }`}
             >
               <span className="block font-sora text-sm font-medium text-primary">
@@ -139,8 +139,8 @@ export function TripDNAStep({
                 onClick={() => onFoodToggle(chip)}
                 className={`rounded-full border px-3.5 py-1.5 font-dm-mono text-xs transition-all duration-150 ${
                   selected
-                    ? "border-accent bg-accent text-white"
-                    : "border-ink-700 bg-surface text-primary hover:border-accent/50"
+                    ? "border-accent bg-accent-light text-accent-fg"
+                    : "border-ink-700 bg-raised text-ink-300 hover:border-accent/50"
                 }`}
               >
                 {chip}

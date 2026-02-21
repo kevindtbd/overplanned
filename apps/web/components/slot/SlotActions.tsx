@@ -140,8 +140,8 @@ export function SlotActions({
           disabled:opacity-40 disabled:cursor-not-allowed
           ${
             status === "confirmed"
-              ? "bg-emerald-100 text-success border border-emerald-300"
-              : "bg-surface text-ink-100 border border-ink-700 hover:border-emerald-400 hover:text-success"
+              ? "bg-[var(--success-bg)] text-success border border-[var(--success)]"
+              : "bg-surface text-ink-100 border border-ink-700 hover:border-[var(--success)] hover:text-success"
           }
         `}
         aria-label="Confirm this slot"
@@ -159,7 +159,7 @@ export function SlotActions({
           flex items-center gap-1.5 px-3 py-1.5 rounded-lg
           font-dm-mono text-xs uppercase tracking-wider
           bg-surface text-ink-400 border border-ink-700
-          hover:border-red-400 hover:text-error
+          hover:border-[var(--error)] hover:text-error
           transition-all duration-150
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
           disabled:opacity-40 disabled:cursor-not-allowed
@@ -183,8 +183,8 @@ export function SlotActions({
           disabled:opacity-40 disabled:cursor-not-allowed
           ${
             isLocked
-              ? "bg-amber-100 text-warning border border-amber-300"
-              : "bg-surface text-ink-400 border border-ink-700 hover:border-amber-400 hover:text-warning"
+              ? "bg-[var(--warning-bg)] text-warning border border-[var(--warning)]"
+              : "bg-surface text-ink-400 border border-ink-700 hover:border-[var(--warning)] hover:text-warning"
           }
         `}
         aria-label={isLocked ? "Unlock this slot" : "Lock this slot"}

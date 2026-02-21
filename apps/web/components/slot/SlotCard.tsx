@@ -64,6 +64,8 @@ export interface SlotCardProps {
   timezone?: string;
   /** One-liner explaining why this activity was chosen */
   whyThis?: string;
+  /** Compact text-first layout (default true). Set false for photo-heavy layout. */
+  compact?: boolean;
   /** Track 4: show group voting controls */
   showVoting?: boolean;
   /** Track 5: show pivot/swap controls */
@@ -132,6 +134,22 @@ function formatDuration(minutes?: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Slot type label color class
+function getSlotTypeColorClass(slotType: SlotTypeLabel): string {
+  switch (slotType) {
+    case "anchor":
+      return "text-accent";
+    case "flex":
+      return "text-info";
+    case "meal":
+      return "text-warning";
+    case "rest":
+      return "text-success";
+    default:
+      return "text-ink-400";
+  }
+}
+
 // ---------- Component ----------
 
 export function SlotCard({
@@ -139,6 +157,7 @@ export function SlotCard({
   onAction,
   timezone,
   whyThis,
+  compact = true,
   showVoting = false,
   showPivot = false,
   showFlag = false,
@@ -157,10 +176,168 @@ export function SlotCard({
   const durationDisplay = formatDuration(slot.durationMinutes);
   const isDimmed = slot.status === "completed" || slot.status === "skipped";
 
+  // Shared action/voting/pivot footer
+  const cardFooter = (
+    <>
+      <SlotActions
+        slotId={slot.id}
+        status={slot.status}
+        isLocked={slot.isLocked}
+        onAction={handleAction}
+      />
+
+      {showVoting && (
+        <div
+          className="
+            mt-2 p-3 rounded-[13px] border border-dashed border-ink-700
+            label-mono text-center
+          "
+          aria-label="Group voting controls (coming soon)"
+        >
+          Group voting -- Track 4
+        </div>
+      )}
+
+      {(showPivot || showFlag) && (
+        <div className="flex gap-2 mt-2">
+          {showPivot && (
+            <div
+              className="
+                flex-1 p-2 rounded-[13px] border border-dashed border-ink-700
+                label-mono text-center
+              "
+              aria-label="Pivot swap controls (coming soon)"
+            >
+              Pivot -- Track 5
+            </div>
+          )}
+          {showFlag && (
+            <div
+              className="
+                flex-1 p-2 rounded-[13px] border border-dashed border-ink-700
+                label-mono text-center
+              "
+              aria-label="Flag for review (coming soon)"
+            >
+              Flag -- Track 5
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  // ---------- Compact (text-first) layout ----------
+  if (compact) {
+    const showThumbnail = slot.slotType === "anchor" && slot.imageUrl;
+
+    return (
+      <article
+        className={`
+          group relative
+          rounded-[13px]
+          border-[1.5px] border-ink-800
+          bg-surface
+          transition-all duration-200
+          hover:shadow-md
+          ${isDimmed ? "opacity-60" : ""}
+        `}
+        style={{ padding: "13px 15px" }}
+        aria-label={`${slot.activityName} - ${statusConfig.label}`}
+      >
+        <div className="flex gap-3">
+          {/* Optional thumbnail for anchor slots */}
+          {showThumbnail && (
+            <div className="relative shrink-0 w-[90px] h-[90px] rounded-lg overflow-hidden bg-base">
+              <Image
+                src={slot.imageUrl!}
+                alt={slot.activityName}
+                fill
+                sizes="90px"
+                className="object-cover"
+                loading="lazy"
+              />
+              <div className="photo-overlay-warm absolute inset-0" aria-hidden="true" />
+            </div>
+          )}
+
+          {/* Text content */}
+          <div className="flex-1 min-w-0 space-y-1.5">
+            {/* Slot type label */}
+            <span
+              className={`
+                font-dm-mono text-[10px] uppercase tracking-wider font-medium
+                ${getSlotTypeColorClass(slot.slotType)}
+              `}
+            >
+              {slot.slotType}
+            </span>
+
+            {/* Activity name */}
+            <h3 className="font-sora text-[13px] font-medium text-ink-100 leading-tight">
+              {slot.activityName}
+            </h3>
+
+            {/* Why-this line */}
+            {whyThis && (
+              <p className="font-lora italic text-ink-400 text-[12px] leading-snug">
+                {whyThis}
+              </p>
+            )}
+
+            {/* Meta tags row */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              {timeDisplay && (
+                <span className="font-dm-mono text-[10px] text-ink-400 bg-base px-1.5 py-0.5 rounded">
+                  {timeDisplay}
+                  {endTimeDisplay && ` - ${endTimeDisplay}`}
+                </span>
+              )}
+              {durationDisplay && (
+                <span className="font-dm-mono text-[10px] text-ink-400 bg-base px-1.5 py-0.5 rounded">
+                  {durationDisplay}
+                </span>
+              )}
+              {slot.isLocked && (
+                <span className="font-dm-mono text-[10px] text-warning bg-warning-bg px-1.5 py-0.5 rounded">
+                  Locked
+                </span>
+              )}
+              {slot.bookingStatus && slot.bookingStatus !== "none" && (
+                <span
+                  className={`
+                    font-dm-mono text-[10px] px-1.5 py-0.5 rounded
+                    ${
+                      slot.bookingStatus === "confirmed"
+                        ? "text-success bg-success-bg"
+                        : "text-warning bg-warning-bg"
+                    }
+                  `}
+                >
+                  {slot.bookingStatus === "confirmed" ? "Booked" : "Pending"}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Vibe tags + actions */}
+        <div className="mt-3 space-y-3">
+          <VibeChips
+            tags={slot.vibeTags}
+            primarySlug={slot.primaryVibeSlug}
+          />
+          {cardFooter}
+        </div>
+      </article>
+    );
+  }
+
+  // ---------- Photo-heavy (original) layout ----------
   return (
     <article
       className={`
-        group relative rounded-2xl
+        group relative rounded-[13px]
         bg-surface shadow-card overflow-hidden
         transition-all duration-200
         hover:shadow-md
@@ -181,7 +358,6 @@ export function SlotCard({
               className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
               loading="lazy"
             />
-            {/* Warm photo overlay */}
             <div className="photo-overlay-warm absolute inset-0" aria-hidden="true" />
           </>
         ) : (
@@ -203,7 +379,7 @@ export function SlotCard({
           </div>
         )}
 
-        {/* Status badge — top right */}
+        {/* Status badge */}
         <div className="absolute top-3 right-3">
           <span
             className={`
@@ -221,7 +397,6 @@ export function SlotCard({
           </span>
         </div>
 
-        {/* Locked indicator */}
         {slot.isLocked && (
           <div className="absolute top-3 left-3">
             <span
@@ -251,7 +426,6 @@ export function SlotCard({
           </div>
         )}
 
-        {/* Booking badge */}
         {slot.bookingStatus && slot.bookingStatus !== "none" && (
           <div className="absolute bottom-3 right-3">
             <span
@@ -274,7 +448,6 @@ export function SlotCard({
 
       {/* Content */}
       <div className="p-4 space-y-3">
-        {/* Activity name + slot type */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h3 className="font-sora font-semibold text-ink-100 text-base leading-tight">
@@ -287,16 +460,16 @@ export function SlotCard({
             )}
           </div>
           <span
-            className="
+            className={`
               shrink-0 label-mono
               bg-base px-1.5 py-0.5 rounded
-            "
+              ${getSlotTypeColorClass(slot.slotType)}
+            `}
           >
             {slot.slotType}
           </span>
         </div>
 
-        {/* Time + Duration */}
         {(timeDisplay || durationDisplay) && (
           <div className="flex items-center gap-2 label-mono text-ink-400">
             {timeDisplay && (
@@ -331,60 +504,12 @@ export function SlotCard({
           </div>
         )}
 
-        {/* Vibe tags */}
         <VibeChips
           tags={slot.vibeTags}
           primarySlug={slot.primaryVibeSlug}
         />
 
-        {/* Actions */}
-        <SlotActions
-          slotId={slot.id}
-          status={slot.status}
-          isLocked={slot.isLocked}
-          onAction={handleAction}
-        />
-
-        {/* Track 4: Group voting placeholder */}
-        {showVoting && (
-          <div
-            className="
-              mt-2 p-3 rounded-lg border border-dashed border-ink-700
-              label-mono text-center
-            "
-            aria-label="Group voting controls (coming soon)"
-          >
-            Group voting -- Track 4
-          </div>
-        )}
-
-        {/* Track 5: Pivot / Flag placeholders */}
-        {(showPivot || showFlag) && (
-          <div className="flex gap-2 mt-2">
-            {showPivot && (
-              <div
-                className="
-                  flex-1 p-2 rounded-lg border border-dashed border-ink-700
-                  label-mono text-center
-                "
-                aria-label="Pivot swap controls (coming soon)"
-              >
-                Pivot -- Track 5
-              </div>
-            )}
-            {showFlag && (
-              <div
-                className="
-                  flex-1 p-2 rounded-lg border border-dashed border-ink-700
-                  label-mono text-center
-                "
-                aria-label="Flag for review (coming soon)"
-              >
-                Flag -- Track 5
-              </div>
-            )}
-          </div>
-        )}
+        {cardFooter}
       </div>
     </article>
   );

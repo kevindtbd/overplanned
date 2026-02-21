@@ -50,7 +50,7 @@ export function PastTripRow({ trip }: { trip: TripSummary }) {
   return (
     <Link
       href={`/trip/${trip.id}`}
-      className="group flex items-center gap-4 rounded-xl border border-ink-900 bg-surface p-3 transition-colors duration-150 hover:border-accent/40"
+      className="group flex items-center gap-4 rounded-xl border border-ink-700 bg-surface p-3 transition-colors duration-150 hover:border-accent/40"
     >
       {/* Thumbnail */}
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg">

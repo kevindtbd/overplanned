@@ -260,56 +260,58 @@ export default function TripDetailPage() {
       tripPhoto={tripPhoto}
       tripName={tripName}
     >
-      <div className="space-y-6">
-        {/* Trip header */}
-        <header className="space-y-1">
-          <h1 className="font-sora text-2xl sm:text-3xl font-bold text-ink-100">
-            {trip!.destination}
-          </h1>
-          <div className="flex items-center gap-3 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
-            <span>
-              {trip!.city}, {trip!.country}
-            </span>
-            <span aria-hidden="true" className="text-ink-700">
-              |
-            </span>
-            <span>{totalDays} days</span>
-            <span aria-hidden="true" className="text-ink-700">
-              |
-            </span>
-            <span>
-              {statusSummary.confirmed}/{statusSummary.total} confirmed
+      <div className="bg-surface rounded-[22px] border border-ink-800 shadow-lg overflow-hidden">
+        <div className="space-y-6 p-5 sm:p-6">
+          {/* Trip header */}
+          <header className="space-y-1">
+            <h1 className="font-sora text-2xl sm:text-3xl font-medium text-ink-100">
+              {trip!.destination}
+            </h1>
+            <div className="flex items-center gap-3 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
+              <span>
+                {trip!.city}, {trip!.country}
+              </span>
+              <span aria-hidden="true" className="text-ink-700">
+                |
+              </span>
+              <span>{totalDays} days</span>
+              <span aria-hidden="true" className="text-ink-700">
+                |
+              </span>
+              <span>
+                {statusSummary.confirmed}/{statusSummary.total} confirmed
+              </span>
+            </div>
+          </header>
+
+          {/* Day navigation */}
+          <DayNavigation
+            totalDays={totalDays}
+            currentDay={currentDay}
+            onDayChange={setCurrentDay}
+            startDate={trip!.startDate}
+            timezone={trip!.timezone}
+          />
+
+          {/* Day header */}
+          <div className="flex items-center justify-between">
+            <h2 className="font-sora text-lg font-medium text-ink-100">
+              Day {currentDay}
+            </h2>
+            <span className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
+              {slotsForDay.length}{" "}
+              {slotsForDay.length === 1 ? "activity" : "activities"}
             </span>
           </div>
-        </header>
 
-        {/* Day navigation */}
-        <DayNavigation
-          totalDays={totalDays}
-          currentDay={currentDay}
-          onDayChange={setCurrentDay}
-          startDate={trip!.startDate}
-          timezone={trip!.timezone}
-        />
-
-        {/* Day header */}
-        <div className="flex items-center justify-between">
-          <h2 className="font-sora text-lg font-semibold text-ink-100">
-            Day {currentDay}
-          </h2>
-          <span className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
-            {slotsForDay.length}{" "}
-            {slotsForDay.length === 1 ? "activity" : "activities"}
-          </span>
+          {/* Timeline day view */}
+          <DayView
+            dayNumber={currentDay}
+            slots={slotsForDay}
+            timezone={trip!.timezone}
+            onSlotAction={handleSlotAction}
+          />
         </div>
-
-        {/* Timeline day view */}
-        <DayView
-          dayNumber={currentDay}
-          slots={slotsForDay}
-          timezone={trip!.timezone}
-          onSlotAction={handleSlotAction}
-        />
       </div>
     </AppShell>
   );

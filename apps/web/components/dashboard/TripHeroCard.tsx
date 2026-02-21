@@ -85,16 +85,16 @@ export function TripHeroCard({ trip }: { trip: TripSummary }) {
   return (
     <Link
       href={`/trip/${trip.id}`}
-      className="group block rounded-2xl shadow-card overflow-hidden relative"
+      className="group block rounded-[20px] shadow-lg overflow-hidden relative"
     >
       {/* Background photo */}
-      <div className="relative h-56 sm:h-64 w-full">
+      <div className="relative h-[340px] w-full">
         <Image
           src={photo}
           alt={displayName}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
         />
         <div className="photo-overlay-warm absolute inset-0" aria-hidden="true" />
 
@@ -106,7 +106,7 @@ export function TripHeroCard({ trip }: { trip: TripSummary }) {
           </span>
 
           {/* Trip name */}
-          <h3 className="font-sora text-xl font-semibold text-white leading-tight">
+          <h3 className="font-sora text-2xl font-medium text-white leading-tight">
             {displayName}
           </h3>
 

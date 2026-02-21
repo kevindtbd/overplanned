@@ -41,20 +41,21 @@ function formatTimeMarker(isoString: string, timezone?: string): string {
   }
 }
 
-// Status color for the timeline dot
-function getTimelineDotClass(status: SlotData["status"]): string {
-  switch (status) {
-    case "confirmed":
-    case "active":
-      return "bg-success border-emerald-200";
-    case "proposed":
-    case "voted":
-      return "bg-warning border-amber-200";
-    case "completed":
-    case "skipped":
-      return "bg-ink-600 border-ink-800";
+// Dot color by slot type (not status) per design spec
+function getTimelineDotClass(slotType: SlotData["slotType"]): string {
+  switch (slotType) {
+    case "anchor":
+      return "bg-accent border-accent/30";
+    case "flex":
+      return "bg-transparent border-ink-500";
+    case "meal":
+      return "bg-warning border-warning/30";
+    case "rest":
+      return "bg-success border-success/30";
+    case "transit":
+      return "bg-ink-500 border-ink-600";
     default:
-      return "bg-ink-700 border-base";
+      return "bg-ink-700 border-ink-800";
   }
 }
 
@@ -87,7 +88,7 @@ function EmptyDayState({ dayNumber }: { dayNumber: number }) {
         <line x1="20" y1="26" x2="28" y2="26" />
         <line x1="24" y1="22" x2="24" y2="30" />
       </svg>
-      <h3 className="font-sora text-base font-semibold text-ink-100 mb-1">
+      <h3 className="font-sora text-base font-medium text-ink-100 mb-1">
         No plans yet for Day {dayNumber}
       </h3>
       <p className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
@@ -153,7 +154,7 @@ export function DayView({
               <div
                 className={`
                   w-3 h-3 rounded-full border-2 shrink-0
-                  ${getTimelineDotClass(slot.status)}
+                  ${getTimelineDotClass(slot.slotType)}
                 `}
                 aria-hidden="true"
               />
@@ -173,6 +174,7 @@ export function DayView({
                 slot={slot}
                 onAction={onSlotAction}
                 timezone={timezone}
+                compact
                 showVoting={showVoting}
                 showPivot={showPivot}
                 showFlag={showFlag}

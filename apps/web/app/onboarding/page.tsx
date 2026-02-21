@@ -291,7 +291,7 @@ export default function OnboardingPage() {
               }}
               placeholder="e.g. Tokyo Golden Week"
               maxLength={80}
-              className="mt-6 w-full rounded-lg border border-ink-700 bg-surface py-3 px-4 font-sora text-primary placeholder:text-secondary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              className="mt-6 w-full rounded-xl border-[1.5px] border-ink-700 bg-input py-3 px-4 font-sora text-primary placeholder:text-secondary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
             <p className="mt-2 text-right font-dm-mono text-xs text-secondary">
               {tripName.length}/80

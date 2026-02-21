@@ -118,13 +118,12 @@ export function DayNavigation({
           </svg>
         </button>
 
-        {/* Day tabs — scrollable on mobile, full display on desktop */}
+        {/* Day tabs — horizontal scrollable underline strip */}
         <div
           ref={scrollRef}
           className="
-            flex-1 overflow-x-auto scrollbar-hide
-            flex gap-1 sm:gap-2
-            snap-x snap-mandatory
+            flex-1 overflow-x-auto scrollbar-none
+            flex gap-0
             scroll-smooth
           "
           role="tablist"
@@ -143,23 +142,24 @@ export function DayNavigation({
                 aria-label={`Day ${day}, ${label}`}
                 onClick={() => onDayChange(day)}
                 className={`
-                  snap-start shrink-0
-                  flex flex-col items-center gap-0.5
-                  px-3 py-2 rounded-lg
-                  transition-all duration-150
+                  shrink-0
+                  px-[18px] py-[11px]
+                  text-[13px] font-sora
+                  border-b-2
+                  transition-colors duration-150
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400
                   ${
                     isActive
-                      ? "bg-accent text-white shadow-sm"
-                      : "bg-surface text-ink-400 hover:bg-base hover:text-ink-100 border border-ink-700"
+                      ? "text-accent font-medium border-accent"
+                      : "text-ink-400 font-normal border-transparent hover:text-ink-300"
                   }
                 `}
               >
-                <span className="font-sora text-sm font-semibold">
+                <span className="whitespace-nowrap">
                   Day {day}
-                </span>
-                <span className="font-dm-mono text-[10px] uppercase tracking-wider opacity-80">
-                  {label}
+                  <span className="font-dm-mono text-[10px] uppercase tracking-wider opacity-80 ml-1.5">
+                    {label}
+                  </span>
                 </span>
               </button>
             );
