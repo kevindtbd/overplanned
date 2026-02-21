@@ -395,12 +395,20 @@ export default function GlobeCanvas({ className = "" }: { className?: string }) 
       const rotation = rotRef.current;
       const t = tRef.current;
 
-      // Globe positioning — offset right, capped for ultrawide
-      const cx = Math.min(W, 1600) * 0.72;
-      const cy = H > 600 ? H * 0.55 : H * 0.48;
-      const R = H * 0.48;
+      // Globe positioning — centered-low on mobile, offset right on desktop
+      const isMobile = W < 768;
+      const cx = isMobile ? W * 0.5 : Math.min(W, 1600) * 0.72;
+      const cy = isMobile ? H * 0.7 : (H > 600 ? H * 0.55 : H * 0.48);
+      const R = isMobile ? Math.min(W * 0.6, H * 0.38) : Math.min(H * 0.52, 380);
 
       ctx.clearRect(0, 0, W, H);
+
+      // Render globe at reduced opacity — atmospheric on mobile, slightly toned on desktop
+      const globeAlpha = isMobile ? (dark ? 0.35 : 0.30) : (dark ? 0.85 : 0.80);
+      if (globeAlpha < 1) {
+        ctx.save();
+        ctx.globalAlpha = globeAlpha;
+      }
 
       // --- Ambient glow (cached) ---
       if (!cachedGradientsRef.current.ambient || cachedGradientsRef.current.cx !== cx || cachedGradientsRef.current.cy !== cy || cachedGradientsRef.current.R !== R) {
@@ -481,7 +489,7 @@ export default function GlobeCanvas({ className = "" }: { className?: string }) 
       ctx.fill();
 
       // --- Heatmap scatter dots (denser near cities) ---
-      ctx.fillStyle = dark ? "rgba(201,104,72,0.35)" : "rgba(196,105,79,0.50)";
+      ctx.fillStyle = dark ? "rgba(201,104,72,0.22)" : "rgba(196,105,79,0.35)";
       ctx.beginPath();
       for (let i = 0; i < HEATMAP_VECS.length; i++) {
         const p = projectPoint(HEATMAP_VECS[i], cx, cy, R, rotation);
@@ -542,12 +550,12 @@ export default function GlobeCanvas({ className = "" }: { className?: string }) 
       projectedCities.forEach((c, i) => {
         if (!c.vis) return;
         if (c.main) {
-          // Subtle steady glow — no pulse animation (Stripe-style)
-          const glOuter = ctx.createRadialGradient(c.x, c.y, c.r * 0.5, c.x, c.y, c.r + 8);
-          glOuter.addColorStop(0, dark ? "rgba(201,104,72,0.25)" : "rgba(196,105,79,0.35)");
+          // Subtle steady glow — toned-down halo
+          const glOuter = ctx.createRadialGradient(c.x, c.y, c.r * 0.5, c.x, c.y, c.r + 4);
+          glOuter.addColorStop(0, dark ? "rgba(201,104,72,0.14)" : "rgba(196,105,79,0.22)");
           glOuter.addColorStop(1, "rgba(0,0,0,0)");
           ctx.beginPath();
-          ctx.arc(c.x, c.y, c.r + 8, 0, Math.PI * 2);
+          ctx.arc(c.x, c.y, c.r + 4, 0, Math.PI * 2);
           ctx.fillStyle = glOuter;
           ctx.fill();
         }
@@ -556,8 +564,8 @@ export default function GlobeCanvas({ className = "" }: { className?: string }) 
         if (!c.main) {
           // Subtle glow for minor cities (simple alpha, no gradient)
           ctx.beginPath();
-          ctx.arc(c.x, c.y, cr + 6, 0, Math.PI * 2);
-          ctx.fillStyle = dark ? "rgba(201,104,72,0.12)" : "rgba(196,105,79,0.20)";
+          ctx.arc(c.x, c.y, cr + 3, 0, Math.PI * 2);
+          ctx.fillStyle = dark ? "rgba(201,104,72,0.06)" : "rgba(196,105,79,0.10)";
           ctx.fill();
         }
         ctx.beginPath();
@@ -566,14 +574,29 @@ export default function GlobeCanvas({ className = "" }: { className?: string }) 
           ? dark ? "#C96848" : "#B85C3F"
           : dark ? "rgba(201,104,72,0.55)" : "rgba(196,105,79,0.70)";
         ctx.fill();
-        ctx.strokeStyle = dark ? "rgba(14,12,9,0.85)" : "rgba(250,248,245,0.95)";
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = dark ? "rgba(14,12,9,0.70)" : "rgba(250,248,245,0.85)";
+        ctx.lineWidth = 1.0;
         ctx.stroke();
       });
 
-      // --- Card positions (time-based throttle: every ~32ms) ---
+      // Restore full opacity after globe draw
+      if (globeAlpha < 1) {
+        ctx.restore();
+      }
+
+      // --- Card positions (time-based throttle: every ~32ms, hidden on mobile) ---
       const now = performance.now();
-      if (now - lastCardUpdateRef.current >= 32) {
+      if (isMobile) {
+        // Hide all card overlays on small screens to avoid clutter
+        lerpCardsRef.current.forEach((card) => {
+          card.opacity = 0;
+          const el = cardElemRefs.current.get(card.cityIdx);
+          if (el) {
+            el.style.opacity = "0";
+            el.style.display = "none";
+          }
+        });
+      } else if (now - lastCardUpdateRef.current >= 32) {
         lastCardUpdateRef.current = now;
 
         // Build raw card rects for visible featured cities
@@ -641,7 +664,7 @@ export default function GlobeCanvas({ className = "" }: { className?: string }) 
           }
         });
         lerpCardsRef.current = newLerp;
-      }
+      } // end else if (card update throttle)
 
       // --- Lerp card positions every frame ---
       lerpCardsRef.current.forEach((card) => {

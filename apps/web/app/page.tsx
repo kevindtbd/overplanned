@@ -12,6 +12,10 @@ const TripMapCanvas = dynamic(
   () => import("@/components/landing/TripMapCanvas"),
   { ssr: false },
 );
+const ItineraryCard = dynamic(
+  () => import("@/components/landing/ItineraryCard"),
+  { ssr: false },
+);
 
 export const metadata: Metadata = {
   title: "overplanned. -- Travel that knows you",
@@ -42,157 +46,6 @@ function ArrowRightIcon({ className = "" }: { className?: string }) {
   );
 }
 
-function TruckIcon() {
-  return (
-    <svg
-      width="9"
-      height="9"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="var(--ink-500)"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <rect x="1" y="3" width="15" height="13" rx="2" />
-      <path d="M16 8h4l3 3v5h-7V8z" />
-      <circle cx="5.5" cy="18.5" r="2.5" />
-      <circle cx="18.5" cy="18.5" r="2.5" />
-    </svg>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Itinerary card (static mockup for "The Output" section)           */
-/* ------------------------------------------------------------------ */
-
-function ItineraryCard() {
-  return (
-    <div className="card overflow-hidden shadow-xl rounded-[20px]">
-      {/* Header */}
-      <div className="flex items-center justify-between px-[18px] py-[14px] border-b border-ink-700">
-        <span className="font-sora text-[15px] font-semibold tracking-[-0.02em] text-ink-100">
-          Kyoto &middot; Day 3
-        </span>
-        <span className="font-dm-mono text-[8px] text-ink-500 tracking-[0.08em] uppercase">
-          Friday &middot; 4 Slots
-        </span>
-      </div>
-      {/* Day tabs */}
-      <div className="flex px-[18px] border-b border-ink-700 overflow-hidden">
-        {["Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <span
-            key={d}
-            className={`py-2 px-2.5 font-dm-mono text-[8px] tracking-[0.08em] uppercase cursor-pointer whitespace-nowrap border-b-2 ${
-              d === "Fri"
-                ? "text-ink-100 border-accent"
-                : "text-ink-500 border-transparent"
-            }`}
-          >
-            {d}
-          </span>
-        ))}
-      </div>
-      {/* Slot 1: Fushimi Inari */}
-      <div className="flex items-stretch border-b border-ink-700 hover:bg-warm transition-colors cursor-pointer">
-        <div className="w-[72px] h-[72px] flex-shrink-0 overflow-hidden relative">
-          <img
-            src="https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=300&q=70&auto=format&fit=crop"
-            alt="Fushimi Inari"
-            className="w-full h-full object-cover block hover:scale-[1.06] transition-transform duration-400"
-          />
-          <span className="absolute bottom-1 left-1 font-dm-mono text-[7px] tracking-[0.04em] uppercase px-[5px] py-[1px] rounded-full bg-[rgba(61,122,82,0.88)] text-white">
-            Visited
-          </span>
-        </div>
-        <div className="flex-1 px-3.5 py-2.5 flex flex-col justify-center">
-          <span className="text-[13px] font-medium text-ink-100 mb-0.5">
-            Fushimi Inari
-          </span>
-          <span className="text-[11px] text-ink-400 font-light italic mb-1">
-            left before the crowds hit
-          </span>
-          <div className="flex gap-1 flex-wrap">
-            <span className="font-dm-mono text-[8px] px-1.5 py-0.5 rounded-full bg-success-bg text-success">
-              Local
-            </span>
-            <span className="font-dm-mono text-[8px] px-1.5 py-0.5 rounded-full bg-info-bg text-info">
-              Tabelog &middot; 2.1k
-            </span>
-          </div>
-        </div>
-      </div>
-      {/* Transit */}
-      <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-raised border-b border-ink-700">
-        <TruckIcon />
-        <span className="font-dm-mono text-[9px] text-ink-500">
-          18 min taxi &middot; &yen;1,200
-        </span>
-      </div>
-      {/* Slot 2: Kinkaku-ji (active) */}
-      <div className="flex items-stretch border-b border-ink-700 bg-accent-light border-l-[3px] border-l-accent cursor-pointer">
-        <div className="w-[72px] h-[72px] flex-shrink-0 overflow-hidden relative">
-          <img
-            src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=300&q=70&auto=format&fit=crop"
-            alt="Kinkaku-ji"
-            className="w-full h-full object-cover block"
-          />
-          <span className="absolute bottom-1 left-1 font-dm-mono text-[7px] tracking-[0.04em] uppercase px-[5px] py-[1px] rounded-full bg-[rgba(61,122,82,0.88)] text-white">
-            Booked
-          </span>
-        </div>
-        <div className="flex-1 px-3.5 py-2.5 flex flex-col justify-center">
-          <span className="text-[13px] font-medium text-ink-100 mb-0.5">
-            Kinkaku-ji
-          </span>
-          <span className="text-[11px] text-ink-400 font-light italic mb-1">
-            weekday afternoon &middot; thins out by 15:00
-          </span>
-          <div className="flex gap-1 flex-wrap">
-            <span className="font-dm-mono text-[8px] px-1.5 py-0.5 rounded-full bg-success-bg text-success">
-              Local
-            </span>
-            <span className="font-dm-mono text-[8px] px-1.5 py-0.5 rounded-full bg-info-bg text-info">
-              Tabelog &middot; 4.2k
-            </span>
-            <span className="font-dm-mono text-[8px] px-1.5 py-0.5 rounded-full bg-warning-bg text-warning">
-              Busy 10-14
-            </span>
-          </div>
-        </div>
-      </div>
-      {/* Slot 3: Pontocho izakaya */}
-      <div className="flex items-stretch hover:bg-warm transition-colors cursor-pointer">
-        <div className="w-[72px] h-[72px] flex-shrink-0 overflow-hidden relative">
-          <img
-            src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=300&q=70&auto=format&fit=crop"
-            alt="Pontocho izakaya"
-            className="w-full h-full object-cover block hover:scale-[1.06] transition-transform duration-400"
-          />
-          <span className="absolute bottom-1 left-1 font-dm-mono text-[7px] tracking-[0.04em] uppercase px-[5px] py-[1px] rounded-full bg-[rgba(26,22,18,0.6)] text-white/[0.92]">
-            Book Now
-          </span>
-        </div>
-        <div className="flex-1 px-3.5 py-2.5 flex flex-col justify-center">
-          <span className="text-[13px] font-medium text-ink-100 mb-0.5">
-            Pontocho izakaya
-          </span>
-          <span className="text-[11px] text-ink-400 font-light italic mb-1">
-            locals-only counter &middot; full by 20:00
-          </span>
-          <div className="flex gap-1 flex-wrap">
-            <span className="font-dm-mono text-[8px] px-1.5 py-0.5 rounded-full bg-success-bg text-success">
-              Local
-            </span>
-            <span className="font-dm-mono text-[8px] px-1.5 py-0.5 rounded-full bg-info-bg text-info">
-              Tabelog &middot; 3.8k
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*  Persona card                                                       */
@@ -422,9 +275,9 @@ export default function LandingPage() {
       <LandingNav />
 
       {/* ==================== HERO ==================== */}
-      <section className="relative min-h-screen overflow-hidden max-w-[1600px] mx-auto pt-[62px]">
-        {/* Z1: Globe canvas (full bleed, md+ only) */}
-        <div className="absolute inset-0 z-[1] hidden md:block">
+      <section className="relative min-h-[88vh] max-h-[900px] md:min-h-[90vh] md:max-h-[1000px] overflow-hidden max-w-[1600px] mx-auto pt-[62px]">
+        {/* Z1: Globe canvas (all breakpoints) */}
+        <div className="absolute inset-0 z-[1]">
           <GlobeCanvas />
         </div>
 
@@ -435,25 +288,31 @@ export default function LandingPage() {
         />
 
         {/* Z3: Gradient layers (text protection) */}
+        {/* Desktop: left-to-right gradient (text left, globe right) */}
         <div
-          className="absolute left-0 inset-y-0 w-[55%] z-[3] pointer-events-none"
+          className="absolute left-0 inset-y-0 w-[55%] z-[3] pointer-events-none hidden md:block"
           style={{ background: "linear-gradient(to right, var(--bg-base-92) 0%, var(--bg-base-92) 30%, var(--bg-base-60) 50%, transparent 100%)" }}
         />
+        {/* Mobile: top-to-bottom gradient (text top, globe bottom) */}
         <div
-          className="absolute bottom-0 inset-x-0 h-[140px] z-[3] pointer-events-none"
-          style={{ background: "linear-gradient(to top, var(--bg-base-92) 0%, transparent 100%)" }}
+          className="absolute inset-x-0 top-0 h-[65%] z-[3] pointer-events-none md:hidden"
+          style={{ background: "linear-gradient(to bottom, var(--bg-base-92) 0%, var(--bg-base-92) 40%, var(--bg-base-60) 60%, transparent 100%)" }}
+        />
+        <div
+          className="absolute bottom-0 inset-x-0 h-[280px] z-[3] pointer-events-none"
+          style={{ background: "linear-gradient(to top, var(--bg-base) 0%, var(--bg-base) 20%, var(--bg-base-92) 50%, transparent 100%)" }}
         />
         <div
           className="absolute top-0 inset-x-0 h-[80px] z-[3] pointer-events-none"
           style={{ background: "linear-gradient(to bottom, var(--bg-base-92) 0%, transparent 100%)" }}
         />
         <div
-          className="absolute right-0 inset-y-0 w-[80px] z-[3] pointer-events-none"
+          className="absolute right-0 inset-y-0 w-[80px] z-[3] pointer-events-none hidden md:block"
           style={{ background: "linear-gradient(to left, var(--bg-base-50) 0%, transparent 100%)" }}
         />
 
         {/* Z10: Text content */}
-        <div className="relative z-[10] flex flex-col justify-center min-h-screen px-6 py-[60px] md:px-14 lg:pl-20 lg:pr-12 max-w-[600px]">
+        <div className="relative z-[10] flex flex-col justify-center min-h-[inherit] px-6 py-[60px] md:px-14 lg:pl-20 lg:pr-12 max-w-[600px]">
           {/* Eyebrow */}
           <div className="section-eyebrow mb-[22px] animate-[fadeUp_0.7s_ease_both_0.08s]">
             Travel Intelligence
@@ -471,8 +330,9 @@ export default function LandingPage() {
           {/* Sub */}
           <p className="text-[16px] text-ink-400 font-light leading-[1.74] max-w-[440px] mb-[42px] animate-[fadeUp_0.7s_ease_both_0.24s]">
             Overplanned builds your itinerary from how you actually travel -- not
-            your demographics. Local sources. Real-time adaptation. A plan that
-            changes when you do.
+            your demographics. Plans your next trip. Remembers every one
+            you&apos;ve taken. Local sources, real-time adaptation, and a plan
+            that changes when you do.
           </p>
 
           {/* Actions */}
@@ -496,9 +356,9 @@ export default function LandingPage() {
           {/* City pills */}
           <div className="flex items-center gap-2.5 flex-wrap animate-[fadeUp_0.7s_ease_both_0.40s]">
             <span className="font-dm-mono text-[9px] tracking-[0.14em] uppercase text-ink-600">
-              First cities
+              Featured cities
             </span>
-            {["Tokyo", "Kyoto", "Seoul", "Barcelona"].map((city) => (
+            {["Tokyo", "Barcelona", "New York", "Sydney"].map((city) => (
               <span
                 key={city}
                 className="font-dm-mono text-[9px] tracking-[0.06em] text-ink-400 bg-raised border border-ink-700 rounded-full px-2.5 py-[3px]"
@@ -509,13 +369,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* Globe banner -- mobile only (below md) */}
-      <div className="md:hidden relative h-[320px] bg-warm border-b border-ink-700 overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-[60px] bg-gradient-to-b from-base to-transparent pointer-events-none z-[2]" />
-        <div className="absolute bottom-0 left-0 right-0 h-[60px] bg-gradient-to-t from-base to-transparent pointer-events-none z-[2]" />
-        <GlobeCanvas />
-      </div>
 
       {/* ==================== THE OUTPUT ==================== */}
       <section
@@ -577,22 +430,22 @@ export default function LandingPage() {
               {
                 num: "01",
                 title: "Finds the counter seat nobody put on a list",
-                body: "The 8-seat ramen spot. The izakaya that only takes walk-ins before 18:00. The coffee bar that opened three months ago. Sources that don't translate, aggregated so you don't have to.",
+                body: "The 8-seat ramen spot. The izakaya that only takes walk-ins before 18:00. The coffee bar that opened three months ago. Sources that don't show up on the usual apps.",
                 tag: "Local-First",
                 tagClass: "bg-success-bg text-success",
               },
               {
                 num: "02",
-                title: "Knows what kind of tired you are",
-                body: 'Day four tired is different from day one tired. A quick coffee break tired is different from "cancel the afternoon" tired. The plan adjusts -- one slot, not a rebuild -- without you having to explain yourself.',
-                tag: "Reads the Room",
+                title: "Builds the plan you'd forget to make",
+                body: "Auto-generated packing lists based on your destination and trip length. Budget estimates before you book. Offline access to your full itinerary \u2014 no signal required. The logistics layer that actually saves you time.",
+                tag: "Smart Planning",
                 tagClass: "bg-info-bg text-info",
               },
               {
                 num: "03",
-                title: "Gets better every time you use it",
-                body: "Every trip compounds. The more you travel, the sharper your recommendations get -- not because you filled out a profile, but because the system watched what you actually chose, skipped, and lingered on.",
-                tag: "Compounds Over Time",
+                title: "Adapts when the trip does",
+                body: "Flight delayed. Restaurant closed. Rain all afternoon. The plan reshuffles one slot at a time \u2014 not a full rebuild. You approve every change before it happens.",
+                tag: "Real-Time",
                 tagClass: "bg-accent-light text-accent-fg",
               },
             ].map((cell) => (
@@ -600,7 +453,7 @@ export default function LandingPage() {
                 key={cell.num}
                 className="bg-surface hover:bg-warm transition-colors p-[36px_32px]"
               >
-                <div className="font-lora text-[54px] font-medium italic text-ink-600 leading-none mb-[18px]">
+                <div className="font-lora text-[36px] md:text-[54px] font-medium italic text-ink-600 leading-none mb-[18px]">
                   {cell.num}
                 </div>
                 <div className="text-[16px] font-medium text-ink-100 tracking-[-0.01em] mb-2.5 leading-[1.3]">
@@ -634,9 +487,9 @@ export default function LandingPage() {
                 <em className="italic text-gold">the ground floor.</em>
               </h2>
               <p className="text-[15px] text-ink-400 font-light leading-[1.75] text-center mx-auto">
-                Every recommendation traces back to a source you can verify. Not
-                a five-star rating from someone who visited once -- continuous
-                signals from people who live there.
+                Every recommendation traces back to a real source -- not a
+                five-star rating from someone who visited once. We pull from the
+                places locals actually use.
               </p>
             </div>
           </RevealOnScroll>
@@ -645,37 +498,57 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1000px] mx-auto">
               {[
                 {
-                  stat: "8,100+",
-                  label: "local reviews per city",
-                  desc: "Sourced from regional food databases, resident forums, and local bloggers -- not tourist review platforms.",
+                  icon: (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    </svg>
+                  ),
+                  title: "Sourced where locals actually look",
+                  body: "Regional food blogs. Neighborhood review sites. The kind of places that don't have English translations but have decades of trust. We find them so you don't have to.",
+                  tag: "Local-First",
                   tagClass: "bg-success-bg text-success",
                 },
                 {
-                  stat: "12+",
-                  label: "source types per destination",
-                  desc: "Local review sites, resident forums, seasonal menus, booking availability, weather APIs, transit schedules -- all cross-referenced so you don't have to.",
+                  icon: (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                      <polyline points="23 4 23 10 17 10" />
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                    </svg>
+                  ),
+                  title: "Always current, never stale",
+                  body: "Closures caught before you show up. Hours that changed last week, already in your plan. Seasonal menus reflected in real time -- not a snapshot from two years ago.",
+                  tag: "Continuous Updates",
                   tagClass: "bg-info-bg text-info",
                 },
                 {
-                  stat: "3 months",
-                  label: "average source freshness",
-                  desc: "Venues that opened this quarter. Closures caught before you show up. Hours that changed last week, already updated in your plan.",
+                  icon: (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                  ),
+                  title: "No pay-to-rank. No sponsored slots.",
+                  body: "Every recommendation earns its place. No venue pays to appear in your itinerary. No aggregator scores. What you see is what locals actually recommend.",
+                  tag: "Zero Sponsored Content",
                   tagClass: "bg-accent-light text-accent-fg",
                 },
               ].map((card) => (
                 <div
-                  key={card.label}
-                  className="card rounded-[16px] p-[28px_24px] shadow-md"
+                  key={card.title}
+                  className="card rounded-[16px] p-[28px_24px] hover:shadow-md hover:-translate-y-[3px] transition-all duration-300 cursor-default"
                 >
-                  <div className="font-lora text-[36px] font-medium text-accent leading-none mb-1.5">
-                    {card.stat}
+                  <div className="w-10 h-10 bg-accent-light rounded-[10px] flex items-center justify-center mb-5 text-accent">
+                    {card.icon}
                   </div>
-                  <div className="font-dm-mono text-[9px] tracking-[0.1em] uppercase text-ink-500 mb-3">
-                    {card.label}
+                  <div className="text-[15px] font-medium text-ink-100 tracking-[-0.01em] mb-2.5 leading-[1.3]">
+                    {card.title}
                   </div>
                   <div className="text-[13px] text-ink-400 font-light leading-[1.72]">
-                    {card.desc}
+                    {card.body}
                   </div>
+                  <span className={`font-dm-mono text-[8px] tracking-[0.1em] uppercase mt-4 inline-block px-[9px] py-[3px] rounded-full ${card.tagClass}`}>
+                    {card.tag}
+                  </span>
                 </div>
               ))}
             </div>
@@ -727,11 +600,18 @@ export default function LandingPage() {
               <em className="italic text-gold">One plan.</em>
             </h2>
             <p className="text-[15px] text-ink-400 font-light leading-[1.75] max-w-[480px]">
-              Async voting before you leave. The system tracks who keeps
-              compromising -- not just who wins the vote -- and rebalances across
-              the trip. Conflicts surface as two camps, not a debate thread nobody
-              reads.
+              Async voting before you leave. Shared packing lists so nobody
+              brings three umbrellas. A budget that splits itself. And when the
+              trip changes, everyone stays in sync.
             </p>
+            <DotList
+              items={[
+                "Shared packing list -- see who's bringing what, avoid duplicates",
+                "Split budget tracker -- expenses logged per person, settled at the end",
+                "Split days -- everyone gets a half-day to do their own thing, then regroup",
+                "Group chat built into the trip -- no separate WhatsApp thread",
+              ]}
+            />
           </RevealOnScroll>
           <RevealOnScroll delay={200}>
             <GroupPhones />
@@ -767,23 +647,6 @@ export default function LandingPage() {
           <RevealOnScroll delay={200} className="h-full">
             <div className="relative bg-stone border-t lg:border-t-0 lg:border-l border-ink-700 min-h-[420px] h-full">
               <TripMapCanvas />
-              {/* Map legend */}
-              <div className="absolute bottom-[18px] right-[18px] card rounded-[10px] p-[10px_14px] flex flex-col gap-[5px]">
-                {[
-                  { color: "bg-ink-500", label: "Visited" },
-                  { color: "bg-success", label: "You Are Here" },
-                  { color: "bg-accent", label: "End" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-[7px]">
-                    <div
-                      className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`}
-                    />
-                    <span className="font-dm-mono text-[8px] tracking-[0.06em] uppercase text-ink-400">
-                      {item.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
           </RevealOnScroll>
         </div>

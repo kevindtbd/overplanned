@@ -20,7 +20,7 @@ const STOPS: Stop[] = [
   { x: 0.22, y: 0.65, label: "Senso-ji" },
   { x: 0.35, y: 0.48, label: "Shinjuku" },
   { x: 0.48, y: 0.35, label: "Harajuku", current: true },
-  { x: 0.61, y: 0.24, label: "Meiji" },
+  { x: 0.61, y: 0.14, label: "Meiji" },
   { x: 0.74, y: 0.40, label: "Ginza" },
   { x: 0.88, y: 0.22, label: "Roppongi", end: true },
 ];
@@ -67,13 +67,15 @@ interface CardOverlay {
   title: string;
   time: string;
   tag: string;
-  tagType: "local" | "busy" | "source" | "start" | "end";
+  tagType: "local" | "busy" | "source" | "start" | "end" | "current";
   image?: string;
+  variant?: "you-are-here";
 }
 
 const CARD_OVERLAYS: CardOverlay[] = [
   { stopIdx: 0, title: "Tsukiji outer market", time: "06:00 -- 08:30", tag: "Start", tagType: "start", image: "https://images.unsplash.com/photo-1553621042-f6e147245754?w=200&q=70&auto=format&fit=crop" },
-  { stopIdx: 2, title: "Omoide Yokocho", time: "12:30 -- 14:00", tag: "Busy 11-13", tagType: "busy" },
+  { stopIdx: 3, title: "Harajuku", time: "Day 2 \u00B7 14:30", tag: "You're here", tagType: "current", variant: "you-are-here" },
+  { stopIdx: 4, title: "Meiji Shrine", time: "15:30 -- 17:00", tag: "Quiet Hours", tagType: "local" },
   { stopIdx: 6, title: "Standing bar crawl", time: "19:00 -- late", tag: "End", tagType: "end", image: "https://images.unsplash.com/photo-1554797589-7241bb691973?w=200&q=70&auto=format&fit=crop" },
 ];
 
@@ -366,7 +368,7 @@ export default function TripMapCanvas() {
         } else if (stop.end) {
           fillColor = dark ? "#C96848" : "#B85C3F";
           glowColor = dark ? "#C96848" : "#B85C3F";
-          radius = 7;
+          radius = 11;
           hasGlow = true;
         } else {
           fillColor = dark ? "#5C4E42" : "#9E9286";
@@ -377,12 +379,13 @@ export default function TripMapCanvas() {
         ctx.globalAlpha = fadeIn;
 
         if (hasGlow) {
-          const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 16);
+          const glowR = stop.end ? 20 : 16;
+          const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, glowR);
           grad.addColorStop(0, glowColor);
           grad.addColorStop(1, "rgba(0,0,0,0)");
           ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.arc(sx, sy, 16, 0, Math.PI * 2);
+          ctx.arc(sx, sy, glowR, 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -390,6 +393,21 @@ export default function TripMapCanvas() {
         ctx.beginPath();
         ctx.arc(sx, sy, radius, 0, Math.PI * 2);
         ctx.fill();
+
+        if (stop.end) {
+          // Outer ring stroke
+          ctx.beginPath();
+          ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+          ctx.strokeStyle = fillColor;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // Inner filled dot
+          ctx.beginPath();
+          ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+          ctx.fillStyle = fillColor;
+          ctx.fill();
+        }
 
         // Label
         const isHighlighted = stop.start || stop.end || stop.current;
@@ -452,9 +470,10 @@ export default function TripMapCanvas() {
         const sy = stop.y * H;
 
         // Position card offset from stop
-        const onLeft = stop.x > 0.55;
+        const onLeft = stop.x > 0.55; // Natural left/right based on position
         const cardX = onLeft ? sx - 168 : sx + 18;
-        const cardY = sy - 20;
+        // Harajuku (current/green): push card below pin to avoid Meiji overlap
+        const cardY = co.stopIdx === 3 ? sy + 14 : sy - 20;
 
         el.style.transform = `translate(${cardX}px, ${cardY}px)`;
         el.style.opacity = String(fadeIn);
@@ -536,6 +555,7 @@ export default function TripMapCanvas() {
     source: "bg-info-bg text-info",
     start: "bg-success-bg text-success",
     end: "bg-accent-light text-accent-fg",
+    current: "bg-success-bg text-success",
   };
 
   return (
@@ -563,37 +583,70 @@ export default function TripMapCanvas() {
             display: "none",
           }}
         >
-          <div
-            className="rounded-[10px] overflow-hidden min-w-[130px] max-w-[155px] flex"
-            style={{
-              background: "var(--bg-surface)",
-              border: "1px solid color-mix(in srgb, var(--ink-700) 60%, transparent)",
-              boxShadow: "var(--shadow-card)",
-            }}
-          >
-            {co.image && (
-              <div className="w-[44px] flex-shrink-0">
-                <img
-                  src={co.image}
-                  alt=""
-                  className="w-full h-full object-cover block"
-                />
+          {co.variant === "you-are-here" ? (
+            <div
+              className="rounded-[10px] overflow-hidden min-w-[130px] max-w-[155px] border-l-[3px]"
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid color-mix(in srgb, var(--ink-700) 60%, transparent)",
+                borderLeft: "3px solid var(--success)",
+                boxShadow: "var(--shadow-card)",
+              }}
+            >
+              <div className="p-[8px_10px] flex items-center gap-[6px]">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="var(--success)"
+                  stroke="none"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z" />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] font-medium text-ink-100 leading-tight">
+                    {co.title}
+                  </div>
+                  <div className="font-dm-mono text-[8px] text-success tracking-[0.04em]">
+                    {co.time}
+                  </div>
+                </div>
               </div>
-            )}
-            <div className="p-[8px_10px] flex-1 min-w-0">
-              <div className="text-[11px] font-medium text-ink-100 mb-[2px] leading-tight truncate">
-                {co.title}
-              </div>
-              <div className="font-dm-mono text-[8px] text-ink-500 tracking-[0.04em] mb-[4px]">
-                {co.time}
-              </div>
-              <span
-                className={`font-dm-mono text-[7px] tracking-[0.06em] uppercase px-1.5 py-0.5 rounded-full inline-block ${tagColors[co.tagType]}`}
-              >
-                {co.tag}
-              </span>
             </div>
-          </div>
+          ) : (
+            <div
+              className="rounded-[10px] overflow-hidden min-w-[130px] max-w-[155px] flex"
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid color-mix(in srgb, var(--ink-700) 60%, transparent)",
+                boxShadow: "var(--shadow-card)",
+              }}
+            >
+              {co.image && (
+                <div className="w-[44px] flex-shrink-0">
+                  <img
+                    src={co.image}
+                    alt=""
+                    className="w-full h-full object-cover block"
+                  />
+                </div>
+              )}
+              <div className="p-[8px_10px] flex-1 min-w-0">
+                <div className="text-[11px] font-medium text-ink-100 mb-[2px] leading-tight truncate">
+                  {co.title}
+                </div>
+                <div className="font-dm-mono text-[8px] text-ink-500 tracking-[0.04em] mb-[4px]">
+                  {co.time}
+                </div>
+                <span
+                  className={`font-dm-mono text-[7px] tracking-[0.06em] uppercase px-1.5 py-0.5 rounded-full inline-block ${tagColors[co.tagType]}`}
+                >
+                  {co.tag}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>

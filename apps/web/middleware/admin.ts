@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth/config';
 
 /**
  * Admin middleware: Enforces systemRole = 'admin' for all /admin routes.
