@@ -170,7 +170,11 @@ CREATE TABLE itinerary_import_events (
 
 ---
 
-## Gap 5 — Weather Context on Behavioral Signals [INFERRED]
+## Gap 5 — Weather Context on Behavioral Signals [INFERRED] — PARTIALLY ADDRESSED
+
+**Status:** Synthetic data backfill complete (43,595 outdoor/active signals tagged
+with pipe-delimited `label|temp_c|precip_index` in commit 0fd5f6b). Production
+instrumentation (appending live weather at signal write time) still needed.
 
 **What exists:** The architecture-addendum-pivot.md specifies weather API integration for pivot triggers (`weather change → outdoor slot detector → fallback cached`). The `EnergyModel` in open-questions-deepdive.md includes `weather_drain_modifier: float`. Weather is being consumed.
 
@@ -339,7 +343,7 @@ class RankingEvent:
 | Gap | Priority | Effort | Reason |
 |---|---|---|---|
 | **3** — Card view duration | High | Low | Client-side only, extends existing RankingEvent, immediate ranking model value |
-| **5** — Weather context | High | Low | Already fetching weather, just append to payload, zero API cost |
+| **5** — Weather context | High | Low | Synthetic backfill done (0fd5f6b). Production write-time append still needed |
 | **10** — Geo denormalization | High | Low | Append at write time, eliminates stale join problem permanently |
 | **1** — Search query events | High | Medium | New table + client instrumentation, high intent signal being lost every session |
 | **2** — Onboarding funnel | Medium | Medium | New event type, session-scoped before account creation adds complexity |

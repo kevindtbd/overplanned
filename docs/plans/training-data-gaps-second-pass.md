@@ -1,59 +1,43 @@
 # Training Data Gaps — Second Pass
 
-After fixing the 3 blockers (RawEvent, PersonaDimension, ModelRegistry),
-these quality improvements should be addressed before any real BPR training run.
+After fixing the 3 blockers (RankingEvent, PersonaDimension, ModelRegistry),
+these quality improvements were addressed before BPR training.
 
-## 1. PivotEvent Records
+**Status: 5/6 complete (commit 0fd5f6b). Only #5 remains.**
 
-The persona seeder already computes swaps (`_pick_swap_node`, `wasSwapped=True`)
-but doesn't write PivotEvent rows. For each swap, generate:
-- `trigger_type='user_request'`
-- `status='accepted'`
-- `response_time_ms` between 500-3000ms
-- Link `original_node_id` and `selected_node_id`
+## 1. PivotEvent Records — DONE
 
-Low effort — swap logic already exists, just needs the PivotEvent INSERT.
+1,044 PivotEvent rows created from existing swap slot pairs.
+Design: `docs/plans/2026-02-20-training-enrichments-design.md` (Enrichment 1)
 
-## 2. IntentionSignal Seeding
+## 2. IntentionSignal Seeding — DONE
 
-For 20-30% of `slot_skip` signals, write an IntentionSignal with:
-- `intention_type`: weighted random from `not_interested`, `bad_timing`,
-  `too_far`, `already_visited`, `weather`, `group_conflict`
-- `confidence=1.0`, `source='user_explicit'`, `user_provided=true`
+2,864 IntentionSignal rows for ~25% of slot_skip signals (per-user capped).
+Weighted types: not_interested (32%), bad_timing (17%), too_far (15%),
+already_visited (10%), weather (10%, 2x for outdoor), price_mismatch (8%),
+group_conflict (5%).
+Design: Enrichment 2 in design doc.
 
-These are the highest-confidence labels the system can produce.
-Critical for distinguishing "wrong vibe" from "wrong logistics."
+## 3. Discovery Swipe Signals — DONE
 
-## 3. Discovery Swipe Signals
+13,643 swipe signals + 838 RankingEvents (surface='discovery') for ~30% of users.
+Thresholds: 65%/40%/8% with +-15% per-user noise to prevent echo chamber.
+Design: Enrichment 3 in design doc.
 
-The offline discovery surface (swipe deck) has zero training data.
-For ~30% of users, generate:
-- `discover_swipe_right` for high-affinity nodes
-- `discover_swipe_left` for low-affinity nodes
-- `discover_shortlist` for a subset of swipe_rights
+## 4. WeatherContext on Outdoor/Active Signals — DONE
 
-BPR needs to learn the discovery context separately from the itinerary context.
+43,595 signals updated with pipe-delimited `label|temp_c|precip_index` format.
+Only signals with slotId (slot-level decisions). Join through ItinerarySlot -> Trip.
+Design: Enrichment 4 in design doc.
 
-## 4. WeatherContext on Outdoor/Active Signals
+## 5. QualitySignal Source Diversity — PENDING
 
-All 220K signals have `weatherContext=null`. For outdoor and active category
-slots, assign plausible weather:
-- Tokyo: seasonal (rainy June, humid Aug, mild Oct-Nov)
-- NYC: seasonal (cold Jan-Feb, humid Jul-Aug, mild Sep-Oct)
-- CDMX: rainy season Jun-Oct, dry Nov-May
+Not a BPR blocker. Needed for convergence/authority scoring pipeline.
+Audit QualitySignal rows per city first — may be empty or single-source.
 
-Weight toward the trip's date range. Low effort, high value for the
-Item Tower weather feature.
+## 6. Trip Completion Realism — DONE
 
-## 5. QualitySignal Source Diversity (Audit First)
-
-Check `QualitySignal` rows per city. If single-source or empty, the
-tourist/local divergence calculation is a fiction. Seed synthetic
-QualitySignal rows with 2-3 sources per node (en_reddit, foursquare,
-tabelog for Tokyo).
-
-## 6. Trip Completion Realism
-
-Currently all trips >8 days old are "completed." Add some abandoned
-planning trips (status='planning' from 60+ days ago) and short completed
-trips from recent dates for more realistic distribution.
+13 trips flipped to 'planning' (only those with NO post_trip signals).
+80 trips shortened to 2-3 days. Cosmetic for current BPR but future-proofs
+User Tower features.
+Design: Enrichment 6 in design doc.

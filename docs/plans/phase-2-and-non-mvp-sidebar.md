@@ -2,6 +2,12 @@
 Items identified during agent review that are real but NOT launch blockers.
 Address after MVP ships and user data is flowing.
 
+**Update (2026-02-20):** Synthetic training data pipeline is BPR-ready.
+3 blockers fixed (c4c8c0f), 5 enrichments complete (0fd5f6b). Item #1 below
+(BPR triplet optimization) is less urgent now — RankingEvent seeding provides
+clean (user, candidates, selected) tuples without JSON parsing. Items #3 and
+#7 remain relevant for production training pipeline.
+
 ## Phase 2 Data Issues (Post-MVP, Pre-Two-Tower)
 
 ### 1. BPR Training Triplet Optimization
