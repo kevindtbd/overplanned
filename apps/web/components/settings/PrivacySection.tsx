@@ -17,9 +17,17 @@ const DEFAULTS: ConsentState = {
   anonymizedResearch: false,
 };
 
-const CONSENT_ITEMS: { field: ConsentField; label: string }[] = [
-  { field: "modelTraining", label: "Use my data to improve recommendations" },
-  { field: "anonymizedResearch", label: "Include my anonymized data in research" },
+const CONSENT_ITEMS: { field: ConsentField; label: string; sub: string }[] = [
+  {
+    field: "modelTraining",
+    label: "Help us learn your travel style",
+    sub: "We use your trip patterns and preferences to surface better recommendations for you and travelers like you.",
+  },
+  {
+    field: "anonymizedResearch",
+    label: "Contribute to travel insights",
+    sub: "Your anonymized data helps us understand travel trends and improve our recommendation engine for everyone.",
+  },
 ];
 
 // ---------- Component ----------
@@ -28,6 +36,7 @@ export function PrivacySection({ email }: { email: string }) {
   const [consent, setConsent] = useState<ConsentState>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [bannerVisible, setBannerVisible] = useState(false);
 
   // Export state
   const [exporting, setExporting] = useState(false);
@@ -38,6 +47,13 @@ export function PrivacySection({ email }: { email: string }) {
   const [confirmEmail, setConfirmEmail] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // SSR guard: check localStorage in useEffect only
+  useEffect(() => {
+    if (!localStorage.getItem("consent-banner-seen")) {
+      setBannerVisible(true);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,6 +76,11 @@ export function PrivacySection({ email }: { email: string }) {
     load();
     return () => { cancelled = true; };
   }, []);
+
+  function dismissBanner() {
+    localStorage.setItem("consent-banner-seen", "1");
+    setBannerVisible(false);
+  }
 
   async function toggleConsent(field: ConsentField) {
     const prev = consent[field];
@@ -163,10 +184,37 @@ export function PrivacySection({ email }: { email: string }) {
               <h3 className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-3">
                 Consent
               </h3>
+
+              {/* Education banner */}
+              {bannerVisible && (
+                <div className="rounded-xl border border-warm-border bg-warm-background p-4 mb-4" data-testid="consent-banner">
+                  <p className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
+                    How your data helps
+                  </p>
+                  <p className="font-sora text-sm text-ink-300 mb-3">
+                    Your preferences and trip patterns help us learn what makes great
+                    recommendations. Users who share their data see up to 40% more
+                    relevant suggestions within their first 3 trips.
+                  </p>
+                  <p className="font-sora text-sm text-ink-300 mb-3">
+                    You can enable or change these options anytime.
+                  </p>
+                  <button
+                    onClick={dismissBanner}
+                    className="rounded-full border border-accent text-accent px-4 py-1.5 font-sora text-sm hover:bg-accent/10 transition-colors"
+                  >
+                    Got it
+                  </button>
+                </div>
+              )}
+
               <div className="space-y-3">
-                {CONSENT_ITEMS.map(({ field, label }) => (
-                  <div key={field} className="flex items-center justify-between">
-                    <span className="font-sora text-sm text-ink-200">{label}</span>
+                {CONSENT_ITEMS.map(({ field, label, sub }) => (
+                  <div key={field} className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <span className="font-sora text-sm text-ink-200">{label}</span>
+                      <p className="font-sora text-xs text-ink-400 mt-0.5">{sub}</p>
+                    </div>
                     <button
                       role="switch"
                       aria-checked={consent[field]}
@@ -174,7 +222,7 @@ export function PrivacySection({ email }: { email: string }) {
                       className={`
                         relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full
                         border-2 border-transparent transition-colors
-                        ${consent[field] ? "bg-accent" : "bg-warm-border"}
+                        ${consent[field] ? "bg-accent" : "bg-ink-500"}
                       `}
                     >
                       <span

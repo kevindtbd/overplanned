@@ -106,6 +106,34 @@ describe("GET /api/settings/export", () => {
     expect(json.trips).toEqual([]);
     expect(json.behavioralSignals).toEqual([]);
     expect(json.consent).toEqual({ modelTraining: false, anonymizedResearch: false });
+
+    // Preferences fallback — all new fields present with correct defaults
+    expect(json.preferences).toEqual({
+      dietary: [],
+      mobility: [],
+      languages: [],
+      travelFrequency: null,
+      vibePreferences: [],
+      travelStyleNote: null,
+      budgetComfort: null,
+      spendingPriorities: [],
+      accommodationTypes: [],
+      transitModes: [],
+      preferencesNote: null,
+    });
+
+    // Notifications fallback — all fields including checkinReminder + preTripDaysBefore
+    expect(json.notifications).toMatchObject({
+      tripReminders: true,
+      morningBriefing: true,
+      groupActivity: true,
+      postTripPrompt: true,
+      citySeeded: true,
+      inspirationNudges: false,
+      productUpdates: false,
+      checkinReminder: false,
+      preTripDaysBefore: 3,
+    });
   });
 
   it("has trip data populated from transaction", async () => {
@@ -149,5 +177,71 @@ describe("GET /api/settings/export", () => {
     expect(res2.status).toBe(429);
     const json = await res2.json();
     expect(json.error).toBe("Please wait before requesting another export.");
+  });
+
+  it("includes new preference fields when a preferences record exists", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+
+    const data = makeEmptyExportData();
+    data[1] = {
+      dietary: ["vegetarian", "gluten-free"],
+      mobility: ["wheelchair"],
+      languages: ["en", "es"],
+      travelFrequency: "monthly",
+      vibePreferences: ["chill", "adventurous"],
+      travelStyleNote: "I like slow travel with lots of local food stops.",
+      budgetComfort: "mid-range",
+      spendingPriorities: ["food", "accommodation"],
+      accommodationTypes: ["boutique", "airbnb"],
+      transitModes: ["train", "walk"],
+      preferencesNote: "Avoid tourist traps.",
+    };
+    mockPrisma.$transaction.mockResolvedValueOnce(data as never);
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(json.preferences).toEqual({
+      dietary: ["vegetarian", "gluten-free"],
+      mobility: ["wheelchair"],
+      languages: ["en", "es"],
+      travelFrequency: "monthly",
+      vibePreferences: ["chill", "adventurous"],
+      travelStyleNote: "I like slow travel with lots of local food stops.",
+      budgetComfort: "mid-range",
+      spendingPriorities: ["food", "accommodation"],
+      accommodationTypes: ["boutique", "airbnb"],
+      transitModes: ["train", "walk"],
+      preferencesNote: "Avoid tourist traps.",
+    });
+  });
+
+  it("includes checkinReminder and preTripDaysBefore when a notifications record exists", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+
+    const data = makeEmptyExportData();
+    data[2] = {
+      tripReminders: true,
+      morningBriefing: false,
+      groupActivity: true,
+      postTripPrompt: false,
+      citySeeded: true,
+      inspirationNudges: true,
+      productUpdates: false,
+      checkinReminder: true,
+      preTripDaysBefore: 7,
+    };
+    mockPrisma.$transaction.mockResolvedValueOnce(data as never);
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(json.notifications).toMatchObject({
+      checkinReminder: true,
+      preTripDaysBefore: 7,
+    });
+    // Confirm it's the real record, not the fallback
+    expect(json.notifications.morningBriefing).toBe(false);
+    expect(json.notifications.inspirationNudges).toBe(true);
   });
 });

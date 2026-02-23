@@ -1,7 +1,7 @@
 /**
  * Route handler tests for GET + PATCH /api/settings/preferences
  * Tests auth guards, validation, array deduplication, upsert behavior,
- * and field whitelisting (userId from session only).
+ * field whitelisting (userId from session only), and all 11 preference fields.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -57,6 +57,21 @@ function makePatchRequestInvalidJSON(): NextRequest {
 
 const authedSession = { user: { id: "user-abc", email: "test@example.com" } };
 
+// Full PREF_SELECT shape — all 11 fields
+const FULL_PREF_SELECT = {
+  dietary: true,
+  mobility: true,
+  languages: true,
+  travelFrequency: true,
+  vibePreferences: true,
+  travelStyleNote: true,
+  budgetComfort: true,
+  spendingPriorities: true,
+  accommodationTypes: true,
+  transitModes: true,
+  preferencesNote: true,
+};
+
 // ---------------------------------------------------------------------------
 // GET — auth guards
 // ---------------------------------------------------------------------------
@@ -86,7 +101,7 @@ describe("GET /api/settings/preferences — data retrieval", () => {
     vi.clearAllMocks();
   });
 
-  it("returns defaults when no record exists", async () => {
+  it("returns defaults when no record exists (all 11 fields)", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.userPreference.findUnique.mockResolvedValueOnce(null);
 
@@ -101,6 +116,11 @@ describe("GET /api/settings/preferences — data retrieval", () => {
       travelFrequency: null,
       vibePreferences: [],
       travelStyleNote: null,
+      budgetComfort: null,
+      spendingPriorities: [],
+      accommodationTypes: [],
+      transitModes: [],
+      preferencesNote: null,
     });
   });
 
@@ -111,6 +131,13 @@ describe("GET /api/settings/preferences — data retrieval", () => {
       mobility: ["wheelchair"],
       languages: ["non-english-menus"],
       travelFrequency: "monthly",
+      vibePreferences: ["hidden-gem"],
+      travelStyleNote: "I like slow travel",
+      budgetComfort: "mid-range",
+      spendingPriorities: ["food-drink", "experiences"],
+      accommodationTypes: ["boutique-hotel"],
+      transitModes: ["walking", "public-transit"],
+      preferencesNote: "Prefer quieter neighborhoods",
     };
     mockPrisma.userPreference.findUnique.mockResolvedValueOnce(
       savedPrefs as never
@@ -180,6 +207,42 @@ describe("PATCH /api/settings/preferences — validation", () => {
     const json = await res.json();
     expect(json.error).toBe("Validation failed");
   });
+
+  it("returns 400 for invalid budgetComfort value", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    const res = await PATCH(makePatchRequest({ budgetComfort: "luxury" }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("Validation failed");
+  });
+
+  it("returns 400 for invalid enum in spendingPriorities", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    const res = await PATCH(
+      makePatchRequest({ spendingPriorities: ["flights"] })
+    );
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("Validation failed");
+  });
+
+  it("returns 400 for invalid enum in accommodationTypes", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    const res = await PATCH(
+      makePatchRequest({ accommodationTypes: ["luxury-resort"] })
+    );
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("Validation failed");
+  });
+
+  it("returns 400 for invalid enum in transitModes", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    const res = await PATCH(makePatchRequest({ transitModes: ["helicopter"] }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe("Validation failed");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -190,7 +253,7 @@ describe("PATCH /api/settings/preferences — upsert behavior", () => {
     vi.clearAllMocks();
   });
 
-  it("upserts on first write with userId from session and empty defaults", async () => {
+  it("upserts on first write with userId from session and empty defaults (all 11 fields)", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     const upsertResult = {
       dietary: ["vegan"],
@@ -199,6 +262,11 @@ describe("PATCH /api/settings/preferences — upsert behavior", () => {
       travelFrequency: null,
       vibePreferences: [],
       travelStyleNote: null,
+      budgetComfort: null,
+      spendingPriorities: [],
+      accommodationTypes: [],
+      transitModes: [],
+      preferencesNote: null,
     };
     mockPrisma.userPreference.upsert.mockResolvedValueOnce(
       upsertResult as never
@@ -210,27 +278,39 @@ describe("PATCH /api/settings/preferences — upsert behavior", () => {
     const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
     expect(upsertCall.where).toEqual({ userId: "user-abc" });
     expect(upsertCall.create.userId).toBe("user-abc");
+
+    // Original 6 fields
     expect(upsertCall.create.dietary).toEqual(["vegan"]);
     expect(upsertCall.create.mobility).toEqual([]);
     expect(upsertCall.create.languages).toEqual([]);
     expect(upsertCall.create.travelFrequency).toBeNull();
-    expect(upsertCall.select).toEqual({
-      dietary: true,
-      mobility: true,
-      languages: true,
-      travelFrequency: true,
-      vibePreferences: true,
-      travelStyleNote: true,
-    });
+    expect(upsertCall.create.vibePreferences).toEqual([]);
+    expect(upsertCall.create.travelStyleNote).toBeNull();
+
+    // New 5 fields
+    expect(upsertCall.create.budgetComfort).toBeNull();
+    expect(upsertCall.create.spendingPriorities).toEqual([]);
+    expect(upsertCall.create.accommodationTypes).toEqual([]);
+    expect(upsertCall.create.transitModes).toEqual([]);
+    expect(upsertCall.create.preferencesNote).toBeNull();
+
+    expect(upsertCall.select).toEqual(FULL_PREF_SELECT);
   });
 
-  it("deduplicates arrays before saving", async () => {
+  it("deduplicates dietary arrays before saving", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.userPreference.upsert.mockResolvedValueOnce({
       dietary: ["vegan"],
       mobility: [],
       languages: [],
       travelFrequency: null,
+      vibePreferences: [],
+      travelStyleNote: null,
+      budgetComfort: null,
+      spendingPriorities: [],
+      accommodationTypes: [],
+      transitModes: [],
+      preferencesNote: null,
     } as never);
 
     await PATCH(makePatchRequest({ dietary: ["vegan", "vegan"] }));
@@ -240,6 +320,63 @@ describe("PATCH /api/settings/preferences — upsert behavior", () => {
     expect(upsertCall.create.dietary).toEqual(["vegan"]);
   });
 
+  it("deduplicates spendingPriorities before saving", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      spendingPriorities: ["food-drink"],
+    } as never);
+
+    await PATCH(
+      makePatchRequest({
+        spendingPriorities: ["food-drink", "food-drink", "experiences", "experiences"],
+      })
+    );
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.spendingPriorities).toEqual([
+      "food-drink",
+      "experiences",
+    ]);
+    expect(upsertCall.create.spendingPriorities).toEqual([
+      "food-drink",
+      "experiences",
+    ]);
+  });
+
+  it("deduplicates accommodationTypes before saving", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      accommodationTypes: ["hostel"],
+    } as never);
+
+    await PATCH(
+      makePatchRequest({
+        accommodationTypes: ["hostel", "hostel", "airbnb"],
+      })
+    );
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.accommodationTypes).toEqual(["hostel", "airbnb"]);
+    expect(upsertCall.create.accommodationTypes).toEqual(["hostel", "airbnb"]);
+  });
+
+  it("deduplicates transitModes before saving", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      transitModes: ["walking"],
+    } as never);
+
+    await PATCH(
+      makePatchRequest({
+        transitModes: ["walking", "walking", "biking"],
+      })
+    );
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.transitModes).toEqual(["walking", "biking"]);
+    expect(upsertCall.create.transitModes).toEqual(["walking", "biking"]);
+  });
+
   it("stores empty array when clearing selections", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.userPreference.upsert.mockResolvedValueOnce({
@@ -247,6 +384,13 @@ describe("PATCH /api/settings/preferences — upsert behavior", () => {
       mobility: [],
       languages: [],
       travelFrequency: null,
+      vibePreferences: [],
+      travelStyleNote: null,
+      budgetComfort: null,
+      spendingPriorities: [],
+      accommodationTypes: [],
+      transitModes: [],
+      preferencesNote: null,
     } as never);
 
     await PATCH(makePatchRequest({ dietary: [] }));
@@ -254,6 +398,97 @@ describe("PATCH /api/settings/preferences — upsert behavior", () => {
     const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
     expect(upsertCall.update.dietary).toEqual([]);
     expect(upsertCall.create.dietary).toEqual([]);
+  });
+
+  it("PATCH with valid budgetComfort succeeds", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      budgetComfort: "mid-range",
+    } as never);
+
+    const res = await PATCH(makePatchRequest({ budgetComfort: "mid-range" }));
+    expect(res.status).toBe(200);
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.budgetComfort).toBe("mid-range");
+    expect(upsertCall.create.budgetComfort).toBe("mid-range");
+  });
+
+  it("PATCH with budgetComfort null clears the field", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      budgetComfort: null,
+    } as never);
+
+    const res = await PATCH(makePatchRequest({ budgetComfort: null }));
+    expect(res.status).toBe(200);
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.budgetComfort).toBeNull();
+    expect(upsertCall.create.budgetComfort).toBeNull();
+  });
+
+  it("PATCH with valid spendingPriorities array succeeds", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      spendingPriorities: ["food-drink", "accommodation"],
+    } as never);
+
+    const res = await PATCH(
+      makePatchRequest({ spendingPriorities: ["food-drink", "accommodation"] })
+    );
+    expect(res.status).toBe(200);
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.spendingPriorities).toEqual([
+      "food-drink",
+      "accommodation",
+    ]);
+  });
+
+  it("PATCH preferencesNote empty string normalizes to null", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      preferencesNote: null,
+    } as never);
+
+    await PATCH(makePatchRequest({ preferencesNote: "" }));
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.preferencesNote).toBeNull();
+    expect(upsertCall.create.preferencesNote).toBeNull();
+  });
+
+  it("PATCH preferencesNote whitespace-only string normalizes to null", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      preferencesNote: null,
+    } as never);
+
+    await PATCH(makePatchRequest({ preferencesNote: "   " }));
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.preferencesNote).toBeNull();
+    expect(upsertCall.create.preferencesNote).toBeNull();
+  });
+
+  it("PATCH preferencesNote with content passes through trimmed", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      preferencesNote: "Quiet neighborhoods preferred",
+    } as never);
+
+    await PATCH(
+      makePatchRequest({ preferencesNote: "  Quiet neighborhoods preferred  " })
+    );
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.preferencesNote).toBe(
+      "Quiet neighborhoods preferred"
+    );
+    expect(upsertCall.create.preferencesNote).toBe(
+      "Quiet neighborhoods preferred"
+    );
   });
 });
 
@@ -272,6 +507,13 @@ describe("PATCH /api/settings/preferences — field whitelisting", () => {
       mobility: [],
       languages: [],
       travelFrequency: null,
+      vibePreferences: [],
+      travelStyleNote: null,
+      budgetComfort: null,
+      spendingPriorities: [],
+      accommodationTypes: [],
+      transitModes: [],
+      preferencesNote: null,
     } as never);
 
     await PATCH(
@@ -298,6 +540,13 @@ describe("PATCH /api/settings/preferences — field whitelisting", () => {
       mobility: [],
       languages: [],
       travelFrequency: "monthly",
+      vibePreferences: [],
+      travelStyleNote: null,
+      budgetComfort: "splurge",
+      spendingPriorities: ["experiences"],
+      accommodationTypes: ["boutique-hotel"],
+      transitModes: ["walking"],
+      preferencesNote: null,
     } as never);
 
     const res = await PATCH(
@@ -305,21 +554,145 @@ describe("PATCH /api/settings/preferences — field whitelisting", () => {
     );
     const json = await res.json();
 
-    // Verify the upsert uses PREF_SELECT to limit returned fields
+    // Verify the upsert uses PREF_SELECT to limit returned fields (all 11)
     const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
-    expect(upsertCall.select).toEqual({
-      dietary: true,
-      mobility: true,
-      languages: true,
-      travelFrequency: true,
-      vibePreferences: true,
-      travelStyleNote: true,
-    });
+    expect(upsertCall.select).toEqual(FULL_PREF_SELECT);
 
     // Response should only contain data fields
     expect(json).not.toHaveProperty("id");
     expect(json).not.toHaveProperty("userId");
     expect(json).not.toHaveProperty("createdAt");
     expect(json).not.toHaveProperty("updatedAt");
+  });
+
+  it("PREF_SELECT includes all 11 preference fields", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      budgetComfort: "mix",
+    } as never);
+
+    await PATCH(makePatchRequest({ budgetComfort: "mix" }));
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    const selectKeys = Object.keys(upsertCall.select);
+
+    expect(selectKeys).toContain("dietary");
+    expect(selectKeys).toContain("mobility");
+    expect(selectKeys).toContain("languages");
+    expect(selectKeys).toContain("travelFrequency");
+    expect(selectKeys).toContain("vibePreferences");
+    expect(selectKeys).toContain("travelStyleNote");
+    expect(selectKeys).toContain("budgetComfort");
+    expect(selectKeys).toContain("spendingPriorities");
+    expect(selectKeys).toContain("accommodationTypes");
+    expect(selectKeys).toContain("transitModes");
+    expect(selectKeys).toContain("preferencesNote");
+    expect(selectKeys).toHaveLength(11);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PATCH — new enum validation (dairy-free, pescatarian, no-pork, service-animal, limited-stamina)
+// ---------------------------------------------------------------------------
+describe("PATCH /api/settings/preferences — expanded enum coverage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("accepts new dietary options: dairy-free, pescatarian, no-pork", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      dietary: ["dairy-free", "pescatarian", "no-pork"],
+    } as never);
+
+    const res = await PATCH(
+      makePatchRequest({ dietary: ["dairy-free", "pescatarian", "no-pork"] })
+    );
+    expect(res.status).toBe(200);
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.dietary).toEqual([
+      "dairy-free",
+      "pescatarian",
+      "no-pork",
+    ]);
+  });
+
+  it("accepts new mobility options: service-animal, limited-stamina", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      mobility: ["service-animal", "limited-stamina"],
+    } as never);
+
+    const res = await PATCH(
+      makePatchRequest({ mobility: ["service-animal", "limited-stamina"] })
+    );
+    expect(res.status).toBe(200);
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.mobility).toEqual([
+      "service-animal",
+      "limited-stamina",
+    ]);
+  });
+
+  it("accepts all valid budgetComfort enum values", async () => {
+    const validValues = ["budget", "mid-range", "splurge", "mix"];
+
+    for (const value of validValues) {
+      vi.clearAllMocks();
+      mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+      mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+        budgetComfort: value,
+      } as never);
+
+      const res = await PATCH(makePatchRequest({ budgetComfort: value }));
+      expect(res.status).toBe(200);
+    }
+  });
+
+  it("accepts all valid transitModes enum values", async () => {
+    const validModes = [
+      "walking",
+      "public-transit",
+      "rideshare",
+      "rental-car",
+      "biking",
+      "scooter",
+    ];
+
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      transitModes: validModes,
+    } as never);
+
+    const res = await PATCH(makePatchRequest({ transitModes: validModes }));
+    expect(res.status).toBe(200);
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.transitModes).toEqual(validModes);
+  });
+
+  it("accepts all valid accommodationTypes enum values", async () => {
+    const validTypes = [
+      "hostel",
+      "boutique-hotel",
+      "chain-hotel",
+      "airbnb",
+      "camping",
+    ];
+
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
+      accommodationTypes: validTypes,
+    } as never);
+
+    const res = await PATCH(
+      makePatchRequest({ accommodationTypes: validTypes })
+    );
+    expect(res.status).toBe(200);
+
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
+    expect(upsertCall.update.accommodationTypes).toEqual(validTypes);
   });
 });

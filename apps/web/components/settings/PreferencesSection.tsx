@@ -1,10 +1,18 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import type {
+  DIETARY_OPTIONS,
+  MOBILITY_OPTIONS,
+  BUDGET_OPTIONS,
+  SPENDING_PRIORITY_OPTIONS,
+  ACCOMMODATION_OPTIONS,
+  TRANSIT_OPTIONS,
+} from "@/lib/validations/settings";
 
 // ---------- Label Maps ----------
 
-const DIETARY_LABELS: Record<string, string> = {
+const DIETARY_LABELS: Record<(typeof DIETARY_OPTIONS)[number], string> = {
   vegan: "Vegan",
   vegetarian: "Vegetarian",
   halal: "Halal",
@@ -12,18 +20,54 @@ const DIETARY_LABELS: Record<string, string> = {
   "gluten-free": "Gluten-free",
   "nut-allergy": "Nut allergy",
   shellfish: "Shellfish allergy",
+  "dairy-free": "Dairy-free",
+  pescatarian: "Pescatarian",
+  "no-pork": "No pork",
 };
 
-const MOBILITY_LABELS: Record<string, string> = {
+const MOBILITY_LABELS: Record<(typeof MOBILITY_OPTIONS)[number], string> = {
   wheelchair: "Wheelchair accessible",
   "low-step": "Low-step preferred",
   "elevator-required": "Elevator required",
   "sensory-friendly": "Sensory-friendly",
+  "service-animal": "Service animal",
+  "limited-stamina": "Limited stamina",
 };
 
 const LANGUAGE_LABELS: Record<string, string> = {
   "non-english-menus": "Comfortable with non-English menus",
   "limited-english-staff": "OK with limited English staff",
+};
+
+const BUDGET_LABELS: Record<(typeof BUDGET_OPTIONS)[number], string> = {
+  budget: "Budget-friendly",
+  "mid-range": "Mid-range",
+  splurge: "Splurge-worthy",
+  mix: "Mix of everything",
+};
+
+const SPENDING_LABELS: Record<(typeof SPENDING_PRIORITY_OPTIONS)[number], string> = {
+  "food-drink": "Food & drink",
+  experiences: "Experiences",
+  accommodation: "Accommodation",
+  shopping: "Shopping",
+};
+
+const ACCOMMODATION_LABELS: Record<(typeof ACCOMMODATION_OPTIONS)[number], string> = {
+  hostel: "Hostel",
+  "boutique-hotel": "Boutique hotel",
+  "chain-hotel": "Chain hotel",
+  airbnb: "Airbnb / rental",
+  camping: "Camping",
+};
+
+const TRANSIT_LABELS: Record<(typeof TRANSIT_OPTIONS)[number], string> = {
+  walking: "Walking",
+  "public-transit": "Public transit",
+  rideshare: "Rideshare",
+  "rental-car": "Rental car",
+  biking: "Biking",
+  scooter: "Scooter",
 };
 
 const FREQUENCY_OPTIONS = [
@@ -39,6 +83,13 @@ type PrefsState = {
   mobility: string[];
   languages: string[];
   travelFrequency: string | null;
+  vibePreferences: string[];
+  travelStyleNote: string | null;
+  budgetComfort: string | null;
+  spendingPriorities: string[];
+  accommodationTypes: string[];
+  transitModes: string[];
+  preferencesNote: string | null;
 };
 
 const DEFAULTS: PrefsState = {
@@ -46,6 +97,13 @@ const DEFAULTS: PrefsState = {
   mobility: [],
   languages: [],
   travelFrequency: null,
+  vibePreferences: [],
+  travelStyleNote: null,
+  budgetComfort: null,
+  spendingPriorities: [],
+  accommodationTypes: [],
+  transitModes: [],
+  preferencesNote: null,
 };
 
 // ---------- Icons ----------
@@ -70,11 +128,14 @@ function CheckIcon() {
 
 // ---------- Component ----------
 
+type ArrayField = "dietary" | "mobility" | "languages" | "spendingPriorities" | "accommodationTypes" | "transitModes";
+type ScalarField = "travelFrequency" | "budgetComfort";
+
 export function PreferencesSection() {
   const [prefs, setPrefs] = useState<PrefsState>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [noteText, setNoteText] = useState("");
   const lastSavedRef = useRef<PrefsState>(DEFAULTS);
 
   useEffect(() => {
@@ -87,6 +148,7 @@ export function PreferencesSection() {
         if (!cancelled) {
           setPrefs(data);
           lastSavedRef.current = data;
+          setNoteText(data.preferencesNote ?? "");
           setLoading(false);
         }
       } catch {
@@ -100,49 +162,50 @@ export function PreferencesSection() {
     return () => { cancelled = true; };
   }, []);
 
-  const save = useCallback((next: PrefsState) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch("/api/settings/preferences", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(next),
-        });
-        if (!res.ok) throw new Error();
-        const saved = await res.json();
-        lastSavedRef.current = saved;
-      } catch {
-        // Revert all on failure
-        setPrefs(lastSavedRef.current);
-      }
-    }, 500);
+  const patchField = useCallback(async (field: string, value: unknown) => {
+    try {
+      const res = await fetch("/api/settings/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (!res.ok) throw new Error();
+      const saved = await res.json();
+      lastSavedRef.current = saved;
+    } catch {
+      // Revert on failure
+      setPrefs(lastSavedRef.current);
+      setNoteText(lastSavedRef.current.preferencesNote ?? "");
+    }
   }, []);
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
-  function toggleArray(field: "dietary" | "mobility" | "languages", value: string) {
+  function toggleArray(field: ArrayField, value: string) {
     setPrefs((prev) => {
       const arr = prev[field];
       const next = arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
       const updated = { ...prev, [field]: next };
-      save(updated);
+      patchField(field, next);
       return updated;
     });
   }
 
-  function setFrequency(value: string | null) {
+  function setScalar(field: ScalarField, value: string | null) {
     setPrefs((prev) => {
-      const updated = { ...prev, travelFrequency: value };
-      save(updated);
+      const updated = { ...prev, [field]: value };
+      patchField(field, value);
       return updated;
     });
   }
+
+  function handleNoteBlur() {
+    const trimmed = noteText.trim();
+    const normalized = trimmed === "" ? null : trimmed;
+    if (normalized === lastSavedRef.current.preferencesNote) return;
+    setPrefs((prev) => ({ ...prev, preferencesNote: normalized }));
+    patchField("preferencesNote", normalized);
+  }
+
+  const remaining = 500 - noteText.length;
 
   return (
     <section aria-labelledby="preferences-heading">
@@ -150,7 +213,7 @@ export function PreferencesSection() {
         My Preferences
       </h2>
 
-      <div className="rounded-[20px] border border-warm-border bg-warm-surface p-5 space-y-6">
+      <div className="rounded-[20px] border border-warm-border bg-warm-surface p-5">
         {loading ? (
           <div className="space-y-4 animate-pulse">
             <div className="h-4 w-32 bg-warm-border rounded" />
@@ -169,8 +232,8 @@ export function PreferencesSection() {
         ) : error ? (
           <p className="font-sora text-sm text-red-400">Failed to load preferences.</p>
         ) : (
-          <>
-            {/* Dietary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+            {/* Dietary needs */}
             <fieldset>
               <legend className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
                 Dietary needs
@@ -204,7 +267,7 @@ export function PreferencesSection() {
               </div>
             </fieldset>
 
-            {/* Mobility */}
+            {/* Accessibility */}
             <fieldset>
               <legend className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
                 Accessibility
@@ -238,7 +301,159 @@ export function PreferencesSection() {
               </div>
             </fieldset>
 
-            {/* Languages */}
+            {/* Budget comfort */}
+            <fieldset>
+              <legend className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
+                Budget comfort
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(BUDGET_LABELS).map(([value, label]) => (
+                  <label
+                    key={value}
+                    className={`
+                      flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer
+                      font-sora text-sm transition-colors
+                      ${prefs.budgetComfort === value
+                        ? "border-accent bg-accent/10 text-ink-100"
+                        : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+                      }
+                    `}
+                  >
+                    <input
+                      type="radio"
+                      name="budgetComfort"
+                      checked={prefs.budgetComfort === value}
+                      onChange={() => setScalar("budgetComfort", value)}
+                      className="sr-only"
+                    />
+                    {label}
+                  </label>
+                ))}
+                <label
+                  className={`
+                    flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer
+                    font-sora text-sm transition-colors
+                    ${prefs.budgetComfort === null
+                      ? "border-accent bg-accent/10 text-ink-100"
+                      : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+                    }
+                  `}
+                >
+                  <input
+                    type="radio"
+                    name="budgetComfort"
+                    checked={prefs.budgetComfort === null}
+                    onChange={() => setScalar("budgetComfort", null)}
+                    className="sr-only"
+                  />
+                  No preference
+                </label>
+              </div>
+            </fieldset>
+
+            {/* Spending priorities */}
+            <fieldset>
+              <legend className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
+                Spending priorities
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(SPENDING_LABELS).map(([slug, label]) => {
+                  const checked = prefs.spendingPriorities.includes(slug);
+                  return (
+                    <label
+                      key={slug}
+                      className={`
+                        flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer
+                        font-sora text-sm transition-colors
+                        ${checked
+                          ? "border-accent bg-accent/10 text-ink-100"
+                          : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+                        }
+                      `}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleArray("spendingPriorities", slug)}
+                        className="sr-only"
+                      />
+                      {checked && <CheckIcon />}
+                      {label}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            {/* Accommodation */}
+            <fieldset>
+              <legend className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
+                Accommodation
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(ACCOMMODATION_LABELS).map(([slug, label]) => {
+                  const checked = prefs.accommodationTypes.includes(slug);
+                  return (
+                    <label
+                      key={slug}
+                      className={`
+                        flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer
+                        font-sora text-sm transition-colors
+                        ${checked
+                          ? "border-accent bg-accent/10 text-ink-100"
+                          : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+                        }
+                      `}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleArray("accommodationTypes", slug)}
+                        className="sr-only"
+                      />
+                      {checked && <CheckIcon />}
+                      {label}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            {/* Getting around */}
+            <fieldset>
+              <legend className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
+                Getting around
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(TRANSIT_LABELS).map(([slug, label]) => {
+                  const checked = prefs.transitModes.includes(slug);
+                  return (
+                    <label
+                      key={slug}
+                      className={`
+                        flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer
+                        font-sora text-sm transition-colors
+                        ${checked
+                          ? "border-accent bg-accent/10 text-ink-100"
+                          : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+                        }
+                      `}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleArray("transitModes", slug)}
+                        className="sr-only"
+                      />
+                      {checked && <CheckIcon />}
+                      {label}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            {/* Language comfort */}
             <fieldset>
               <legend className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
                 Language comfort
@@ -294,7 +509,7 @@ export function PreferencesSection() {
                       type="radio"
                       name="travelFrequency"
                       checked={prefs.travelFrequency === value}
-                      onChange={() => setFrequency(value)}
+                      onChange={() => setScalar("travelFrequency", value)}
                       className="sr-only"
                     />
                     {label}
@@ -314,14 +529,37 @@ export function PreferencesSection() {
                     type="radio"
                     name="travelFrequency"
                     checked={prefs.travelFrequency === null}
-                    onChange={() => setFrequency(null)}
+                    onChange={() => setScalar("travelFrequency", null)}
                     className="sr-only"
                   />
                   No preference
                 </label>
               </div>
             </fieldset>
-          </>
+
+            {/* Free-form textarea (full width) */}
+            <fieldset className="sm:col-span-2">
+              <legend className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
+                Anything else about how you prefer to travel?
+              </legend>
+              <textarea
+                value={noteText}
+                onChange={(e) => {
+                  if (e.target.value.length <= 500) setNoteText(e.target.value);
+                }}
+                onBlur={handleNoteBlur}
+                placeholder="I always need a gym nearby, never book hostels..."
+                maxLength={500}
+                rows={3}
+                className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2 font-sora text-sm text-ink-100 placeholder:text-ink-500 focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+              />
+              {remaining <= 100 && (
+                <p className="mt-1 font-dm-mono text-[10px] text-ink-400 text-right">
+                  {remaining} characters remaining
+                </p>
+              )}
+            </fieldset>
+          </div>
         )}
       </div>
     </section>

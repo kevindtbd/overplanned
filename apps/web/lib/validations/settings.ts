@@ -13,6 +13,9 @@ export const DIETARY_OPTIONS = [
   "gluten-free",
   "nut-allergy",
   "shellfish",
+  "dairy-free",
+  "pescatarian",
+  "no-pork",
 ] as const;
 
 export const MOBILITY_OPTIONS = [
@@ -20,6 +23,8 @@ export const MOBILITY_OPTIONS = [
   "low-step",
   "elevator-required",
   "sensory-friendly",
+  "service-animal",
+  "limited-stamina",
 ] as const;
 
 export const LANGUAGE_OPTIONS = [
@@ -41,6 +46,11 @@ export const VIBE_PREFERENCE_OPTIONS = [
   "late-night", "early-morning", "solo-friendly", "group-friendly", "social-scene", "low-interaction",
 ] as const;
 
+export const BUDGET_OPTIONS = ["budget", "mid-range", "splurge", "mix"] as const;
+export const SPENDING_PRIORITY_OPTIONS = ["food-drink", "experiences", "accommodation", "shopping"] as const;
+export const ACCOMMODATION_OPTIONS = ["hostel", "boutique-hotel", "chain-hotel", "airbnb", "camping"] as const;
+export const TRANSIT_OPTIONS = ["walking", "public-transit", "rideshare", "rental-car", "biking", "scooter"] as const;
+
 export const DISTANCE_UNITS = ["mi", "km"] as const;
 export const TEMPERATURE_UNITS = ["F", "C"] as const;
 export const DATE_FORMATS = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"] as const;
@@ -59,6 +69,13 @@ export const updatePreferencesSchema = z
     // SECURITY: travelStyleNote MUST use delimiter isolation (<user_note> tags) when
     // fed to any LLM for persona extraction. Never pass raw text as instructions.
     travelStyleNote: z.string().max(500).optional(),
+    budgetComfort: z.enum(BUDGET_OPTIONS).nullable().optional(),
+    spendingPriorities: z.array(z.enum(SPENDING_PRIORITY_OPTIONS)).max(4).optional(),
+    accommodationTypes: z.array(z.enum(ACCOMMODATION_OPTIONS)).max(5).optional(),
+    transitModes: z.array(z.enum(TRANSIT_OPTIONS)).max(6).optional(),
+    // SECURITY: preferencesNote MUST use delimiter isolation (<user_note> tags) when
+    // fed to any LLM for persona extraction. Never pass raw text as instructions.
+    preferencesNote: z.string().max(500).optional(),
   })
   .refine((obj) => Object.keys(obj).length > 0, "At least one field required");
 

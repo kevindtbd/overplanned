@@ -33,10 +33,16 @@ function mockFetchSuccess(getData = CONSENT_DEFAULTS) {
 describe("PrivacySection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset localStorage spies
+    vi.spyOn(Storage.prototype, "getItem").mockReturnValue(null);
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => undefined);
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => undefined);
     // Mock URL.createObjectURL and revokeObjectURL
     global.URL.createObjectURL = vi.fn(() => "blob:test");
     global.URL.revokeObjectURL = vi.fn();
   });
+
+  // ─── Existing tests ───────────────────────────────────────────────────────
 
   it("renders skeleton during load, then toggles after GET resolves", async () => {
     mockFetchSuccess();
@@ -270,5 +276,109 @@ describe("PrivacySection", () => {
 
     // Confirm button should be re-enabled (not stuck in deleting state)
     expect(screen.getByText("Yes, delete my account")).not.toBeDisabled();
+  });
+
+  // ─── New tests: consent banner ────────────────────────────────────────────
+
+  it("banner renders on first visit when no localStorage flag is set", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockReturnValue(null);
+    mockFetchSuccess();
+
+    render(<PrivacySection email="test@example.com" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("consent-banner")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("How your data helps")).toBeInTheDocument();
+  });
+
+  it("banner 'Got it' click sets localStorage and hides the banner", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(Storage.prototype, "getItem").mockReturnValue(null);
+    const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
+    mockFetchSuccess();
+
+    render(<PrivacySection email="test@example.com" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("consent-banner")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("Got it"));
+
+    expect(setItemSpy).toHaveBeenCalledWith("consent-banner-seen", "1");
+    await waitFor(() => {
+      expect(screen.queryByTestId("consent-banner")).not.toBeInTheDocument();
+    });
+  });
+
+  it("banner is hidden when localStorage flag is already present", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation((key) =>
+      key === "consent-banner-seen" ? "1" : null
+    );
+    mockFetchSuccess();
+
+    render(<PrivacySection email="test@example.com" />);
+
+    // Wait for component to finish loading so the useEffect has run
+    await waitFor(() => {
+      expect(screen.getAllByRole("switch")).toHaveLength(2);
+    });
+
+    expect(screen.queryByTestId("consent-banner")).not.toBeInTheDocument();
+  });
+
+  // ─── New tests: reframed toggle labels ────────────────────────────────────
+
+  it("renders new toggle labels after load", async () => {
+    mockFetchSuccess();
+
+    render(<PrivacySection email="test@example.com" />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("switch")).toHaveLength(2);
+    });
+
+    expect(screen.getByText("Help us learn your travel style")).toBeInTheDocument();
+    expect(screen.getByText("Contribute to travel insights")).toBeInTheDocument();
+  });
+
+  // ─── New tests: sub-text under toggles ───────────────────────────────────
+
+  it("renders sub-text under each toggle after load", async () => {
+    mockFetchSuccess();
+
+    render(<PrivacySection email="test@example.com" />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("switch")).toHaveLength(2);
+    });
+
+    expect(
+      screen.getByText(/We use your trip patterns and preferences/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Your anonymized data helps us understand/i)
+    ).toBeInTheDocument();
+  });
+
+  // ─── New tests: toggle off-state class ───────────────────────────────────
+
+  it("toggle switch button has bg-ink-500 class when unchecked", async () => {
+    mockFetchSuccess();
+
+    render(<PrivacySection email="test@example.com" />);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("switch")).toHaveLength(2);
+    });
+
+    const toggles = screen.getAllByRole("switch");
+    // Both start unchecked per CONSENT_DEFAULTS
+    toggles.forEach((toggle) => {
+      expect(toggle).toHaveAttribute("aria-checked", "false");
+      expect(toggle.className).toContain("bg-ink-500");
+    });
   });
 });

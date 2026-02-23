@@ -18,6 +18,11 @@ const PREF_SELECT = {
   travelFrequency: true,
   vibePreferences: true,
   travelStyleNote: true,
+  budgetComfort: true,
+  spendingPriorities: true,
+  accommodationTypes: true,
+  transitModes: true,
+  preferencesNote: true,
 } as const;
 
 const DEFAULTS = {
@@ -27,6 +32,11 @@ const DEFAULTS = {
   travelFrequency: null as string | null,
   vibePreferences: [] as string[],
   travelStyleNote: null as string | null,
+  budgetComfort: null as string | null,
+  spendingPriorities: [] as string[],
+  accommodationTypes: [] as string[],
+  transitModes: [] as string[],
+  preferencesNote: null as string | null,
 };
 
 export async function GET() {
@@ -68,7 +78,7 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  // Server-side array deduplication
+  // Server-side array deduplication + scalar pass-through
   const data: Record<string, unknown> = {};
   if (result.data.dietary !== undefined) {
     data.dietary = [...new Set(result.data.dietary)];
@@ -88,6 +98,23 @@ export async function PATCH(req: NextRequest) {
   if (result.data.travelStyleNote !== undefined) {
     data.travelStyleNote = result.data.travelStyleNote;
   }
+  if (result.data.budgetComfort !== undefined) {
+    data.budgetComfort = result.data.budgetComfort;
+  }
+  if (result.data.spendingPriorities !== undefined) {
+    data.spendingPriorities = [...new Set(result.data.spendingPriorities)];
+  }
+  if (result.data.accommodationTypes !== undefined) {
+    data.accommodationTypes = [...new Set(result.data.accommodationTypes)];
+  }
+  if (result.data.transitModes !== undefined) {
+    data.transitModes = [...new Set(result.data.transitModes)];
+  }
+  if (result.data.preferencesNote !== undefined) {
+    // Normalize empty string to null
+    const trimmed = result.data.preferencesNote.trim();
+    data.preferencesNote = trimmed === "" ? null : trimmed;
+  }
 
   const updated = await prisma.userPreference.upsert({
     where: { userId },
@@ -99,6 +126,11 @@ export async function PATCH(req: NextRequest) {
       travelFrequency: (data.travelFrequency as string | null) ?? null,
       vibePreferences: (data.vibePreferences as string[]) ?? [],
       travelStyleNote: (data.travelStyleNote as string | null) ?? null,
+      budgetComfort: (data.budgetComfort as string | null) ?? null,
+      spendingPriorities: (data.spendingPriorities as string[]) ?? [],
+      accommodationTypes: (data.accommodationTypes as string[]) ?? [],
+      transitModes: (data.transitModes as string[]) ?? [],
+      preferencesNote: (data.preferencesNote as string | null) ?? null,
     },
     update: data,
     select: PREF_SELECT,

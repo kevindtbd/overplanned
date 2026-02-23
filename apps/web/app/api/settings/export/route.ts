@@ -55,13 +55,19 @@ export async function GET() {
     }),
     prisma.userPreference.findUnique({
       where: { userId },
-      select: { dietary: true, mobility: true, languages: true, travelFrequency: true },
+      select: {
+        dietary: true, mobility: true, languages: true, travelFrequency: true,
+        vibePreferences: true, travelStyleNote: true,
+        budgetComfort: true, spendingPriorities: true, accommodationTypes: true,
+        transitModes: true, preferencesNote: true,
+      },
     }),
     prisma.notificationPreference.findUnique({
       where: { userId },
       select: {
         tripReminders: true, morningBriefing: true, groupActivity: true,
         postTripPrompt: true, citySeeded: true, inspirationNudges: true, productUpdates: true,
+        checkinReminder: true, preTripDaysBefore: true,
       },
     }),
     prisma.dataConsent.findUnique({
@@ -130,10 +136,16 @@ export async function GET() {
       createdAt: user.createdAt,
       subscriptionTier: user.subscriptionTier,
     },
-    preferences: preferences ?? { dietary: [], mobility: [], languages: [], travelFrequency: null },
+    preferences: preferences ?? {
+      dietary: [], mobility: [], languages: [], travelFrequency: null,
+      vibePreferences: [], travelStyleNote: null,
+      budgetComfort: null, spendingPriorities: [], accommodationTypes: [],
+      transitModes: [], preferencesNote: null,
+    },
     notifications: notifications ?? {
       tripReminders: true, morningBriefing: true, groupActivity: true,
       postTripPrompt: true, citySeeded: true, inspirationNudges: false, productUpdates: false,
+      checkinReminder: false, preTripDaysBefore: 3,
     },
     consent: consent ?? { modelTraining: false, anonymizedResearch: false },
     trips: tripMembers.map((tm: any) => tm.trip),
