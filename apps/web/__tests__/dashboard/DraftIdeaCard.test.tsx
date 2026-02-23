@@ -13,15 +13,16 @@ vi.mock("next/link", () => ({
 const baseDraft: TripSummary = {
   id: "draft-abc-123",
   name: null,
-  destination: "Tokyo, Japan",
-  city: "Tokyo",
-  country: "Japan",
+  primaryDestination: "Tokyo, Japan",
+  primaryCity: "Tokyo",
+  primaryCountry: "Japan",
   mode: "solo",
   status: "draft",
   startDate: "2026-04-10",
   endDate: "2026-04-17",
   planningProgress: 0,
   memberCount: 1,
+  legCount: 1,
   createdAt: "2026-02-20T00:00:00Z",
 };
 

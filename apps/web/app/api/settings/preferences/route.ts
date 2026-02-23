@@ -16,6 +16,8 @@ const PREF_SELECT = {
   mobility: true,
   languages: true,
   travelFrequency: true,
+  vibePreferences: true,
+  travelStyleNote: true,
 } as const;
 
 const DEFAULTS = {
@@ -23,6 +25,8 @@ const DEFAULTS = {
   mobility: [] as string[],
   languages: [] as string[],
   travelFrequency: null as string | null,
+  vibePreferences: [] as string[],
+  travelStyleNote: null as string | null,
 };
 
 export async function GET() {
@@ -78,6 +82,12 @@ export async function PATCH(req: NextRequest) {
   if (result.data.travelFrequency !== undefined) {
     data.travelFrequency = result.data.travelFrequency;
   }
+  if (result.data.vibePreferences !== undefined) {
+    data.vibePreferences = [...new Set(result.data.vibePreferences)];
+  }
+  if (result.data.travelStyleNote !== undefined) {
+    data.travelStyleNote = result.data.travelStyleNote;
+  }
 
   const updated = await prisma.userPreference.upsert({
     where: { userId },
@@ -87,6 +97,8 @@ export async function PATCH(req: NextRequest) {
       mobility: (data.mobility as string[]) ?? [],
       languages: (data.languages as string[]) ?? [],
       travelFrequency: (data.travelFrequency as string | null) ?? null,
+      vibePreferences: (data.vibePreferences as string[]) ?? [],
+      travelStyleNote: (data.travelStyleNote as string | null) ?? null,
     },
     update: data,
     select: PREF_SELECT,

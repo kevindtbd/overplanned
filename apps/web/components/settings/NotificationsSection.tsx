@@ -9,6 +9,7 @@ type NotifField =
   | "morningBriefing"
   | "groupActivity"
   | "postTripPrompt"
+  | "checkinReminder"
   | "citySeeded"
   | "inspirationNudges"
   | "productUpdates";
@@ -26,6 +27,7 @@ const NOTIF_GROUPS: NotifGroup[] = [
       { field: "morningBriefing", label: "Daily plans for active trips" },
       { field: "groupActivity", label: "When trip members make changes" },
       { field: "postTripPrompt", label: "Review prompts after trips end" },
+      { field: "checkinReminder", label: "Check-in prompts during active trips" },
     ],
   },
   {
@@ -52,6 +54,7 @@ const DEFAULTS: NotifsState = {
   morningBriefing: true,
   groupActivity: true,
   postTripPrompt: true,
+  checkinReminder: false,
   citySeeded: true,
   inspirationNudges: false,
   productUpdates: false,
@@ -61,6 +64,7 @@ const DEFAULTS: NotifsState = {
 
 export function NotificationsSection() {
   const [notifs, setNotifs] = useState<NotifsState>(DEFAULTS);
+  const [preTripDaysBefore, setPreTripDaysBefore] = useState(3);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -73,6 +77,7 @@ export function NotificationsSection() {
         const data = await res.json();
         if (!cancelled) {
           setNotifs(data);
+          setPreTripDaysBefore(data.preTripDaysBefore ?? 3);
           setLoading(false);
         }
       } catch {
@@ -106,6 +111,21 @@ export function NotificationsSection() {
     }
   }
 
+  async function handleDaysChange(value: number) {
+    const prev = preTripDaysBefore;
+    setPreTripDaysBefore(value);
+    try {
+      const res = await fetch("/api/settings/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preTripDaysBefore: value }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setPreTripDaysBefore(prev);
+    }
+  }
+
   return (
     <section aria-labelledby="notifications-heading">
       <h2 id="notifications-heading" className="font-sora text-lg font-medium text-ink-100 mb-4">
@@ -132,27 +152,62 @@ export function NotificationsSection() {
               </h3>
               <div className="space-y-3">
                 {group.items.map(({ field, label }) => (
-                  <div key={field} className="flex items-center justify-between">
-                    <span className="font-sora text-sm text-ink-200">{label}</span>
-                    <button
-                      role="switch"
-                      aria-checked={notifs[field]}
-                      onClick={() => toggle(field)}
-                      className={`
-                        relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full
-                        border-2 border-transparent transition-colors
-                        ${notifs[field] ? "bg-accent" : "bg-warm-border"}
-                      `}
-                    >
-                      <span
-                        aria-hidden="true"
+                  <div key={field}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-sora text-sm text-ink-200">{label}</span>
+                      <button
+                        role="switch"
+                        aria-checked={notifs[field]}
+                        onClick={() => toggle(field)}
                         className={`
-                          pointer-events-none inline-block h-5 w-5 rounded-full bg-white
-                          shadow-sm transition-transform
-                          ${notifs[field] ? "translate-x-4" : "translate-x-0"}
+                          relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full
+                          border-2 border-transparent transition-colors
+                          ${notifs[field] ? "bg-accent" : "bg-ink-500"}
                         `}
-                      />
-                    </button>
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`
+                            pointer-events-none inline-block h-5 w-5 rounded-full bg-white
+                            shadow-sm transition-transform
+                            ${notifs[field] ? "translate-x-4" : "translate-x-0"}
+                          `}
+                        />
+                      </button>
+                    </div>
+                    {field === "tripReminders" && notifs.tripReminders && (
+                      <div className="mt-2">
+                        <span className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 block mb-2">
+                          Remind me before trips
+                        </span>
+                        <div className="flex gap-2">
+                          {[
+                            { value: 1, label: "1 day" },
+                            { value: 3, label: "3 days" },
+                            { value: 7, label: "1 week" },
+                          ].map(({ value, label: pillLabel }) => (
+                            <label key={value} className={`
+                              flex items-center px-3 py-1.5 rounded-lg border cursor-pointer
+                              font-sora text-sm transition-colors
+                              ${preTripDaysBefore === value
+                                ? "border-accent bg-accent/10 text-ink-100"
+                                : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+                              }
+                            `}>
+                              <input
+                                type="radio"
+                                name="preTripDaysBefore"
+                                value={value}
+                                checked={preTripDaysBefore === value}
+                                onChange={() => handleDaysChange(value)}
+                                className="sr-only"
+                              />
+                              {pillLabel}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

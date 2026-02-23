@@ -44,22 +44,27 @@ function ArrowRightIcon() {
 // ---------- Component ----------
 
 export function DraftIdeaCard({ trip }: { trip: TripSummary }) {
+  const city = trip.primaryCity ?? "Unknown";
+  const country = trip.primaryCountry ?? "";
+
   return (
     <Link
       href={`/onboarding?resume=${trip.id}`}
       className="block rounded-[20px] border border-warm-border bg-warm-surface p-5 transition-colors hover:border-accent/30"
-      aria-label={`Continue planning trip to ${trip.city}, ${trip.country}`}
+      aria-label={`Continue planning trip to ${city}${country ? `, ${country}` : ""}`}
       data-testid="draft-idea-card"
     >
-      {/* City name */}
+      {/* City name or route */}
       <h3 className="font-sora text-lg font-medium text-ink-100">
-        {trip.city}
+        {trip.routeString || city}
       </h3>
 
-      {/* Country */}
-      <p className="font-dm-mono text-xs text-ink-400 mt-0.5">
-        {trip.country}
-      </p>
+      {/* Country (only when no route string — route already includes cities) */}
+      {!trip.routeString && country && (
+        <p className="font-dm-mono text-xs text-ink-400 mt-0.5">
+          {country}
+        </p>
+      )}
 
       {/* Dates (if available) */}
       {trip.startDate && trip.endDate && (

@@ -10,6 +10,7 @@ import { createTripSchema } from "@/lib/validations/trip";
 import { v4 as uuidv4 } from "uuid";
 import { prisma } from "@/lib/prisma";
 import { generateTripItinerary } from "@/lib/generation/generate-itinerary";
+import { buildRouteString } from "@/lib/trip-legs";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -105,10 +106,19 @@ export async function POST(req: NextRequest) {
     // Generate itinerary slots per leg
     let generationResult: { slotsCreated: number; source: "seeded" | "empty" } = { slotsCreated: 0, source: "empty" };
     try {
+      const userPrefs = await prisma.userPreference.findUnique({
+        where: { userId },
+        select: { vibePreferences: true },
+      });
+
       const seed = {
         pace: (personaSeed as any)?.pace ?? "moderate",
         morningPreference: (personaSeed as any)?.morningPreference ?? "mid",
         foodPreferences: (personaSeed as any)?.foodPreferences ?? [],
+        vibePreferences: [
+          ...((personaSeed as any)?.vibePreferences ?? []),
+          ...(userPrefs?.vibePreferences ?? []),
+        ],
         freeformVibes: (personaSeed as any)?.freeformVibes,
         template: presetTemplate ?? (personaSeed as any)?.template,
       };
@@ -208,7 +218,6 @@ export async function GET(_req: NextRequest) {
                 position: true,
               },
               orderBy: { position: "asc" as const },
-              take: 1,
             },
             _count: {
               select: { members: true, legs: true },
@@ -230,6 +239,7 @@ export async function GET(_req: NextRequest) {
       primaryCity: trip.legs[0]?.city ?? null,
       primaryCountry: trip.legs[0]?.country ?? null,
       primaryDestination: trip.legs[0]?.destination ?? null,
+      routeString: trip.legs.length > 1 ? buildRouteString(trip.legs) : null,
       myRole: role,
       myStatus: status,
       joinedAt,

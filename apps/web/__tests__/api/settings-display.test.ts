@@ -1,7 +1,7 @@
 /**
- * Route handler tests for GET + PATCH /api/settings/preferences
- * Tests auth guards, validation, array deduplication, upsert behavior,
- * and field whitelisting (userId from session only).
+ * Route handler tests for GET + PATCH /api/settings/display
+ * Tests auth guards, validation, defaults fallback, upsert behavior,
+ * field whitelisting, and response shape.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -27,20 +27,14 @@ vi.mock("@/lib/auth/config", () => ({
 const { getServerSession } = await import("next-auth");
 const { prisma } = await import("@/lib/prisma");
 const { GET, PATCH } = await import(
-  "../../app/api/settings/preferences/route"
+  "../../app/api/settings/display/route"
 );
 
 const mockGetServerSession = vi.mocked(getServerSession);
 const mockPrisma = vi.mocked(prisma);
 
-function makeGetRequest(): NextRequest {
-  return new NextRequest("http://localhost:3000/api/settings/preferences", {
-    method: "GET",
-  });
-}
-
 function makePatchRequest(body: unknown): NextRequest {
-  return new NextRequest("http://localhost:3000/api/settings/preferences", {
+  return new NextRequest("http://localhost:3000/api/settings/display", {
     method: "PATCH",
     body: JSON.stringify(body),
     headers: { "Content-Type": "application/json" },
@@ -48,7 +42,7 @@ function makePatchRequest(body: unknown): NextRequest {
 }
 
 function makePatchRequestInvalidJSON(): NextRequest {
-  return new NextRequest("http://localhost:3000/api/settings/preferences", {
+  return new NextRequest("http://localhost:3000/api/settings/display", {
     method: "PATCH",
     body: "not json",
     headers: { "Content-Type": "application/json" },
@@ -57,10 +51,18 @@ function makePatchRequestInvalidJSON(): NextRequest {
 
 const authedSession = { user: { id: "user-abc", email: "test@example.com" } };
 
+const DEFAULTS = {
+  distanceUnit: "mi",
+  temperatureUnit: "F",
+  dateFormat: "MM/DD/YYYY",
+  timeFormat: "12h",
+  theme: "system",
+};
+
 // ---------------------------------------------------------------------------
 // GET — auth guards
 // ---------------------------------------------------------------------------
-describe("GET /api/settings/preferences — auth guards", () => {
+describe("GET /api/settings/display — auth guards", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -81,7 +83,7 @@ describe("GET /api/settings/preferences — auth guards", () => {
 // ---------------------------------------------------------------------------
 // GET — data retrieval
 // ---------------------------------------------------------------------------
-describe("GET /api/settings/preferences — data retrieval", () => {
+describe("GET /api/settings/display — data retrieval", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -94,23 +96,17 @@ describe("GET /api/settings/preferences — data retrieval", () => {
     expect(res.status).toBe(200);
 
     const json = await res.json();
-    expect(json).toEqual({
-      dietary: [],
-      mobility: [],
-      languages: [],
-      travelFrequency: null,
-      vibePreferences: [],
-      travelStyleNote: null,
-    });
+    expect(json).toEqual(DEFAULTS);
   });
 
-  it("returns saved preferences when record exists", async () => {
+  it("returns saved display prefs when record exists", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     const savedPrefs = {
-      dietary: ["vegan", "halal"],
-      mobility: ["wheelchair"],
-      languages: ["non-english-menus"],
-      travelFrequency: "monthly",
+      distanceUnit: "km",
+      temperatureUnit: "C",
+      dateFormat: "YYYY-MM-DD",
+      timeFormat: "24h",
+      theme: "dark",
     };
     mockPrisma.userPreference.findUnique.mockResolvedValueOnce(
       savedPrefs as never
@@ -127,14 +123,20 @@ describe("GET /api/settings/preferences — data retrieval", () => {
 // ---------------------------------------------------------------------------
 // PATCH — auth guards
 // ---------------------------------------------------------------------------
-describe("PATCH /api/settings/preferences — auth guards", () => {
+describe("PATCH /api/settings/display — auth guards", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("returns 401 when no session", async () => {
+  it("returns 401 when session is null", async () => {
     mockGetServerSession.mockResolvedValueOnce(null);
-    const res = await PATCH(makePatchRequest({ dietary: ["vegan"] }));
+    const res = await PATCH(makePatchRequest({ theme: "dark" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 401 when session has no user", async () => {
+    mockGetServerSession.mockResolvedValueOnce({ user: null } as never);
+    const res = await PATCH(makePatchRequest({ theme: "dark" }));
     expect(res.status).toBe(401);
   });
 });
@@ -142,7 +144,7 @@ describe("PATCH /api/settings/preferences — auth guards", () => {
 // ---------------------------------------------------------------------------
 // PATCH — validation
 // ---------------------------------------------------------------------------
-describe("PATCH /api/settings/preferences — validation", () => {
+describe("PATCH /api/settings/display — validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -163,19 +165,17 @@ describe("PATCH /api/settings/preferences — validation", () => {
     expect(json.error).toBe("Validation failed");
   });
 
-  it("returns 400 for invalid dietary array items", async () => {
+  it("returns 400 for invalid enum value (theme: 'blue')", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
-    const res = await PATCH(makePatchRequest({ dietary: ["pizza"] }));
+    const res = await PATCH(makePatchRequest({ theme: "blue" }));
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe("Validation failed");
   });
 
-  it("returns 400 for invalid travelFrequency value", async () => {
+  it("returns 400 for invalid distanceUnit", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
-    const res = await PATCH(
-      makePatchRequest({ travelFrequency: "every-decade" })
-    );
+    const res = await PATCH(makePatchRequest({ distanceUnit: "feet" }));
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe("Validation failed");
@@ -185,82 +185,39 @@ describe("PATCH /api/settings/preferences — validation", () => {
 // ---------------------------------------------------------------------------
 // PATCH — upsert behavior
 // ---------------------------------------------------------------------------
-describe("PATCH /api/settings/preferences — upsert behavior", () => {
+describe("PATCH /api/settings/display — upsert behavior", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("upserts on first write with userId from session and empty defaults", async () => {
+  it("upserts a single field with userId from session", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
-    const upsertResult = {
-      dietary: ["vegan"],
-      mobility: [],
-      languages: [],
-      travelFrequency: null,
-      vibePreferences: [],
-      travelStyleNote: null,
-    };
+    const upsertResult = { ...DEFAULTS, theme: "dark" };
     mockPrisma.userPreference.upsert.mockResolvedValueOnce(
       upsertResult as never
     );
 
-    const res = await PATCH(makePatchRequest({ dietary: ["vegan"] }));
+    const res = await PATCH(makePatchRequest({ theme: "dark" }));
     expect(res.status).toBe(200);
 
     const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
     expect(upsertCall.where).toEqual({ userId: "user-abc" });
-    expect(upsertCall.create.userId).toBe("user-abc");
-    expect(upsertCall.create.dietary).toEqual(["vegan"]);
-    expect(upsertCall.create.mobility).toEqual([]);
-    expect(upsertCall.create.languages).toEqual([]);
-    expect(upsertCall.create.travelFrequency).toBeNull();
+    expect(upsertCall.create).toMatchObject({ userId: "user-abc", theme: "dark" });
+    expect(upsertCall.update).toEqual({ theme: "dark" });
     expect(upsertCall.select).toEqual({
-      dietary: true,
-      mobility: true,
-      languages: true,
-      travelFrequency: true,
-      vibePreferences: true,
-      travelStyleNote: true,
+      distanceUnit: true,
+      temperatureUnit: true,
+      dateFormat: true,
+      timeFormat: true,
+      theme: true,
     });
-  });
-
-  it("deduplicates arrays before saving", async () => {
-    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
-    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
-      dietary: ["vegan"],
-      mobility: [],
-      languages: [],
-      travelFrequency: null,
-    } as never);
-
-    await PATCH(makePatchRequest({ dietary: ["vegan", "vegan"] }));
-
-    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
-    expect(upsertCall.update.dietary).toEqual(["vegan"]);
-    expect(upsertCall.create.dietary).toEqual(["vegan"]);
-  });
-
-  it("stores empty array when clearing selections", async () => {
-    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
-    mockPrisma.userPreference.upsert.mockResolvedValueOnce({
-      dietary: [],
-      mobility: [],
-      languages: [],
-      travelFrequency: null,
-    } as never);
-
-    await PATCH(makePatchRequest({ dietary: [] }));
-
-    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
-    expect(upsertCall.update.dietary).toEqual([]);
-    expect(upsertCall.create.dietary).toEqual([]);
   });
 });
 
 // ---------------------------------------------------------------------------
 // PATCH — field whitelisting & response shape
 // ---------------------------------------------------------------------------
-describe("PATCH /api/settings/preferences — field whitelisting", () => {
+describe("PATCH /api/settings/display — field whitelisting", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -268,55 +225,46 @@ describe("PATCH /api/settings/preferences — field whitelisting", () => {
   it("ignores extra fields like userId and id in body", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.userPreference.upsert.mockResolvedValueOnce({
-      dietary: ["halal"],
-      mobility: [],
-      languages: [],
-      travelFrequency: null,
+      ...DEFAULTS,
+      theme: "dark",
     } as never);
 
     await PATCH(
       makePatchRequest({
-        dietary: ["halal"],
+        theme: "dark",
         userId: "attacker-id",
         id: "fake-id",
       })
     );
 
     const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
-    // userId in where/create comes from session, not body
     expect(upsertCall.where).toEqual({ userId: "user-abc" });
     expect(upsertCall.create.userId).toBe("user-abc");
-    // update block should not contain userId or id
     expect(upsertCall.update).not.toHaveProperty("userId");
     expect(upsertCall.update).not.toHaveProperty("id");
   });
 
-  it("returns only data fields in response (no id/userId/timestamps)", async () => {
+  it("returns only display fields in response (no id/userId/timestamps)", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.userPreference.upsert.mockResolvedValueOnce({
-      dietary: ["kosher"],
-      mobility: [],
-      languages: [],
-      travelFrequency: "monthly",
+      distanceUnit: "km",
+      temperatureUnit: "C",
+      dateFormat: "DD/MM/YYYY",
+      timeFormat: "24h",
+      theme: "light",
     } as never);
 
-    const res = await PATCH(
-      makePatchRequest({ dietary: ["kosher"], travelFrequency: "monthly" })
-    );
+    const res = await PATCH(makePatchRequest({ distanceUnit: "km" }));
     const json = await res.json();
 
-    // Verify the upsert uses PREF_SELECT to limit returned fields
-    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
-    expect(upsertCall.select).toEqual({
-      dietary: true,
-      mobility: true,
-      languages: true,
-      travelFrequency: true,
-      vibePreferences: true,
-      travelStyleNote: true,
-    });
-
-    // Response should only contain data fields
+    const expectedKeys = [
+      "distanceUnit",
+      "temperatureUnit",
+      "dateFormat",
+      "timeFormat",
+      "theme",
+    ];
+    expect(Object.keys(json).sort()).toEqual(expectedKeys.sort());
     expect(json).not.toHaveProperty("id");
     expect(json).not.toHaveProperty("userId");
     expect(json).not.toHaveProperty("createdAt");

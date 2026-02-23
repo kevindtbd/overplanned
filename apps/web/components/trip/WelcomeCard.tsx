@@ -8,13 +8,19 @@ interface WelcomeCardProps {
   totalSlots: number;
   totalDays: number;
   onDismiss: () => void;
+  /** Multi-leg route string, e.g. "Tokyo → Kyoto → Osaka" */
+  routeString?: string;
 }
 
-export function WelcomeCard({ city, totalSlots, totalDays, onDismiss }: WelcomeCardProps) {
+export function WelcomeCard({ city, totalSlots, totalDays, onDismiss, routeString }: WelcomeCardProps) {
+  const title = routeString
+    ? `Your ${routeString} trip is ready`
+    : `Your ${city} itinerary is ready`;
+
   return (
     <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 space-y-2">
       <h3 className="font-sora text-base font-medium text-ink-100">
-        Your {city} itinerary is ready
+        {title}
       </h3>
       <p className="font-dm-mono text-xs text-ink-400 leading-relaxed">
         {totalSlots > 0

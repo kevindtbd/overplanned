@@ -6,6 +6,7 @@ const envSchema = z.object({
   NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL"),
   GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
   GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
+  STRIPE_SECRET_KEY: z.string().startsWith("sk_", "STRIPE_SECRET_KEY must start with sk_"),
 });
 
 function validateEnv() {

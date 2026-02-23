@@ -64,6 +64,8 @@ const DEFAULTS = {
   citySeeded: true,
   inspirationNudges: false,
   productUpdates: false,
+  checkinReminder: false,
+  preTripDaysBefore: 3,
 };
 
 describe("GET /api/settings/notifications — auth guards", () => {
@@ -112,6 +114,8 @@ describe("GET /api/settings/notifications — defaults and saved prefs", () => {
       citySeeded: false,
       inspirationNudges: true,
       productUpdates: true,
+      checkinReminder: true,
+      preTripDaysBefore: 7,
     };
     mockPrisma.notificationPreference.findUnique.mockResolvedValueOnce(
       savedPrefs as never
@@ -255,7 +259,7 @@ describe("PATCH /api/settings/notifications — field whitelisting and IDOR", ()
     expect(upsertCall.where.userId).not.toBe("attacker-id");
   });
 
-  it("returns only the 7 boolean notification fields", async () => {
+  it("returns only the 9 notification fields", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.notificationPreference.upsert.mockResolvedValueOnce(
       DEFAULTS as never
@@ -272,6 +276,8 @@ describe("PATCH /api/settings/notifications — field whitelisting and IDOR", ()
       "citySeeded",
       "inspirationNudges",
       "productUpdates",
+      "checkinReminder",
+      "preTripDaysBefore",
     ];
     expect(Object.keys(json).sort()).toEqual(expectedKeys.sort());
     expect(json).not.toHaveProperty("id");

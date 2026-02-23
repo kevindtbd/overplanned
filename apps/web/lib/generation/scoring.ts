@@ -24,8 +24,10 @@ export function scoreNodes(
 
   const categoryWeights = templateConfig?.weights ?? DEFAULT_WEIGHTS;
 
-  // Convert food preferences to lowercase set for matching
-  const foodPrefSet = new Set(personaSeed.foodPreferences.map(f => f.toLowerCase()));
+  // Convert food preferences + vibe preferences to a combined lowercase set for matching
+  const foodPrefs = personaSeed.foodPreferences.map(f => f.toLowerCase());
+  const vibePrefs = (personaSeed.vibePreferences ?? []).map(v => v.toLowerCase());
+  const prefSet = new Set([...foodPrefs, ...vibePrefs]);
 
   const scored: ScoredNode[] = nodes.map((node) => {
     let score = 0;
@@ -39,7 +41,7 @@ export function scoreNodes(
     const nodeTagNames = node.vibeTags.map(vt => vt.vibeTag.name.toLowerCase());
     const allNodeTags = new Set([...nodeTags, ...nodeTagNames]);
     let tagOverlap = 0;
-    for (const pref of foodPrefSet) {
+    for (const pref of prefSet) {
       if (allNodeTags.has(pref)) tagOverlap++;
       // Also check partial match (e.g. "ramen" matches "ramen-shops")
       for (const tag of allNodeTags) {
@@ -49,7 +51,7 @@ export function scoreNodes(
         }
       }
     }
-    score += Math.min(tagOverlap / Math.max(foodPrefSet.size, 1), 1) * 0.30;
+    score += Math.min(tagOverlap / Math.max(prefSet.size, 1), 1) * 0.30;
 
     // 3. Authority score (0 - 0.15)
     if (node.authorityScore != null) {

@@ -15,15 +15,17 @@ import { getCityPhoto } from "@/lib/city-photos";
 export interface TripSummary {
   id: string;
   name: string | null;
-  destination: string;
-  city: string;
-  country: string;
+  primaryDestination: string | null;
+  primaryCity: string | null;
+  primaryCountry: string | null;
   mode: string;
   status: string;
   startDate: string;
   endDate: string;
   planningProgress: number;
   memberCount: number;
+  legCount: number;
+  routeString: string | null;
   createdAt: string;
 }
 
@@ -41,8 +43,10 @@ function formatDateRange(start: string, end: string): string {
 // ---------- Component ----------
 
 export function TripHeroCard({ trip }: { trip: TripSummary }) {
-  const photo = getCityPhoto(trip.city);
-  const displayName = trip.name || trip.destination;
+  const city = trip.primaryCity ?? "Unknown";
+  const country = trip.primaryCountry ?? "";
+  const photo = getCityPhoto(city);
+  const displayName = trip.name || trip.primaryDestination || city;
   const progress = Math.min(Math.max(trip.planningProgress ?? 0, 0), 100);
 
   return (
@@ -76,7 +80,7 @@ export function TripHeroCard({ trip }: { trip: TripSummary }) {
 
           {/* Destination + dates */}
           <p className="font-dm-mono text-sm text-white/80 mt-1">
-            {trip.city}, {trip.country}
+            {trip.routeString || `${city}${country ? `, ${country}` : ""}`}
           </p>
           <p className="font-dm-mono text-xs text-white/60 mt-0.5">
             {formatDateRange(trip.startDate, trip.endDate)}

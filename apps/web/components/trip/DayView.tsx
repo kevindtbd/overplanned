@@ -27,15 +27,16 @@ interface DayViewProps {
   showFlag?: boolean;
   /** Total days in the trip (for move-to-day dropdown) */
   totalDays?: number;
+  timeFormat?: "12h" | "24h";
 }
 
-function formatTimeMarker(isoString: string, timezone?: string): string {
+function formatTimeMarker(isoString: string, timezone?: string, timeFormat?: "12h" | "24h"): string {
   try {
     const date = new Date(isoString);
     return date.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
-      hour12: true,
+      hour12: timeFormat === "24h" ? false : true,
       timeZone: timezone || undefined,
     });
   } catch {
@@ -98,6 +99,7 @@ export function DayView({
   showPivot = false,
   showFlag = false,
   totalDays,
+  timeFormat = "12h",
 }: DayViewProps) {
   // Sort slots by sortOrder (already from DB) or startTime fallback
   const sortedSlots = [...slots].sort((a, b) => {
@@ -119,7 +121,7 @@ export function DayView({
     >
       {sortedSlots.map((slot, index) => {
         const timeMarker = slot.startTime
-          ? formatTimeMarker(slot.startTime, timezone)
+          ? formatTimeMarker(slot.startTime, timezone, timeFormat)
           : null;
         const isLast = index === sortedSlots.length - 1;
 

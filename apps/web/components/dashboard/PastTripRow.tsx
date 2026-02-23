@@ -18,8 +18,10 @@ function formatShortDateRange(start: string, end: string): string {
 }
 
 export function PastTripRow({ trip }: { trip: TripSummary }) {
-  const photo = getCityPhoto(trip.city, 400);
-  const displayName = trip.name || trip.destination;
+  const city = trip.primaryCity ?? "Unknown";
+  const country = trip.primaryCountry ?? "";
+  const photo = getCityPhoto(city, 400);
+  const displayName = trip.name || trip.primaryDestination || city;
 
   return (
     <Link
@@ -43,7 +45,7 @@ export function PastTripRow({ trip }: { trip: TripSummary }) {
           {displayName}
         </h4>
         <p className="font-dm-mono text-xs text-ink-400 mt-0.5">
-          {trip.city}, {trip.country}
+          {city}{country ? `, ${country}` : ""}
         </p>
       </div>
 

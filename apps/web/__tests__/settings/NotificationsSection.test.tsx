@@ -8,9 +8,11 @@ const GET_DEFAULTS = {
   morningBriefing: true,
   groupActivity: true,
   postTripPrompt: true,
+  checkinReminder: false,
   citySeeded: true,
   inspirationNudges: false,
   productUpdates: false,
+  preTripDaysBefore: 3,
 };
 
 function mockFetchSuccess(getData = GET_DEFAULTS) {
@@ -47,7 +49,7 @@ describe("NotificationsSection", () => {
     });
 
     const toggles = screen.getAllByRole("switch");
-    expect(toggles).toHaveLength(7);
+    expect(toggles).toHaveLength(8);
   });
 
   it("all 7 toggles render with correct default states", async () => {
@@ -55,20 +57,20 @@ describe("NotificationsSection", () => {
     render(<NotificationsSection />);
 
     await waitFor(() => {
-      expect(screen.getAllByRole("switch")).toHaveLength(7);
+      expect(screen.getAllByRole("switch")).toHaveLength(8);
     });
 
     const toggles = screen.getAllByRole("switch");
 
-    // First 5 are true, last 2 are false (matching GET_DEFAULTS order from NOTIF_GROUPS)
-    // Order: tripReminders, morningBriefing, groupActivity, postTripPrompt, citySeeded, inspirationNudges, productUpdates
+    // Order: tripReminders, morningBriefing, groupActivity, postTripPrompt, checkinReminder, citySeeded, inspirationNudges, productUpdates
     expect(toggles[0]).toHaveAttribute("aria-checked", "true");  // tripReminders
     expect(toggles[1]).toHaveAttribute("aria-checked", "true");  // morningBriefing
     expect(toggles[2]).toHaveAttribute("aria-checked", "true");  // groupActivity
     expect(toggles[3]).toHaveAttribute("aria-checked", "true");  // postTripPrompt
-    expect(toggles[4]).toHaveAttribute("aria-checked", "true");  // citySeeded
-    expect(toggles[5]).toHaveAttribute("aria-checked", "false"); // inspirationNudges
-    expect(toggles[6]).toHaveAttribute("aria-checked", "false"); // productUpdates
+    expect(toggles[4]).toHaveAttribute("aria-checked", "false"); // checkinReminder
+    expect(toggles[5]).toHaveAttribute("aria-checked", "true");  // citySeeded
+    expect(toggles[6]).toHaveAttribute("aria-checked", "false"); // inspirationNudges
+    expect(toggles[7]).toHaveAttribute("aria-checked", "false"); // productUpdates
   });
 
   it("toggle click triggers immediate PATCH with single field in body", async () => {
@@ -78,7 +80,7 @@ describe("NotificationsSection", () => {
     render(<NotificationsSection />);
 
     await waitFor(() => {
-      expect(screen.getAllByRole("switch")).toHaveLength(7);
+      expect(screen.getAllByRole("switch")).toHaveLength(8);
     });
 
     const toggles = screen.getAllByRole("switch");
@@ -103,18 +105,18 @@ describe("NotificationsSection", () => {
     render(<NotificationsSection />);
 
     await waitFor(() => {
-      expect(screen.getAllByRole("switch")).toHaveLength(7);
+      expect(screen.getAllByRole("switch")).toHaveLength(8);
     });
 
     const toggles = screen.getAllByRole("switch");
 
-    // inspirationNudges starts false
-    expect(toggles[5]).toHaveAttribute("aria-checked", "false");
+    // inspirationNudges starts false (index 6 after checkinReminder insertion)
+    expect(toggles[6]).toHaveAttribute("aria-checked", "false");
 
-    await user.click(toggles[5]);
+    await user.click(toggles[6]);
 
     // Should now be true (optimistic update)
-    expect(toggles[5]).toHaveAttribute("aria-checked", "true");
+    expect(toggles[6]).toHaveAttribute("aria-checked", "true");
   });
 
   it("reverts toggle on PATCH failure", async () => {
@@ -132,7 +134,7 @@ describe("NotificationsSection", () => {
     render(<NotificationsSection />);
 
     await waitFor(() => {
-      expect(screen.getAllByRole("switch")).toHaveLength(7);
+      expect(screen.getAllByRole("switch")).toHaveLength(8);
     });
 
     const toggles = screen.getAllByRole("switch");
@@ -164,7 +166,7 @@ describe("NotificationsSection", () => {
     render(<NotificationsSection />);
 
     await waitFor(() => {
-      expect(screen.getAllByRole("switch")).toHaveLength(7);
+      expect(screen.getAllByRole("switch")).toHaveLength(8);
     });
 
     const toggles = screen.getAllByRole("switch");

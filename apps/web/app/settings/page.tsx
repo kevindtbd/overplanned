@@ -1,17 +1,31 @@
 "use client";
 
 // Settings Page -- /settings
-// Single scrollable page: Account, Subscription, Preferences, Notifications, Privacy, About.
+// Single scrollable page with anchor nav: Account, Subscription, Display, Preferences,
+// Travel Interests, Notifications, Privacy, About.
 
 import { useSession } from "next-auth/react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CardSkeleton, ErrorState } from "@/components/states";
 import { AccountSection } from "@/components/settings/AccountSection";
 import { SubscriptionBadge } from "@/components/settings/SubscriptionBadge";
+import { DisplayPreferences } from "@/components/settings/DisplayPreferences";
 import { PreferencesSection } from "@/components/settings/PreferencesSection";
+import { TravelInterests } from "@/components/settings/TravelInterests";
 import { NotificationsSection } from "@/components/settings/NotificationsSection";
 import { PrivacySection } from "@/components/settings/PrivacySection";
 import { AboutSection } from "@/components/settings/AboutSection";
+
+const SECTION_ANCHORS = [
+  { id: "account", label: "Account" },
+  { id: "subscription", label: "Subscription" },
+  { id: "display", label: "Display" },
+  { id: "preferences", label: "Preferences" },
+  { id: "travel-interests", label: "Interests" },
+  { id: "notifications", label: "Notifications" },
+  { id: "privacy", label: "Privacy" },
+  { id: "about", label: "About" },
+];
 
 // ---------- Component ----------
 
@@ -45,6 +59,21 @@ export default function SettingsPage() {
           <ErrorState message="You need to be signed in to view settings." />
         )}
 
+        {/* Anchor nav */}
+        {status === "authenticated" && (
+          <nav className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {SECTION_ANCHORS.map((s) => (
+              <a
+                key={s.id}
+                href={`#${s.id}`}
+                className="shrink-0 rounded-full border border-warm-border px-3 py-1 font-dm-mono text-xs text-ink-400 transition-colors hover:border-terracotta hover:text-terracotta"
+              >
+                {s.label}
+              </a>
+            ))}
+          </nav>
+        )}
+
         {/* Authenticated — render sections */}
         {status === "authenticated" && session?.user && (
           <div className="space-y-10">
@@ -56,7 +85,11 @@ export default function SettingsPage() {
 
             <SubscriptionBadge tier={session.user.subscriptionTier} />
 
+            <DisplayPreferences />
+
             <PreferencesSection />
+
+            <TravelInterests />
 
             <NotificationsSection />
 

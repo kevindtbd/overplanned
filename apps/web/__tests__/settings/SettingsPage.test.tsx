@@ -39,6 +39,14 @@ vi.mock("@/components/settings/NotificationsSection", () => ({
   NotificationsSection: () => <section><h2>Notifications</h2></section>,
 }));
 
+vi.mock("@/components/settings/DisplayPreferences", () => ({
+  DisplayPreferences: () => <section><h2>Display Preferences</h2></section>,
+}));
+
+vi.mock("@/components/settings/TravelInterests", () => ({
+  TravelInterests: () => <section><h2>Travel Interests</h2></section>,
+}));
+
 vi.mock("@/components/settings/PrivacySection", () => ({
   PrivacySection: () => <section><h2>Privacy & Data</h2></section>,
 }));
@@ -114,7 +122,8 @@ describe("SettingsPage — authenticated", () => {
 
   it("renders Account section with user data", () => {
     render(<SettingsPage />);
-    expect(screen.getByText("Account")).toBeInTheDocument();
+    // "Account" appears in both anchor nav and section heading — use heading role
+    expect(screen.getByRole("heading", { name: "Account" })).toBeInTheDocument();
     expect(screen.getByDisplayValue("Kevin")).toBeInTheDocument();
     expect(screen.getByText("kevin@example.com")).toBeInTheDocument();
     expect(screen.getByText("google")).toBeInTheDocument();
@@ -123,7 +132,8 @@ describe("SettingsPage — authenticated", () => {
 
   it("renders Subscription badge with tier", () => {
     render(<SettingsPage />);
-    expect(screen.getByText("Subscription")).toBeInTheDocument();
+    // "Subscription" appears in both anchor nav and section heading — use heading role
+    expect(screen.getByRole("heading", { name: "Subscription" })).toBeInTheDocument();
     // "Beta" appears in SubscriptionBadge and AboutSection version — use getAllByText
     const betaElements = screen.getAllByText("Beta");
     expect(betaElements.length).toBeGreaterThanOrEqual(1);
@@ -131,7 +141,9 @@ describe("SettingsPage — authenticated", () => {
 
   it("renders all stub sections", () => {
     render(<SettingsPage />);
+    expect(screen.getByText("Display Preferences")).toBeInTheDocument();
     expect(screen.getByText("My Preferences")).toBeInTheDocument();
+    expect(screen.getByText("Travel Interests")).toBeInTheDocument();
     // "Notifications" heading
     expect(screen.getByRole("heading", { name: "Notifications" })).toBeInTheDocument();
     expect(screen.getByText("Privacy & Data")).toBeInTheDocument();

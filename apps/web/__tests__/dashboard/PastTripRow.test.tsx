@@ -22,15 +22,16 @@ vi.mock("next/link", () => ({
 const mockTrip: TripSummary = {
   id: "trip-1",
   name: "Paris Getaway",
-  destination: "Paris, France",
-  city: "Paris",
-  country: "France",
+  primaryDestination: "Paris, France",
+  primaryCity: "Paris",
+  primaryCountry: "France",
   mode: "solo",
   status: "completed",
   startDate: "2025-12-10",
   endDate: "2025-12-17",
   planningProgress: 100,
   memberCount: 1,
+  legCount: 1,
   createdAt: "2025-11-01T00:00:00Z",
 };
 

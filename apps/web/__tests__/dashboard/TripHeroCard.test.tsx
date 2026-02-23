@@ -13,15 +13,16 @@ vi.mock("next/image", () => ({
 const mockTrip: TripSummary = {
   id: "trip-1",
   name: "Tokyo Adventure",
-  destination: "Tokyo, Japan",
-  city: "Tokyo",
-  country: "Japan",
+  primaryDestination: "Tokyo, Japan",
+  primaryCity: "Tokyo",
+  primaryCountry: "Japan",
   mode: "solo",
   status: "planning",
   startDate: "2026-03-15",
   endDate: "2026-03-22",
   planningProgress: 65,
   memberCount: 1,
+  legCount: 1,
   createdAt: "2026-02-01T00:00:00Z",
 };
 

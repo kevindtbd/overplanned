@@ -1,5 +1,5 @@
 /**
- * Tests for Phase 4: Onboarding draft save, resume flow, and completion branching.
+ * Tests for Onboarding draft save, resume flow, and completion branching.
  *
  * Strategy: mock all step sub-components as thin stubs. The test drives the wizard
  * by interacting with the Continue / Create trip buttons rendered by OnboardingContent
@@ -44,8 +44,7 @@ vi.mock("@/app/onboarding/components/BackfillStep", () => ({
   ),
 }));
 
-// DestinationStep mock: auto-calls onChange with a LaunchCity on mount so
-// tests don't have to simulate city selection.
+// DestinationStep mock: click "Select Tokyo" to set destination
 vi.mock("@/app/onboarding/components/DestinationStep", () => ({
   LAUNCH_CITIES: [
     { city: "Tokyo", country: "Japan", timezone: "Asia/Tokyo", destination: "Tokyo, Japan" },
@@ -58,7 +57,6 @@ vi.mock("@/app/onboarding/components/DestinationStep", () => ({
     value: unknown;
     onChange: (city: { city: string; country: string; timezone: string; destination: string }) => void;
   }) => {
-    // Immediately pre-select Tokyo so canAdvance() is true
     return (
       <div>
         <span>DestinationStep</span>
@@ -101,6 +99,30 @@ vi.mock("@/app/onboarding/components/DatesStep", () => ({
       </button>
     </div>
   ),
+}));
+
+vi.mock("@/app/onboarding/components/LegReviewStep", () => ({
+  LegReviewStep: ({
+    legs,
+    onRemoveLeg,
+    onAddAnother,
+  }: {
+    legs: any[];
+    onRemoveLeg: (i: number) => void;
+    onAddAnother: () => void;
+  }) => (
+    <div>
+      <span>LegReviewStep</span>
+      <span data-testid="leg-count">{legs.length} cities</span>
+      <button onClick={onAddAnother}>Add another city</button>
+      {legs.map((_: any, i: number) => (
+        <button key={i} onClick={() => onRemoveLeg(i)}>
+          Remove leg {i}
+        </button>
+      ))}
+    </div>
+  ),
+  OnboardingLeg: {},
 }));
 
 vi.mock("@/app/onboarding/components/TripDNAStep", () => ({
@@ -176,9 +198,21 @@ async function advanceToDates(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: /fill dates/i }));
 }
 
-async function advanceToName(user: ReturnType<typeof userEvent.setup>) {
+/**
+ * Advance to legReview (dates -> legReview adds the first leg)
+ */
+async function advanceToLegReview(user: ReturnType<typeof userEvent.setup>) {
   await advanceToDates(user);
-  // dates -> name (this is where draft save fires)
+  // dates -> legReview (adds first leg, fires draft save)
+  await user.click(screen.getByRole("button", { name: /continue/i }));
+}
+
+/**
+ * Advance to name step (legReview -> name)
+ */
+async function advanceToName(user: ReturnType<typeof userEvent.setup>) {
+  await advanceToLegReview(user);
+  // legReview -> name
   await user.click(screen.getByRole("button", { name: /continue/i }));
 }
 
@@ -197,7 +231,7 @@ describe("Onboarding — draft save on dates advance", () => {
     vi.restoreAllMocks();
   });
 
-  it("fires POST /api/trips/draft with correct payload when advancing from dates step", async () => {
+  it("fires POST /api/trips/draft with legs array when advancing from dates step", async () => {
     const user = userEvent.setup();
 
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -206,7 +240,7 @@ describe("Onboarding — draft save on dates advance", () => {
     });
 
     render(<OnboardingPage />);
-    await advanceToName(user);
+    await advanceToLegReview(user);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -223,17 +257,19 @@ describe("Onboarding — draft save on dates advance", () => {
     expect(draftCall).toBeTruthy();
 
     const body = JSON.parse((draftCall![1] as RequestInit).body as string);
-    expect(body).toMatchObject({
-      destination: "Tokyo, Japan",
+    expect(body.legs).toBeDefined();
+    expect(body.legs).toHaveLength(1);
+    expect(body.legs[0]).toMatchObject({
       city: "Tokyo",
       country: "Japan",
       timezone: "Asia/Tokyo",
-      startDate: expect.stringMatching(/^2026-04-01/),
-      endDate: expect.stringMatching(/^2026-04-07/),
+      destination: "Tokyo, Japan",
     });
+    expect(body.startDate).toBeDefined();
+    expect(body.endDate).toBeDefined();
   });
 
-  it("advances to name step immediately without waiting for draft POST", async () => {
+  it("advances to legReview step immediately without waiting for draft POST", async () => {
     const user = userEvent.setup();
 
     // Never resolves — simulates slow network
@@ -247,8 +283,8 @@ describe("Onboarding — draft save on dates advance", () => {
     // Click Continue from dates step
     await user.click(screen.getByRole("button", { name: /continue/i }));
 
-    // Name step should be visible immediately, not blocked by pending draft POST
-    expect(screen.getByText("Name your trip")).toBeInTheDocument();
+    // LegReview step should be visible immediately, not blocked by pending draft POST
+    expect(screen.getByText("LegReviewStep")).toBeInTheDocument();
   });
 
   it("does not fire a second draft POST on double-click (ref guard)", async () => {
@@ -263,14 +299,16 @@ describe("Onboarding — draft save on dates advance", () => {
     await advanceToDates(user);
 
     const continueBtn = screen.getByRole("button", { name: /continue/i });
-    // Two rapid clicks — userEvent processes them sequentially
+    // Click to advance from dates -> legReview
     await user.click(continueBtn);
 
-    // After advancing to name step, go back to dates and try again —
+    // Go back to dates and try again —
     // draftIdRef.current is already set so a second POST must not fire
     const backBtn = screen.getByRole("button", { name: /go back/i });
     await user.click(backBtn);
 
+    // Re-fill dates since going back restores the leg
+    await user.click(screen.getByRole("button", { name: /fill dates/i }));
     await user.click(screen.getByRole("button", { name: /continue/i }));
 
     await waitFor(() => {
@@ -311,7 +349,56 @@ describe("Onboarding — draft save on dates advance", () => {
     await advanceToDates(user);
     await user.click(screen.getByRole("button", { name: /continue/i }));
 
-    // Step advancement is not blocked by draft failure
+    // Step advancement is not blocked by draft failure — should be on legReview
+    expect(screen.getByText("LegReviewStep")).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("Onboarding — legReview step", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSearchParams = new URLSearchParams();
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ trip: { id: "draft-abc-123" } }),
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows legReview step with 1 city after first dates advance", async () => {
+    const user = userEvent.setup();
+
+    render(<OnboardingPage />);
+    await advanceToLegReview(user);
+
+    expect(screen.getByText("LegReviewStep")).toBeInTheDocument();
+    expect(screen.getByTestId("leg-count")).toHaveTextContent("1 cities");
+  });
+
+  it("'Add another city' goes back to destination step", async () => {
+    const user = userEvent.setup();
+
+    render(<OnboardingPage />);
+    await advanceToLegReview(user);
+
+    await user.click(screen.getByRole("button", { name: /add another city/i }));
+
+    expect(screen.getByText("DestinationStep")).toBeInTheDocument();
+  });
+
+  it("Continue from legReview goes to name step", async () => {
+    const user = userEvent.setup();
+
+    render(<OnboardingPage />);
+    await advanceToLegReview(user);
+
+    await user.click(screen.getByRole("button", { name: /continue/i }));
+
     expect(screen.getByText("Name your trip")).toBeInTheDocument();
   });
 });
@@ -330,7 +417,7 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
     vi.restoreAllMocks();
   });
 
-  it("pre-fills city and dates from draft trip data", async () => {
+  it("pre-fills legs from draft trip data and jumps to name", async () => {
     mockSearchParams = new URLSearchParams(`resume=${VALID_UUID}`);
 
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
@@ -339,10 +426,18 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
         trip: {
           id: VALID_UUID,
           status: "draft",
-          city: "Tokyo",
-          country: "Japan",
           startDate: "2026-05-01T00:00:00.000Z",
           endDate: "2026-05-07T00:00:00.000Z",
+          legs: [
+            {
+              city: "Tokyo",
+              country: "Japan",
+              timezone: "Asia/Tokyo",
+              destination: "Tokyo, Japan",
+              startDate: "2026-05-01T00:00:00.000Z",
+              endDate: "2026-05-07T00:00:00.000Z",
+            },
+          ],
         },
       }),
     });
@@ -364,10 +459,18 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
         trip: {
           id: VALID_UUID,
           status: "draft",
-          city: "Tokyo",
-          country: "Japan",
           startDate: "2026-05-01T00:00:00.000Z",
           endDate: "2026-05-07T00:00:00.000Z",
+          legs: [
+            {
+              city: "Tokyo",
+              country: "Japan",
+              timezone: "Asia/Tokyo",
+              destination: "Tokyo, Japan",
+              startDate: "2026-05-01T00:00:00.000Z",
+              endDate: "2026-05-07T00:00:00.000Z",
+            },
+          ],
         },
       }),
     });
@@ -392,10 +495,18 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
           trip: {
             id: VALID_UUID,
             status: "draft",
-            city: "Tokyo",
-            country: "Japan",
             startDate: "2026-05-01T00:00:00.000Z",
             endDate: "2026-05-07T00:00:00.000Z",
+            legs: [
+              {
+                city: "Tokyo",
+                country: "Japan",
+                timezone: "Asia/Tokyo",
+                destination: "Tokyo, Japan",
+                startDate: "2026-05-01T00:00:00.000Z",
+                endDate: "2026-05-07T00:00:00.000Z",
+              },
+            ],
           },
         }),
       })
@@ -435,7 +546,6 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
 
     await waitFor(() => {
       // Should have called PATCH, not POST /api/trips
-      // c[1] may be undefined for the GET call (no init object), so guard with optional chaining
       const patchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(
         (c: unknown[]) =>
           typeof c[0] === "string" &&
@@ -463,10 +573,18 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
         trip: {
           id: VALID_UUID,
           status: "draft",
-          city: "Tokyo",
-          country: "Japan",
           startDate: "2026-05-01T00:00:00.000Z",
           endDate: "2026-05-07T00:00:00.000Z",
+          legs: [
+            {
+              city: "Tokyo",
+              country: "Japan",
+              timezone: "Asia/Tokyo",
+              destination: "Tokyo, Japan",
+              startDate: "2026-05-01T00:00:00.000Z",
+              endDate: "2026-05-07T00:00:00.000Z",
+            },
+          ],
         },
       }),
     });
@@ -501,10 +619,9 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
         trip: {
           id: VALID_UUID,
           status: "planning",
-          city: "Tokyo",
-          country: "Japan",
           startDate: "2026-05-01T00:00:00.000Z",
           endDate: "2026-05-07T00:00:00.000Z",
+          legs: [],
         },
       }),
     });
@@ -552,7 +669,10 @@ describe("Onboarding — completion branching", () => {
     await user.click(screen.getByRole("button", { name: /continue/i }));
     await user.click(screen.getByRole("button", { name: /fill dates/i }));
 
-    // dates -> name (draft save fires here)
+    // dates -> legReview (draft save fires here)
+    await user.click(screen.getByRole("button", { name: /continue/i }));
+
+    // legReview -> name
     await user.click(screen.getByRole("button", { name: /continue/i }));
 
     // Wait for name step
@@ -639,7 +759,7 @@ describe("Onboarding — completion branching", () => {
     });
   });
 
-  it("falls back to POST when draft save failed (draftIdRef stays null)", async () => {
+  it("falls back to POST with legs when draft save failed (draftIdRef stays null)", async () => {
     const user = userEvent.setup();
 
     (global.fetch as ReturnType<typeof vi.fn>)
@@ -668,6 +788,12 @@ describe("Onboarding — completion branching", () => {
           (c[1] as RequestInit | undefined)?.method === "POST"
       );
       expect(postCall).toBeTruthy();
+
+      // POST payload should include legs array
+      const body = JSON.parse((postCall![1] as RequestInit).body as string);
+      expect(body.legs).toBeDefined();
+      expect(body.legs).toHaveLength(1);
+      expect(body.legs[0].city).toBe("Tokyo");
 
       // Should NOT have called PATCH
       const patchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(

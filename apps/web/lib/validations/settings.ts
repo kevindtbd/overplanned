@@ -33,12 +33,42 @@ export const TRAVEL_FREQUENCY_OPTIONS = [
   "constantly",
 ] as const;
 
+export const VIBE_PREFERENCE_OPTIONS = [
+  "high-energy", "slow-burn", "immersive",
+  "hidden-gem", "iconic-worth-it", "locals-only", "offbeat",
+  "destination-meal", "street-food", "local-institution", "drinks-forward",
+  "nature-immersive", "urban-exploration", "deep-history", "contemporary-culture", "hands-on", "scenic",
+  "late-night", "early-morning", "solo-friendly", "group-friendly", "social-scene", "low-interaction",
+] as const;
+
+export const DISTANCE_UNITS = ["mi", "km"] as const;
+export const TEMPERATURE_UNITS = ["F", "C"] as const;
+export const DATE_FORMATS = ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"] as const;
+export const TIME_FORMATS = ["12h", "24h"] as const;
+export const THEME_OPTIONS = ["light", "dark", "system"] as const;
+
+export const PRE_TRIP_DAYS = [1, 3, 7] as const;
+
 export const updatePreferencesSchema = z
   .object({
     dietary: z.array(z.enum(DIETARY_OPTIONS)).max(10).optional(),
     mobility: z.array(z.enum(MOBILITY_OPTIONS)).max(10).optional(),
     languages: z.array(z.enum(LANGUAGE_OPTIONS)).max(5).optional(),
     travelFrequency: z.enum(TRAVEL_FREQUENCY_OPTIONS).nullable().optional(),
+    vibePreferences: z.array(z.enum(VIBE_PREFERENCE_OPTIONS)).max(23).optional(),
+    // SECURITY: travelStyleNote MUST use delimiter isolation (<user_note> tags) when
+    // fed to any LLM for persona extraction. Never pass raw text as instructions.
+    travelStyleNote: z.string().max(500).optional(),
+  })
+  .refine((obj) => Object.keys(obj).length > 0, "At least one field required");
+
+export const updateDisplaySchema = z
+  .object({
+    distanceUnit: z.enum(DISTANCE_UNITS).optional(),
+    temperatureUnit: z.enum(TEMPERATURE_UNITS).optional(),
+    dateFormat: z.enum(DATE_FORMATS).optional(),
+    timeFormat: z.enum(TIME_FORMATS).optional(),
+    theme: z.enum(THEME_OPTIONS).optional(),
   })
   .refine((obj) => Object.keys(obj).length > 0, "At least one field required");
 
@@ -51,6 +81,8 @@ export const updateNotificationsSchema = z
     citySeeded: z.boolean().optional(),
     inspirationNudges: z.boolean().optional(),
     productUpdates: z.boolean().optional(),
+    checkinReminder: z.boolean().optional(),
+    preTripDaysBefore: z.number().int().refine(v => [1, 3, 7].includes(v), "Must be 1, 3, or 7").optional(),
   })
   .refine((obj) => Object.keys(obj).length > 0, "At least one field required");
 

@@ -10,33 +10,31 @@ import {
   type LaunchCity,
 } from "./components/DestinationStep";
 import { DatesStep } from "./components/DatesStep";
+import {
+  LegReviewStep,
+  type OnboardingLeg,
+} from "./components/LegReviewStep";
 import { TripDNAStep, type Pace, type MorningPreference } from "./components/TripDNAStep";
 import { TemplateStep } from "./components/TemplateStep";
 import { ErrorState } from "@/components/states";
 import { nightsBetween } from "@/lib/utils/dates";
 import { MAX_TRIP_NIGHTS } from "@/lib/constants/trip";
+import { autoTripName } from "@/lib/trip-legs";
 
-type WizardStep = "fork" | "backfill" | "destination" | "dates" | "name" | "dna" | "template";
+type WizardStep = "fork" | "backfill" | "destination" | "dates" | "legReview" | "name" | "dna" | "template";
 
 const STEP_ORDER: WizardStep[] = [
   "fork",
   "backfill",
   "destination",
   "dates",
+  "legReview",
   "name",
   "dna",
   "template",
 ];
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function generateTripName(city: string, startDate: string): string {
-  if (!startDate) return `${city} trip`;
-  const d = new Date(startDate);
-  const month = d.toLocaleString("en-US", { month: "short" });
-  const year = d.getFullYear();
-  return `${city} ${month} ${year}`;
-}
 
 function ArrowLeftIcon({ className }: { className?: string }) {
   return (
@@ -121,7 +119,7 @@ function OnboardingContent() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [draftSaveError, setDraftSaveError] = useState(false);
 
-  // Form state
+  // Form state — destination + dates are working state for the current leg being edited
   const [destination, setDestination] = useState<LaunchCity | null>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -133,6 +131,9 @@ function OnboardingContent() {
   const [foodPreferences, setFoodPreferences] = useState<string[]>([]);
   const [freeformVibes, setFreeformVibes] = useState("");
   const [template, setTemplate] = useState<string | null>(null);
+
+  // Accumulated legs for multi-city trips
+  const [legs, setLegs] = useState<OnboardingLeg[]>([]);
 
   // Draft state refs
   const isDraftSaving = useRef(false);
@@ -198,12 +199,28 @@ function OnboardingContent() {
           return;
         }
 
-        // Pre-fill destination from LAUNCH_CITIES match
-        const matchedDest = LAUNCH_CITIES.find(
-          (d) => d.city.toLowerCase() === (trip.city ?? "").toLowerCase()
-        );
-        if (matchedDest) {
-          setDestination(matchedDest);
+        // Restore legs from trip data
+        const tripLegs: OnboardingLeg[] = (trip.legs ?? []).map((l: any) => ({
+          city: l.city,
+          country: l.country,
+          timezone: l.timezone ?? "",
+          destination: l.destination,
+          startDate: typeof l.startDate === "string" ? l.startDate : new Date(l.startDate).toISOString(),
+          endDate: typeof l.endDate === "string" ? l.endDate : new Date(l.endDate).toISOString(),
+        }));
+        if (tripLegs.length > 0) {
+          setLegs(tripLegs);
+        }
+
+        // Pre-fill destination from first leg for backwards compat
+        const firstLeg = trip.legs?.[0];
+        if (firstLeg) {
+          const matchedDest = LAUNCH_CITIES.find(
+            (d) => d.city.toLowerCase() === firstLeg.city.toLowerCase()
+          );
+          if (matchedDest) {
+            setDestination(matchedDest);
+          }
         }
 
         // Convert ISO dates to YYYY-MM-DD for the DatesStep inputs
@@ -243,6 +260,8 @@ function OnboardingContent() {
           endDate > startDate &&
           nightsBetween(startDate, endDate) <= MAX_TRIP_NIGHTS
         );
+      case "legReview":
+        return legs.length > 0;
       case "name":
         return tripName.trim().length > 0;
       case "dna":
@@ -254,63 +273,165 @@ function OnboardingContent() {
     }
   }
 
+  /** Fire-and-forget draft save with constructed legs array */
+  function fireDraftSave(legsToSave: OnboardingLeg[]) {
+    isDraftSaving.current = true;
+    setDraftSaveError(false);
+
+    const overallStartDate = legsToSave[0].startDate;
+    const overallEndDate = legsToSave[legsToSave.length - 1].endDate;
+
+    fetch("/api/trips/draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        startDate: overallStartDate,
+        endDate: overallEndDate,
+        legs: legsToSave.map((l) => ({
+          city: l.city,
+          country: l.country,
+          timezone: l.timezone,
+          destination: l.destination,
+          startDate: l.startDate,
+          endDate: l.endDate,
+        })),
+      }),
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          draftIdRef.current = data.trip.id;
+        } else {
+          console.error("[onboarding] Draft save failed:", res.status);
+          setDraftSaveError(true);
+        }
+      })
+      .catch((err) => {
+        console.error("[onboarding] Draft save error:", err);
+        setDraftSaveError(true);
+      })
+      .finally(() => {
+        isDraftSaving.current = false;
+      });
+  }
+
+  /** Fire-and-forget add leg to existing draft */
+  function fireAddLeg(leg: OnboardingLeg) {
+    const draftId = draftIdRef.current;
+    if (!draftId) return;
+
+    fetch(`/api/trips/${draftId}/legs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        city: leg.city,
+        country: leg.country,
+        timezone: leg.timezone,
+        destination: leg.destination,
+        startDate: leg.startDate,
+        endDate: leg.endDate,
+      }),
+    }).catch((err) => {
+      console.error("[onboarding] Add leg error:", err);
+    });
+  }
+
   function goNext() {
     const idx = STEP_ORDER.indexOf(step);
-    if (idx < STEP_ORDER.length - 1) {
-      const nextStep = STEP_ORDER[idx + 1];
+    if (idx >= STEP_ORDER.length - 1) return;
+    const nextStep = STEP_ORDER[idx + 1];
 
-      // Auto-generate trip name when entering name step
-      if (nextStep === "name" && !tripNameTouched && destination) {
-        setTripName(generateTripName(destination.city, startDate));
+    // Track the effective legs for downstream logic (state updates are async)
+    let currentLegs = legs;
+
+    // dates → legReview: add current destination+dates as a new leg
+    if (step === "dates" && nextStep === "legReview" && canAdvance() && destination) {
+      const newLeg: OnboardingLeg = {
+        city: destination.city,
+        country: destination.country,
+        timezone: destination.timezone,
+        destination: destination.destination,
+        startDate: new Date(startDate).toISOString(),
+        endDate: new Date(endDate).toISOString(),
+      };
+
+      currentLegs = [...legs, newLeg];
+      setLegs(currentLegs);
+
+      // Fire draft save for first leg, add-leg for subsequent legs
+      if (legs.length === 0 && !isDraftSaving.current && !draftIdRef.current) {
+        fireDraftSave(currentLegs);
+      } else if (draftIdRef.current) {
+        fireAddLeg(newLeg);
       }
 
-      // Fire-and-forget draft save when advancing from dates step
-      if (step === "dates" && canAdvance()) {
-        if (!isDraftSaving.current && !draftIdRef.current && destination) {
-          isDraftSaving.current = true;
-          setDraftSaveError(false);
-
-          fetch("/api/trips/draft", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              destination: destination.destination,
-              city: destination.city,
-              country: destination.country,
-              timezone: destination.timezone,
-              startDate: new Date(startDate).toISOString(),
-              endDate: new Date(endDate).toISOString(),
-            }),
-          })
-            .then(async (res) => {
-              if (res.ok) {
-                const data = await res.json();
-                draftIdRef.current = data.trip.id;
-              } else {
-                console.error("[onboarding] Draft save failed:", res.status);
-                setDraftSaveError(true);
-              }
-            })
-            .catch((err) => {
-              console.error("[onboarding] Draft save error:", err);
-              setDraftSaveError(true);
-            })
-            .finally(() => {
-              isDraftSaving.current = false;
-            });
-        }
-      }
-
-      // Step transition is NOT blocked by the draft save — fire and forget
-      setStep(nextStep);
+      // Clear working state for potential next add
+      setDestination(null);
+      setStartDate("");
+      setEndDate("");
     }
+
+    // legReview → name: auto-generate trip name from accumulated legs
+    if (nextStep === "name" && !tripNameTouched && currentLegs.length > 0) {
+      setTripName(autoTripName(currentLegs, currentLegs[0].startDate));
+    }
+
+    // Step transition is NOT blocked by the draft save — fire and forget
+    setStep(nextStep);
   }
 
   function goBack() {
+    if (step === "legReview") {
+      // Undo the last leg add: restore it back to working destination/dates
+      const lastLeg = legs[legs.length - 1];
+      if (lastLeg) {
+        const matchedDest = LAUNCH_CITIES.find(
+          (d) => d.city.toLowerCase() === lastLeg.city.toLowerCase()
+        );
+        if (matchedDest) {
+          setDestination(matchedDest);
+        } else {
+          // Freeform city — reconstruct as a LaunchCity-shaped object
+          setDestination({
+            city: lastLeg.city,
+            country: lastLeg.country,
+            timezone: lastLeg.timezone,
+            destination: lastLeg.destination,
+          });
+        }
+        setStartDate(lastLeg.startDate.split("T")[0]);
+        setEndDate(lastLeg.endDate.split("T")[0]);
+        setLegs(legs.slice(0, -1));
+      }
+      setStep("dates");
+      return;
+    }
+
     const idx = STEP_ORDER.indexOf(step);
     if (idx > 0) {
       setStep(STEP_ORDER[idx - 1]);
     }
+  }
+
+  /** "Add another city" from LegReviewStep — go back to destination with default dates */
+  function handleAddAnother() {
+    setDestination(null);
+    const lastLeg = legs[legs.length - 1];
+    if (lastLeg) {
+      // Default start date to the day the previous leg ends
+      const nextStart = new Date(lastLeg.endDate);
+      setStartDate(nextStart.toISOString().split("T")[0]);
+      setEndDate("");
+    } else {
+      setStartDate("");
+      setEndDate("");
+    }
+    setStep("destination");
+  }
+
+  /** Remove a leg from the review list */
+  function handleRemoveLeg(index: number) {
+    setLegs((prev) => prev.filter((_, i) => i !== index));
   }
 
   const handleFoodToggle = useCallback((chip: string) => {
@@ -320,12 +441,16 @@ function OnboardingContent() {
   }, []);
 
   async function handleComplete() {
-    if (!destination || !startDate || !endDate || !pace || !morningPreference) {
+    if (legs.length === 0 || !pace || !morningPreference) {
       return;
     }
 
     setIsSubmitting(true);
     setSubmitError(null);
+
+    // Derive overall date range from legs
+    const overallStartDate = legs[0].startDate;
+    const overallEndDate = legs[legs.length - 1].endDate;
 
     try {
       let trip: { id: string };
@@ -360,17 +485,21 @@ function OnboardingContent() {
         const { trip: patchedTrip } = await res.json();
         trip = patchedTrip;
       } else {
-        // No draft — fall back to full POST
+        // No draft — fall back to full POST with legs array
         const payload = {
-          destination: destination.destination,
-          city: destination.city,
-          country: destination.country,
-          timezone: destination.timezone,
-          startDate: new Date(startDate).toISOString(),
-          endDate: new Date(endDate).toISOString(),
+          startDate: overallStartDate,
+          endDate: overallEndDate,
           name: tripName.trim(),
           mode: "solo" as const,
           presetTemplate: template,
+          legs: legs.map((l) => ({
+            city: l.city,
+            country: l.country,
+            timezone: l.timezone,
+            destination: l.destination,
+            startDate: l.startDate,
+            endDate: l.endDate,
+          })),
           personaSeed: {
             pace,
             morningPreference,
@@ -475,6 +604,16 @@ function OnboardingContent() {
               endDate={endDate}
               onStartDateChange={setStartDate}
               onEndDateChange={setEndDate}
+            />
+          </div>
+        )}
+
+        {step === "legReview" && (
+          <div className="pt-8">
+            <LegReviewStep
+              legs={legs}
+              onRemoveLeg={handleRemoveLeg}
+              onAddAnother={handleAddAnother}
             />
           </div>
         )}

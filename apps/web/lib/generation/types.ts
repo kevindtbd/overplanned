@@ -5,6 +5,7 @@ export interface PersonaSeed {
   pace: Pace;
   morningPreference: MorningPreference;
   foodPreferences: string[];
+  vibePreferences?: string[];
   freeformVibes?: string;
   template?: string;
 }

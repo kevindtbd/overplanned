@@ -1,6 +1,7 @@
 "use client";
 
 // DayNavigation — Swipeable (mobile) or tabbed (desktop) day selector.
+// Supports optional multi-city leg grouping.
 // Usage:
 //   <DayNavigation
 //     totalDays={5}
@@ -8,9 +9,19 @@
 //     onDayChange={setCurrentDay}
 //     startDate="2026-03-15"
 //     timezone="Asia/Tokyo"
+//     legs={[
+//       { id: "leg-1", city: "Tokyo", dayCount: 3 },
+//       { id: "leg-2", city: "Kyoto", dayCount: 2 },
+//     ]}
 //   />
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+interface LegInfo {
+  id: string;
+  city: string;
+  dayCount: number;
+}
 
 interface DayNavigationProps {
   totalDays: number;
@@ -19,6 +30,8 @@ interface DayNavigationProps {
   /** Trip start date ISO string — used to show actual dates on tabs */
   startDate: string;
   timezone?: string;
+  /** Optional leg info for multi-city trips — groups day pills by leg */
+  legs?: LegInfo[];
 }
 
 function formatDayLabel(startDate: string, dayNumber: number, timezone?: string): string {
@@ -36,12 +49,25 @@ function formatDayLabel(startDate: string, dayNumber: number, timezone?: string)
   }
 }
 
+/** Build leg groups with absolute day numbers from leg info */
+function buildLegGroups(legs: LegInfo[]): { leg: LegInfo; startDay: number; days: number[] }[] {
+  const groups: { leg: LegInfo; startDay: number; days: number[] }[] = [];
+  let dayOffset = 0;
+  for (const leg of legs) {
+    const days = Array.from({ length: leg.dayCount }, (_, i) => dayOffset + i + 1);
+    groups.push({ leg, startDay: dayOffset + 1, days });
+    dayOffset += leg.dayCount;
+  }
+  return groups;
+}
+
 export function DayNavigation({
   totalDays,
   currentDay,
   onDayChange,
   startDate,
   timezone,
+  legs,
 }: DayNavigationProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number>(0);
@@ -49,6 +75,8 @@ export function DayNavigation({
 
   const days = Array.from({ length: totalDays }, (_, i) => i + 1);
   const tabRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+
+  const legGroups = useMemo(() => (legs ? buildLegGroups(legs) : null), [legs]);
 
   const handlePrev = useCallback(() => {
     if (currentDay > 1) onDayChange(currentDay - 1);
@@ -91,6 +119,47 @@ export function DayNavigation({
     }
   }, [currentDay]);
 
+  /** Render a single day tab button */
+  function renderDayTab(day: number) {
+    const isActive = day === currentDay;
+    const label = formatDayLabel(startDate, day, timezone);
+
+    return (
+      <button
+        key={day}
+        ref={(el) => {
+          if (el) tabRefs.current.set(day, el);
+          else tabRefs.current.delete(day);
+        }}
+        type="button"
+        role="tab"
+        aria-selected={isActive}
+        aria-label={`Day ${day}, ${label}`}
+        onClick={() => onDayChange(day)}
+        className={`
+          shrink-0
+          px-[18px] py-[11px]
+          text-[13px] font-sora
+          border-b-2
+          transition-colors duration-150
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400
+          ${
+            isActive
+              ? "text-accent font-medium border-accent"
+              : "text-ink-400 font-normal border-transparent hover:text-ink-300"
+          }
+        `}
+      >
+        <span className="whitespace-nowrap">
+          Day {day}
+          <span className="font-dm-mono text-[10px] uppercase tracking-wider opacity-80 ml-1.5">
+            {label}
+          </span>
+        </span>
+      </button>
+    );
+  }
+
   return (
     <nav
       className="w-full"
@@ -130,57 +199,39 @@ export function DayNavigation({
           </svg>
         </button>
 
-        {/* Day tabs — horizontal scrollable underline strip */}
+        {/* Day tabs — horizontal scrollable strip, optionally grouped by leg */}
         <div
           ref={scrollRef}
           className="
             flex-1 overflow-x-auto scrollbar-none
-            flex gap-0
+            flex items-end gap-0
             scroll-smooth
             overscroll-x-contain
           "
           role="tablist"
           aria-label="Trip days"
         >
-          {days.map((day) => {
-            const isActive = day === currentDay;
-            const label = formatDayLabel(startDate, day, timezone);
-
-            return (
-              <button
-                key={day}
-                ref={(el) => {
-                  if (el) tabRefs.current.set(day, el);
-                  else tabRefs.current.delete(day);
-                }}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-label={`Day ${day}, ${label}`}
-                onClick={() => onDayChange(day)}
-                className={`
-                  shrink-0
-                  px-[18px] py-[11px]
-                  text-[13px] font-sora
-                  border-b-2
-                  transition-colors duration-150
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400
-                  ${
-                    isActive
-                      ? "text-accent font-medium border-accent"
-                      : "text-ink-400 font-normal border-transparent hover:text-ink-300"
-                  }
-                `}
-              >
-                <span className="whitespace-nowrap">
-                  Day {day}
-                  <span className="font-dm-mono text-[10px] uppercase tracking-wider opacity-80 ml-1.5">
-                    {label}
+          {legGroups ? (
+            legGroups.map((group, groupIdx) => (
+              <div key={group.leg.id} className="flex items-end">
+                {/* Separator between leg groups */}
+                {groupIdx > 0 && (
+                  <div className="w-px h-6 bg-warm-border mx-1 shrink-0" />
+                )}
+                {/* Leg group: city label + day tabs */}
+                <div className="flex flex-col">
+                  <span className="font-dm-mono text-[10px] uppercase tracking-wider text-ink-400 px-2 pb-1">
+                    {group.leg.city}
                   </span>
-                </span>
-              </button>
-            );
-          })}
+                  <div className="flex gap-0">
+                    {group.days.map((day) => renderDayTab(day))}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            days.map((day) => renderDayTab(day))
+          )}
         </div>
 
         {/* Next arrow */}
