@@ -76,9 +76,13 @@ async function getTripData(tripId: string) {
     select: {
       id: true,
       name: true,
-      destination: true,
       startDate: true,
       endDate: true,
+      legs: {
+        select: { destination: true, city: true },
+        orderBy: { position: "asc" },
+        take: 1,
+      },
       slots: {
         orderBy: [{ dayNumber: "asc" }, { sortOrder: "asc" }],
         select: {
@@ -135,7 +139,7 @@ async function getTripData(tripId: string) {
 
   return {
     id: trip.id,
-    name: trip.name || trip.destination,
+    name: trip.name || (trip.legs[0]?.destination ?? trip.legs[0]?.city ?? ""),
     totalDays,
     center,
     slots: trip.slots

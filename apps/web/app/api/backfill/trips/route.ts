@@ -5,7 +5,7 @@
  * entries (soft-deleted or admin-rejected).
  *
  * Response shape per trip:
- *   id, legs, primaryCity, primaryCountry, startDate, endDate, contextTag,
+ *   id, legs, city, country, startDate, endDate, contextTag,
  *   status, createdAt, updatedAt, resolvedVenueCount, totalVenueCount
  *
  * Intentionally omitted: confidenceTier, rawSubmission, rejectionReason
@@ -60,8 +60,8 @@ export async function GET(_req: NextRequest) {
     const result = trips.map((trip) => ({
       id: trip.id,
       legs: trip.legs,
-      primaryCity: trip.legs[0]?.city ?? null,
-      primaryCountry: trip.legs[0]?.country ?? null,
+      city: trip.legs[0]?.city ?? null,
+      country: trip.legs[0]?.country ?? null,
       startDate: trip.startDate,
       endDate: trip.endDate,
       contextTag: trip.contextTag,

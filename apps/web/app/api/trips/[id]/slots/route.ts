@@ -6,7 +6,7 @@
  * Auth: requires an active session.
  * IDOR: caller must be a TripMember with status "joined".
  * Validates: activityNodeId is a UUID, node exists, not archived,
- *            and node.city matches trip.city.
+ *            and node.city matches the trip's primary leg city.
  * Atomic: slot creation + behavioral signal written in one $transaction.
  */
 
@@ -84,7 +84,15 @@ export async function POST(
       }),
       prisma.trip.findUnique({
         where: { id: tripId },
-        select: { city: true, startDate: true, endDate: true },
+        select: {
+          startDate: true,
+          endDate: true,
+          legs: {
+            select: { city: true },
+            orderBy: { position: "asc" },
+            take: 1,
+          },
+        },
       }),
     ]);
 
@@ -106,7 +114,8 @@ export async function POST(
       return NextResponse.json({ error: "Trip not found" }, { status: 404 });
     }
 
-    if (activityNode.city.toLowerCase() !== trip.city.toLowerCase()) {
+    const tripCity = trip.legs[0]?.city ?? "";
+    if (activityNode.city.toLowerCase() !== tripCity.toLowerCase()) {
       return NextResponse.json(
         { error: "Activity city does not match trip destination" },
         { status: 422 }

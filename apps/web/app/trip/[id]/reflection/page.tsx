@@ -64,9 +64,9 @@ export default function ReflectionPage({
 
         setTrip({
           id: tripData.id,
-          destination: tripData.destination,
-          city: tripData.city,
-          country: tripData.country,
+          destination: tripData.legs?.[0]?.destination ?? tripData.legs?.[0]?.city ?? "",
+          city: tripData.legs?.[0]?.city ?? "",
+          country: tripData.legs?.[0]?.country ?? "",
           totalDays,
         });
 

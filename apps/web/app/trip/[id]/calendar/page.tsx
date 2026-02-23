@@ -31,6 +31,11 @@ export default async function CalendarPage({ params }: PageProps) {
       },
     },
     include: {
+      legs: {
+        select: { city: true, destination: true, timezone: true },
+        orderBy: { position: "asc" },
+        take: 1,
+      },
       slots: {
         include: {
           activityNode: {
@@ -57,9 +62,9 @@ export default async function CalendarPage({ params }: PageProps) {
     <CalendarClient
       trip={{
         id: trip.id,
-        destination: trip.destination,
-        city: trip.city,
-        timezone: trip.timezone,
+        destination: trip.legs[0]?.destination ?? trip.legs[0]?.city ?? "",
+        city: trip.legs[0]?.city ?? "",
+        timezone: trip.legs[0]?.timezone ?? "UTC",
         startDate: trip.startDate.toISOString(),
         endDate: trip.endDate.toISOString(),
         slots: trip.slots.map((s) => ({

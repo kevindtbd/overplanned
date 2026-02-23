@@ -140,8 +140,8 @@ export async function GET(
         trip: {
           id: trip.id,
           legs: trip.legs,
-          primaryCity: trip.legs[0]?.city ?? null,
-          primaryCountry: trip.legs[0]?.country ?? null,
+          city: trip.legs[0]?.city ?? null,
+          country: trip.legs[0]?.country ?? null,
           startDate: trip.startDate,
           endDate: trip.endDate,
           contextTag: trip.contextTag,
