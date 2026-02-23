@@ -33,24 +33,34 @@ export const TRAVEL_FREQUENCY_OPTIONS = [
   "constantly",
 ] as const;
 
-export const updatePreferencesSchema = z.object({
-  dietary: z.array(z.enum(DIETARY_OPTIONS)).max(10).optional(),
-  mobility: z.array(z.enum(MOBILITY_OPTIONS)).max(10).optional(),
-  languages: z.array(z.enum(LANGUAGE_OPTIONS)).max(5).optional(),
-  travelFrequency: z.enum(TRAVEL_FREQUENCY_OPTIONS).nullable().optional(),
-});
+export const updatePreferencesSchema = z
+  .object({
+    dietary: z.array(z.enum(DIETARY_OPTIONS)).max(10).optional(),
+    mobility: z.array(z.enum(MOBILITY_OPTIONS)).max(10).optional(),
+    languages: z.array(z.enum(LANGUAGE_OPTIONS)).max(5).optional(),
+    travelFrequency: z.enum(TRAVEL_FREQUENCY_OPTIONS).nullable().optional(),
+  })
+  .refine((obj) => Object.keys(obj).length > 0, "At least one field required");
 
-export const updateNotificationsSchema = z.object({
-  tripReminders: z.boolean().optional(),
-  morningBriefing: z.boolean().optional(),
-  groupActivity: z.boolean().optional(),
-  postTripPrompt: z.boolean().optional(),
-  citySeeded: z.boolean().optional(),
-  inspirationNudges: z.boolean().optional(),
-  productUpdates: z.boolean().optional(),
-});
+export const updateNotificationsSchema = z
+  .object({
+    tripReminders: z.boolean().optional(),
+    morningBriefing: z.boolean().optional(),
+    groupActivity: z.boolean().optional(),
+    postTripPrompt: z.boolean().optional(),
+    citySeeded: z.boolean().optional(),
+    inspirationNudges: z.boolean().optional(),
+    productUpdates: z.boolean().optional(),
+  })
+  .refine((obj) => Object.keys(obj).length > 0, "At least one field required");
 
-export const updateConsentSchema = z.object({
-  modelTraining: z.boolean().optional(),
-  anonymizedResearch: z.boolean().optional(),
+export const updateConsentSchema = z
+  .object({
+    modelTraining: z.boolean().optional(),
+    anonymizedResearch: z.boolean().optional(),
+  })
+  .refine((obj) => Object.keys(obj).length > 0, "At least one field required");
+
+export const deleteAccountSchema = z.object({
+  confirmEmail: z.string().email("Valid email required"),
 });

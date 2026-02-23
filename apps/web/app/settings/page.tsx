@@ -9,9 +9,9 @@ import { CardSkeleton, ErrorState } from "@/components/states";
 import { AccountSection } from "@/components/settings/AccountSection";
 import { SubscriptionBadge } from "@/components/settings/SubscriptionBadge";
 import { TravelProfileStub } from "@/components/settings/TravelProfileStub";
-import { PreferencesStub } from "@/components/settings/PreferencesStub";
-import { NotificationsStub } from "@/components/settings/NotificationsStub";
-import { PrivacyStub } from "@/components/settings/PrivacyStub";
+import { PreferencesSection } from "@/components/settings/PreferencesSection";
+import { NotificationsSection } from "@/components/settings/NotificationsSection";
+import { PrivacySection } from "@/components/settings/PrivacySection";
 import { AboutSection } from "@/components/settings/AboutSection";
 
 // ---------- Component ----------
@@ -59,11 +59,11 @@ export default function SettingsPage() {
 
             <TravelProfileStub />
 
-            <PreferencesStub />
+            <PreferencesSection />
 
-            <NotificationsStub />
+            <NotificationsSection />
 
-            <PrivacyStub />
+            <PrivacySection email={session.user.email} />
 
             <AboutSection />
           </div>

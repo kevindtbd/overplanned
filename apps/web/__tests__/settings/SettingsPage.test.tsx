@@ -30,6 +30,19 @@ vi.mock("@/components/layout/AppShell", () => ({
   AppShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+// Mock PreferencesSection and NotificationsSection so we don't need fetch mocks for them
+vi.mock("@/components/settings/PreferencesSection", () => ({
+  PreferencesSection: () => <section><h2>My Preferences</h2></section>,
+}));
+
+vi.mock("@/components/settings/NotificationsSection", () => ({
+  NotificationsSection: () => <section><h2>Notifications</h2></section>,
+}));
+
+vi.mock("@/components/settings/PrivacySection", () => ({
+  PrivacySection: () => <section><h2>Privacy & Data</h2></section>,
+}));
+
 // Mock next-auth
 const mockUseSession = vi.fn();
 vi.mock("next-auth/react", () => ({
