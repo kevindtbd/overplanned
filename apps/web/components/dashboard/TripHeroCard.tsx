@@ -83,7 +83,7 @@ export function TripHeroCard({ trip }: { trip: TripSummary }) {
           </p>
 
           {/* Progress bar */}
-          {trip.status === "planning" && (
+          {(trip.status === "draft" || trip.status === "planning") && (
             <div className="mt-3">
               <div className="flex items-center justify-between mb-1">
                 <span className="font-dm-mono text-[10px] uppercase tracking-wider text-white/50">

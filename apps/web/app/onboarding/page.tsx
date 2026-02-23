@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useRef, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ForkScreen } from "./components/ForkScreen";
 import {
   DestinationStep,
+  LAUNCH_CITIES,
   type LaunchCity,
 } from "./components/DestinationStep";
 import { DatesStep } from "./components/DatesStep";
@@ -22,6 +23,8 @@ const STEP_ORDER: WizardStep[] = [
   "dna",
   "template",
 ];
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function generateTripName(city: string, startDate: string): string {
   if (!startDate) return `${city} trip`;
@@ -106,11 +109,13 @@ function LoadingSpinner({ className }: { className?: string }) {
   );
 }
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<WizardStep>("fork");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [draftSaveError, setDraftSaveError] = useState(false);
 
   // Form state
   const [destination, setDestination] = useState<LaunchCity | null>(null);
@@ -124,6 +129,87 @@ export default function OnboardingPage() {
   const [foodPreferences, setFoodPreferences] = useState<string[]>([]);
   const [freeformVibes, setFreeformVibes] = useState("");
   const [template, setTemplate] = useState<string | null>(null);
+
+  // Draft state refs
+  const isDraftSaving = useRef(false);
+  const draftIdRef = useRef<string | null>(null);
+
+  // Quick-start pre-fill from query params (e.g. /onboarding?city=Tokyo&step=dates)
+  // SECURITY: Only use values from the matched LAUNCH_CITIES entry.
+  // Never use raw query param values directly.
+  const didPrefill = useRef(false);
+  useEffect(() => {
+    if (didPrefill.current) return;
+    const prefilledCity = searchParams.get("city");
+    const startStep = searchParams.get("step");
+    if (!prefilledCity || startStep !== "dates") return;
+
+    const matchedDest = LAUNCH_CITIES.find(
+      (d) => d.city.toLowerCase() === prefilledCity.toLowerCase()
+    );
+    if (matchedDest) {
+      didPrefill.current = true;
+      setDestination(matchedDest);
+      setStep("dates");
+      router.replace("/onboarding", { scroll: false });
+    }
+  }, [searchParams, router]);
+
+  // Resume flow from query params (e.g. /onboarding?resume=<tripId>)
+  const didResume = useRef(false);
+  useEffect(() => {
+    if (didResume.current) return;
+    const resumeId = searchParams.get("resume");
+    if (!resumeId) return;
+
+    // Validate UUID format before hitting API
+    if (!UUID_RE.test(resumeId)) {
+      router.replace("/onboarding", { scroll: false });
+      return;
+    }
+
+    didResume.current = true;
+
+    fetch(`/api/trips/${resumeId}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          router.replace("/onboarding", { scroll: false });
+          return;
+        }
+        const data = await res.json();
+        const trip = data.trip;
+
+        // If trip is not a draft, redirect to the trip detail page
+        if (trip.status !== "draft") {
+          router.replace(`/trip/${resumeId}`);
+          return;
+        }
+
+        // Pre-fill destination from LAUNCH_CITIES match
+        const matchedDest = LAUNCH_CITIES.find(
+          (d) => d.city.toLowerCase() === (trip.city ?? "").toLowerCase()
+        );
+        if (matchedDest) {
+          setDestination(matchedDest);
+        }
+
+        // Convert ISO dates to YYYY-MM-DD for the DatesStep inputs
+        if (trip.startDate) {
+          setStartDate(new Date(trip.startDate).toISOString().split("T")[0]);
+        }
+        if (trip.endDate) {
+          setEndDate(new Date(trip.endDate).toISOString().split("T")[0]);
+        }
+
+        // Store draft ID and jump to name step
+        draftIdRef.current = resumeId;
+        setStep("name");
+        router.replace("/onboarding", { scroll: false });
+      })
+      .catch(() => {
+        router.replace("/onboarding", { scroll: false });
+      });
+  }, [searchParams, router]);
 
   const stepIndex = STEP_ORDER.indexOf(step);
   const totalSteps = STEP_ORDER.length - 1; // exclude fork from progress
@@ -152,10 +238,50 @@ export default function OnboardingPage() {
     const idx = STEP_ORDER.indexOf(step);
     if (idx < STEP_ORDER.length - 1) {
       const nextStep = STEP_ORDER[idx + 1];
+
       // Auto-generate trip name when entering name step
       if (nextStep === "name" && !tripNameTouched && destination) {
         setTripName(generateTripName(destination.city, startDate));
       }
+
+      // Fire-and-forget draft save when advancing from dates step
+      if (step === "dates" && canAdvance()) {
+        if (!isDraftSaving.current && !draftIdRef.current && destination) {
+          isDraftSaving.current = true;
+          setDraftSaveError(false);
+
+          fetch("/api/trips/draft", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              destination: destination.destination,
+              city: destination.city,
+              country: destination.country,
+              timezone: destination.timezone,
+              startDate: new Date(startDate).toISOString(),
+              endDate: new Date(endDate).toISOString(),
+            }),
+          })
+            .then(async (res) => {
+              if (res.ok) {
+                const data = await res.json();
+                draftIdRef.current = data.trip.id;
+              } else {
+                console.error("[onboarding] Draft save failed:", res.status);
+                setDraftSaveError(true);
+              }
+            })
+            .catch((err) => {
+              console.error("[onboarding] Draft save error:", err);
+              setDraftSaveError(true);
+            })
+            .finally(() => {
+              isDraftSaving.current = false;
+            });
+        }
+      }
+
+      // Step transition is NOT blocked by the draft save — fire and forget
       setStep(nextStep);
     }
   }
@@ -182,37 +308,74 @@ export default function OnboardingPage() {
     setSubmitError(null);
 
     try {
-      const payload = {
-        destination: destination.destination,
-        city: destination.city,
-        country: destination.country,
-        timezone: destination.timezone,
-        startDate: new Date(startDate).toISOString(),
-        endDate: new Date(endDate).toISOString(),
-        name: tripName.trim(),
-        mode: "solo" as const,
-        presetTemplate: template,
-        personaSeed: {
-          pace,
-          morningPreference,
-          foodPreferences,
-          freeformVibes: freeformVibes.trim() || undefined,
-          template,
-        },
-      };
+      let trip: { id: string };
 
-      const res = await fetch("/api/trips", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      if (draftIdRef.current) {
+        // Promote the existing draft via PATCH
+        const patchPayload = {
+          name: tripName.trim(),
+          presetTemplate: template,
+          personaSeed: {
+            pace,
+            morningPreference,
+            foodPreferences,
+            freeformVibes: freeformVibes.trim() || undefined,
+            template,
+          },
+          status: "planning" as const,
+          mode: "solo" as const,
+        };
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to create trip");
+        const res = await fetch(`/api/trips/${draftIdRef.current}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patchPayload),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to create trip");
+        }
+
+        const { trip: patchedTrip } = await res.json();
+        trip = patchedTrip;
+      } else {
+        // No draft — fall back to full POST
+        const payload = {
+          destination: destination.destination,
+          city: destination.city,
+          country: destination.country,
+          timezone: destination.timezone,
+          startDate: new Date(startDate).toISOString(),
+          endDate: new Date(endDate).toISOString(),
+          name: tripName.trim(),
+          mode: "solo" as const,
+          presetTemplate: template,
+          personaSeed: {
+            pace,
+            morningPreference,
+            foodPreferences,
+            freeformVibes: freeformVibes.trim() || undefined,
+            template,
+          },
+        };
+
+        const res = await fetch("/api/trips", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to create trip");
+        }
+
+        const { trip: createdTrip } = await res.json();
+        trip = createdTrip;
       }
 
-      const { trip } = await res.json();
+      sessionStorage.setItem(`new-trip-${trip.id}`, "1");
       router.push(`/trip/${trip.id}`);
     } catch (err) {
       setSubmitError(
@@ -224,7 +387,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-base">
-      {/* Progress bar — hidden on fork screen */}
+      {/* Progress bar -- hidden on fork screen */}
       {step !== "fork" && (
         <div className="fixed left-0 right-0 top-0 z-20 bg-base/80 backdrop-blur-sm">
           <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
@@ -249,6 +412,15 @@ export default function OnboardingPage() {
               {progressStep}/{totalSteps}
             </span>
           </div>
+          {/* Non-blocking draft save error */}
+          {draftSaveError && (
+            <div
+              data-testid="draft-save-error"
+              className="mx-auto max-w-lg px-4 pb-2 font-dm-mono text-xs text-secondary"
+            >
+              Could not save your progress yet. Your trip will still be created at the end.
+            </div>
+          )}
         </div>
       )}
 
@@ -338,7 +510,7 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* Bottom navigation — hidden on fork screen */}
+      {/* Bottom navigation -- hidden on fork screen */}
       {step !== "fork" && (
         <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-ink-700 bg-base/90 backdrop-blur-sm">
           <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-4">
@@ -381,5 +553,13 @@ export default function OnboardingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-base" />}>
+      <OnboardingContent />
+    </Suspense>
   );
 }

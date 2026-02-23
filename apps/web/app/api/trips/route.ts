@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         mode,
+        status: "planning",
         presetTemplate: presetTemplate ?? null,
         personaSeed: (personaSeed ?? undefined) as any,
         members: {
@@ -156,7 +157,7 @@ export async function GET(_req: NextRequest) {
 
   try {
     const memberships = await prisma.tripMember.findMany({
-      where: { userId },
+      where: { userId, status: "joined" },
       select: {
         role: true,
         status: true,

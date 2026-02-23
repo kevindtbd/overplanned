@@ -2,31 +2,32 @@
 
 // Dashboard Page -- /dashboard
 // Fetches the user's trips and renders hero cards for active trips,
-// compact rows for past trips, and an EmptyState when no trips exist.
+// compact rows for past trips, and a QuickStartGrid when no trips exist.
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { TripHeroCard, type TripSummary } from "@/components/dashboard/TripHeroCard";
+import { DraftIdeaCard } from "@/components/dashboard/DraftIdeaCard";
 import { PastTripRow } from "@/components/dashboard/PastTripRow";
-import { CardSkeleton, EmptyState, ErrorState } from "@/components/states";
+import { QuickStartGrid } from "@/components/dashboard/QuickStartGrid";
+import { CardSkeleton, ErrorState } from "@/components/states";
 
 // ---------- Icons ----------
 
-function CompassIcon() {
+function PlusIcon({ className }: { className?: string }) {
   return (
     <svg
-      width="28"
-      height="28"
+      className={className}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <circle cx="12" cy="12" r="10" />
-      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   );
 }
@@ -36,7 +37,6 @@ function CompassIcon() {
 type FetchState = "loading" | "error" | "success";
 
 export default function DashboardPage() {
-  const router = useRouter();
   const [trips, setTrips] = useState<TripSummary[]>([]);
   const [fetchState, setFetchState] = useState<FetchState>("loading");
   const [errorMessage, setErrorMessage] = useState("Failed to load trips");
@@ -64,25 +64,39 @@ export default function DashboardPage() {
     fetchTrips();
   }, [fetchTrips]);
 
-  // Partition trips into active and past
-  const activeTrips = trips.filter(
+  // Partition trips into committed, draft, and past
+  const committedTrips = trips.filter(
     (t) => t.status === "planning" || t.status === "active"
   );
+  const draftTrips = trips.filter((t) => t.status === "draft");
   const pastTrips = trips.filter(
-    (t) => t.status === "completed" || t.status === "cancelled"
+    (t) => t.status === "completed" || t.status === "archived"
   );
+  const showLabels =
+    (committedTrips.length + draftTrips.length) > 0 && pastTrips.length > 0;
 
   return (
     <AppShell context="app">
       <div className="space-y-8">
         {/* Page header */}
-        <header>
-          <h1 className="font-sora text-2xl font-medium text-ink-100 sm:text-3xl">
-            Your trips
-          </h1>
-          <p className="mt-1 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
-            Plan, track, and relive
-          </p>
+        <header className="flex items-baseline justify-between">
+          <div>
+            <h1 className="font-sora text-2xl font-medium text-ink-100 sm:text-3xl">
+              Your trips
+            </h1>
+            <p className="mt-1 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
+              Plan, track, and relive
+            </p>
+          </div>
+          {fetchState === "success" && trips.length > 0 && (
+            <Link
+              href="/onboarding"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-sora text-sm text-accent transition-colors hover:bg-accent/10"
+            >
+              <PlusIcon className="h-4 w-4" />
+              New trip
+            </Link>
+          )}
         </header>
 
         {/* Loading state */}
@@ -98,45 +112,49 @@ export default function DashboardPage() {
           <ErrorState message={errorMessage} onRetry={fetchTrips} />
         )}
 
-        {/* Empty state */}
+        {/* Empty state -- action-forward launchpad */}
         {fetchState === "success" && trips.length === 0 && (
-          <EmptyState
-            icon={<CompassIcon />}
-            title="Your adventures start here"
-            description="Plan your first trip and we will build you a local-first itinerary."
-            action={{
-              label: "Plan a trip",
-              onClick: () => router.push("/onboarding"),
-            }}
-          />
+          <QuickStartGrid />
         )}
 
-        {/* Active trips */}
-        {fetchState === "success" && activeTrips.length > 0 && (
-          <section aria-labelledby="active-trips-heading">
-            <h2
-              id="active-trips-heading"
-              className="sec-label mb-4"
-            >
-              Active
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {activeTrips.map((trip) => (
-                <TripHeroCard key={trip.id} trip={trip} />
-              ))}
-            </div>
+        {/* Active trips (committed hero cards + draft idea cards) */}
+        {fetchState === "success" &&
+          (committedTrips.length > 0 || draftTrips.length > 0) && (
+          <section aria-labelledby={showLabels ? "active-trips-heading" : undefined}>
+            {showLabels && (
+              <h2 id="active-trips-heading" className="sec-label mb-4">
+                Active
+              </h2>
+            )}
+
+            {/* Committed trips -- hero cards */}
+            {committedTrips.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {committedTrips.map((trip) => (
+                  <TripHeroCard key={trip.id} trip={trip} />
+                ))}
+              </div>
+            )}
+
+            {/* Draft trips -- idea cards */}
+            {draftTrips.length > 0 && (
+              <div className={`grid gap-4 sm:grid-cols-2${committedTrips.length > 0 ? " mt-4" : ""}`}>
+                {draftTrips.map((trip) => (
+                  <DraftIdeaCard key={trip.id} trip={trip} />
+                ))}
+              </div>
+            )}
           </section>
         )}
 
         {/* Past trips */}
         {fetchState === "success" && pastTrips.length > 0 && (
-          <section aria-labelledby="past-trips-heading">
-            <h2
-              id="past-trips-heading"
-              className="sec-label mb-4"
-            >
-              Past trips
-            </h2>
+          <section aria-labelledby={showLabels ? "past-trips-heading" : undefined}>
+            {showLabels && (
+              <h2 id="past-trips-heading" className="sec-label mb-4">
+                Past trips
+              </h2>
+            )}
             <div className="space-y-2">
               {pastTrips.map((trip) => (
                 <PastTripRow key={trip.id} trip={trip} />

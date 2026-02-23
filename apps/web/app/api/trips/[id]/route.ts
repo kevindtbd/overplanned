@@ -8,6 +8,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { updateTripSchema } from "@/lib/validations/trip";
 import { prisma } from "@/lib/prisma";
+import { shouldAutoTransition, validateTransition, getWritableFields } from "@/lib/trip-status";
+import { promoteDraftToPlanning } from "@/lib/generation/promote-draft";
 
 export async function GET(
   _req: NextRequest,
@@ -29,7 +31,6 @@ export async function GET(
     });
 
     if (!membership) {
-      // Return 404 regardless of whether the trip exists, to avoid leaking IDs
       return NextResponse.json({ error: "Trip not found" }, { status: 404 });
     }
 
@@ -79,6 +80,20 @@ export async function GET(
       return NextResponse.json({ error: "Trip not found" }, { status: 404 });
     }
 
+    // Auto-transition: planning -> active when start date has arrived
+    // Only organizer role triggers the write to prevent guest-initiated mutations
+    if (
+      membership.role === "organizer" &&
+      shouldAutoTransition(trip.status, new Date(trip.startDate))
+    ) {
+      await prisma.trip.update({
+        where: { id: trip.id },
+        data: { status: "active" },
+      });
+      trip.status = "active";
+      console.info(`[auto-transition] Trip ${trip.id} planning -> active (organizer: ${userId})`);
+    }
+
     return NextResponse.json(
       { trip, myRole: membership.role, myStatus: membership.status },
       { status: 200 }
@@ -124,7 +139,6 @@ export async function PATCH(
     });
 
     if (!membership) {
-      // Caller is not a member — return 404 to avoid leaking IDs
       return NextResponse.json({ error: "Trip not found" }, { status: 404 });
     }
 
@@ -139,7 +153,50 @@ export async function PATCH(
       );
     }
 
-    const { name, status, planningProgress } = parsed.data;
+    // Fetch current trip status for state machine validation
+    const currentTrip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      select: { status: true },
+    });
+
+    if (!currentTrip) {
+      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
+    }
+
+    const currentStatus = currentTrip.status;
+
+    // Validate status transition if a status change is requested
+    if (parsed.data.status !== undefined && parsed.data.status !== currentStatus) {
+      const requestedStatus = parsed.data.status;
+      if (!validateTransition(currentStatus, requestedStatus)) {
+        return NextResponse.json(
+          {
+            error: "Invalid status transition",
+            detail: `Cannot transition from '${currentStatus}' to '${requestedStatus}'`,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Apply field-level write guards: silently drop fields not writable in current status
+    const writable = getWritableFields(currentStatus);
+    const filteredData = Object.fromEntries(
+      Object.entries(parsed.data).filter(([key]) => writable.has(key))
+    );
+
+    const {
+      name,
+      status,
+      planningProgress,
+      startDate,
+      endDate,
+      mode,
+      presetTemplate,
+      personaSeed,
+    } = filteredData as typeof parsed.data;
+
+    const isDraftPromotion = currentStatus === "draft" && status === "planning";
 
     const updated = await prisma.trip.update({
       where: { id: tripId },
@@ -147,6 +204,11 @@ export async function PATCH(
         ...(name !== undefined && { name }),
         ...(status !== undefined && { status }),
         ...(planningProgress !== undefined && { planningProgress }),
+        ...(startDate !== undefined && { startDate: new Date(startDate) }),
+        ...(endDate !== undefined && { endDate: new Date(endDate) }),
+        ...(mode !== undefined && { mode }),
+        ...(presetTemplate !== undefined && { presetTemplate }),
+        ...(personaSeed !== undefined && { personaSeed: personaSeed as any }),
       },
       select: {
         id: true,
@@ -162,6 +224,16 @@ export async function PATCH(
         updatedAt: true,
       },
     });
+
+    if (isDraftPromotion) {
+      try {
+        const { trip: generatedTrip, generated } = await promoteDraftToPlanning(tripId, userId);
+        return NextResponse.json({ trip: generatedTrip, generated }, { status: 200 });
+      } catch (err) {
+        console.error(`[PATCH /api/trips/${tripId}] Generation error after promotion:`, err);
+        return NextResponse.json({ trip: updated, generated: { slotsCreated: 0, source: "empty" } }, { status: 200 });
+      }
+    }
 
     return NextResponse.json({ trip: updated }, { status: 200 });
   } catch (err) {

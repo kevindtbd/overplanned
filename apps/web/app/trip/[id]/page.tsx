@@ -4,68 +4,18 @@
 // Fetches real trip data from GET /api/trips/[id] and renders
 // DayNavigation + DayView with actual slots.
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { DayNavigation } from "@/components/trip/DayNavigation";
 import { DayView } from "@/components/trip/DayView";
+import { WelcomeCard } from "@/components/trip/WelcomeCard";
 import { type SlotData } from "@/components/slot/SlotCard";
 import { type SlotActionEvent } from "@/components/slot/SlotActions";
 import { SlotSkeleton, ErrorState } from "@/components/states";
 import { getCityPhoto } from "@/lib/city-photos";
-
-// ---------- Types for API response ----------
-
-interface ApiSlot {
-  id: string;
-  dayNumber: number;
-  sortOrder: number;
-  slotType: string;
-  status: string;
-  startTime: string | null;
-  endTime: string | null;
-  durationMinutes: number | null;
-  isLocked: boolean;
-  activityNode: {
-    id: string;
-    name: string;
-    category: string;
-    latitude: number;
-    longitude: number;
-    priceLevel: number | null;
-    primaryImageUrl?: string | null;
-  } | null;
-}
-
-interface ApiTrip {
-  id: string;
-  name: string | null;
-  destination: string;
-  city: string;
-  country: string;
-  timezone: string;
-  startDate: string;
-  endDate: string;
-  mode: string;
-  status: string;
-  planningProgress: number;
-  slots: ApiSlot[];
-  members: {
-    id: string;
-    userId: string;
-    role: string;
-    status: string;
-    joinedAt: string;
-    user: {
-      id: string;
-      name: string | null;
-      avatarUrl: string | null;
-    };
-  }[];
-}
-
-type FetchState = "loading" | "error" | "success";
+import { useTripDetail, type ApiSlot } from "@/lib/hooks/useTripDetail";
 
 // ---------- Helpers ----------
 
@@ -100,41 +50,45 @@ export default function TripDetailPage() {
   const params = useParams<{ id: string }>();
   const tripId = params.id;
 
-  const [trip, setTrip] = useState<ApiTrip | null>(null);
-  const [myRole, setMyRole] = useState<string | null>(null);
-  const [fetchState, setFetchState] = useState<FetchState>("loading");
-  const [errorMessage, setErrorMessage] = useState("Failed to load trip");
+  const { trip, setTrip, myRole, fetchState, errorMessage, fetchTrip } =
+    useTripDetail(tripId);
+
   const [currentDay, setCurrentDay] = useState(1);
 
-  const fetchTrip = useCallback(async () => {
-    setFetchState("loading");
-    try {
-      const res = await fetch(`/api/trips/${tripId}`);
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 404) {
-          throw new Error("Trip not found");
-        }
-        if (res.status === 403) {
-          throw new Error("You do not have access to this trip");
-        }
-        throw new Error(data.error || "Failed to load trip");
-      }
-      const { trip: tripData, myRole: role } = await res.json();
-      setTrip(tripData);
-      setMyRole(role);
-      setFetchState("success");
-    } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "Failed to load trip"
-      );
-      setFetchState("error");
+  // -- Welcome card (post-creation feedback) --
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    const key = `new-trip-${tripId}`;
+    if (sessionStorage.getItem(key) === "1") {
+      sessionStorage.removeItem(key);
+      setShowWelcome(true);
     }
   }, [tripId]);
 
+  // -- FAB scroll collapse --
+  const [fabCompact, setFabCompact] = useState(false);
+
   useEffect(() => {
-    fetchTrip();
-  }, [fetchTrip]);
+    let lastY = 0;
+    function onScroll() {
+      const y = window.scrollY;
+      setFabCompact(y > 80 && y > lastY);
+      lastY = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // -- Progress pulse --
+  const [confirmPulse, setConfirmPulse] = useState(false);
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pulseTimer.current) clearTimeout(pulseTimer.current);
+    };
+  }, []);
 
   // Compute derived data
   const totalDays = useMemo(() => {
@@ -160,6 +114,16 @@ export default function TripDetailPage() {
 
   const handleSlotAction = useCallback(
     async (event: SlotActionEvent) => {
+      // Dismiss welcome card on first slot action
+      setShowWelcome(false);
+
+      // Progress pulse on confirm
+      if (event.action === "confirm") {
+        if (pulseTimer.current) clearTimeout(pulseTimer.current);
+        setConfirmPulse(true);
+        pulseTimer.current = setTimeout(() => setConfirmPulse(false), 600);
+      }
+
       // Optimistic update
       setTrip((prev) => {
         if (!prev) return prev;
@@ -196,7 +160,7 @@ export default function TripDetailPage() {
         fetchTrip();
       }
     },
-    [fetchTrip]
+    [fetchTrip, setTrip]
   );
 
   // Status summary across all days
@@ -308,7 +272,9 @@ export default function TripDetailPage() {
               <span aria-hidden="true" className="text-ink-700">
                 |
               </span>
-              <span>
+              <span
+                className={`transition-colors duration-300 ${confirmPulse ? "text-accent" : ""}`}
+              >
                 {statusSummary.confirmed}/{statusSummary.total} confirmed
               </span>
             </div>
@@ -322,6 +288,16 @@ export default function TripDetailPage() {
             startDate={trip!.startDate}
             timezone={trip!.timezone}
           />
+
+          {/* Welcome card -- post-creation feedback */}
+          {showWelcome && (
+            <WelcomeCard
+              city={trip!.city}
+              totalSlots={trip!.slots.length}
+              totalDays={totalDays}
+              onDismiss={() => setShowWelcome(false)}
+            />
+          )}
 
           {/* Day header */}
           <div className="flex items-center justify-between">
@@ -344,36 +320,40 @@ export default function TripDetailPage() {
         </div>
       </div>
 
-      {/* Add activity FAB — organizer only */}
+      {/* Add activity FAB — organizer only, labeled pill with scroll collapse */}
       {myRole === "organizer" && (
         <Link
           href={discoverUrl}
-          className="
-            fixed z-30
-            bottom-24 right-5
-            lg:bottom-8 lg:right-8
-            w-14 h-14 rounded-full
-            bg-accent hover:bg-accent/90
-            text-white shadow-lg
-            flex items-center justify-center
-            transition-all duration-150
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
-          "
+          className={`
+            fixed z-30 bottom-24 right-5 lg:bottom-8 lg:right-8
+            flex items-center justify-center gap-2
+            h-14 rounded-full
+            bg-accent hover:bg-accent/90 text-white shadow-lg
+            transition-[width,padding] duration-200
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
+            ${fabCompact ? "w-14" : "px-5"}
+          `}
           aria-label="Add activity"
         >
           <svg
-            width="24"
-            height="24"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2.5"
             strokeLinecap="round"
             aria-hidden="true"
+            className="flex-shrink-0"
           >
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
+          {!fabCompact && (
+            <span className="font-sora text-sm font-medium whitespace-nowrap">
+              Add activity
+            </span>
+          )}
         </Link>
       )}
     </AppShell>

@@ -3,12 +3,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DashboardPage from "@/app/dashboard/page";
 
-// Mock Next.js router
-const mockPush = vi.fn();
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
+// Mock Next.js Link
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+    <a href={href} {...props}>{children}</a>
+  ),
 }));
 
 // Mock Next.js Image
@@ -23,6 +22,36 @@ vi.mock("next/image", () => ({
 vi.mock("@/components/layout/AppShell", () => ({
   AppShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
+
+const mockDraftTrip = {
+  id: "trip-draft-1",
+  name: null,
+  destination: "Mexico City, Mexico",
+  city: "Mexico City",
+  country: "Mexico",
+  mode: "solo",
+  status: "draft",
+  startDate: "2026-06-01",
+  endDate: "2026-06-10",
+  planningProgress: 0,
+  memberCount: 1,
+  createdAt: "2026-02-20T00:00:00Z",
+};
+
+const mockDraftTripNoDates = {
+  id: "trip-draft-2",
+  name: null,
+  destination: "Kyoto, Japan",
+  city: "Kyoto",
+  country: "Japan",
+  mode: "solo",
+  status: "draft",
+  startDate: null as string | null,
+  endDate: null as string | null,
+  planningProgress: 0,
+  memberCount: 1,
+  createdAt: "2026-02-21T00:00:00Z",
+};
 
 const mockActiveTrip = {
   id: "trip-1",
@@ -84,7 +113,7 @@ describe("DashboardPage", () => {
     });
   });
 
-  it("shows empty state when no trips exist", async () => {
+  it("shows QuickStartGrid when no trips exist", async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ trips: [] }),
@@ -93,12 +122,15 @@ describe("DashboardPage", () => {
     render(<DashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Your adventures start here")).toBeInTheDocument();
-      expect(screen.getByText("Plan your first trip and we will build you a local-first itinerary.")).toBeInTheDocument();
+      expect(screen.getByText("Where to?")).toBeInTheDocument();
+      expect(screen.getByText("Tokyo")).toBeInTheDocument();
+      expect(screen.getByText("New York")).toBeInTheDocument();
+      expect(screen.getByText("Mexico City")).toBeInTheDocument();
+      expect(screen.getByText("Somewhere else")).toBeInTheDocument();
     });
   });
 
-  it("shows active trips in hero card format", async () => {
+  it("shows active trips without section label when no past trips", async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ trips: [mockActiveTrip] }),
@@ -108,12 +140,13 @@ describe("DashboardPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Tokyo Adventure")).toBeInTheDocument();
-      expect(screen.getByText("Active")).toBeInTheDocument();
       expect(screen.getByText("Planning progress")).toBeInTheDocument();
     });
+    // No section label when only active trips exist
+    expect(screen.queryByText("Active")).not.toBeInTheDocument();
   });
 
-  it("shows past trips in compact row format", async () => {
+  it("shows past trips without section label when no active trips", async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ trips: [mockPastTrip] }),
@@ -123,8 +156,9 @@ describe("DashboardPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Paris Getaway")).toBeInTheDocument();
-      expect(screen.getByText("Past trips")).toBeInTheDocument();
     });
+    // No section label when only past trips exist
+    expect(screen.queryByText("Past trips")).not.toBeInTheDocument();
   });
 
   it("partitions trips into active and past correctly", async () => {
@@ -132,7 +166,7 @@ describe("DashboardPage", () => {
       mockActiveTrip,
       mockPastTrip,
       { ...mockActiveTrip, id: "trip-3", status: "active" },
-      { ...mockPastTrip, id: "trip-4", status: "cancelled" },
+      { ...mockPastTrip, id: "trip-4", status: "archived" },
     ];
 
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
@@ -148,12 +182,10 @@ describe("DashboardPage", () => {
     });
 
     // Should have 2 active trips (planning + active)
-    // and 2 past trips (completed + cancelled)
+    // and 2 past trips (completed + archived)
   });
 
-  it("navigates to onboarding when 'Plan a trip' is clicked", async () => {
-    const user = userEvent.setup();
-
+  it("QuickStartGrid city cards link to onboarding with query params", async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ trips: [] }),
@@ -162,13 +194,48 @@ describe("DashboardPage", () => {
     render(<DashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Your adventures start here")).toBeInTheDocument();
+      expect(screen.getByText("Where to?")).toBeInTheDocument();
     });
 
-    const planButton = screen.getByRole("button", { name: "Plan a trip" });
-    await user.click(planButton);
+    const tokyoLink = screen.getByRole("link", { name: /Plan a trip to Tokyo/i });
+    expect(tokyoLink).toHaveAttribute("href", "/onboarding?city=Tokyo&step=dates");
 
-    expect(mockPush).toHaveBeenCalledWith("/onboarding");
+    const nycLink = screen.getByRole("link", { name: /Plan a trip to New York/i });
+    expect(nycLink).toHaveAttribute("href", "/onboarding?city=New%20York&step=dates");
+
+    const somewhereElse = screen.getByRole("link", { name: /different city/i });
+    expect(somewhereElse).toHaveAttribute("href", "/onboarding");
+  });
+
+  it("shows '+ New trip' header button when trips exist", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ trips: [mockActiveTrip] }),
+    });
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Tokyo Adventure")).toBeInTheDocument();
+    });
+
+    const newTripLink = screen.getByRole("link", { name: /New trip/i });
+    expect(newTripLink).toHaveAttribute("href", "/onboarding");
+  });
+
+  it("does not show '+ New trip' button on empty state", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ trips: [] }),
+    });
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Where to?")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText("New trip")).not.toBeInTheDocument();
   });
 
   it("retries fetch when retry button is clicked in error state", async () => {
@@ -196,6 +263,109 @@ describe("DashboardPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Tokyo Adventure")).toBeInTheDocument();
+    });
+  });
+
+  // ---------- Draft card tests ----------
+
+  it("renders DraftIdeaCard for draft trips with 'Continue planning' text", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ trips: [mockDraftTrip] }),
+    });
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mexico City")).toBeInTheDocument();
+      expect(screen.getByText("Continue planning")).toBeInTheDocument();
+    });
+  });
+
+  it("draft trips link to /onboarding?resume=<tripId>, NOT /trip/<id>", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ trips: [mockDraftTrip] }),
+    });
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Continue planning")).toBeInTheDocument();
+    });
+
+    const draftLink = screen.getByTestId("draft-idea-card");
+    expect(draftLink).toHaveAttribute("href", `/onboarding?resume=${mockDraftTrip.id}`);
+    // Must NOT link to trip detail
+    expect(draftLink).not.toHaveAttribute("href", `/trip/${mockDraftTrip.id}`);
+  });
+
+  it("planning/active trips still render TripHeroCard (not DraftIdeaCard)", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ trips: [mockActiveTrip] }),
+    });
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Tokyo Adventure")).toBeInTheDocument();
+      expect(screen.getByText("Planning progress")).toBeInTheDocument();
+    });
+
+    // Should NOT render as a draft card
+    expect(screen.queryByText("Continue planning")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("draft-idea-card")).not.toBeInTheDocument();
+  });
+
+  it("committed hero cards appear before draft idea cards in DOM", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ trips: [mockDraftTrip, mockActiveTrip] }),
+    });
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Tokyo Adventure")).toBeInTheDocument();
+      expect(screen.getByText("Continue planning")).toBeInTheDocument();
+    });
+
+    // Hero card text should appear before draft card text in DOM order
+    const heroText = screen.getByText("Tokyo Adventure");
+    const draftText = screen.getByText("Continue planning");
+    // compareDocumentPosition bit 4 = DOCUMENT_POSITION_FOLLOWING
+    const position = heroText.compareDocumentPosition(draftText);
+    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("only drafts, no planning trips: drafts show, QuickStartGrid does NOT show", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ trips: [mockDraftTrip] }),
+    });
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Continue planning")).toBeInTheDocument();
+    });
+
+    // QuickStartGrid should NOT appear
+    expect(screen.queryByText("Where to?")).not.toBeInTheDocument();
+  });
+
+  it("draft + past trips: section labels show", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ trips: [mockDraftTrip, mockPastTrip] }),
+    });
+
+    render(<DashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Active")).toBeInTheDocument();
+      expect(screen.getByText("Past trips")).toBeInTheDocument();
     });
   });
 });

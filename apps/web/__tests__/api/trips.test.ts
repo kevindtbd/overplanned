@@ -183,7 +183,7 @@ describe("updateTripSchema", () => {
   });
 
   it("rejects an invalid status value", () => {
-    const result = updateTripSchema.safeParse({ status: "archived" });
+    const result = updateTripSchema.safeParse({ status: "cancelled" });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.flatten().fieldErrors.status).toBeDefined();
@@ -223,7 +223,7 @@ describe("updateTripSchema", () => {
   });
 
   it("accepts all valid status values", () => {
-    const statuses = ["draft", "active", "completed", "cancelled"] as const;
+    const statuses = ["draft", "planning", "active", "completed", "archived"] as const;
     for (const status of statuses) {
       const result = updateTripSchema.safeParse({ status });
       expect(result.success, `status '${status}' should be valid`).toBe(true);
