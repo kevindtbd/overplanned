@@ -1,0 +1,13 @@
+{
+  "id": "CP-1771657750491502688",
+  "timestamp": "2026-02-20T23:09:10.491504642-08:00",
+  "migration_id": "M-007",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/__tests__/api/trips-route.test.ts": "DELETED",
+    "apps/web/__tests__/dashboard/edge-cases.test.tsx": "DELETED",
+    "apps/web/app/api/trips/route.ts": "DELETED",
+    "apps/web/lib/city-photos.ts": "DELETED"
+  },
+  "description": "Pre-batch"
+}

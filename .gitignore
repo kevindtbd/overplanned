@@ -15,3 +15,6 @@ tracks/*/services/
 tracks/*/apps/
 tracks/*/data/
 tracks/*/tests/
+test-results/
+apps/web/test-results/
+apps/web/tsconfig.tsbuildinfo

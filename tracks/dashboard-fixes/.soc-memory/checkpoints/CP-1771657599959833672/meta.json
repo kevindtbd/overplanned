@@ -1,0 +1,14 @@
+{
+  "id": "CP-1771657599959833672",
+  "timestamp": "2026-02-20T23:06:39.959834433-08:00",
+  "migration_id": "M-003",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/__tests__/dashboard/EmptyState.test.tsx": "DELETED",
+    "apps/web/app/api/trips/[id]/route.ts": "DELETED",
+    "apps/web/app/dashboard/error.tsx": "DELETED",
+    "apps/web/components/dashboard/TripHeroCard.tsx": "DELETED",
+    "apps/web/lib/validations/trip.ts": "DELETED"
+  },
+  "description": "Pre-batch"
+}

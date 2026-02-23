@@ -1,0 +1,14 @@
+{
+  "id": "CP-1771657514490453208",
+  "timestamp": "2026-02-20T23:05:14.49045435-08:00",
+  "migration_id": "M-001",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/app/trip/[id]/page.tsx": "DELETED",
+    "apps/web/components/nav/MobileNav.tsx": "DELETED",
+    "apps/web/components/states/EmptyState.tsx": "DELETED",
+    "apps/web/lib/prisma.ts": "DELETED",
+    "apps/web/middleware.ts": "DELETED"
+  },
+  "description": "Pre-batch"
+}

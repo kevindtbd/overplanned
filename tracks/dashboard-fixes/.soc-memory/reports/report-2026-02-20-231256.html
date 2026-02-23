@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC Conductor Report - dashboard-fixes</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    padding: 20px;
+  }
+  h1, h2, h3 { color: #e0e0e0; }
+  h1 { font-size: 1.8em; margin-bottom: 8px; }
+  h2 { font-size: 1.3em; margin-bottom: 6px; }
+
+  .banner {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .banner h1 { color: #e94560; }
+  .banner .meta { color: #a0a0a0; font-size: 0.9em; margin-top: 4px; }
+
+  .stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .stat-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    padding: 12px 20px;
+    min-width: 140px;
+    text-align: center;
+  }
+  .stat-card .value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #e94560;
+  }
+  .stat-card .label {
+    font-size: 0.85em;
+    color: #a0a0a0;
+    text-transform: uppercase;
+  }
+
+  details {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  summary {
+    cursor: pointer;
+    padding: 14px 20px;
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #e0e0e0;
+    user-select: none;
+  }
+  summary:hover { background: #1a1a3e; border-radius: 8px; }
+  details[open] summary { border-bottom: 1px solid #0f3460; }
+  .section-content { padding: 16px 20px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid #0f3460;
+  }
+  th {
+    color: #a0a0a0;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    background: #1a1a2e;
+  }
+
+  .status-pass { color: #4ecca3; font-weight: bold; }
+  .status-fail { color: #e94560; font-weight: bold; }
+  .status-complete { color: #4ecca3; }
+  .status-pending { color: #f0c040; }
+  .status-running { color: #4fc3f7; }
+  .status-failed { color: #e94560; }
+
+  .file-created { color: #4ecca3; }
+  .file-modified { color: #f0c040; }
+  .file-deleted { color: #e94560; }
+
+  ul.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+  }
+  ul.file-list li {
+    padding: 4px 0;
+    font-family: monospace;
+    font-size: 0.9em;
+  }
+
+  .failure-output {
+    background: #1a1a2e;
+    border: 1px solid #e94560;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 4px 0 8px 0;
+    font-family: monospace;
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    color: #e0a0a0;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .no-data { color: #a0a0a0; font-style: italic; padding: 12px 0; }
+
+  .model-grid {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .model-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    padding: 16px 24px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .model-card .count {
+    font-size: 2em;
+    font-weight: bold;
+    color: #4fc3f7;
+  }
+  .model-card .name {
+    font-size: 0.9em;
+    color: #a0a0a0;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>SOC Conductor Report</h1>
+  <div class="meta">
+    Project: dashboard-fixes |
+    Generated: 2026-02-20 23:12:56 PST |
+    Baseline: f164b5e6ee2566db05502e8eb249c49b4a0861f9
+  </div>
+  <div class="stats">
+    <div class="stat-card">
+      <div class="value">14</div>
+      <div class="label">Tasks</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0</div>
+      <div class="label">Tests Passed</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0</div>
+      <div class="label">Tests Failed</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">0.0%</div>
+      <div class="label">Coverage</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">7m41.722598666s</div>
+      <div class="label">Duration</div>
+    </div>
+  </div>
+</div>
+
+
+<details>
+  <summary>Test Results (0 tests)</summary>
+  <div class="section-content">
+    
+    <p class="no-data">No test results available.</p>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Work Summary (14 migrations)</summary>
+  <div class="section-content">
+    
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Description</th><th>Status</th><th>Model</th><th>Core Type</th><th>Duration</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>T-0012</td>
+          <td>Dashboard has 0% test coverage. Write unit tests for all dashboard components and state components. P3 priority.
+Create test infrastructure:
+Create `apps/web/__tests__/dashboard/EmptyState.test.tsx` (5 tests):
+Create `apps/web/__tests__/dashboard/ErrorState.test.tsx` (5 tests):
+Create `apps/web/__tests__/dashboard/TripHeroCard.test.tsx` (8 tests):
+Create `apps/web/__tests__/dashboard/PastTripRow.test.tsx` (5 tests):
+Verify: `npx vitest run apps/web/__tests__/dashboard/` — all tests pass.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>test</td>
+          <td>2m30.530756797s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0013</td>
+          <td>The trips API route handlers (GET/POST) have zero test coverage beyond Zod schema validation. Auth bypass, database errors, and response shape are all untested. P3 priority.
+Create `apps/web/__tests__/api/trips-route.test.ts` (12 tests):
+Mock setup:
+GET tests:
+POST tests:
+Verify: `npx vitest run apps/web/__tests__/api/trips-route.test.ts` — all tests pass.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>test</td>
+          <td>3m45.721795549s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0002</td>
+          <td>Remove `/dashboard` and `/dashboard/` from PUBLIC_PATHS in middleware. The prefix-match logic makes all `/dashboard/*` sub-routes public. Critical security fix — P0 priority.
+Edit `apps/web/middleware.ts`:
+If dev-mode access is needed, gate it:
+```typescript
+...(process.env.NODE_ENV === &#39;development&#39; ? [&#39;/dashboard&#39;, &#39;/dashboard/&#39;] : [])
+```
+Verify: The middleware still redirects unauthenticated users away from `/dashboard`. Existing public paths (`/`, `/auth/signin`, `/api/auth/`, `/s/`, `/invite/`) still work.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>security</td>
+          <td>31.314783712s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0003</td>
+          <td>Remove `email: true` from the trip detail API member select. Any trip member can currently see all other members&#39; email addresses — PII exposure. P0 priority.
+Edit `apps/web/app/api/trips/[id]/route.ts`:
+Then update the client-side type in `apps/web/app/trip/[id]/page.tsx`:
+Verify: `GET /api/trips/[id]` response no longer contains member email addresses. TypeScript compiles clean. Trip detail page renders without errors.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>security</td>
+          <td>30.072457372s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0007</td>
+          <td>Multiple `as never` casts suppress TypeScript enum validation in trips API routes. If Prisma enums drift from Zod schemas, errors surface at runtime instead of compile time. P1 priority.
+Edit `apps/web/app/api/trips/route.ts`:
+Edit `apps/web/app/api/trips/[id]/route.ts`:
+Check which Prisma enum names are correct by reading `prisma/schema.prisma` for the enum definitions.
+Verify: `npx tsc --noEmit` passes without the `as never` casts. All existing tests pass.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>api</td>
+          <td>1m23.304410006s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0008</td>
+          <td>CITY_PHOTOS map is duplicated in 3 files with inconsistent city counts (TripHeroCard: 13, PastTripRow: 10, trip detail: varies). Extract to single source of truth. P2 priority.
+Create `apps/web/lib/city-photos.ts`:
+Update these files to import from the shared util:
+1. `apps/web/components/dashboard/TripHeroCard.tsx` — remove local CITY_PHOTOS, import `getCityPhoto`
+2. `apps/web/components/dashboard/PastTripRow.tsx` — remove local CITY_PHOTOS, import `getCityPhoto`
+3. `apps/web/app/trip/[id]/page.tsx` — remove local CITY_PHOTOS, import `getCityPhoto`
+Verify: All three components render city photos correctly. The superset includes at minimum: Tokyo, Kyoto, Seoul, Bangkok, Lisbon, Barcelona, Paris, London, Rome, Istanbul, Taipei, Mexico City, New York. TypeScript compiles clean.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>ui</td>
+          <td>1m46.107443297s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0011</td>
+          <td>Zero `error.tsx` files exist in the app. Any runtime error in a dashboard component crashes the entire page with no recovery. P2 priority.
+Create `apps/web/app/dashboard/error.tsx`:
+Create `apps/web/app/trip/[id]/error.tsx`:
+Both error pages should use design system tokens (bg-base, text-ink-100, font-sora headings).
+Verify: Throwing an error in a dashboard component shows the error boundary, not a blank page. The &#34;Try again&#34; button calls `reset()`. The back link navigates correctly.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>ui</td>
+          <td>49.65990545s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0014</td>
+          <td>Document and test known fragile paths: NaN progress, null dates, missing trips key, malformed API responses. P3 priority.
+Create `apps/web/__tests__/dashboard/edge-cases.test.tsx` (8 tests):
+Create `apps/web/__tests__/dashboard/DashboardPage.test.tsx` (8 tests):
+Mock setup: global `fetch` mock, `next/navigation` useRouter mock, `AppShell` wrapper mock.
+Verify: `npx vitest run apps/web/__tests__/dashboard/` — all tests pass including edge cases.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>test</td>
+          <td>3m6.772384703s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0001</td>
+          <td>Create a shared PrismaClient singleton and replace all 9 per-module `new PrismaClient()` instances. Connection pool exhaustion risk — P0 priority.
+Create `apps/web/lib/prisma.ts` with the standard Next.js singleton pattern:
+Replace `new PrismaClient()` in ALL of these files with `import { prisma } from &#34;@/lib/prisma&#34;`:
+1. `apps/web/lib/auth/session.ts` (line 3)
+2. `apps/web/lib/auth/config.ts` (line 7)
+3. `apps/web/app/api/events/raw/route.ts` (line 18)
+4. `apps/web/app/api/discover/feed/route.ts` (line 14)
+5. `apps/web/app/api/signals/behavioral/route.ts` (line 14)
+6. `apps/web/app/api/slots/[slotId]/swap/route.ts` (line 15)
+7. `apps/web/app/trip/[id]/calendar/page.tsx` (line 7)
+8. `apps/web/app/api/trips/[id]/route.ts` (line 12)
+9. `apps/web/app/api/trips/route.ts` (line 13)
+For each file: remove the `import { PrismaClient } from &#34;@prisma/client&#34;` line and the `const prisma = new PrismaClient()` line. Replace with `import { prisma } from &#34;@/lib/prisma&#34;`.
+Verify: `npx tsc --noEmit` passes. All existing tests still pass.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>infra</td>
+          <td>1m7.265355831s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0004</td>
+          <td>Fix broken navigation links in MobileNav and DesktopSidebar. &#34;Trips&#34; points to `/trips` (doesn&#39;t exist), &#34;Home&#34; points to `/` (landing page). 3 out of 4 mobile nav items are dead links. P1 priority.
+Edit `apps/web/components/nav/MobileNav.tsx`:
+Edit `apps/web/components/nav/DesktopSidebar.tsx`:
+Verify: All nav links point to existing pages. Clicking &#34;Trips&#34; in both mobile and desktop nav navigates to `/dashboard`. No 404s from nav interaction.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>ui</td>
+          <td>1m6.021687459s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0005</td>
+          <td>Trip detail page (`/trip/[id]`) has no way to return to `/dashboard` except browser back. Users are stranded. P1 priority.
+Edit `apps/web/app/trip/[id]/page.tsx`:
+Verify: Clicking &#34;Back to trips&#34; navigates to `/dashboard`. The link is visible on both mobile and desktop. Keyboard accessible (focusable, activatable with Enter).</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>ui</td>
+          <td>37.092205418s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0006</td>
+          <td>Locked design system specifies Sora (headings) &#43; DM Mono (data/labels) ONLY. `font-lora` is used in EmptyState and AppShell TripHero — design system violation. P1 priority. Dashboard scope only (landing/auth pages are a separate pass).
+Edit `apps/web/components/states/EmptyState.tsx`:
+Edit `apps/web/components/layout/AppShell.tsx`:
+Do NOT touch font-lora in other files (landing page, auth pages, slot cards) — those are out of scope for this track.
+Verify: Dashboard components render with Sora font on headings. Visual check that the typography feels consistent with the rest of the design system.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>ui</td>
+          <td>27.418471213s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0009</td>
+          <td>TripHeroCard progress bar has no `role=&#34;progressbar&#34;`, no `aria-valuenow`, no `aria-valuemin/max`. Invisible to screen readers — WCAG violation. P2 priority.
+Edit `apps/web/components/dashboard/TripHeroCard.tsx`:
+  - `role=&#34;progressbar&#34;`
+  - `aria-valuenow={clampedProgress}` (the 0-100 clamped value)
+  - `aria-valuemin={0}`
+  - `aria-valuemax={100}`
+  - `aria-label=&#34;Planning progress&#34;`
+  - Add `focus-visible:scale-[1.03]` alongside the existing `group-hover:scale-[1.03]`
+Also add `aria-label` to the TripHeroCard `&lt;Link&gt;` element:
+Verify: Screen reader announces progress bar value. TripHeroCard link has descriptive label. Focus-visible zoom matches hover zoom.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>ui</td>
+          <td>38.936470683s</td>
+        </tr>
+        
+        <tr>
+          <td>T-0010</td>
+          <td>The `personaSeed` field in trip creation accepts arbitrary JSON with no size limit. An attacker could send multi-megabyte payloads. P2 priority.
+Edit `apps/web/lib/validations/trip.ts`:
+  ```typescript
+  personaSeed: z.record(z.unknown())
+    .refine(
+      (val) =&gt; JSON.stringify(val).length &lt;= 10_000,
+      { message: &#34;personaSeed must be under 10KB&#34; }
+    )
+    .optional(),
+  ```
+Verify: Creating a trip with a small personaSeed works. Creating a trip with a &gt;10KB personaSeed returns a 400 validation error. Existing tests pass.</td>
+          <td><span class="status-complete">complete</span></td>
+          <td></td>
+          <td>api</td>
+          <td>22.537230351s</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Files Changed (0 created, 27 modified, 0 deleted)</summary>
+  <div class="section-content">
+    
+
+    
+
+    
+    <h3 class="file-modified" style="margin: 8px 0 4px 0;">Modified</h3>
+    <ul class="file-list">
+      <li class="file-modified">~ apps/web/__tests__/tokens/token-resolution.test.ts</li><li class="file-modified">~ apps/web/app/api/discover/feed/route.ts</li><li class="file-modified">~ apps/web/app/api/events/raw/route.ts</li><li class="file-modified">~ apps/web/app/api/signals/behavioral/route.ts</li><li class="file-modified">~ apps/web/app/api/slots/[slotId]/swap/route.ts</li><li class="file-modified">~ apps/web/app/api/trips/[id]/route.ts</li><li class="file-modified">~ apps/web/app/api/trips/route.ts</li><li class="file-modified">~ apps/web/app/auth/error/page.tsx</li><li class="file-modified">~ apps/web/app/auth/signin/page.tsx</li><li class="file-modified">~ apps/web/app/globals.css</li><li class="file-modified">~ apps/web/app/page.tsx</li><li class="file-modified">~ apps/web/app/trip/[id]/calendar/page.tsx</li><li class="file-modified">~ apps/web/app/trip/[id]/page.tsx</li><li class="file-modified">~ apps/web/components/dashboard/PastTripRow.tsx</li><li class="file-modified">~ apps/web/components/dashboard/TripHeroCard.tsx</li><li class="file-modified">~ apps/web/components/landing/GlobeCanvas.tsx</li><li class="file-modified">~ apps/web/components/layout/AppShell.tsx</li><li class="file-modified">~ apps/web/components/nav/DesktopSidebar.tsx</li><li class="file-modified">~ apps/web/components/nav/MobileNav.tsx</li><li class="file-modified">~ apps/web/components/states/EmptyState.tsx</li><li class="file-modified">~ apps/web/lib/auth/config.ts</li><li class="file-modified">~ apps/web/lib/auth/session.ts</li><li class="file-modified">~ apps/web/lib/validations/trip.ts</li><li class="file-modified">~ apps/web/middleware.ts</li><li class="file-modified">~ apps/web/vitest.config.ts</li><li class="file-modified">~ docs/plans/plan-review-notes.md</li><li class="file-modified">~ package.json</li>
+    </ul>
+    
+
+    
+
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Timeline (14 events)</summary>
+  <div class="section-content">
+    
+    <table>
+      <thead>
+        <tr><th>Task ID</th><th>Worker</th><th>Model</th><th>Start Time</th><th>Duration</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>T-0006</td>
+          <td>4</td>
+          <td></td>
+          <td>23:05:14</td>
+          <td>27.418471213s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0002</td>
+          <td>3</td>
+          <td></td>
+          <td>23:05:14</td>
+          <td>31.314783712s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0005</td>
+          <td>1</td>
+          <td></td>
+          <td>23:05:14</td>
+          <td>37.092205418s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0004</td>
+          <td>0</td>
+          <td></td>
+          <td>23:05:14</td>
+          <td>1m6.021687459s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0001</td>
+          <td>2</td>
+          <td></td>
+          <td>23:05:14</td>
+          <td>1m7.265355831s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0010</td>
+          <td>1</td>
+          <td></td>
+          <td>23:06:39</td>
+          <td>22.537230351s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0003</td>
+          <td>4</td>
+          <td></td>
+          <td>23:06:39</td>
+          <td>30.072457372s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0009</td>
+          <td>3</td>
+          <td></td>
+          <td>23:06:39</td>
+          <td>38.936470683s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0011</td>
+          <td>0</td>
+          <td></td>
+          <td>23:06:39</td>
+          <td>49.65990545s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0012</td>
+          <td>2</td>
+          <td></td>
+          <td>23:06:39</td>
+          <td>2m30.530756797s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0007</td>
+          <td>1</td>
+          <td></td>
+          <td>23:09:10</td>
+          <td>1m23.304410006s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0008</td>
+          <td>4</td>
+          <td></td>
+          <td>23:09:10</td>
+          <td>1m46.107443297s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0014</td>
+          <td>0</td>
+          <td></td>
+          <td>23:09:10</td>
+          <td>3m6.772384703s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+        <tr>
+          <td>T-0013</td>
+          <td>3</td>
+          <td></td>
+          <td>23:09:10</td>
+          <td>3m45.721795549s</td>
+          <td><span class="status-pass">pass</span></td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Decisions &amp; Constraints</summary>
+  <div class="section-content">
+    <h3 style="margin-bottom: 6px;">Decisions</h3>
+    
+    <p class="no-data">No decisions recorded.</p>
+    
+
+    <h3 style="margin: 12px 0 6px 0;">Constraints</h3>
+    
+    <p class="no-data">No constraints recorded.</p>
+    
+  </div>
+</details>
+
+
+<details>
+  <summary>Model Usage</summary>
+  <div class="section-content">
+    <div class="model-grid">
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Opus</div>
+      </div>
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Sonnet</div>
+      </div>
+      <div class="model-card">
+        <div class="count">0</div>
+        <div class="name">Haiku</div>
+      </div>
+    </div>
+  </div>
+</details>
+
+</body>
+</html>

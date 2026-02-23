@@ -1,0 +1,14 @@
+{
+  "id": "CP-1771830561733597491",
+  "timestamp": "2026-02-22T23:09:21.733598603-08:00",
+  "migration_id": "M-006",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/app/api/signals/behavioral/route.ts": "DELETED",
+    "apps/web/lib/validations/packing.ts": "DELETED",
+    "apps/web/lib/validations/pivot.ts": "DELETED",
+    "apps/web/lib/validations/reflection.ts": "DELETED",
+    "apps/web/lib/validations/share.ts": "DELETED"
+  },
+  "description": "Pre-batch"
+}

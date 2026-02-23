@@ -1,0 +1,14 @@
+{
+  "id": "CP-1771830354603522610",
+  "timestamp": "2026-02-22T23:05:54.603523602-08:00",
+  "migration_id": "M-001",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/lib/rate-limit.ts": "DELETED",
+    "apps/web/lib/validations/invite.ts": "DELETED",
+    "apps/web/lib/validations/vote.ts": "DELETED",
+    "prisma/schema.prisma": "DELETED",
+    "scripts/migrate-vote-state.ts": "DELETED"
+  },
+  "description": "Pre-batch"
+}

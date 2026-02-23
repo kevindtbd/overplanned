@@ -1,0 +1,14 @@
+{
+  "id": "CP-1771830779768772000",
+  "timestamp": "2026-02-22T23:12:59.768772801-08:00",
+  "migration_id": "M-010",
+  "phase": "",
+  "file_hashes": {
+    "apps/web/__tests__/api/feature-units-integration.test.ts": "DELETED",
+    "apps/web/app/invite/[token]/page.tsx": "DELETED",
+    "apps/web/app/s/[token]/page.tsx": "DELETED",
+    "apps/web/app/trip/[id]/page.tsx": "DELETED",
+    "apps/web/app/trip/[id]/reflection/page.tsx": "DELETED"
+  },
+  "description": "Pre-batch"
+}
