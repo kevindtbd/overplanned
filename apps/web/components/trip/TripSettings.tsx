@@ -42,7 +42,7 @@ interface TripSettingsProps {
   };
   myRole: string;
   onClose: () => void;
-  onTripUpdate: () => void;
+  onTripUpdate: (dirtyFields?: Record<string, string>) => void;
 }
 
 type ConfirmAction = "archive" | "delete" | null;
@@ -124,7 +124,7 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
         throw new Error(data.error || "Failed to save changes");
       }
 
-      onTripUpdate();
+      onTripUpdate(dirty);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save changes");

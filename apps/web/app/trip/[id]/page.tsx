@@ -19,6 +19,7 @@ import { ReflectionPrompt } from "@/components/trip/ReflectionPrompt";
 import { type SlotData } from "@/components/slot/SlotCard";
 import { type SlotActionEvent } from "@/components/slot/SlotActions";
 import { TripSettings } from "@/components/trip/TripSettings";
+import { InviteCrewCard } from "@/components/trip/InviteCrewCard";
 import { SlotSkeleton, ErrorState } from "@/components/states";
 import { getCityPhoto } from "@/lib/city-photos";
 import { useTripDetail, type ApiSlot } from "@/lib/hooks/useTripDetail";
@@ -73,6 +74,21 @@ export default function TripDetailPage() {
       setShowWelcome(true);
     }
   }, [tripId]);
+
+  // -- Invite crew card dismiss --
+  const [inviteDismissed, setInviteDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem(`dismiss-invite-${tripId}`) === "1";
+  });
+
+  // -- Toast notification --
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
 
   // -- Settings panel --
   const [showSettings, setShowSettings] = useState(false);
@@ -258,6 +274,16 @@ export default function TripDetailPage() {
     },
     [trip, fetchTrip]
   );
+
+  const handleTripUpdate = useCallback((dirtyFields?: Record<string, string>) => {
+    fetchTrip();
+    if (dirtyFields?.mode) {
+      setToastMessage(`Switched to ${dirtyFields.mode} mode`);
+      // Clear invite dismiss flag so card re-appears after mode toggle
+      sessionStorage.removeItem(`dismiss-invite-${tripId}`);
+      setInviteDismissed(false);
+    }
+  }, [fetchTrip, tripId]);
 
   const handleDeleteTrip = useCallback(async () => {
     if (!trip) return;
@@ -454,6 +480,14 @@ export default function TripDetailPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
+              {trip!.mode === "group" && (
+                <>
+                  <span className="bg-accent text-white font-dm-mono text-[10px] uppercase rounded-full px-2 py-0.5">
+                    Group
+                  </span>
+                  <span aria-hidden="true" className="text-ink-700">|</span>
+                </>
+              )}
               <span>
                 {trip!.city}, {trip!.country}
               </span>
@@ -486,7 +520,7 @@ export default function TripDetailPage() {
               trip={trip}
               myRole={myRole!}
               onClose={() => setShowSettings(false)}
-              onTripUpdate={fetchTrip}
+              onTripUpdate={handleTripUpdate}
             />
           )}
 
@@ -524,6 +558,20 @@ export default function TripDetailPage() {
               onDismiss={() => setShowWelcome(false)}
             />
           )}
+
+          {/* Invite crew card — group organizer with <2 joined members, not dismissed */}
+          {trip!.mode === "group" &&
+            myRole === "organizer" &&
+            (trip!.members?.filter((m) => m.status === "joined").length ?? 0) < 2 &&
+            !inviteDismissed && (
+              <InviteCrewCard
+                tripId={trip!.id}
+                onDismiss={() => {
+                  sessionStorage.setItem(`dismiss-invite-${tripId}`, "1");
+                  setInviteDismissed(true);
+                }}
+              />
+            )}
 
           {/* Day header */}
           <div className="flex items-center justify-between">
@@ -605,6 +653,13 @@ export default function TripDetailPage() {
             </span>
           )}
         </Link>
+      )}
+
+      {/* Toast notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 rounded-lg bg-ink-100 px-4 py-2.5 shadow-lg">
+          <p className="font-dm-mono text-sm text-white">{toastMessage}</p>
+        </div>
       )}
     </AppShell>
   );

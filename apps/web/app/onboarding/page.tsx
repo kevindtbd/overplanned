@@ -131,6 +131,7 @@ function OnboardingContent() {
   const [foodPreferences, setFoodPreferences] = useState<string[]>([]);
   const [freeformVibes, setFreeformVibes] = useState("");
   const [template, setTemplate] = useState<string | null>(null);
+  const [tripMode, setTripMode] = useState<"solo" | "group">("solo");
 
   // Accumulated legs for multi-city trips
   const [legs, setLegs] = useState<OnboardingLeg[]>([]);
@@ -468,7 +469,7 @@ function OnboardingContent() {
             template,
           },
           status: "planning" as const,
-          mode: "solo" as const,
+          mode: tripMode,
         };
 
         const res = await fetch(`/api/trips/${draftIdRef.current}`, {
@@ -490,7 +491,7 @@ function OnboardingContent() {
           startDate: overallStartDate,
           endDate: overallEndDate,
           name: tripName.trim(),
-          mode: "solo" as const,
+          mode: tripMode,
           presetTemplate: template,
           legs: legs.map((l) => ({
             city: l.city,
@@ -638,6 +639,35 @@ function OnboardingContent() {
             <p className="mt-2 text-right font-dm-mono text-xs text-secondary">
               {tripName.length}/80
             </p>
+
+            {/* Mode toggle */}
+            <div className="mt-6 space-y-2">
+              <span className="font-dm-mono text-xs text-secondary uppercase tracking-wider">
+                Trip mode
+              </span>
+              <div className="grid grid-cols-2 gap-3">
+                {(["solo", "group"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setTripMode(m)}
+                    className={`rounded-xl border-[1.5px] p-4 text-left transition-colors ${
+                      tripMode === m
+                        ? "border-accent bg-accent/5"
+                        : "border-ink-700 hover:border-ink-600"
+                    }`}
+                  >
+                    <span className="font-sora text-sm font-medium text-primary block">
+                      {m === "solo" ? "Solo" : "Group"}
+                    </span>
+                    <span className="font-dm-mono text-xs text-secondary mt-1 block">
+                      {m === "solo"
+                        ? "Just you planning"
+                        : "Friends can vote and suggest"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 

@@ -91,9 +91,9 @@ export async function POST(
       },
     });
 
-    // Build invite URL using request origin
-    const origin = req.headers.get("origin") || req.nextUrl.origin;
-    const inviteUrl = `${origin}/invite/${invite.token}`;
+    // Build invite URL using env var (production) or request origin (local dev)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
+    const inviteUrl = `${baseUrl}/invite/${invite.token}`;
 
     return NextResponse.json(
       { token: invite.token, inviteUrl, expiresAt: invite.expiresAt },
