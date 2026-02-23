@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     # Anthropic
     anthropic_api_key: str = ""
 
+    # Backfill pipeline
+    backfill_service_token: str = ""  # validates X-Service-Token on POST /backfill/submit
+
     # Generation
     generation_candidate_pool_size: int = 30
     generation_llm_timeout_s: float = 5.0

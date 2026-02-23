@@ -86,12 +86,16 @@ const mockPastTrip = {
 describe("DashboardPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    // Default: empty backfill trips (fallback for 2nd parallel fetch)
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ trips: [] }),
+    });
   });
 
   it("shows loading state initially", () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
-      () => new Promise(() => {}) // Never resolves
+      () => new Promise(() => {}) // Never resolves — blocks both fetches
     );
 
     render(<DashboardPage />);

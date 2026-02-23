@@ -42,6 +42,9 @@ model User {
   sessions       Session[]
   accounts       Account[]
   tripMembers    TripMember[]
+  backfillTrips  BackfillTrip[]
+  backfillSignals BackfillSignal[]
+  personaDeltas  PersonaDelta[]
 
   userPreference          UserPreference?
   notificationPreference  NotificationPreference?
@@ -198,6 +201,7 @@ model ActivityNode {
   aliases          ActivityAlias[]
   qualitySignals   QualitySignal[]
   slots            ItinerarySlot[]
+  backfillVenues   BackfillVenue[]
 }
 
 model VibeTag {
@@ -450,6 +454,113 @@ model InviteToken {
 }
 
 // ============================================================================
+// BACKFILL (Diary + Enrichment)
+// ============================================================================
+
+model BackfillTrip {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city            String
+  country         String
+  startDate       DateTime?
+  endDate         DateTime?
+  confidenceTier  ConfidenceTier
+  source          String         @default("freeform")
+  rawSubmission   String
+  contextTag      TripContext?
+  tripNote        String?
+  status          BackfillStatus @default(processing)
+  rejectionReason String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  venues          BackfillVenue[]
+  signals         BackfillSignal[]
+
+  @@index([userId, status])
+  @@index([userId, city])
+}
+
+model BackfillVenue {
+  id                String        @id @default(uuid())
+  backfillTripId    String
+  backfillTrip      BackfillTrip  @relation(fields: [backfillTripId], references: [id], onDelete: Cascade)
+  activityNodeId    String?
+  activityNode      ActivityNode? @relation(fields: [activityNodeId], references: [id])
+  extractedName     String
+  extractedCategory String?
+  extractedDate     String?
+  extractedSentiment String?
+  latitude          Float?
+  longitude         Float?
+  resolutionScore   Float?
+  isResolved        Boolean       @default(false)
+  isQuarantined     Boolean       @default(false)
+  quarantineReason  String?
+  wouldReturn       Boolean?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  photos            BackfillPhoto[]
+
+  @@index([backfillTripId])
+  @@index([activityNodeId])
+}
+
+model BackfillPhoto {
+  id              String        @id @default(uuid())
+  backfillVenueId String
+  backfillVenue   BackfillVenue @relation(fields: [backfillVenueId], references: [id], onDelete: Cascade)
+  gcsPath         String
+  originalFilename String
+  mimeType        String
+  exifLat         Float?
+  exifLng         Float?
+  exifTimestamp   DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@index([backfillVenueId])
+}
+
+model BackfillSignal {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  backfillTripId  String
+  backfillTrip    BackfillTrip   @relation(fields: [backfillTripId], references: [id], onDelete: Cascade)
+  backfillVenueId String?
+  signalType      String
+  signalValue     Float
+  confidenceTier  ConfidenceTier
+  weight          Float
+  earnedOut       Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  personaDeltas   PersonaDelta[]
+
+  @@index([userId, createdAt])
+  @@index([backfillTripId])
+}
+
+model PersonaDelta {
+  id                  String         @id @default(uuid())
+  userId              String
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  backfillSignalId    String
+  backfillSignal      BackfillSignal @relation(fields: [backfillSignalId], references: [id], onDelete: Cascade)
+  dimensionName       String
+  personaScore        Float
+  backfillImpliedScore Float
+  delta               Float
+  createdAt           DateTime       @default(now())
+
+  @@index([userId, dimensionName])
+  @@index([backfillSignalId])
+}
+
+// ============================================================================
 // USER SETTINGS (Preferences + Notifications + Consent)
 // ============================================================================
 
@@ -641,4 +752,29 @@ enum PivotStatus {
   accepted
   rejected
   expired
+}
+
+enum ConfidenceTier {
+  tier_2
+  tier_3
+  tier_4
+}
+
+enum BackfillStatus {
+  processing
+  extracting
+  resolving
+  checking
+  complete
+  rejected
+  quarantined
+  archived
+}
+
+enum TripContext {
+  solo
+  partner
+  family
+  friends
+  work
 }

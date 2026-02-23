@@ -9,6 +9,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { TripHeroCard, type TripSummary } from "@/components/dashboard/TripHeroCard";
 import { DraftIdeaCard } from "@/components/dashboard/DraftIdeaCard";
+import { DiaryTripCard, type BackfillTripSummary } from "@/components/dashboard/DiaryTripCard";
 import { PastTripRow } from "@/components/dashboard/PastTripRow";
 import { QuickStartGrid } from "@/components/dashboard/QuickStartGrid";
 import { CardSkeleton, ErrorState } from "@/components/states";
@@ -38,19 +39,30 @@ type FetchState = "loading" | "error" | "success";
 
 export default function DashboardPage() {
   const [trips, setTrips] = useState<TripSummary[]>([]);
+  const [backfillTrips, setBackfillTrips] = useState<BackfillTripSummary[]>([]);
   const [fetchState, setFetchState] = useState<FetchState>("loading");
   const [errorMessage, setErrorMessage] = useState("Failed to load trips");
 
   const fetchTrips = useCallback(async () => {
     setFetchState("loading");
     try {
-      const res = await fetch("/api/trips");
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+      const [tripsRes, backfillRes] = await Promise.all([
+        fetch("/api/trips"),
+        fetch("/api/backfill/trips"),
+      ]);
+      if (!tripsRes.ok) {
+        const data = await tripsRes.json().catch(() => ({}));
         throw new Error(data.error || "Failed to load trips");
       }
-      const { trips: tripList } = await res.json();
+      const { trips: tripList } = await tripsRes.json();
       setTrips(tripList);
+
+      // Backfill trips are non-critical — fail silently
+      if (backfillRes.ok) {
+        const { trips: bfList } = await backfillRes.json();
+        setBackfillTrips(bfList);
+      }
+
       setFetchState("success");
     } catch (err) {
       setErrorMessage(
@@ -73,7 +85,8 @@ export default function DashboardPage() {
     (t) => t.status === "completed" || t.status === "archived"
   );
   const showLabels =
-    (committedTrips.length + draftTrips.length) > 0 && pastTrips.length > 0;
+    (committedTrips.length + draftTrips.length) > 0 &&
+    (pastTrips.length > 0 || backfillTrips.length > 0);
 
   return (
     <AppShell context="app">
@@ -112,8 +125,8 @@ export default function DashboardPage() {
           <ErrorState message={errorMessage} onRetry={fetchTrips} />
         )}
 
-        {/* Empty state -- action-forward launchpad */}
-        {fetchState === "success" && trips.length === 0 && (
+        {/* Empty state -- action-forward launchpad (only when no trips AND no backfill trips) */}
+        {fetchState === "success" && trips.length === 0 && backfillTrips.length === 0 && (
           <QuickStartGrid />
         )}
 
@@ -144,6 +157,41 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
+          </section>
+        )}
+
+        {/* Past Travels -- backfill diary trips */}
+        {fetchState === "success" && backfillTrips.length > 0 && (
+          <section aria-labelledby="diary-trips-heading">
+            <h2 id="diary-trips-heading" className="sec-label mb-4">
+              Past travels
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {backfillTrips.map((bt) => (
+                <DiaryTripCard key={bt.id} trip={bt} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Backfill prompt -- when user has planned trips but no backfill trips */}
+        {fetchState === "success" &&
+          trips.length > 0 &&
+          backfillTrips.length === 0 && (
+          <section className="rounded-[20px] border border-warm-border bg-warm-surface p-5">
+            <p className="font-sora text-sm text-ink-300">
+              Traveled before Overplanned?
+            </p>
+            <p className="mt-1 font-dm-mono text-xs text-ink-400">
+              Add past trips to help us personalize your recommendations.
+            </p>
+            <Link
+              href="/onboarding?step=backfill"
+              className="mt-3 inline-flex items-center gap-1 font-sora text-sm text-accent hover:text-accent/80 transition-colors"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Add a past trip
+            </Link>
           </section>
         )}
 

@@ -35,6 +35,15 @@ vi.mock("@/app/onboarding/components/ForkScreen", () => ({
   ),
 }));
 
+vi.mock("@/app/onboarding/components/BackfillStep", () => ({
+  BackfillStep: ({ onSkip }: { onSkip: () => void; onContinue: () => void }) => (
+    <div>
+      <span>BackfillStep</span>
+      <button onClick={onSkip}>Skip backfill</button>
+    </div>
+  ),
+}));
+
 // DestinationStep mock: auto-calls onChange with a LaunchCity on mount so
 // tests don't have to simulate city selection.
 vi.mock("@/app/onboarding/components/DestinationStep", () => ({
@@ -155,8 +164,10 @@ import OnboardingPage from "@/app/onboarding/page";
  * and return the user-event instance for chaining.
  */
 async function advanceToDates(user: ReturnType<typeof userEvent.setup>) {
-  // fork -> destination
+  // fork -> backfill
   await user.click(screen.getByRole("button", { name: /start planning/i }));
+  // backfill -> destination (skip)
+  await user.click(screen.getByRole("button", { name: /skip backfill/i }));
   // destination: select Tokyo so canAdvance = true
   await user.click(screen.getByRole("button", { name: /select tokyo/i }));
   // destination -> dates
@@ -531,8 +542,10 @@ describe("Onboarding — completion branching", () => {
   async function completeFullWizard(user: ReturnType<typeof userEvent.setup>) {
     render(<OnboardingPage />);
 
-    // fork -> destination
+    // fork -> backfill
     await user.click(screen.getByRole("button", { name: /start planning/i }));
+    // backfill -> destination (skip)
+    await user.click(screen.getByRole("button", { name: /skip backfill/i }));
     await user.click(screen.getByRole("button", { name: /select tokyo/i }));
 
     // destination -> dates

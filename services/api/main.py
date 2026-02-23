@@ -26,6 +26,7 @@ from services.api.routers import pivot as pivot_router
 from services.api.routers import upload
 from services.api.routers import admin_nodes, admin_users, admin_models
 from services.api.routers import admin_sources, admin_pipeline, admin_seeding, admin_safety
+from services.api.routers import backfill as backfill_router
 from services.api.search.qdrant_client import QdrantSearchClient
 from services.api.search.service import ActivitySearchService
 
@@ -129,6 +130,7 @@ app.include_router(admin_sources.router)
 app.include_router(admin_pipeline.router)
 app.include_router(admin_seeding.router)
 app.include_router(admin_safety.router)
+app.include_router(backfill_router.router)
 
 # CORS (needs to be outermost to handle preflight)
 setup_cors(app)

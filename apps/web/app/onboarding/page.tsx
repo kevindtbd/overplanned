@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ForkScreen } from "./components/ForkScreen";
+import { BackfillStep } from "./components/BackfillStep";
 import {
   DestinationStep,
   LAUNCH_CITIES,
@@ -13,10 +14,11 @@ import { TripDNAStep, type Pace, type MorningPreference } from "./components/Tri
 import { TemplateStep } from "./components/TemplateStep";
 import { ErrorState } from "@/components/states";
 
-type WizardStep = "fork" | "destination" | "dates" | "name" | "dna" | "template";
+type WizardStep = "fork" | "backfill" | "destination" | "dates" | "name" | "dna" | "template";
 
 const STEP_ORDER: WizardStep[] = [
   "fork",
+  "backfill",
   "destination",
   "dates",
   "name",
@@ -140,8 +142,17 @@ function OnboardingContent() {
   const didPrefill = useRef(false);
   useEffect(() => {
     if (didPrefill.current) return;
-    const prefilledCity = searchParams.get("city");
     const startStep = searchParams.get("step");
+
+    // Direct jump to backfill step (from dashboard "Add a past trip")
+    if (startStep === "backfill") {
+      didPrefill.current = true;
+      setStep("backfill");
+      router.replace("/onboarding", { scroll: false });
+      return;
+    }
+
+    const prefilledCity = searchParams.get("city");
     if (!prefilledCity || startStep !== "dates") return;
 
     const matchedDest = LAUNCH_CITIES.find(
@@ -219,6 +230,8 @@ function OnboardingContent() {
     switch (step) {
       case "fork":
         return true;
+      case "backfill":
+        return true; // handled by its own skip/continue buttons
       case "destination":
         return destination !== null;
       case "dates":
@@ -387,8 +400,8 @@ function OnboardingContent() {
 
   return (
     <div className="min-h-screen bg-base">
-      {/* Progress bar -- hidden on fork screen */}
-      {step !== "fork" && (
+      {/* Progress bar -- hidden on fork and backfill screens */}
+      {step !== "fork" && step !== "backfill" && (
         <div className="fixed left-0 right-0 top-0 z-20 bg-base/80 backdrop-blur-sm">
           <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
             <button
@@ -425,12 +438,21 @@ function OnboardingContent() {
       )}
 
       {/* Step content */}
-      <div className={step !== "fork" ? "px-4 pb-28 pt-16" : ""}>
+      <div className={step !== "fork" && step !== "backfill" ? "px-4 pb-28 pt-16" : step === "backfill" ? "px-4" : ""}>
         {step === "fork" && (
           <ForkScreen
-            onPlanTrip={() => setStep("destination")}
+            onPlanTrip={() => setStep("backfill")}
             onExplore={() => router.push("/discover")}
           />
+        )}
+
+        {step === "backfill" && (
+          <div className="pt-8">
+            <BackfillStep
+              onSkip={() => setStep("destination")}
+              onContinue={() => setStep("destination")}
+            />
+          </div>
         )}
 
         {step === "destination" && (
@@ -510,8 +532,8 @@ function OnboardingContent() {
         </div>
       )}
 
-      {/* Bottom navigation -- hidden on fork screen */}
-      {step !== "fork" && (
+      {/* Bottom navigation -- hidden on fork and backfill screens (backfill has its own buttons) */}
+      {step !== "fork" && step !== "backfill" && (
         <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-ink-700 bg-base/90 backdrop-blur-sm">
           <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-4">
             {step === "template" ? (

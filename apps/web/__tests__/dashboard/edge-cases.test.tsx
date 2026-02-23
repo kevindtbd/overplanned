@@ -26,7 +26,11 @@ vi.mock("@/components/layout/AppShell", () => ({
 describe("Dashboard Edge Cases", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    // Default: empty backfill trips (fallback for 2nd parallel fetch)
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ trips: [] }),
+    });
   });
 
   it("handles NaN planning progress gracefully", async () => {
