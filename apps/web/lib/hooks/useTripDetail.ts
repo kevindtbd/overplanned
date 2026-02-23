@@ -14,6 +14,8 @@ export interface ApiSlot {
   endTime: string | null;
   durationMinutes: number | null;
   isLocked: boolean;
+  // voteState stores group vote data as JSON (nullable)
+  voteState: Record<string, unknown> | null;
   activityNode: {
     id: string;
     name: string;
@@ -44,6 +46,16 @@ export interface ApiTrip {
   mode: string;
   status: string;
   planningProgress: number;
+  packingList: {
+    items: Array<{
+      id: string;
+      text: string;
+      category: "essentials" | "clothing" | "documents" | "tech" | "toiletries" | "misc";
+      checked: boolean;
+    }>;
+    generatedAt: string;
+    model: string;
+  } | null;
   legs: ApiLeg[];
   slots: ApiSlot[];
   members: {
@@ -70,6 +82,7 @@ export type FetchState = "loading" | "error" | "success";
 export function useTripDetail(tripId: string) {
   const [trip, setTrip] = useState<ApiTrip | null>(null);
   const [myRole, setMyRole] = useState<string | null>(null);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
   const [fetchState, setFetchState] = useState<FetchState>("loading");
   const [errorMessage, setErrorMessage] = useState("Failed to load trip");
 
@@ -87,7 +100,7 @@ export function useTripDetail(tripId: string) {
         }
         throw new Error(data.error || "Failed to load trip");
       }
-      const { trip: tripData, myRole: role } = await res.json();
+      const { trip: tripData, myRole: role, myUserId: odId } = await res.json();
       // Derive convenience fields from first leg
       const leg0 = tripData.legs?.[0];
       tripData.city = leg0?.city ?? "";
@@ -96,6 +109,7 @@ export function useTripDetail(tripId: string) {
       tripData.timezone = leg0?.timezone ?? "UTC";
       setTrip(tripData);
       setMyRole(role);
+      setMyUserId(odId ?? null);
       setFetchState("success");
     } catch (err) {
       setErrorMessage(
@@ -109,5 +123,5 @@ export function useTripDetail(tripId: string) {
     fetchTrip();
   }, [fetchTrip]);
 
-  return { trip, setTrip, myRole, fetchState, errorMessage, fetchTrip };
+  return { trip, setTrip, myRole, myUserId, fetchState, errorMessage, fetchTrip };
 }

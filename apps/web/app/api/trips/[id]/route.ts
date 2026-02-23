@@ -140,7 +140,7 @@ export async function GET(
     }
 
     return NextResponse.json(
-      { trip, myRole: membership.role, myStatus: membership.status },
+      { trip, myRole: membership.role, myStatus: membership.status, myUserId: userId },
       { status: 200 }
     );
   } catch (err) {
@@ -362,9 +362,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Trip not found" }, { status: 404 });
     }
 
-    if (currentTrip.status !== "draft") {
+    if (currentTrip.status !== "draft" && currentTrip.status !== "planning") {
       return NextResponse.json(
-        { error: "Only draft trips can be deleted" },
+        { error: "Only draft or planning trips can be deleted" },
         { status: 409 }
       );
     }

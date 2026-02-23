@@ -390,57 +390,52 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
         </div>
       )}
 
-      {/* Danger zone — organizer only */}
-      {isOrganizer &&
-        (trip.status === "completed" || trip.status === "draft") && (
+      {/* Danger zone — organizer only, all non-archived statuses */}
+      {isOrganizer && trip.status !== "archived" && (
           <div className="px-5 py-4">
             <span className="font-dm-mono text-xs text-red-400 uppercase tracking-wider">
               Danger zone
             </span>
             <div className="mt-2 space-y-2">
-              {/* Archive — completed only */}
-              {trip.status === "completed" && (
-                <>
-                  {confirmAction === "archive" ? (
-                    <div className="rounded-lg border border-red-400/30 bg-red-400/5 p-3 space-y-3">
-                      <p className="font-sora text-sm text-ink-100">
-                        Archive this trip? It will move to your past trips.
-                      </p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setConfirmAction(null)}
-                          disabled={actionLoading}
-                          className="rounded-lg px-3 py-2 font-sora text-sm text-ink-400 hover:text-ink-100 transition-colors min-h-[44px]"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleArchive}
-                          disabled={actionLoading}
-                          className="rounded-lg border border-red-400/30 px-3 py-2 font-sora text-sm font-medium text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-50 min-h-[44px]"
-                        >
-                          {actionLoading ? "Archiving..." : "Yes, archive"}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
+              {/* Archive — any non-archived status */}
+              {confirmAction === "archive" ? (
+                <div className="rounded-lg border border-red-400/30 bg-red-400/5 p-3 space-y-3">
+                  <p className="font-sora text-sm text-ink-100">
+                    Archive this trip? It will be read-only and hidden from your main dashboard.
+                  </p>
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => setConfirmAction("archive")}
-                      className="w-full rounded-lg border border-red-400/30 px-4 py-2.5 font-sora text-sm font-medium text-red-400 hover:bg-red-400/10 transition-colors min-h-[44px] text-left"
+                      onClick={() => setConfirmAction(null)}
+                      disabled={actionLoading}
+                      className="rounded-lg px-3 py-2 font-sora text-sm text-ink-400 hover:text-ink-100 transition-colors min-h-[44px]"
                     >
-                      Archive trip
+                      Cancel
                     </button>
-                  )}
-                </>
+                    <button
+                      onClick={handleArchive}
+                      disabled={actionLoading}
+                      className="rounded-lg border border-red-400/30 px-3 py-2 font-sora text-sm font-medium text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-50 min-h-[44px]"
+                    >
+                      {actionLoading ? "Archiving..." : "Yes, archive"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmAction("archive")}
+                  className="w-full rounded-lg border border-red-400/30 px-4 py-2.5 font-sora text-sm font-medium text-red-400 hover:bg-red-400/10 transition-colors min-h-[44px] text-left"
+                >
+                  Archive trip
+                </button>
               )}
 
-              {/* Delete — draft only */}
-              {trip.status === "draft" && (
+              {/* Delete — draft and planning only */}
+              {(trip.status === "draft" || trip.status === "planning") && (
                 <>
                   {confirmAction === "delete" ? (
                     <div className="rounded-lg border border-red-400/30 bg-red-400/5 p-3 space-y-3">
                       <p className="font-sora text-sm text-ink-100">
-                        Delete this draft? This cannot be undone.
+                        Delete this trip? This cannot be undone.
                       </p>
                       <div className="flex gap-2">
                         <button

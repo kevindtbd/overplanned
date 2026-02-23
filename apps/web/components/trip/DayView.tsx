@@ -21,8 +21,16 @@ interface DayViewProps {
   onSlotAction: (event: SlotActionEvent) => void;
   /** Track 4: enable group voting on all slots */
   showVoting?: boolean;
+  /** Trip ID — passed through to VotePanel and PivotDrawer */
+  tripId?: string;
+  /** Current user ID — passed through to VotePanel */
+  myUserId?: string | null;
+  /** Callback when current user casts a vote */
+  onVote?: (slotId: string, vote: string) => void;
   /** Track 5: enable pivot controls on all slots */
   showPivot?: boolean;
+  /** Callback after a pivot is successfully created */
+  onPivotCreated?: () => void;
   /** Track 5: enable flag controls on all slots */
   showFlag?: boolean;
   /** Total days in the trip (for move-to-day dropdown) */
@@ -96,7 +104,11 @@ export function DayView({
   timezone,
   onSlotAction,
   showVoting = false,
+  tripId,
+  myUserId,
+  onVote,
   showPivot = false,
+  onPivotCreated,
   showFlag = false,
   totalDays,
   timeFormat = "12h",
@@ -170,7 +182,11 @@ export function DayView({
                 timezone={timezone}
                 compact
                 showVoting={showVoting}
+                tripId={tripId}
+                myUserId={myUserId}
+                onVote={onVote}
                 showPivot={showPivot}
+                onPivotCreated={onPivotCreated}
                 showFlag={showFlag}
                 totalDays={totalDays}
                 currentDay={dayNumber}

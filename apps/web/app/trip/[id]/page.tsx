@@ -5,12 +5,17 @@
 // DayNavigation + DayView with actual slots.
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { DayNavigation } from "@/components/trip/DayNavigation";
 import { DayView } from "@/components/trip/DayView";
 import { WelcomeCard } from "@/components/trip/WelcomeCard";
+import { MemberAvatars } from "@/components/trip/MemberAvatars";
+import { InviteButton } from "@/components/trip/InviteButton";
+import { ShareButton } from "@/components/trip/ShareButton";
+import { PackingList } from "@/components/trip/PackingList";
+import { ReflectionPrompt } from "@/components/trip/ReflectionPrompt";
 import { type SlotData } from "@/components/slot/SlotCard";
 import { type SlotActionEvent } from "@/components/slot/SlotActions";
 import { TripSettings } from "@/components/trip/TripSettings";
@@ -33,6 +38,7 @@ function apiSlotToSlotData(slot: ApiSlot): SlotData {
     isLocked: slot.isLocked,
     vibeTags: [], // Vibe tags would need a separate join; empty for now
     activityNodeId: slot.activityNode?.id,
+    voteState: slot.voteState,
   };
 }
 
@@ -49,9 +55,10 @@ function computeTotalDays(startDate: string, endDate: string): number {
 
 export default function TripDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const tripId = params.id;
 
-  const { trip, setTrip, myRole, fetchState, errorMessage, fetchTrip } =
+  const { trip, setTrip, myRole, myUserId, fetchState, errorMessage, fetchTrip } =
     useTripDetail(tripId);
 
   const [currentDay, setCurrentDay] = useState(1);
@@ -69,6 +76,8 @@ export default function TripDetailPage() {
 
   // -- Settings panel --
   const [showSettings, setShowSettings] = useState(false);
+  const [showTripMenu, setShowTripMenu] = useState(false);
+  const [archiveConfirm, setArchiveConfirm] = useState(false);
 
   // -- FAB scroll collapse --
   const [fabCompact, setFabCompact] = useState(false);
@@ -218,6 +227,50 @@ export default function TripDetailPage() {
     }
   }, [trip, tripId, fetchTrip, setTrip]);
 
+  const handleArchiveTrip = useCallback(async () => {
+    if (!trip) return;
+    try {
+      const res = await fetch(`/api/trips/${tripId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "archived" }),
+      });
+      if (res.ok) {
+        router.push("/dashboard");
+      }
+    } catch {
+      // silently fail
+    }
+  }, [trip, tripId, router]);
+
+  const handleVote = useCallback(
+    async (slotId: string, vote: string) => {
+      if (!trip) return;
+      try {
+        await fetch(`/api/trips/${trip.id}/vote`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slotId, vote }),
+        });
+      } finally {
+        fetchTrip();
+      }
+    },
+    [trip, fetchTrip]
+  );
+
+  const handleDeleteTrip = useCallback(async () => {
+    if (!trip) return;
+    try {
+      const res = await fetch(`/api/trips/${tripId}`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/dashboard");
+      }
+    } catch {
+      // silently fail
+    }
+  }, [trip, tripId, router]);
+
   // Status summary across all days
   const statusSummary = useMemo(() => {
     if (!trip) return { total: 0, confirmed: 0, proposed: 0 };
@@ -313,22 +366,92 @@ export default function TripDetailPage() {
 
           {/* Trip header */}
           <header className="space-y-1">
-            <div className="flex items-center justify-between">
-              <h1 className="font-sora text-2xl sm:text-3xl font-medium text-ink-100">
+            <div className="flex items-center justify-between gap-3">
+              <h1 className="font-sora text-2xl sm:text-3xl font-medium text-ink-100 min-w-0 truncate">
                 {trip!.destination}
               </h1>
-              {myRole === "organizer" && (
-                <button
-                  onClick={() => setShowSettings(prev => !prev)}
-                  className="rounded-lg p-2 text-ink-400 hover:text-ink-100 hover:bg-warm-surface transition-colors"
-                  aria-label="Trip settings"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
-                  </svg>
-                </button>
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Member avatars — group trips with 2+ joined members */}
+                {trip!.mode === "group" && trip!.members && (
+                  <MemberAvatars members={trip!.members} />
+                )}
+
+                {/* Invite button — group organizer, planning or active */}
+                {trip!.mode === "group" &&
+                  myRole === "organizer" &&
+                  (trip!.status === "planning" || trip!.status === "active") && (
+                    <InviteButton tripId={trip!.id} />
+                  )}
+
+                {/* Share button — any status that's meaningful to share */}
+                {(trip!.status === "planning" ||
+                  trip!.status === "active" ||
+                  trip!.status === "completed") && (
+                  <ShareButton tripId={trip!.id} />
+                )}
+
+                {myRole === "organizer" && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowTripMenu(prev => !prev)}
+                      className="rounded-lg p-2 text-ink-400 hover:text-ink-100 hover:bg-warm-surface transition-colors"
+                      aria-label="Trip menu"
+                    >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="5" r="1" />
+                      <circle cx="12" cy="12" r="1" />
+                      <circle cx="12" cy="19" r="1" />
+                    </svg>
+                  </button>
+                  {showTripMenu && (
+                    <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-warm-border bg-surface shadow-lg z-20 overflow-hidden">
+                      <button
+                        onClick={() => { setShowTripMenu(false); setShowSettings(prev => !prev); }}
+                        className="w-full px-4 py-3 text-left font-sora text-sm text-ink-100 hover:bg-warm-surface transition-colors flex items-center gap-2"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+                        </svg>
+                        Settings
+                      </button>
+                      <div className="border-t border-warm-border" />
+                      {!archiveConfirm ? (
+                        <button
+                          onClick={() => setArchiveConfirm(true)}
+                          className="w-full px-4 py-3 text-left font-sora text-sm text-red-400 hover:bg-red-400/5 transition-colors flex items-center gap-2"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="21 8 21 21 3 21 3 8" />
+                            <rect x="1" y="3" width="22" height="5" />
+                            <line x1="10" y1="12" x2="14" y2="12" />
+                          </svg>
+                          Archive trip
+                        </button>
+                      ) : (
+                        <div className="px-4 py-3 space-y-2">
+                          <p className="font-dm-mono text-xs text-ink-400">Are you sure?</p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setArchiveConfirm(false)}
+                              className="rounded-lg px-3 py-1.5 font-sora text-xs text-ink-400 hover:text-ink-100 transition-colors"
+                            >
+                              No
+                            </button>
+                            <button
+                              onClick={handleArchiveTrip}
+                              className="rounded-lg px-3 py-1.5 font-sora text-xs font-medium text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
+                            >
+                              Yes, archive
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
+              </div>
             </div>
             <div className="flex items-center gap-3 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
               <span>
@@ -420,7 +543,30 @@ export default function TripDetailPage() {
             timezone={trip!.timezone}
             onSlotAction={handleSlotAction}
             totalDays={totalDays}
+            showVoting={trip!.mode === "group" && (trip!.status === "planning" || trip!.status === "active")}
+            tripId={trip!.id}
+            myUserId={myUserId}
+            onVote={handleVote}
+            showPivot={trip!.mode === "group" && (trip!.status === "planning" || trip!.status === "active")}
+            onPivotCreated={fetchTrip}
           />
+
+          {/* Packing list — active or completed trips only */}
+          {(trip!.status === "active" || trip!.status === "completed") && (
+            <PackingList
+              tripId={trip!.id}
+              packingList={trip!.packingList}
+              onUpdate={fetchTrip}
+            />
+          )}
+
+          {/* Reflection prompt — completed trips only */}
+          {trip!.status === "completed" && (
+            <ReflectionPrompt
+              tripId={trip!.id}
+              hasSubmitted={false}
+            />
+          )}
         </div>
       </div>
 

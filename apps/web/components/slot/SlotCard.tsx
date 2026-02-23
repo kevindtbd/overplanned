@@ -14,9 +14,11 @@
 //   />
 
 import Image from "next/image";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { VibeChips, type VibeTagDisplay } from "./VibeChips";
 import { SlotActions, type SlotActionEvent } from "./SlotActions";
+import { VotePanel, type VoteChoice, type MemberVote, type VoteState } from "@/components/group/voting/VotePanel";
+import { PivotDrawer } from "@/components/trip/PivotDrawer";
 
 // ---------- Types ----------
 
@@ -54,6 +56,8 @@ export interface SlotData {
   bookingStatus?: "none" | "pending" | "confirmed";
   /** Activity node ID for behavioral signal logging */
   activityNodeId?: string;
+  /** Raw group vote state JSON from the DB */
+  voteState?: Record<string, unknown> | null;
 }
 
 export interface SlotCardProps {
@@ -68,8 +72,16 @@ export interface SlotCardProps {
   compact?: boolean;
   /** Track 4: show group voting controls */
   showVoting?: boolean;
+  /** Trip ID — required for VotePanel and PivotDrawer */
+  tripId?: string;
+  /** Current user ID — required for VotePanel */
+  myUserId?: string | null;
+  /** Callback when current user casts or changes their vote */
+  onVote?: (slotId: string, vote: string) => void;
   /** Track 5: show pivot/swap controls */
   showPivot?: boolean;
+  /** Callback after a pivot is successfully created */
+  onPivotCreated?: () => void;
   /** Track 5: show flag-for-review button */
   showFlag?: boolean;
   /** Total days in the trip (for move-to-day dropdown) */
@@ -167,7 +179,11 @@ export function SlotCard({
   whyThis,
   compact = true,
   showVoting = false,
+  tripId,
+  myUserId,
+  onVote,
   showPivot = false,
+  onPivotCreated,
   showFlag = false,
   totalDays,
   currentDay,
@@ -175,12 +191,33 @@ export function SlotCard({
   totalSlotsInDay,
 }: SlotCardProps) {
   const statusConfig = STATUS_CONFIG[slot.status];
+  const [showPivotDrawer, setShowPivotDrawer] = useState(false);
 
   const handleAction = useCallback(
     (event: SlotActionEvent) => {
       onAction(event);
     },
     [onAction]
+  );
+
+  // Derive VotePanel data from voteState JSON
+  const votePanelData = (() => {
+    if (!showVoting || !slot.voteState) return null;
+    const vs = slot.voteState as {
+      panelState?: VoteState;
+      memberVotes?: MemberVote[];
+    };
+    const panelState: VoteState = vs.panelState ?? "proposed";
+    const memberVotes: MemberVote[] = vs.memberVotes ?? [];
+    const isComplete = memberVotes.length > 0 && memberVotes.every((mv) => mv.vote !== null);
+    return { panelState, memberVotes, isComplete };
+  })();
+
+  const handleVotePanelVote = useCallback(
+    (slotId: string, vote: VoteChoice) => {
+      if (onVote) onVote(slotId, vote);
+    },
+    [onVote]
   );
 
   const timeDisplay = slot.startTime ? formatTime(slot.startTime, timezone) : null;
@@ -202,30 +239,38 @@ export function SlotCard({
         totalSlotsInDay={totalSlotsInDay}
       />
 
-      {showVoting && (
+      {showVoting && tripId && myUserId && votePanelData && votePanelData.memberVotes.length > 0 && (
+        <VotePanel
+          slotId={slot.id}
+          voteState={votePanelData.panelState}
+          memberVotes={votePanelData.memberVotes}
+          currentUserId={myUserId}
+          isComplete={votePanelData.isComplete}
+          onVote={handleVotePanelVote}
+        />
+      )}
+
+      {showVoting && (!votePanelData || votePanelData.memberVotes.length === 0) && (
         <div
-          className="
-            mt-2 p-3 rounded-[13px] border border-dashed border-ink-700
-            label-mono text-center
-          "
-          aria-label="Group voting controls (coming soon)"
+          className="mt-2 rounded-[13px] border border-ink-700 px-3 py-2"
+          aria-label="Group voting"
         >
-          Group voting -- Track 4
+          <p className="font-dm-mono text-[10px] uppercase tracking-wider text-ink-400">
+            Awaiting group votes
+          </p>
         </div>
       )}
 
       {(showPivot || showFlag) && (
         <div className="flex gap-2 mt-2">
           {showPivot && (
-            <div
-              className="
-                flex-1 p-2 rounded-[13px] border border-dashed border-ink-700
-                label-mono text-center
-              "
-              aria-label="Pivot swap controls (coming soon)"
+            <button
+              onClick={() => setShowPivotDrawer(true)}
+              className="flex-1 rounded-[13px] border border-ink-700 px-3 py-2 font-dm-mono text-[10px] uppercase tracking-wider text-ink-400 hover:border-ink-500 hover:text-ink-200 transition-colors text-left"
+              aria-label="Suggest a change for this activity"
             >
-              Pivot -- Track 5
-            </div>
+              Suggest change
+            </button>
           )}
           {showFlag && (
             <div
@@ -239,6 +284,19 @@ export function SlotCard({
             </div>
           )}
         </div>
+      )}
+
+      {showPivotDrawer && tripId && (
+        <PivotDrawer
+          tripId={tripId}
+          slotId={slot.id}
+          currentActivityName={slot.activityName}
+          onClose={() => setShowPivotDrawer(false)}
+          onPivotCreated={() => {
+            setShowPivotDrawer(false);
+            if (onPivotCreated) onPivotCreated();
+          }}
+        />
       )}
     </>
   );
