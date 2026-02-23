@@ -96,8 +96,6 @@ export async function POST(req: NextRequest) {
     const trip = await prisma.backfillTrip.create({
       data: {
         userId,
-        city: cityHint?.trim() || "unknown",
-        country: "unknown",
         rawSubmission: text,
         confidenceTier: "tier_4",
         source: "freeform",
@@ -107,6 +105,18 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, status: true },
     });
+
+    // Create initial leg from city hint
+    if (cityHint?.trim()) {
+      await prisma.backfillLeg.create({
+        data: {
+          backfillTripId: trip.id,
+          position: 0,
+          city: cityHint.trim(),
+          country: "unknown",
+        },
+      });
+    }
 
     return NextResponse.json(
       { backfill_trip_id: trip.id, status: trip.status },

@@ -13,6 +13,8 @@ import { DatesStep } from "./components/DatesStep";
 import { TripDNAStep, type Pace, type MorningPreference } from "./components/TripDNAStep";
 import { TemplateStep } from "./components/TemplateStep";
 import { ErrorState } from "@/components/states";
+import { nightsBetween } from "@/lib/utils/dates";
+import { MAX_TRIP_NIGHTS } from "@/lib/constants/trip";
 
 type WizardStep = "fork" | "backfill" | "destination" | "dates" | "name" | "dna" | "template";
 
@@ -235,7 +237,12 @@ function OnboardingContent() {
       case "destination":
         return destination !== null;
       case "dates":
-        return !!startDate && !!endDate && endDate >= startDate;
+        return (
+          !!startDate &&
+          !!endDate &&
+          endDate > startDate &&
+          nightsBetween(startDate, endDate) <= MAX_TRIP_NIGHTS
+        );
       case "name":
         return tripName.trim().length > 0;
       case "dna":

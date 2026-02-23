@@ -2,7 +2,7 @@
  * GET /api/discover/feed
  *
  * Returns ActivityNodes for the discover surface.
- * Filters by city and optional category.
+ * Filters by city (direct param or resolved via tripLegId) and optional category.
  * Returns only approved nodes with images, sorted by convergenceScore desc.
  */
 
@@ -17,14 +17,40 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const userId = session.user.id as string;
   const { searchParams } = req.nextUrl;
-  const city = searchParams.get("city");
+  let city = searchParams.get("city");
+  const tripLegId = searchParams.get("tripLegId");
   const category = searchParams.get("category") ?? undefined;
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "60", 10), 100);
 
+  // Resolve city from tripLegId if provided
+  if (tripLegId) {
+    const leg = await prisma.tripLeg.findUnique({
+      where: { id: tripLegId },
+      select: { city: true, tripId: true },
+    });
+
+    if (!leg) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    // Ownership check: caller must be a joined member of the trip
+    const membership = await prisma.tripMember.findUnique({
+      where: { tripId_userId: { tripId: leg.tripId, userId } },
+      select: { status: true },
+    });
+
+    if (!membership || membership.status !== "joined") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    city = leg.city;
+  }
+
   if (!city) {
     return NextResponse.json(
-      { error: "city parameter is required" },
+      { error: "city or tripLegId parameter is required" },
       { status: 400 }
     );
   }

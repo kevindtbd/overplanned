@@ -46,8 +46,10 @@ export async function verifyBackfillTripOwnership(
       id: true,
       userId: true,
       status: true,
-      city: true,
-      country: true,
+      legs: {
+        select: { city: true, country: true, position: true },
+        orderBy: { position: "asc" },
+      },
       startDate: true,
       endDate: true,
       contextTag: true,

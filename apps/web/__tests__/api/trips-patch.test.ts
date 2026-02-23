@@ -30,6 +30,29 @@ vi.mock("@/lib/generation/promote-draft", () => ({
   promoteDraftToPlanning: vi.fn(),
 }));
 
+vi.mock("@/lib/trip-status", () => ({
+  shouldAutoTransition: vi.fn(() => false),
+  validateTransition: vi.fn((from: string, to: string) => {
+    const allowed: Record<string, string[]> = {
+      draft: ["planning"],
+      planning: ["active"],
+      active: ["completed"],
+      completed: ["archived"],
+    };
+    return (allowed[from] ?? []).includes(to);
+  }),
+  getWritableFields: vi.fn((status: string) => {
+    const fields: Record<string, Set<string>> = {
+      draft: new Set(["name", "status", "startDate", "endDate", "mode", "presetTemplate", "personaSeed"]),
+      planning: new Set(["name", "status", "startDate", "endDate", "planningProgress"]),
+      active: new Set(["name", "status", "planningProgress"]),
+      completed: new Set(["status"]),
+      archived: new Set([]),
+    };
+    return fields[status] ?? new Set();
+  }),
+}));
+
 const { getServerSession } = await import("next-auth");
 const { prisma } = await import("@/lib/prisma");
 const { promoteDraftToPlanning } = await import("@/lib/generation/promote-draft");
@@ -114,7 +137,11 @@ describe("PATCH /api/trips/[id] — state machine: invalid transitions return 40
     it(`rejects ${current} -> ${requested} with 409`, async () => {
       mockGetServerSession.mockResolvedValueOnce(authedSession as never);
       mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-      mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: current } as never);
+      mockPrisma.trip.findUnique.mockResolvedValueOnce({
+        status: current,
+        startDate: new Date("2027-01-01T00:00:00.000Z"),
+        endDate: new Date("2027-01-07T00:00:00.000Z"),
+      } as never);
 
       const res = await PATCH(makePatchRequest({ status: requested }), mockParams);
       expect(res.status).toBe(409);
@@ -132,7 +159,11 @@ describe("PATCH /api/trips/[id] — state machine: valid transitions succeed", (
   it("allows planning -> active transition", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-    mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "planning" } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "planning",
+      startDate: new Date("2027-01-01T00:00:00.000Z"),
+      endDate: new Date("2027-01-07T00:00:00.000Z"),
+    } as never);
     mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123", status: "active" } as never);
 
     const res = await PATCH(makePatchRequest({ status: "active" }), mockParams);
@@ -144,7 +175,11 @@ describe("PATCH /api/trips/[id] — state machine: valid transitions succeed", (
   it("allows active -> completed transition", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-    mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "active" } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "active",
+      startDate: new Date("2027-01-01T00:00:00.000Z"),
+      endDate: new Date("2027-01-07T00:00:00.000Z"),
+    } as never);
     mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123", status: "completed" } as never);
 
     const res = await PATCH(makePatchRequest({ status: "completed" }), mockParams);
@@ -154,7 +189,11 @@ describe("PATCH /api/trips/[id] — state machine: valid transitions succeed", (
   it("allows completed -> archived transition", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-    mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "completed" } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "completed",
+      startDate: new Date("2027-01-01T00:00:00.000Z"),
+      endDate: new Date("2027-01-07T00:00:00.000Z"),
+    } as never);
     mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123", status: "archived" } as never);
 
     const res = await PATCH(makePatchRequest({ status: "archived" }), mockParams);
@@ -170,7 +209,11 @@ describe("PATCH /api/trips/[id] — field-level write guards", () => {
   it("allows startDate when trip is in planning status", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-    mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "planning" } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "planning",
+      startDate: new Date("2027-01-01T00:00:00.000Z"),
+      endDate: new Date("2027-01-07T00:00:00.000Z"),
+    } as never);
     mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123", name: "New Name" } as never);
 
     const res = await PATCH(
@@ -187,7 +230,11 @@ describe("PATCH /api/trips/[id] — field-level write guards", () => {
   it("silently ignores mode when trip is in active status", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-    mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "active" } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "active",
+      startDate: new Date("2027-01-01T00:00:00.000Z"),
+      endDate: new Date("2027-01-07T00:00:00.000Z"),
+    } as never);
     mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123", name: "Updated" } as never);
 
     const res = await PATCH(
@@ -203,7 +250,11 @@ describe("PATCH /api/trips/[id] — field-level write guards", () => {
   it("ignores all fields for archived trips (terminal state)", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-    mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "archived" } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "archived",
+      startDate: new Date("2027-01-01T00:00:00.000Z"),
+      endDate: new Date("2027-01-07T00:00:00.000Z"),
+    } as never);
     mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123" } as never);
 
     const res = await PATCH(
@@ -219,7 +270,11 @@ describe("PATCH /api/trips/[id] — field-level write guards", () => {
   it("allows all draft-writable fields through when trip is in draft status", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-    mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "draft" } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "draft",
+      startDate: new Date("2027-06-01T00:00:00.000Z"),
+      endDate: new Date("2027-06-07T00:00:00.000Z"),
+    } as never);
     mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123", status: "draft" } as never);
 
     const res = await PATCH(
@@ -245,6 +300,82 @@ describe("PATCH /api/trips/[id] — field-level write guards", () => {
   });
 });
 
+describe("PATCH /api/trips/[id] — date range validation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("rejects partial date update that exceeds 14 nights", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "planning",
+      startDate: new Date("2026-04-01T00:00:00.000Z"),
+      endDate: new Date("2026-04-07T00:00:00.000Z"),
+    } as never);
+
+    const res = await PATCH(
+      makePatchRequest({ endDate: "2026-04-20T00:00:00.000Z" }),
+      mockParams
+    );
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/exceed 14 nights/i);
+  });
+
+  it("rejects date update where end <= start", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "planning",
+      startDate: new Date("2026-04-01T00:00:00.000Z"),
+      endDate: new Date("2026-04-07T00:00:00.000Z"),
+    } as never);
+
+    const res = await PATCH(
+      makePatchRequest({ endDate: "2026-03-30T00:00:00.000Z" }),
+      mockParams
+    );
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/after start date/i);
+  });
+
+  it("allows non-date PATCH on an existing trip with >14 day range (no regression)", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "planning",
+      startDate: new Date("2026-04-01T00:00:00.000Z"),
+      endDate: new Date("2026-05-01T00:00:00.000Z"),
+    } as never);
+    mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123", name: "Renamed" } as never);
+
+    const res = await PATCH(makePatchRequest({ name: "Renamed" }), mockParams);
+    expect(res.status).toBe(200);
+  });
+
+  it("allows valid date update within 14 nights", async () => {
+    mockGetServerSession.mockResolvedValueOnce(authedSession as never);
+    mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "planning",
+      startDate: new Date("2026-04-01T00:00:00.000Z"),
+      endDate: new Date("2026-04-07T00:00:00.000Z"),
+    } as never);
+    mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123" } as never);
+
+    const res = await PATCH(
+      makePatchRequest({
+        startDate: "2026-04-01T00:00:00.000Z",
+        endDate: "2026-04-15T00:00:00.000Z",
+      }),
+      mockParams
+    );
+    expect(res.status).toBe(200);
+  });
+});
+
 describe("PATCH /api/trips/[id] — draft -> planning triggers generation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -260,7 +391,11 @@ describe("PATCH /api/trips/[id] — draft -> planning triggers generation", () =
 
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-    mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "draft" } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "draft",
+      startDate: new Date("2027-06-01T00:00:00.000Z"),
+      endDate: new Date("2027-06-07T00:00:00.000Z"),
+    } as never);
     mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123", status: "planning" } as never);
     mockPromoteDraft.mockResolvedValueOnce({
       trip: mockGeneratedTrip,
@@ -279,7 +414,11 @@ describe("PATCH /api/trips/[id] — draft -> planning triggers generation", () =
   it("returns graceful fallback if generation throws after promotion", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-    mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "draft" } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "draft",
+      startDate: new Date("2027-06-01T00:00:00.000Z"),
+      endDate: new Date("2027-06-07T00:00:00.000Z"),
+    } as never);
     mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123", status: "planning" } as never);
     mockPromoteDraft.mockRejectedValueOnce(new Error("Generation failed"));
 
@@ -294,7 +433,11 @@ describe("PATCH /api/trips/[id] — draft -> planning triggers generation", () =
   it("does NOT call promoteDraftToPlanning for non-promotion status updates", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
-    mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "planning" } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      status: "planning",
+      startDate: new Date("2027-01-01T00:00:00.000Z"),
+      endDate: new Date("2027-01-07T00:00:00.000Z"),
+    } as never);
     mockPrisma.trip.update.mockResolvedValueOnce({ id: "trip-123", status: "active" } as never);
 
     const res = await PATCH(makePatchRequest({ status: "active" }), mockParams);

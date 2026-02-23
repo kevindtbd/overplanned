@@ -11,6 +11,8 @@ import { updateTripSchema } from "@/lib/validations/trip";
 import { prisma } from "@/lib/prisma";
 import { shouldAutoTransition, validateTransition, getWritableFields } from "@/lib/trip-status";
 import { promoteDraftToPlanning } from "@/lib/generation/promote-draft";
+import { nightsBetween } from "@/lib/utils/dates";
+import { MAX_TRIP_NIGHTS } from "@/lib/constants/trip";
 
 export async function GET(
   _req: NextRequest,
@@ -54,6 +56,27 @@ export async function GET(
                 id: true,
                 name: true,
                 avatarUrl: true,
+              },
+            },
+          },
+        },
+        legs: {
+          orderBy: { position: "asc" },
+          include: {
+            slots: {
+              orderBy: [{ dayNumber: "asc" }, { sortOrder: "asc" }],
+              include: {
+                activityNode: {
+                  select: {
+                    id: true,
+                    name: true,
+                    category: true,
+                    latitude: true,
+                    longitude: true,
+                    priceLevel: true,
+                    primaryImageUrl: true,
+                  },
+                },
               },
             },
           },
@@ -175,10 +198,10 @@ export async function PATCH(
       );
     }
 
-    // Fetch current trip status for state machine validation
+    // Fetch current trip for state machine validation + date merge
     const currentTrip = await prisma.trip.findUnique({
       where: { id: tripId },
-      select: { status: true },
+      select: { status: true, startDate: true, endDate: true },
     });
 
     if (!currentTrip) {
@@ -186,6 +209,30 @@ export async function PATCH(
     }
 
     const currentStatus = currentTrip.status;
+
+    // Validate merged date range for partial date updates
+    const isDateChange =
+      parsed.data.startDate !== undefined || parsed.data.endDate !== undefined;
+    if (isDateChange) {
+      const mergedStart =
+        parsed.data.startDate ?? currentTrip.startDate.toISOString();
+      const mergedEnd =
+        parsed.data.endDate ?? currentTrip.endDate.toISOString();
+      const nights = nightsBetween(mergedStart, mergedEnd);
+
+      if (nights <= 0) {
+        return NextResponse.json(
+          { error: "End date must be after start date" },
+          { status: 400 }
+        );
+      }
+      if (nights > MAX_TRIP_NIGHTS) {
+        return NextResponse.json(
+          { error: `Trip cannot exceed ${MAX_TRIP_NIGHTS} nights` },
+          { status: 400 }
+        );
+      }
+    }
 
     // Validate status transition if a status change is requested
     if (parsed.data.status !== undefined && parsed.data.status !== currentStatus) {
@@ -235,15 +282,22 @@ export async function PATCH(
       select: {
         id: true,
         name: true,
-        destination: true,
-        city: true,
-        country: true,
         mode: true,
         status: true,
         planningProgress: true,
         startDate: true,
         endDate: true,
         updatedAt: true,
+        legs: {
+          select: {
+            id: true,
+            city: true,
+            country: true,
+            destination: true,
+            position: true,
+          },
+          orderBy: { position: "asc" },
+        },
       },
     });
 

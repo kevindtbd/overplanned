@@ -6,6 +6,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
+// Mock @anthropic-ai/sdk BEFORE importing route (prevent browser-env error)
+vi.mock("@anthropic-ai/sdk", () => {
+  const MockAnthropic = function (this: unknown) {
+    (this as { messages: { create: ReturnType<typeof vi.fn> } }).messages = {
+      create: vi.fn(),
+    };
+  };
+  return { default: MockAnthropic };
+});
+
 // Mock next-auth BEFORE importing route
 vi.mock("next-auth", () => ({
   getServerSession: vi.fn(),
@@ -19,6 +29,10 @@ vi.mock("@/lib/prisma", () => ({
     },
     trip: {
       create: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    tripLeg: {
+      createMany: vi.fn(),
     },
   },
 }));
@@ -47,6 +61,15 @@ const { GET, POST } = await import("../../app/api/trips/route");
 
 const mockGetServerSession = vi.mocked(getServerSession);
 const mockPrisma = vi.mocked(prisma);
+
+const validLeg = {
+  city: "Kyoto",
+  country: "Japan",
+  timezone: "Asia/Tokyo",
+  destination: "Kyoto, Japan",
+  startDate: "2026-04-01T00:00:00.000Z",
+  endDate: "2026-04-07T00:00:00.000Z",
+};
 
 describe("GET /api/trips", () => {
   beforeEach(() => {
@@ -86,7 +109,7 @@ describe("GET /api/trips", () => {
     const json = await response.json();
     expect(json.trips).toEqual([]);
     expect(mockPrisma.tripMember.findMany).toHaveBeenCalledWith({
-      where: { userId: "user-123" },
+      where: { userId: "user-123", status: "joined" },
       select: expect.any(Object),
       orderBy: expect.any(Object),
     });
@@ -105,16 +128,22 @@ describe("GET /api/trips", () => {
         trip: {
           id: "trip-1",
           name: "Kyoto Trip",
-          destination: "Kyoto, Japan",
-          city: "Kyoto",
-          country: "Japan",
           mode: "solo",
           status: "draft",
           startDate: new Date("2026-04-01T00:00:00.000Z"),
           endDate: new Date("2026-04-07T00:00:00.000Z"),
           planningProgress: 0.5,
           createdAt: new Date("2026-01-01T00:00:00.000Z"),
-          _count: { members: 1 },
+          legs: [
+            {
+              id: "leg-1",
+              city: "Kyoto",
+              country: "Japan",
+              destination: "Kyoto, Japan",
+              position: 0,
+            },
+          ],
+          _count: { members: 1, legs: 1 },
         },
       },
     ];
@@ -186,7 +215,7 @@ describe("POST /api/trips", () => {
     expect(json.error).toBe("Invalid JSON");
   });
 
-  it("returns 400 if Zod validation fails (missing destination)", async () => {
+  it("returns 400 if Zod validation fails (missing legs)", async () => {
     mockGetServerSession.mockResolvedValueOnce({
       user: { id: "user-123" },
     } as never);
@@ -194,12 +223,10 @@ describe("POST /api/trips", () => {
     const req = new NextRequest("http://localhost:3000/api/trips", {
       method: "POST",
       body: JSON.stringify({
-        city: "Kyoto",
-        country: "Japan",
-        timezone: "Asia/Tokyo",
         startDate: "2026-04-01T00:00:00.000Z",
         endDate: "2026-04-07T00:00:00.000Z",
         mode: "solo",
+        // legs missing
       }),
     });
     const response = await POST(req);
@@ -207,7 +234,6 @@ describe("POST /api/trips", () => {
     expect(response.status).toBe(400);
     const json = await response.json();
     expect(json.error).toBe("Validation failed");
-    expect(json.details.destination).toBeDefined();
   });
 
   it("returns 400 if mode is invalid", async () => {
@@ -218,13 +244,10 @@ describe("POST /api/trips", () => {
     const req = new NextRequest("http://localhost:3000/api/trips", {
       method: "POST",
       body: JSON.stringify({
-        destination: "Kyoto, Japan",
-        city: "Kyoto",
-        country: "Japan",
-        timezone: "Asia/Tokyo",
         startDate: "2026-04-01T00:00:00.000Z",
         endDate: "2026-04-07T00:00:00.000Z",
         mode: "invalid-mode",
+        legs: [validLeg],
       }),
     });
     const response = await POST(req);
@@ -244,10 +267,6 @@ describe("POST /api/trips", () => {
       id: "trip-abc",
       userId: "user-123",
       name: null,
-      destination: "Kyoto, Japan",
-      city: "Kyoto",
-      country: "Japan",
-      timezone: "Asia/Tokyo",
       startDate: new Date("2026-04-01T00:00:00.000Z"),
       endDate: new Date("2026-04-07T00:00:00.000Z"),
       mode: "solo",
@@ -261,19 +280,31 @@ describe("POST /api/trips", () => {
           status: "active",
         },
       ],
+      legs: [],
     };
     mockPrisma.trip.create.mockResolvedValueOnce(mockTrip as never);
+    mockPrisma.tripLeg.createMany.mockResolvedValueOnce({ count: 1 } as never);
+    // Re-fetch after generation: return no slots created
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      ...mockTrip,
+      legs: [
+        {
+          id: "leg-1",
+          city: "Kyoto",
+          country: "Japan",
+          destination: "Kyoto, Japan",
+          position: 0,
+        },
+      ],
+    } as never);
 
     const req = new NextRequest("http://localhost:3000/api/trips", {
       method: "POST",
       body: JSON.stringify({
-        destination: "Kyoto, Japan",
-        city: "Kyoto",
-        country: "Japan",
-        timezone: "Asia/Tokyo",
         startDate: "2026-04-01T00:00:00.000Z",
         endDate: "2026-04-07T00:00:00.000Z",
         mode: "solo",
+        legs: [validLeg],
       }),
     });
     const response = await POST(req);
@@ -282,7 +313,6 @@ describe("POST /api/trips", () => {
     const json = await response.json();
     expect(json.trip).toMatchObject({
       id: "trip-abc",
-      destination: "Kyoto, Japan",
       mode: "solo",
     });
     expect(json.trip.members).toHaveLength(1);
@@ -298,10 +328,6 @@ describe("POST /api/trips", () => {
       id: "trip-abc",
       userId: "user-123",
       name: "Cherry Blossom Trip",
-      destination: "Kyoto, Japan",
-      city: "Kyoto",
-      country: "Japan",
-      timezone: "Asia/Tokyo",
       startDate: new Date("2026-04-01T00:00:00.000Z"),
       endDate: new Date("2026-04-07T00:00:00.000Z"),
       mode: "group",
@@ -315,20 +341,31 @@ describe("POST /api/trips", () => {
           status: "active",
         },
       ],
+      legs: [],
     };
     mockPrisma.trip.create.mockResolvedValueOnce(mockTrip as never);
+    mockPrisma.tripLeg.createMany.mockResolvedValueOnce({ count: 1 } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      ...mockTrip,
+      legs: [
+        {
+          id: "leg-1",
+          city: "Kyoto",
+          country: "Japan",
+          destination: "Kyoto, Japan",
+          position: 0,
+        },
+      ],
+    } as never);
 
     const req = new NextRequest("http://localhost:3000/api/trips", {
       method: "POST",
       body: JSON.stringify({
         name: "Cherry Blossom Trip",
-        destination: "Kyoto, Japan",
-        city: "Kyoto",
-        country: "Japan",
-        timezone: "Asia/Tokyo",
         startDate: "2026-04-01T00:00:00.000Z",
         endDate: "2026-04-07T00:00:00.000Z",
         mode: "group",
+        legs: [validLeg],
       }),
     });
     const response = await POST(req);
@@ -350,13 +387,10 @@ describe("POST /api/trips", () => {
     const req = new NextRequest("http://localhost:3000/api/trips", {
       method: "POST",
       body: JSON.stringify({
-        destination: "Kyoto, Japan",
-        city: "Kyoto",
-        country: "Japan",
-        timezone: "Asia/Tokyo",
         startDate: "2026-04-01T00:00:00.000Z",
         endDate: "2026-04-07T00:00:00.000Z",
         mode: "solo",
+        legs: [validLeg],
       }),
     });
     const response = await POST(req);

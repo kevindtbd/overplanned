@@ -4,6 +4,8 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { downloadIcsFile } from "@/lib/ics-export";
 import type { IcsTripData } from "@/lib/ics-export";
+import { toMidnightISO, nightsBetween } from "@/lib/utils/dates";
+import { MAX_TRIP_NIGHTS } from "@/lib/constants/trip";
 
 interface TripSettingsProps {
   trip: {
@@ -51,12 +53,22 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
 
   const isOrganizer = myRole === "organizer";
 
+  // Compute max end date for the date picker
+  const maxEndDate = (() => {
+    if (!startDate) return undefined;
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + MAX_TRIP_NIGHTS);
+    return d.toISOString().split("T")[0];
+  })();
+
   // Compute dirty fields
   const getDirtyFields = useCallback(() => {
     const dirty: Record<string, string> = {};
     if (name !== (trip.name ?? "")) dirty.name = name;
-    if (startDate !== trip.startDate.split("T")[0]) dirty.startDate = startDate;
-    if (endDate !== trip.endDate.split("T")[0]) dirty.endDate = endDate;
+    if (startDate !== trip.startDate.split("T")[0])
+      dirty.startDate = toMidnightISO(startDate);
+    if (endDate !== trip.endDate.split("T")[0])
+      dirty.endDate = toMidnightISO(endDate);
     if (mode !== trip.mode) dirty.mode = mode;
     return dirty;
   }, [name, startDate, endDate, mode, trip]);
@@ -68,6 +80,22 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
     if (Object.keys(dirty).length === 0) {
       onClose();
       return;
+    }
+
+    // Client-side date validation before hitting API
+    if (dirty.startDate !== undefined || dirty.endDate !== undefined) {
+      const mergedStart = dirty.startDate ?? toMidnightISO(trip.startDate);
+      const mergedEnd = dirty.endDate ?? toMidnightISO(trip.endDate);
+      const nights = nightsBetween(mergedStart, mergedEnd);
+
+      if (nights <= 0) {
+        setError("End date must be after start date");
+        return;
+      }
+      if (nights > MAX_TRIP_NIGHTS) {
+        setError(`Trip cannot exceed ${MAX_TRIP_NIGHTS} nights`);
+        return;
+      }
     }
 
     setSaving(true);
@@ -239,6 +267,7 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
                 id="end-date"
                 type="date"
                 value={endDate}
+                max={maxEndDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2.5 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
               />

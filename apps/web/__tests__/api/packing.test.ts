@@ -118,11 +118,15 @@ function mockLLMResponse(items: Array<{ text: string; category: string }>) {
   });
 }
 
+const ITEM_ID_1 = "a1b2c3d4-e5f6-4a7b-8c9d-000000000001";
+const ITEM_ID_2 = "a1b2c3d4-e5f6-4a7b-8c9d-000000000002";
+const ITEM_ID_3 = "a1b2c3d4-e5f6-4a7b-8c9d-000000000003";
+
 const MOCK_PACKING_LIST = {
   items: [
-    { id: "item-1", text: "Sunscreen SPF 50+", category: "essentials", checked: false },
-    { id: "item-2", text: "Passport", category: "documents", checked: true },
-    { id: "item-3", text: "Phone charger", category: "tech", checked: false },
+    { id: ITEM_ID_1, text: "Sunscreen SPF 50+", category: "essentials", checked: false },
+    { id: ITEM_ID_2, text: "Passport", category: "documents", checked: true },
+    { id: ITEM_ID_3, text: "Phone charger", category: "tech", checked: false },
   ],
   generatedAt: "2026-02-22T00:00:00.000Z",
   model: "claude-haiku-4-5-20251001",
@@ -480,7 +484,7 @@ describe("PATCH /api/trips/[id]/packing", () => {
     const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itemId: "item-1", checked: true }),
+      body: JSON.stringify({ itemId: ITEM_ID_1, checked: true }),
     });
     const res = await PATCH(req, { params: { id: TRIP_ID } });
     expect(res.status).toBe(200);
@@ -499,7 +503,7 @@ describe("PATCH /api/trips/[id]/packing", () => {
     const listWithChecked = {
       ...MOCK_PACKING_LIST,
       items: MOCK_PACKING_LIST.items.map((i) =>
-        i.id === "item-1" ? { ...i, checked: true } : i
+        i.id === ITEM_ID_1 ? { ...i, checked: true } : i
       ),
     };
     mockPrisma.trip.findUnique.mockResolvedValueOnce({
@@ -510,7 +514,7 @@ describe("PATCH /api/trips/[id]/packing", () => {
     const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ itemId: "item-1", checked: false }),
+      body: JSON.stringify({ itemId: ITEM_ID_1, checked: false }),
     });
     const res = await PATCH(req, { params: { id: TRIP_ID } });
     expect(res.status).toBe(200);

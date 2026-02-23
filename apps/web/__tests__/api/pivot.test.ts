@@ -47,8 +47,9 @@ const mockPrisma = vi.mocked(prisma);
 
 const authedSession = { user: { id: "user-abc" } };
 const tripId = "trip-1";
-const slotId = "slot-1";
-const pivotId = "pivot-1";
+// Valid UUIDs required by pivotCreateSchema (slotId: z.string().uuid())
+const slotId = "123e4567-e89b-12d3-a456-426614174000";
+const pivotId = "223e4567-e89b-12d3-a456-426614174001";
 
 function makeCreateRequest(body: unknown): NextRequest {
   return new NextRequest(`http://localhost:3000/api/trips/${tripId}/pivot`, {
@@ -86,6 +87,11 @@ const baseSlot = {
   },
 };
 
+// Valid UUIDs for alternativeIds (selectedNodeId also requires UUID per pivotResolveSchema)
+const altId1 = "323e4567-e89b-12d3-a456-426614174001";
+const altId2 = "423e4567-e89b-12d3-a456-426614174002";
+const altId3 = "523e4567-e89b-12d3-a456-426614174003";
+
 const basePivotEvent = {
   id: pivotId,
   tripId,
@@ -93,7 +99,7 @@ const basePivotEvent = {
   triggerType: "user_mood",
   triggerPayload: null,
   originalNodeId: "node-original",
-  alternativeIds: ["alt-1", "alt-2", "alt-3"],
+  alternativeIds: [altId1, altId2, altId3],
   selectedNodeId: null,
   status: "proposed",
   resolvedAt: null,
@@ -103,7 +109,7 @@ const basePivotEvent = {
 
 const mockAlternatives = [
   {
-    id: "alt-1",
+    id: altId1,
     name: "Ramen Spot",
     category: "dining",
     neighborhood: "Shibuya",
@@ -112,7 +118,7 @@ const mockAlternatives = [
     vibeTags: [{ vibeTag: { slug: "local-eats" } }],
   },
   {
-    id: "alt-2",
+    id: altId2,
     name: "Sushi Place",
     category: "dining",
     neighborhood: "Shinjuku",
@@ -121,7 +127,7 @@ const mockAlternatives = [
     vibeTags: [{ vibeTag: { slug: "hidden-gems" } }],
   },
   {
-    id: "alt-3",
+    id: altId3,
     name: "Udon House",
     category: "dining",
     neighborhood: "Asakusa",
@@ -136,7 +142,7 @@ const mockAlternatives = [
 // ═══════════════════════════════════════════════════════════════════════
 
 describe("POST /api/trips/[id]/pivot — auth guards", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   it("returns 401 when session is null", async () => {
     mockGetServerSession.mockResolvedValueOnce(null);
@@ -171,7 +177,7 @@ describe("POST /api/trips/[id]/pivot — auth guards", () => {
 });
 
 describe("POST /api/trips/[id]/pivot — validation", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   it("returns 400 for invalid JSON body", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
@@ -221,7 +227,7 @@ describe("POST /api/trips/[id]/pivot — validation", () => {
 });
 
 describe("POST /api/trips/[id]/pivot — state checks", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   function setupAuth() {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
@@ -281,7 +287,7 @@ describe("POST /api/trips/[id]/pivot — state checks", () => {
 });
 
 describe("POST /api/trips/[id]/pivot — pivot caps (V11)", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   function setupAuthAndSlot() {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
@@ -319,7 +325,7 @@ describe("POST /api/trips/[id]/pivot — pivot caps (V11)", () => {
 });
 
 describe("POST /api/trips/[id]/pivot — happy path", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   function setupFullHappyPath() {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
@@ -412,7 +418,7 @@ describe("POST /api/trips/[id]/pivot — happy path", () => {
 // ═══════════════════════════════════════════════════════════════════════
 
 describe("PATCH /api/trips/[id]/pivot/[pivotId] — auth guards", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   it("returns 401 when session is null", async () => {
     mockGetServerSession.mockResolvedValueOnce(null);
@@ -435,7 +441,7 @@ describe("PATCH /api/trips/[id]/pivot/[pivotId] — auth guards", () => {
 });
 
 describe("PATCH /api/trips/[id]/pivot/[pivotId] — validation", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   it("returns 400 for invalid JSON body", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
@@ -480,7 +486,7 @@ describe("PATCH /api/trips/[id]/pivot/[pivotId] — validation", () => {
     mockPrisma.pivotEvent.findUnique.mockResolvedValueOnce(basePivotEvent as never);
 
     const res = await PATCH(
-      makeResolveRequest({ outcome: "accepted", selectedNodeId: "not-in-list" }),
+      makeResolveRequest({ outcome: "accepted", selectedNodeId: "123e4567-e89b-12d3-a456-426614174999" }),
       resolveParams,
     );
     expect(res.status).toBe(400);
@@ -490,7 +496,7 @@ describe("PATCH /api/trips/[id]/pivot/[pivotId] — validation", () => {
 });
 
 describe("PATCH /api/trips/[id]/pivot/[pivotId] — state checks", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   function setupAuth() {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
@@ -539,7 +545,7 @@ describe("PATCH /api/trips/[id]/pivot/[pivotId] — state checks", () => {
 });
 
 describe("PATCH /api/trips/[id]/pivot/[pivotId] — accept", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   function setupForAccept() {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
@@ -554,12 +560,12 @@ describe("PATCH /api/trips/[id]/pivot/[pivotId] — accept", () => {
     const updatedPivot = {
       ...basePivotEvent,
       status: "accepted",
-      selectedNodeId: "alt-1",
+      selectedNodeId: altId1,
       resolvedAt: new Date(),
     };
     const updatedSlot = {
       id: slotId,
-      activityNodeId: "alt-1",
+      activityNodeId: altId1,
       wasSwapped: true,
       swappedFromId: "node-original",
       pivotEventId: pivotId,
@@ -569,14 +575,14 @@ describe("PATCH /api/trips/[id]/pivot/[pivotId] — accept", () => {
     mockPrisma.$transaction.mockResolvedValueOnce([updatedPivot, updatedSlot, {}] as never);
 
     const res = await PATCH(
-      makeResolveRequest({ outcome: "accepted", selectedNodeId: "alt-1" }),
+      makeResolveRequest({ outcome: "accepted", selectedNodeId: altId1 }),
       resolveParams,
     );
     expect(res.status).toBe(200);
 
     const json = await res.json();
     expect(json.pivotEvent.status).toBe("accepted");
-    expect(json.updatedSlot.activityNodeId).toBe("alt-1");
+    expect(json.updatedSlot.activityNodeId).toBe(altId1);
     expect(json.updatedSlot.wasSwapped).toBe(true);
   });
 
@@ -589,7 +595,7 @@ describe("PATCH /api/trips/[id]/pivot/[pivotId] — accept", () => {
     ] as never);
 
     await PATCH(
-      makeResolveRequest({ outcome: "accepted", selectedNodeId: "alt-2" }),
+      makeResolveRequest({ outcome: "accepted", selectedNodeId: altId2 }),
       resolveParams,
     );
 
@@ -602,7 +608,7 @@ describe("PATCH /api/trips/[id]/pivot/[pivotId] — accept", () => {
 });
 
 describe("PATCH /api/trips/[id]/pivot/[pivotId] — reject", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   it("rejects without updating slot", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
@@ -627,7 +633,7 @@ describe("PATCH /api/trips/[id]/pivot/[pivotId] — reject", () => {
 });
 
 describe("PATCH /api/trips/[id]/pivot/[pivotId] — error handling", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   it("returns 500 when transaction fails", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { MAX_TRIP_NIGHTS } from "@/lib/constants/trip";
 
 function CalendarIcon({ className }: { className?: string }) {
   return (
@@ -28,6 +29,12 @@ interface DatesStepProps {
   onEndDateChange: (date: string) => void;
 }
 
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
+
 export function DatesStep({
   startDate,
   endDate,
@@ -37,6 +44,8 @@ export function DatesStep({
   const [tripLength, setTripLength] = useState<number | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
+  const maxEndDate = startDate ? addDays(startDate, MAX_TRIP_NIGHTS) : undefined;
+  const tooLong = tripLength !== null && tripLength > MAX_TRIP_NIGHTS;
 
   useEffect(() => {
     if (startDate && endDate) {
@@ -93,6 +102,7 @@ export function DatesStep({
               type="date"
               value={endDate}
               min={startDate || today}
+              max={maxEndDate}
               onChange={(e) => onEndDateChange(e.target.value)}
               className="w-full rounded-xl border-[1.5px] border-ink-700 bg-input py-3 pl-10 pr-4 font-dm-mono text-sm text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
@@ -100,7 +110,15 @@ export function DatesStep({
         </div>
       </div>
 
-      {tripLength !== null && tripLength > 0 && (
+      {tooLong && (
+        <div className="mt-4 rounded-lg border border-red-400/30 bg-red-400/5 px-4 py-3">
+          <p className="font-dm-mono text-xs text-red-400">
+            Trips can be up to {MAX_TRIP_NIGHTS} nights. For longer journeys, split into multiple legs.
+          </p>
+        </div>
+      )}
+
+      {tripLength !== null && tripLength > 0 && !tooLong && (
         <div className="mt-4 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3">
           <span className="label-mono">trip length</span>
           <p className="mt-1 font-sora text-lg font-medium text-primary">

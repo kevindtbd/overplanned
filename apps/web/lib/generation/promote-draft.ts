@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { generateItinerary } from "./generate-itinerary";
+import { generateTripItinerary } from "./generate-itinerary";
 import type { Pace, MorningPreference } from "./types";
 
 interface PromotionResult {
@@ -9,7 +9,7 @@ interface PromotionResult {
 
 /**
  * Generates an itinerary after promoting a draft to planning.
- * Reads trip data, runs generation, re-fetches with slots if slots were created.
+ * Reads trip data, runs generation across all legs, re-fetches with slots if slots were created.
  * Returns the same { trip, generated } shape as POST /api/trips.
  */
 export async function promoteDraftToPlanning(
@@ -19,12 +19,11 @@ export async function promoteDraftToPlanning(
   const trip = await prisma.trip.findUnique({
     where: { id: tripId },
     select: {
-      city: true,
-      country: true,
       startDate: true,
       endDate: true,
       presetTemplate: true,
       personaSeed: true,
+      legs: { orderBy: { position: "asc" } },
     },
   });
 
@@ -48,15 +47,8 @@ export async function promoteDraftToPlanning(
   };
 
   try {
-    generationResult = await generateItinerary(
-      tripId,
-      userId,
-      trip.city,
-      trip.country,
-      new Date(trip.startDate),
-      new Date(trip.endDate),
-      seed
-    );
+    const genResult = await generateTripItinerary(tripId, userId, seed);
+    generationResult = { slotsCreated: genResult.totalSlotsCreated, source: genResult.totalSlotsCreated > 0 ? "seeded" : "empty" };
   } catch (err) {
     console.error("[promoteDraftToPlanning] Generation error:", err);
   }
@@ -65,6 +57,7 @@ export async function promoteDraftToPlanning(
     const fullTrip = await prisma.trip.findUnique({
       where: { id: tripId },
       include: {
+        legs: { orderBy: { position: "asc" } },
         members: {
           select: { id: true, userId: true, role: true, status: true },
         },
@@ -92,6 +85,7 @@ export async function promoteDraftToPlanning(
   const bareTrip = await prisma.trip.findUnique({
     where: { id: tripId },
     include: {
+      legs: { orderBy: { position: "asc" } },
       members: {
         select: { id: true, userId: true, role: true, status: true },
       },

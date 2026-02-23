@@ -12,13 +12,14 @@ interface GenerationResult {
 }
 
 /**
- * Generate an itinerary for a trip. Called synchronously after trip creation.
+ * Generate an itinerary for a single trip leg. Called per-leg by generateTripItinerary.
  * Returns the count of slots created.
  *
  * The LLM enrichment fires async (non-blocking) after slots are persisted.
  */
-export async function generateItinerary(
+export async function generateLegItinerary(
   tripId: string,
+  tripLegId: string,
   userId: string,
   city: string,
   country: string,
@@ -100,6 +101,7 @@ export async function generateItinerary(
   const slotRows = placedSlots.map((s) => ({
     id: uuidv4(),
     tripId,
+    tripLegId,
     activityNodeId: s.nodeId,
     dayNumber: s.dayNumber,
     sortOrder: s.sortOrder,
@@ -144,4 +146,44 @@ export async function generateItinerary(
   });
 
   return { slotsCreated: slotRows.length, source: "seeded" };
+}
+
+/**
+ * Orchestrate itinerary generation across all legs of a trip.
+ * Processes legs sequentially in position order.
+ */
+export async function generateTripItinerary(
+  tripId: string,
+  userId: string,
+  personaSeed: PersonaSeed,
+): Promise<{ totalSlotsCreated: number; legResults: { legId: string; city: string; slotsCreated: number; source: "seeded" | "empty" }[] }> {
+  const legs = await prisma.tripLeg.findMany({
+    where: { tripId },
+    orderBy: { position: "asc" },
+  });
+
+  const legResults: { legId: string; city: string; slotsCreated: number; source: "seeded" | "empty" }[] = [];
+  let totalSlotsCreated = 0;
+
+  for (const leg of legs) {
+    try {
+      const result = await generateLegItinerary(
+        tripId,
+        leg.id,
+        userId,
+        leg.city,
+        leg.country,
+        new Date(leg.startDate),
+        new Date(leg.endDate),
+        personaSeed,
+      );
+      legResults.push({ legId: leg.id, city: leg.city, slotsCreated: result.slotsCreated, source: result.source });
+      totalSlotsCreated += result.slotsCreated;
+    } catch (err) {
+      console.error(`[generateTripItinerary] Leg ${leg.id} (${leg.city}) failed:`, err);
+      legResults.push({ legId: leg.id, city: leg.city, slotsCreated: 0, source: "empty" });
+    }
+  }
+
+  return { totalSlotsCreated, legResults };
 }

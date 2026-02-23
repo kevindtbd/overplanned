@@ -49,6 +49,7 @@ vi.mock("@/lib/prisma", () => ({
     pivotEvent: {
       count: vi.fn(),
       findUnique: vi.fn(),
+      update: vi.fn(),
     },
     activityNode: {
       findMany: vi.fn(),
@@ -91,6 +92,9 @@ const TRIP_ID = "trip-001";
 const SLOT_ID = "slot-001";
 const INVITE_TOKEN = "abcdefghij1234567890abcdefghij12";
 const SHARE_TOKEN = "sharetoken1234567890sharetoken12";
+const ALT_NODE_ID_1 = "c3d4e5f6-a7b8-4c9d-0e1f-000000000001";
+const ALT_NODE_ID_2 = "c3d4e5f6-a7b8-4c9d-0e1f-000000000002";
+const ALT_NODE_ID_3 = "c3d4e5f6-a7b8-4c9d-0e1f-000000000003";
 
 // ══════════════════════════════════════════════════════════════════
 // Invite → Vote Integration
@@ -256,7 +260,7 @@ describe("Import → Reflection: Reflection works on cloned trips", () => {
     mockPrisma.trip.findFirst.mockResolvedValueOnce(null); // Not imported yet
 
     const importedTripId = "imported-trip-123";
-    const importedSlotId = "imported-slot-456";
+    const importedSlotId = "b2c3d4e5-f6a7-4b8c-9d0e-000000000456";
 
     mockPrisma.$transaction.mockImplementationOnce(async (fn: Function) => {
       const tx = {
@@ -514,7 +518,7 @@ describe("Pivot on voted slot: voteState resets after swap", () => {
       triggerType: "user_mood",
       triggerPayload: null,
       originalNodeId: "node-original",
-      alternativeIds: ["alt-1", "alt-2", "alt-3"],
+      alternativeIds: [ALT_NODE_ID_1, ALT_NODE_ID_2, ALT_NODE_ID_3],
       selectedNodeId: null,
       status: "proposed",
       resolvedAt: null,
@@ -528,13 +532,13 @@ describe("Pivot on voted slot: voteState resets after swap", () => {
     const updatedPivot = {
       ...activePivot,
       status: "accepted",
-      selectedNodeId: "alt-1",
+      selectedNodeId: ALT_NODE_ID_1,
       resolvedAt: new Date(),
     };
 
     const updatedSlot = {
       id: SLOT_ID,
-      activityNodeId: "alt-1",
+      activityNodeId: ALT_NODE_ID_1,
       wasSwapped: true,
       swappedFromId: "node-original",
       pivotEventId: pivotId,
@@ -552,7 +556,7 @@ describe("Pivot on voted slot: voteState resets after swap", () => {
       `http://localhost/api/trips/${TRIP_ID}/pivot/${pivotId}`,
       {
         method: "PATCH",
-        body: JSON.stringify({ outcome: "accepted", selectedNodeId: "alt-1" }),
+        body: JSON.stringify({ outcome: "accepted", selectedNodeId: ALT_NODE_ID_1 }),
       }
     );
 
@@ -565,7 +569,7 @@ describe("Pivot on voted slot: voteState resets after swap", () => {
     const json = await resolveRes.json();
     expect(json.updatedSlot.voteState).toBeNull();
     expect(json.updatedSlot.isContested).toBe(false);
-    expect(json.updatedSlot.activityNodeId).toBe("alt-1");
+    expect(json.updatedSlot.activityNodeId).toBe(ALT_NODE_ID_1);
     expect(json.updatedSlot.wasSwapped).toBe(true);
   });
 

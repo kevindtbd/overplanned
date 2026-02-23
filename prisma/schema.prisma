@@ -92,10 +92,6 @@ model Trip {
   name              String?
   mode              TripMode
   status            TripStatus @default(draft)
-  destination       String
-  city              String
-  country           String
-  timezone          String
   startDate         DateTime
   endDate           DateTime
   groupId           String?
@@ -113,10 +109,44 @@ model Trip {
   activatedAt       DateTime?
   completedAt       DateTime?
 
+  legs             TripLeg[]
   members          TripMember[]
   slots            ItinerarySlot[]
   sharedTokens     SharedTripToken[]
   inviteTokens     InviteToken[]
+}
+
+model TripLeg {
+  id                 String   @id @default(uuid())
+  tripId             String
+  trip               Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  position           Int      // 0-indexed ordering within the trip route
+  city               String
+  country            String
+  timezone           String?  // nullable for freeform cities without timezone lookup
+  destination        String   // "Kyoto, Japan" display string
+
+  startDate          DateTime
+  endDate            DateTime
+
+  arrivalTime        String?  // "morning", "afternoon", "evening"
+  departureTime      String?
+
+  // Inter-leg transit (position 0 has null transit fields)
+  transitMode        String?
+  transitDurationMin Int?
+  transitCostHint    String?
+  transitConfirmed   Boolean  @default(false)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  slots              ItinerarySlot[]
+
+  @@unique([tripId, position])
+  @@index([tripId])
+  @@index([city])
 }
 
 model TripMember {
@@ -140,6 +170,8 @@ model ItinerarySlot {
   id              String     @id @default(uuid())
   tripId          String
   trip            Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripLegId       String?
+  tripLeg         TripLeg?   @relation(fields: [tripLegId], references: [id], onDelete: Cascade)
   activityNodeId  String?
   activityNode    ActivityNode? @relation(fields: [activityNodeId], references: [id])
   dayNumber       Int
@@ -158,6 +190,8 @@ model ItinerarySlot {
   ownerTip        String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
+
+  @@index([tripLegId])
 }
 
 // ============================================================================
@@ -465,8 +499,6 @@ model BackfillTrip {
   id              String         @id @default(uuid())
   userId          String
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  city            String
-  country         String
   startDate       DateTime?
   endDate         DateTime?
   confidenceTier  ConfidenceTier
@@ -479,17 +511,37 @@ model BackfillTrip {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
+  legs            BackfillLeg[]
   venues          BackfillVenue[]
   signals         BackfillSignal[]
 
   @@index([userId, status])
-  @@index([userId, city])
+}
+
+model BackfillLeg {
+  id              String       @id @default(uuid())
+  backfillTripId  String
+  backfillTrip    BackfillTrip @relation(fields: [backfillTripId], references: [id], onDelete: Cascade)
+
+  position        Int
+  city            String
+  country         String
+  timezone        String?
+
+  createdAt       DateTime     @default(now())
+
+  venues          BackfillVenue[]
+
+  @@unique([backfillTripId, position])
+  @@index([backfillTripId])
 }
 
 model BackfillVenue {
   id                String        @id @default(uuid())
   backfillTripId    String
   backfillTrip      BackfillTrip  @relation(fields: [backfillTripId], references: [id], onDelete: Cascade)
+  backfillLegId     String?
+  backfillLeg       BackfillLeg?  @relation(fields: [backfillLegId], references: [id])
   activityNodeId    String?
   activityNode      ActivityNode? @relation(fields: [activityNodeId], references: [id])
   extractedName     String
@@ -576,6 +628,13 @@ model UserPreference {
   mobility        String[] // validated via Zod: wheelchair, low-step, elevator-required, sensory-friendly
   languages       String[] // validated via Zod: non-english-menus, limited-english-staff
   travelFrequency String?  // validated via Zod: few-times-year | monthly | constantly
+  vibePreferences   String[]  @default([])
+  travelStyleNote   String?
+  distanceUnit      String    @default("mi")
+  temperatureUnit   String    @default("F")
+  dateFormat        String    @default("MM/DD/YYYY")
+  timeFormat        String    @default("12h")
+  theme             String    @default("system")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -591,6 +650,8 @@ model NotificationPreference {
   citySeeded        Boolean @default(true)
   inspirationNudges Boolean @default(false)
   productUpdates    Boolean @default(false)
+  checkinReminder   Boolean @default(false)
+  preTripDaysBefore Int     @default(3)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }

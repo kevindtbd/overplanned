@@ -41,8 +41,10 @@ export async function GET(
       where: { id: tripId },
       select: {
         id: true,
-        city: true,
-        country: true,
+        legs: {
+          select: { id: true, city: true, country: true, timezone: true, position: true },
+          orderBy: { position: "asc" },
+        },
         startDate: true,
         endDate: true,
         contextTag: true,
@@ -137,8 +139,9 @@ export async function GET(
       {
         trip: {
           id: trip.id,
-          city: trip.city,
-          country: trip.country,
+          legs: trip.legs,
+          primaryCity: trip.legs[0]?.city ?? null,
+          primaryCountry: trip.legs[0]?.country ?? null,
           startDate: trip.startDate,
           endDate: trip.endDate,
           contextTag: trip.contextTag,

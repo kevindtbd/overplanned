@@ -10,6 +10,10 @@ vi.mock("@/lib/prisma", () => ({
     trip: {
       count: vi.fn(),
       create: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    tripLeg: {
+      createMany: vi.fn(),
     },
   },
 }));
@@ -34,22 +38,24 @@ const { POST } = await import("../../app/api/trips/draft/route");
 const mockGetServerSession = vi.mocked(getServerSession);
 const mockPrisma = vi.mocked(prisma);
 
-const validDraftPayload = {
-  destination: "Tokyo, Japan",
+const validLeg = {
   city: "Tokyo",
   country: "Japan",
   timezone: "Asia/Tokyo",
+  destination: "Tokyo, Japan",
   startDate: "2026-06-01T00:00:00.000Z",
   endDate: "2026-06-07T00:00:00.000Z",
+};
+
+const validDraftPayload = {
+  startDate: "2026-06-01T00:00:00.000Z",
+  endDate: "2026-06-07T00:00:00.000Z",
+  legs: [validLeg],
 };
 
 const mockDraftTrip = {
   id: "mock-uuid",
   userId: "user-123",
-  destination: "Tokyo, Japan",
-  city: "Tokyo",
-  country: "Japan",
-  timezone: "Asia/Tokyo",
   startDate: new Date("2026-06-01T00:00:00.000Z"),
   endDate: new Date("2026-06-07T00:00:00.000Z"),
   mode: "solo",
@@ -63,6 +69,19 @@ const mockDraftTrip = {
       userId: "user-123",
       role: "organizer",
       status: "joined",
+    },
+  ],
+  legs: [
+    {
+      id: "mock-uuid",
+      tripId: "mock-uuid",
+      position: 0,
+      city: "Tokyo",
+      country: "Japan",
+      timezone: "Asia/Tokyo",
+      destination: "Tokyo, Japan",
+      startDate: new Date("2026-06-01T00:00:00.000Z"),
+      endDate: new Date("2026-06-07T00:00:00.000Z"),
     },
   ],
 };
@@ -114,44 +133,61 @@ describe("POST /api/trips/draft", () => {
     expect(json.error).toBe("Invalid JSON");
   });
 
-  it("returns 400 when city is missing", async () => {
+  it("returns 400 when legs array is missing", async () => {
     mockGetServerSession.mockResolvedValueOnce({
       user: { id: "user-123" },
     } as never);
 
-    const { city, ...payload } = validDraftPayload;
+    const { legs, ...payload } = validDraftPayload;
+    void legs;
+
+    const req = new NextRequest("http://localhost:3000/api/trips/draft", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    const response = await POST(req);
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.error).toBe("Validation failed");
+  });
+
+  it("returns 400 when city is missing from leg", async () => {
+    mockGetServerSession.mockResolvedValueOnce({
+      user: { id: "user-123" },
+    } as never);
+
+    const { city, ...legWithoutCity } = validLeg;
     void city;
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...validDraftPayload, legs: [legWithoutCity] }),
     });
     const response = await POST(req);
 
     expect(response.status).toBe(400);
     const json = await response.json();
     expect(json.error).toBe("Validation failed");
-    expect(json.details.city).toBeDefined();
   });
 
-  it("returns 400 when destination is missing", async () => {
+  it("returns 400 when destination is missing from leg", async () => {
     mockGetServerSession.mockResolvedValueOnce({
       user: { id: "user-123" },
     } as never);
 
-    const { destination, ...payload } = validDraftPayload;
+    const { destination, ...legWithoutDest } = validLeg;
     void destination;
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...validDraftPayload, legs: [legWithoutDest] }),
     });
     const response = await POST(req);
 
     expect(response.status).toBe(400);
     const json = await response.json();
     expect(json.error).toBe("Validation failed");
-    expect(json.details.destination).toBeDefined();
   });
 
   it("returns 400 when startDate is missing", async () => {
@@ -194,44 +230,39 @@ describe("POST /api/trips/draft", () => {
     expect(json.details.endDate).toBeDefined();
   });
 
-  it("returns 400 when country is missing", async () => {
+  it("returns 400 when country is missing from leg", async () => {
     mockGetServerSession.mockResolvedValueOnce({
       user: { id: "user-123" },
     } as never);
 
-    const { country, ...payload } = validDraftPayload;
+    const { country, ...legWithoutCountry } = validLeg;
     void country;
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...validDraftPayload, legs: [legWithoutCountry] }),
     });
     const response = await POST(req);
 
     expect(response.status).toBe(400);
     const json = await response.json();
     expect(json.error).toBe("Validation failed");
-    expect(json.details.country).toBeDefined();
   });
 
-  it("returns 400 when timezone is missing", async () => {
+  it("returns 400 when legs array is empty", async () => {
     mockGetServerSession.mockResolvedValueOnce({
       user: { id: "user-123" },
     } as never);
 
-    const { timezone, ...payload } = validDraftPayload;
-    void timezone;
-
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...validDraftPayload, legs: [] }),
     });
     const response = await POST(req);
 
     expect(response.status).toBe(400);
     const json = await response.json();
     expect(json.error).toBe("Validation failed");
-    expect(json.details.timezone).toBeDefined();
   });
 
   it("returns 429 when user has 10 or more existing drafts", async () => {
@@ -257,6 +288,8 @@ describe("POST /api/trips/draft", () => {
     } as never);
     mockPrisma.trip.count.mockResolvedValueOnce(9 as never);
     mockPrisma.trip.create.mockResolvedValueOnce(mockDraftTrip as never);
+    mockPrisma.tripLeg.createMany.mockResolvedValueOnce({ count: 1 } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce(mockDraftTrip as never);
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
@@ -273,6 +306,8 @@ describe("POST /api/trips/draft", () => {
     } as never);
     mockPrisma.trip.count.mockResolvedValueOnce(0 as never);
     mockPrisma.trip.create.mockResolvedValueOnce(mockDraftTrip as never);
+    mockPrisma.tripLeg.createMany.mockResolvedValueOnce({ count: 1 } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce(mockDraftTrip as never);
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
@@ -291,6 +326,8 @@ describe("POST /api/trips/draft", () => {
     } as never);
     mockPrisma.trip.count.mockResolvedValueOnce(0 as never);
     mockPrisma.trip.create.mockResolvedValueOnce(mockDraftTrip as never);
+    mockPrisma.tripLeg.createMany.mockResolvedValueOnce({ count: 1 } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce(mockDraftTrip as never);
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
@@ -311,6 +348,8 @@ describe("POST /api/trips/draft", () => {
     } as never);
     mockPrisma.trip.count.mockResolvedValueOnce(0 as never);
     mockPrisma.trip.create.mockResolvedValueOnce(mockDraftTrip as never);
+    mockPrisma.tripLeg.createMany.mockResolvedValueOnce({ count: 1 } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce(mockDraftTrip as never);
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
@@ -344,6 +383,8 @@ describe("POST /api/trips/draft", () => {
     } as never);
     mockPrisma.trip.count.mockResolvedValueOnce(0 as never);
     mockPrisma.trip.create.mockResolvedValueOnce(mockDraftTrip as never);
+    mockPrisma.tripLeg.createMany.mockResolvedValueOnce({ count: 1 } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce(mockDraftTrip as never);
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
@@ -368,6 +409,8 @@ describe("POST /api/trips/draft", () => {
     } as never);
     mockPrisma.trip.count.mockResolvedValueOnce(0 as never);
     mockPrisma.trip.create.mockResolvedValueOnce(mockDraftTrip as never);
+    mockPrisma.tripLeg.createMany.mockResolvedValueOnce({ count: 1 } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce(mockDraftTrip as never);
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
@@ -410,6 +453,8 @@ describe("POST /api/trips/draft", () => {
     } as never);
     mockPrisma.trip.count.mockResolvedValueOnce(0 as never);
     mockPrisma.trip.create.mockResolvedValueOnce(mockDraftTrip as never);
+    mockPrisma.tripLeg.createMany.mockResolvedValueOnce({ count: 1 } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce(mockDraftTrip as never);
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
@@ -428,6 +473,8 @@ describe("POST /api/trips/draft", () => {
     } as never);
     mockPrisma.trip.count.mockResolvedValueOnce(2 as never);
     mockPrisma.trip.create.mockResolvedValueOnce(mockDraftTrip as never);
+    mockPrisma.tripLeg.createMany.mockResolvedValueOnce({ count: 1 } as never);
+    mockPrisma.trip.findUnique.mockResolvedValueOnce(mockDraftTrip as never);
 
     const req = new NextRequest("http://localhost:3000/api/trips/draft", {
       method: "POST",
@@ -438,8 +485,9 @@ describe("POST /api/trips/draft", () => {
     expect(response.status).toBe(201);
     const json = await response.json();
     expect(json.trip).toBeDefined();
-    expect(json.trip.city).toBe("Tokyo");
-    expect(json.trip.country).toBe("Japan");
-    expect(json.trip.destination).toBe("Tokyo, Japan");
+    // Leg data is now accessible via trip.legs[0]
+    expect(json.trip.legs[0].city).toBe("Tokyo");
+    expect(json.trip.legs[0].country).toBe("Japan");
+    expect(json.trip.legs[0].destination).toBe("Tokyo, Japan");
   });
 });

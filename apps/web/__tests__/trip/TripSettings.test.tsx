@@ -282,6 +282,72 @@ describe("TripSettings — delete confirmation", () => {
   });
 });
 
+describe("TripSettings — date validation errors", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useRouter).mockReturnValue(mockRouter as never);
+  });
+
+  it("shows error when end date is set before start date and save is clicked", async () => {
+    const user = userEvent.setup();
+    const mockFetch = vi.fn();
+    global.fetch = mockFetch;
+
+    render(
+      <TripSettings
+        trip={makeTrip({
+          startDate: "2026-07-01T00:00:00Z",
+          endDate: "2026-07-04T00:00:00Z",
+        })}
+        myRole="organizer"
+        onClose={vi.fn()}
+        onTripUpdate={vi.fn()}
+      />
+    );
+
+    const endInput = screen.getByLabelText("End date");
+    // Set end date before start date
+    await user.clear(endInput);
+    await user.type(endInput, "2026-06-28");
+
+    await user.click(screen.getByText("Save changes"));
+
+    await waitFor(() => {
+      expect(screen.getByText("End date must be after start date")).toBeInTheDocument();
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("shows error when date range exceeds 14 nights and save is clicked", async () => {
+    const user = userEvent.setup();
+    const mockFetch = vi.fn();
+    global.fetch = mockFetch;
+
+    render(
+      <TripSettings
+        trip={makeTrip({
+          startDate: "2026-07-01T00:00:00Z",
+          endDate: "2026-07-04T00:00:00Z",
+        })}
+        myRole="organizer"
+        onClose={vi.fn()}
+        onTripUpdate={vi.fn()}
+      />
+    );
+
+    const endInput = screen.getByLabelText("End date");
+    await user.clear(endInput);
+    await user.type(endInput, "2026-07-20");
+
+    await user.click(screen.getByText("Save changes"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Trip cannot exceed 14 nights")).toBeInTheDocument();
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+});
+
 describe("TripSettings — export", () => {
   beforeEach(() => {
     vi.clearAllMocks();

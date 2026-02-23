@@ -19,11 +19,18 @@ afterEach(() => {
 function makeTrip(overrides: Partial<IcsTripData> = {}): IcsTripData {
   return {
     id: "trip-1",
-    destination: "Tokyo, Japan",
-    city: "Tokyo",
-    timezone: "Asia/Tokyo",
+    name: "Tokyo Trip",
     startDate: "2026-07-01",
     endDate: "2026-07-04",
+    legs: [
+      {
+        city: "Tokyo",
+        timezone: "Asia/Tokyo",
+        startDate: "2026-07-01",
+        endDate: "2026-07-04",
+        dayOffset: 0,
+      },
+    ],
     slots: [],
     ...overrides,
   };
@@ -56,13 +63,15 @@ describe("generateIcsCalendar — header", () => {
     expect(result).toContain("END:VCALENDAR");
   });
 
-  it("includes X-WR-CALNAME with escaped destination", () => {
-    const result = generateIcsCalendar(makeTrip({ destination: "Tokyo, Japan" }));
+  it("includes X-WR-CALNAME with escaped trip name", () => {
+    const result = generateIcsCalendar(makeTrip({ name: "Tokyo, Japan" }));
     expect(result).toContain("X-WR-CALNAME:Tokyo\\, Japan");
   });
 
-  it("includes X-WR-TIMEZONE", () => {
-    const result = generateIcsCalendar(makeTrip({ timezone: "Asia/Tokyo" }));
+  it("includes X-WR-TIMEZONE from first leg", () => {
+    const result = generateIcsCalendar(makeTrip({
+      legs: [{ city: "Tokyo", timezone: "Asia/Tokyo", startDate: "2026-07-01", endDate: "2026-07-04", dayOffset: 0 }],
+    }));
     expect(result).toContain("X-WR-TIMEZONE:Asia/Tokyo");
   });
 });
@@ -95,6 +104,15 @@ describe("generateIcsCalendar — multi-day trip", () => {
   it("generates events on correct dates for different dayNumbers", () => {
     const trip = makeTrip({
       startDate: "2026-07-01",
+      legs: [
+        {
+          city: "Tokyo",
+          timezone: "Asia/Tokyo",
+          startDate: "2026-07-01",
+          endDate: "2026-07-04",
+          dayOffset: 0,
+        },
+      ],
       slots: [
         makeSlot({ id: "s1", dayNumber: 1, startTime: "10:00", durationMinutes: 60 }),
         makeSlot({
@@ -193,8 +211,11 @@ describe("generateIcsCalendar — CRLF line endings", () => {
 });
 
 describe("generateIcsCalendar — timezone fallback", () => {
-  it("defaults timezone to UTC when empty string provided", () => {
-    const trip = makeTrip({ timezone: "", slots: [makeSlot({ startTime: "09:00" })] });
+  it("defaults timezone to UTC when legs have empty timezone", () => {
+    const trip = makeTrip({
+      legs: [{ city: "Unknown", timezone: "", startDate: "2026-07-01", endDate: "2026-07-04", dayOffset: 0 }],
+      slots: [makeSlot({ startTime: "09:00" })],
+    });
     const result = generateIcsCalendar(trip);
     expect(result).toContain("X-WR-TIMEZONE:UTC");
     expect(result).toContain("DTSTART;TZID=UTC:");

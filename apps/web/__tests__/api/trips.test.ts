@@ -4,16 +4,22 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { createTripSchema, updateTripSchema } from "@/lib/validations/trip";
+import { createTripSchema, createDraftSchema, updateTripSchema } from "@/lib/validations/trip";
 
-const validCreatePayload = {
-  destination: "Kyoto, Japan",
+const validLeg = {
   city: "Kyoto",
   country: "Japan",
   timezone: "Asia/Tokyo",
+  destination: "Kyoto, Japan",
+  startDate: "2026-04-01T00:00:00.000Z",
+  endDate: "2026-04-07T00:00:00.000Z",
+};
+
+const validCreatePayload = {
   startDate: "2026-04-01T00:00:00.000Z",
   endDate: "2026-04-07T00:00:00.000Z",
   mode: "solo" as const,
+  legs: [validLeg],
 };
 
 describe("createTripSchema", () => {
@@ -42,44 +48,56 @@ describe("createTripSchema", () => {
     }
   });
 
-  it("rejects when destination is missing", () => {
-    const { destination, ...payload } = validCreatePayload;
+  it("rejects when legs array is missing", () => {
+    const { legs, ...payload } = validCreatePayload;
+    void legs;
+    const result = createTripSchema.safeParse(payload);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects when legs array is empty", () => {
+    const result = createTripSchema.safeParse({ ...validCreatePayload, legs: [] });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects when leg destination is missing", () => {
+    const { destination, ...legWithoutDest } = validLeg;
     void destination;
-    const result = createTripSchema.safeParse(payload);
+    const result = createTripSchema.safeParse({
+      ...validCreatePayload,
+      legs: [legWithoutDest],
+    });
     expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.flatten().fieldErrors.destination).toBeDefined();
-    }
   });
 
-  it("rejects when city is missing", () => {
-    const { city, ...payload } = validCreatePayload;
+  it("rejects when leg city is missing", () => {
+    const { city, ...legWithoutCity } = validLeg;
     void city;
-    const result = createTripSchema.safeParse(payload);
+    const result = createTripSchema.safeParse({
+      ...validCreatePayload,
+      legs: [legWithoutCity],
+    });
     expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.flatten().fieldErrors.city).toBeDefined();
-    }
   });
 
-  it("rejects when country is missing", () => {
-    const { country, ...payload } = validCreatePayload;
+  it("rejects when leg country is missing", () => {
+    const { country, ...legWithoutCountry } = validLeg;
     void country;
-    const result = createTripSchema.safeParse(payload);
+    const result = createTripSchema.safeParse({
+      ...validCreatePayload,
+      legs: [legWithoutCountry],
+    });
     expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.flatten().fieldErrors.country).toBeDefined();
-    }
   });
 
-  it("rejects when timezone is missing", () => {
-    const { timezone, ...payload } = validCreatePayload;
+  it("accepts when leg timezone is missing (optional)", () => {
+    const { timezone, ...legWithoutTz } = validLeg;
     void timezone;
-    const result = createTripSchema.safeParse(payload);
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.flatten().fieldErrors.timezone).toBeDefined();
-    }
+    const result = createTripSchema.safeParse({
+      ...validCreatePayload,
+      legs: [legWithoutTz],
+    });
+    expect(result.success).toBe(true);
   });
 
   it("rejects an invalid mode value", () => {
@@ -138,6 +156,111 @@ describe("createTripSchema", () => {
     const result = createTripSchema.safeParse({
       ...validCreatePayload,
       mode: "group",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects endDate <= startDate (zero-night trip)", () => {
+    const result = createTripSchema.safeParse({
+      ...validCreatePayload,
+      startDate: "2026-04-07T00:00:00.000Z",
+      endDate: "2026-04-07T00:00:00.000Z",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects endDate before startDate", () => {
+    const result = createTripSchema.safeParse({
+      ...validCreatePayload,
+      startDate: "2026-04-07T00:00:00.000Z",
+      endDate: "2026-04-01T00:00:00.000Z",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects trip exceeding 14 nights", () => {
+    const result = createTripSchema.safeParse({
+      ...validCreatePayload,
+      startDate: "2026-04-01T00:00:00.000Z",
+      endDate: "2026-04-16T00:00:00.000Z",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts exactly 14 nights", () => {
+    const result = createTripSchema.safeParse({
+      ...validCreatePayload,
+      startDate: "2026-04-01T00:00:00.000Z",
+      endDate: "2026-04-15T00:00:00.000Z",
+      legs: [{
+        ...validLeg,
+        startDate: "2026-04-01T00:00:00.000Z",
+        endDate: "2026-04-15T00:00:00.000Z",
+      }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects startDate more than 2 years in the future", () => {
+    const farFuture = new Date();
+    farFuture.setFullYear(farFuture.getFullYear() + 3);
+    const farEnd = new Date(farFuture);
+    farEnd.setDate(farEnd.getDate() + 3);
+
+    const result = createTripSchema.safeParse({
+      ...validCreatePayload,
+      startDate: farFuture.toISOString(),
+      endDate: farEnd.toISOString(),
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("createDraftSchema — date range validation", () => {
+  const validDraftLeg = {
+    city: "Tokyo",
+    country: "Japan",
+    timezone: "Asia/Tokyo",
+    destination: "Tokyo, Japan",
+    startDate: "2026-06-01T00:00:00.000Z",
+    endDate: "2026-06-07T00:00:00.000Z",
+  };
+
+  const validDraft = {
+    startDate: "2026-06-01T00:00:00.000Z",
+    endDate: "2026-06-07T00:00:00.000Z",
+    legs: [validDraftLeg],
+  };
+
+  it("accepts a valid draft payload", () => {
+    const result = createDraftSchema.safeParse(validDraft);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects endDate <= startDate", () => {
+    const result = createDraftSchema.safeParse({
+      ...validDraft,
+      endDate: validDraft.startDate,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects trip exceeding 14 nights", () => {
+    const result = createDraftSchema.safeParse({
+      ...validDraft,
+      endDate: "2026-06-16T00:00:00.000Z",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts exactly 14 nights", () => {
+    const result = createDraftSchema.safeParse({
+      ...validDraft,
+      endDate: "2026-06-15T00:00:00.000Z",
+      legs: [{
+        ...validDraftLeg,
+        endDate: "2026-06-15T00:00:00.000Z",
+      }],
     });
     expect(result.success).toBe(true);
   });
@@ -228,5 +351,36 @@ describe("updateTripSchema", () => {
       const result = updateTripSchema.safeParse({ status });
       expect(result.success, `status '${status}' should be valid`).toBe(true);
     }
+  });
+
+  it("rejects when both dates present and endDate <= startDate", () => {
+    const result = updateTripSchema.safeParse({
+      startDate: "2026-04-07T00:00:00.000Z",
+      endDate: "2026-04-01T00:00:00.000Z",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects when both dates present and exceeds 14 nights", () => {
+    const result = updateTripSchema.safeParse({
+      startDate: "2026-04-01T00:00:00.000Z",
+      endDate: "2026-04-16T00:00:00.000Z",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts single date update (no cross-field check)", () => {
+    const result = updateTripSchema.safeParse({
+      startDate: "2026-04-01T00:00:00.000Z",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts valid date range when both present", () => {
+    const result = updateTripSchema.safeParse({
+      startDate: "2026-04-01T00:00:00.000Z",
+      endDate: "2026-04-15T00:00:00.000Z",
+    });
+    expect(result.success).toBe(true);
   });
 });

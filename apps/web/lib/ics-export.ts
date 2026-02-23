@@ -11,13 +11,20 @@ export interface IcsSlot {
   } | null;
 }
 
-export interface IcsTripData {
-  id: string;
-  destination: string;
+export interface IcsLeg {
   city: string;
   timezone: string;
+  startDate: string;  // ISO date
+  endDate: string;
+  dayOffset: number;  // absolute day offset from trip start (0-indexed)
+}
+
+export interface IcsTripData {
+  id: string;
+  name: string;
   startDate: string;
   endDate: string;
+  legs: IcsLeg[];
   slots: IcsSlot[];
 }
 
@@ -110,8 +117,24 @@ function defaultTimeForSortOrder(sortOrder: number): string {
   return SORT_ORDER_DEFAULTS[sortOrder] ?? '18:00';
 }
 
+/**
+ * Find the leg a given dayNumber belongs to based on each leg's dayOffset
+ * and date range. Falls back to the first leg if no match.
+ */
+function findLegForDay(legs: IcsLeg[], dayNumber: number): IcsLeg | undefined {
+  for (const leg of legs) {
+    const legDays = Math.ceil(
+      (new Date(leg.endDate).getTime() - new Date(leg.startDate).getTime()) / 86400000
+    );
+    if (dayNumber >= leg.dayOffset + 1 && dayNumber <= leg.dayOffset + legDays) {
+      return leg;
+    }
+  }
+  return legs[0]; // fallback to first leg
+}
+
 export function generateIcsCalendar(trip: IcsTripData): string {
-  const timezone = trip.timezone || 'UTC';
+  const defaultTimezone = trip.legs[0]?.timezone || 'UTC';
   const now = formatUtcStamp(new Date());
 
   const lines: string[] = [
@@ -120,13 +143,16 @@ export function generateIcsCalendar(trip: IcsTripData): string {
     'PRODID:-//Overplanned//Trip Calendar//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    `X-WR-CALNAME:${escapeIcsText(trip.destination)}`,
-    `X-WR-TIMEZONE:${timezone}`,
+    `X-WR-CALNAME:${escapeIcsText(trip.name)}`,
+    `X-WR-TIMEZONE:${defaultTimezone}`,
   ];
 
   for (const slot of trip.slots) {
     // Skip slots with no activity data
     if (!slot.activityNode) continue;
+
+    const leg = findLegForDay(trip.legs, slot.dayNumber);
+    const timezone = leg?.timezone || defaultTimezone;
 
     const baseDate = addDays(trip.startDate, slot.dayNumber - 1);
     const startTimeStr = slot.startTime
@@ -166,7 +192,7 @@ export function downloadIcsFile(trip: IcsTripData): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${trip.destination.replace(/[^a-zA-Z0-9]/g, '-')}.ics`;
+  a.download = `${trip.name.replace(/[^a-zA-Z0-9]/g, '-')}.ics`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

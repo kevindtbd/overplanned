@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { destination, city, country, timezone, startDate, endDate } = parsed.data;
+  const { legs, startDate, endDate } = parsed.data;
 
   try {
     const draftCount = await prisma.trip.count({
@@ -56,10 +56,6 @@ export async function POST(req: NextRequest) {
       data: {
         id: tripId,
         userId,
-        destination,
-        city,
-        country,
-        timezone,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         mode: "solo",
@@ -85,7 +81,39 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ trip }, { status: 201 });
+    // Create TripLeg records
+    await prisma.tripLeg.createMany({
+      data: legs.map((leg, i) => ({
+        tripId,
+        position: i,
+        city: leg.city,
+        country: leg.country,
+        timezone: leg.timezone ?? null,
+        destination: leg.destination,
+        startDate: new Date(leg.startDate),
+        endDate: new Date(leg.endDate),
+        arrivalTime: leg.arrivalTime ?? null,
+        departureTime: leg.departureTime ?? null,
+        transitMode: leg.transitMode ?? null,
+        transitDurationMin: leg.transitDurationMin ?? null,
+        transitCostHint: leg.transitCostHint ?? null,
+      })),
+    });
+
+    // Re-fetch to include legs created via createMany
+    const tripWithLegs = await prisma.trip.findUnique({
+      where: { id: tripId },
+      include: {
+        members: {
+          select: { id: true, userId: true, role: true, status: true },
+        },
+        legs: {
+          orderBy: { position: "asc" },
+        },
+      },
+    });
+
+    return NextResponse.json({ trip: tripWithLegs }, { status: 201 });
   } catch (err) {
     console.error("[POST /api/trips/draft] DB error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
