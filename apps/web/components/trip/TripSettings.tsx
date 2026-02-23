@@ -19,6 +19,13 @@ interface TripSettingsProps {
     startDate: string;
     endDate: string;
     timezone: string;
+    legs: Array<{
+      id: string;
+      city: string;
+      country: string;
+      timezone: string | null;
+      destination: string;
+    }>;
     slots: Array<{
       id: string;
       dayNumber: number;
@@ -123,13 +130,25 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
   }, [getDirtyFields, trip.id, onTripUpdate, onClose]);
 
   const handleExport = useCallback(() => {
+    const tripStart = new Date(trip.startDate);
     const icsData: IcsTripData = {
       id: trip.id,
-      destination: trip.destination,
-      city: trip.city,
-      timezone: trip.timezone,
+      name: trip.name || trip.destination,
       startDate: trip.startDate.split("T")[0],
       endDate: trip.endDate.split("T")[0],
+      legs: (trip.legs || []).map((leg) => {
+        const legStart = new Date(leg.destination ? trip.startDate : trip.startDate);
+        const dayOffset = Math.round(
+          (new Date(trip.startDate).getTime() - tripStart.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return {
+          city: leg.city,
+          timezone: leg.timezone || "UTC",
+          startDate: trip.startDate.split("T")[0],
+          endDate: trip.endDate.split("T")[0],
+          dayOffset: 0,
+        };
+      }),
       slots: trip.slots.map((s) => ({
         id: s.id,
         dayNumber: s.dayNumber,
@@ -140,6 +159,16 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
         activityNode: s.activityNode,
       })),
     };
+    // Fallback: if no legs, create a synthetic one from derived fields
+    if (icsData.legs.length === 0) {
+      icsData.legs = [{
+        city: trip.city,
+        timezone: trip.timezone || "UTC",
+        startDate: trip.startDate.split("T")[0],
+        endDate: trip.endDate.split("T")[0],
+        dayOffset: 0,
+      }];
+    }
     downloadIcsFile(icsData);
   }, [trip]);
 

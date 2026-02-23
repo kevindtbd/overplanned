@@ -36,6 +36,15 @@ function makeTrip(overrides: Record<string, unknown> = {}) {
     startDate: "2026-07-01T00:00:00Z",
     endDate: "2026-07-04T00:00:00Z",
     timezone: "Asia/Tokyo",
+    legs: [
+      {
+        id: "leg-1",
+        city: "Tokyo",
+        country: "Japan",
+        timezone: "Asia/Tokyo",
+        destination: "Tokyo, Japan",
+      },
+    ],
     slots: [],
     ...overrides,
   };
@@ -373,7 +382,7 @@ describe("TripSettings — export", () => {
     expect(vi.mocked(downloadIcsFile)).toHaveBeenCalledTimes(1);
     const callArg = vi.mocked(downloadIcsFile).mock.calls[0][0];
     expect(callArg.id).toBe("trip-1");
-    expect(callArg.destination).toBe("Tokyo, Japan");
-    expect(callArg.timezone).toBe("Asia/Tokyo");
+    expect(callArg.name).toBe("Tokyo Trip");
+    expect(callArg.legs[0].timezone).toBe("Asia/Tokyo");
   });
 });

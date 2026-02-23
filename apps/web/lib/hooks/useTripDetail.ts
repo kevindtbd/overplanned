@@ -25,18 +25,26 @@ export interface ApiSlot {
   } | null;
 }
 
+export interface ApiLeg {
+  id: string;
+  position: number;
+  city: string;
+  country: string;
+  timezone: string | null;
+  destination: string;
+  startDate: string;
+  endDate: string;
+}
+
 export interface ApiTrip {
   id: string;
   name: string | null;
-  destination: string;
-  city: string;
-  country: string;
-  timezone: string;
   startDate: string;
   endDate: string;
   mode: string;
   status: string;
   planningProgress: number;
+  legs: ApiLeg[];
   slots: ApiSlot[];
   members: {
     id: string;
@@ -50,6 +58,11 @@ export interface ApiTrip {
       avatarUrl: string | null;
     };
   }[];
+  // Derived from legs[0] for convenience
+  city: string;
+  country: string;
+  destination: string;
+  timezone: string;
 }
 
 export type FetchState = "loading" | "error" | "success";
@@ -75,6 +88,12 @@ export function useTripDetail(tripId: string) {
         throw new Error(data.error || "Failed to load trip");
       }
       const { trip: tripData, myRole: role } = await res.json();
+      // Derive convenience fields from first leg
+      const leg0 = tripData.legs?.[0];
+      tripData.city = leg0?.city ?? "";
+      tripData.country = leg0?.country ?? "";
+      tripData.destination = leg0?.destination ?? "";
+      tripData.timezone = leg0?.timezone ?? "UTC";
       setTrip(tripData);
       setMyRole(role);
       setFetchState("success");
