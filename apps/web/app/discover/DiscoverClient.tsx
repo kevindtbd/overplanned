@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { DiscoverFeed, type ActivityCard } from "./components/DiscoverFeed";
 import { SwipeDeck } from "./components/SwipeDeck";
 import { Shortlist, useShortlist } from "./components/Shortlist";
@@ -15,6 +16,7 @@ interface DiscoverClientProps {
   userId: string;
   city: string;
   tripId?: string;
+  day?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -174,12 +176,14 @@ export default function DiscoverClient({
   userId,
   city,
   tripId,
+  day,
 }: DiscoverClientProps) {
   const sessionId = useSessionId();
 
   const [viewMode, setViewMode] = useState<ViewMode>("feed");
   const [shortlist, setShortlist] = useState<ActivityCard[]>([]);
   const [shortlistIds, setShortlistIds] = useState<Set<string>>(new Set());
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Swipe deck uses a snapshot of the current feed cards
   const [swipeDeckCards, setSwipeDeckCards] = useState<ActivityCard[]>([]);
@@ -294,6 +298,17 @@ export default function DiscoverClient({
               <h1 className="font-sora text-base font-semibold text-primary">Discover</h1>
               <p className="label-mono">{city}</p>
             </div>
+            {tripId && (
+              <Link
+                href={`/trip/${tripId}`}
+                className="inline-flex items-center gap-1.5 font-dm-mono text-xs text-ink-400 uppercase tracking-wider hover:text-accent transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to trip
+              </Link>
+            )}
           </div>
 
           <div className="mt-3">
@@ -355,11 +370,13 @@ export default function DiscoverClient({
                 const res = await fetch(`/api/trips/${tripId}/slots`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ activityNodeId: card.id }),
+                  body: JSON.stringify({ activityNodeId: card.id, dayNumber: day ?? 1 }),
                 });
                 if (res.ok) {
                   // Remove from shortlist after successfully adding to trip
                   handleShortlistRemove(card);
+                  setToastMessage(`Added to Day ${day ?? 1}`);
+                  setTimeout(() => setToastMessage(null), 5000);
                 } else {
                   const data = await res.json().catch(() => ({}));
                   console.error("Failed to add to trip:", data.error);
@@ -371,6 +388,18 @@ export default function DiscoverClient({
           />
         )}
       </div>
+
+      {/* Success toast */}
+      {toastMessage && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 rounded-xl bg-warm-surface border border-warm-border px-4 py-3 shadow-lg font-sora text-sm text-ink-100 flex items-center gap-3">
+          <span>{toastMessage}</span>
+          {tripId && (
+            <Link href={`/trip/${tripId}`} className="font-medium text-accent hover:text-accent/80 whitespace-nowrap">
+              Back to trip
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

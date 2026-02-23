@@ -19,6 +19,7 @@ import { v4 as uuidv4 } from "uuid";
 
 const addSlotSchema = z.object({
   activityNodeId: z.string().uuid(),
+  dayNumber: z.number().int().min(1).optional(),
 });
 
 export async function POST(
@@ -83,7 +84,7 @@ export async function POST(
       }),
       prisma.trip.findUnique({
         where: { id: tripId },
-        select: { city: true },
+        select: { city: true, startDate: true, endDate: true },
       }),
     ]);
 
@@ -113,15 +114,33 @@ export async function POST(
     }
 
     // -------------------------------------------------------------------------
-    // 5. Atomic transaction: compute sortOrder, create slot + behavioral signal
+    // 5. Validate dayNumber bounds
+    // -------------------------------------------------------------------------
+    const requestedDay = parsed.data.dayNumber ?? 1;
+    const totalDays = Math.max(
+      Math.ceil(
+        (new Date(trip.endDate).getTime() - new Date(trip.startDate).getTime()) /
+          (1000 * 60 * 60 * 24)
+      ),
+      1
+    );
+    if (requestedDay < 1 || requestedDay > totalDays) {
+      return NextResponse.json(
+        { error: `Day must be between 1 and ${totalDays}` },
+        { status: 400 }
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. Atomic transaction: compute sortOrder, create slot + behavioral signal
     // -------------------------------------------------------------------------
     const slotId = uuidv4();
     const signalId = uuidv4();
 
     const [slot] = await prisma.$transaction(async (tx) => {
-      // Max sortOrder for existing day-1 slots in this trip
+      // Max sortOrder for existing slots on the requested day
       const agg = await tx.itinerarySlot.aggregate({
-        where: { tripId, dayNumber: 1 },
+        where: { tripId, dayNumber: requestedDay },
         _max: { sortOrder: true },
       });
 
@@ -132,7 +151,7 @@ export async function POST(
           id: slotId,
           tripId,
           activityNodeId,
-          dayNumber: 1,
+          dayNumber: requestedDay,
           sortOrder: nextSortOrder,
           slotType: "flex",
           status: "proposed",

@@ -167,7 +167,7 @@ describe("PATCH /api/trips/[id] — field-level write guards", () => {
     vi.clearAllMocks();
   });
 
-  it("silently ignores startDate when trip is in planning status", async () => {
+  it("allows startDate when trip is in planning status", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);
     mockPrisma.trip.findUnique.mockResolvedValueOnce({ status: "planning" } as never);
@@ -180,7 +180,7 @@ describe("PATCH /api/trips/[id] — field-level write guards", () => {
     expect(res.status).toBe(200);
 
     const updateCall = mockPrisma.trip.update.mock.calls[0][0];
-    expect(updateCall.data.startDate).toBeUndefined();
+    expect(updateCall.data.startDate).toEqual(new Date("2027-01-01T00:00:00.000Z"));
     expect(updateCall.data.name).toBe("New Name");
   });
 

@@ -161,8 +161,8 @@ describe("getWritableFields", () => {
     expect(fields.has("name")).toBe(true);
     expect(fields.has("status")).toBe(true);
     expect(fields.has("planningProgress")).toBe(true);
-    expect(fields.has("startDate")).toBe(false);
-    expect(fields.has("endDate")).toBe(false);
+    expect(fields.has("startDate")).toBe(true);
+    expect(fields.has("endDate")).toBe(true);
     expect(fields.has("mode")).toBe(false);
     expect(fields.has("presetTemplate")).toBe(false);
     expect(fields.has("personaSeed")).toBe(false);

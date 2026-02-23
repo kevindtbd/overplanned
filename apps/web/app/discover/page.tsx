@@ -11,7 +11,7 @@ export const metadata = {
 export default async function DiscoverPage({
   searchParams,
 }: {
-  searchParams: { city?: string; tripId?: string };
+  searchParams: { city?: string; tripId?: string; day?: string };
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -20,12 +20,14 @@ export default async function DiscoverPage({
 
   const city = searchParams.city ?? "Tokyo";
   const tripId = searchParams.tripId ?? undefined;
+  const day = searchParams.day ? Number(searchParams.day) : undefined;
 
   return (
     <DiscoverClient
       userId={(session.user as { id: string }).id}
       city={city}
       tripId={tripId}
+      day={day}
     />
   );
 }

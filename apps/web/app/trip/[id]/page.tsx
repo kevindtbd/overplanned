@@ -13,6 +13,7 @@ import { DayView } from "@/components/trip/DayView";
 import { WelcomeCard } from "@/components/trip/WelcomeCard";
 import { type SlotData } from "@/components/slot/SlotCard";
 import { type SlotActionEvent } from "@/components/slot/SlotActions";
+import { TripSettings } from "@/components/trip/TripSettings";
 import { SlotSkeleton, ErrorState } from "@/components/states";
 import { getCityPhoto } from "@/lib/city-photos";
 import { useTripDetail, type ApiSlot } from "@/lib/hooks/useTripDetail";
@@ -66,6 +67,9 @@ export default function TripDetailPage() {
     }
   }, [tripId]);
 
+  // -- Settings panel --
+  const [showSettings, setShowSettings] = useState(false);
+
   // -- FAB scroll collapse --
   const [fabCompact, setFabCompact] = useState(false);
 
@@ -117,6 +121,23 @@ export default function TripDetailPage() {
       // Dismiss welcome card on first slot action
       setShowWelcome(false);
 
+      // Move action — delegate to move endpoint, refetch on completion
+      if (event.action === "move" && event.moveData) {
+        try {
+          const res = await fetch(`/api/slots/${event.slotId}/move`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(event.moveData),
+          });
+          if (res.ok) {
+            fetchTrip();
+          }
+        } catch {
+          fetchTrip();
+        }
+        return;
+      }
+
       // Progress pulse on confirm
       if (event.action === "confirm") {
         if (pulseTimer.current) clearTimeout(pulseTimer.current);
@@ -163,6 +184,40 @@ export default function TripDetailPage() {
     [fetchTrip, setTrip]
   );
 
+  const handleStartTrip = useCallback(async () => {
+    if (!trip) return;
+    setTrip(prev => prev ? { ...prev, status: "active" } : prev);
+    try {
+      const res = await fetch(`/api/trips/${tripId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "active" }),
+      });
+      if (!res.ok) {
+        fetchTrip();
+      }
+    } catch {
+      fetchTrip();
+    }
+  }, [trip, tripId, fetchTrip, setTrip]);
+
+  const handleCompleteTrip = useCallback(async () => {
+    if (!trip) return;
+    setTrip(prev => prev ? { ...prev, status: "completed" } : prev);
+    try {
+      const res = await fetch(`/api/trips/${tripId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed" }),
+      });
+      if (!res.ok) {
+        fetchTrip();
+      }
+    } catch {
+      fetchTrip();
+    }
+  }, [trip, tripId, fetchTrip, setTrip]);
+
   // Status summary across all days
   const statusSummary = useMemo(() => {
     if (!trip) return { total: 0, confirmed: 0, proposed: 0 };
@@ -181,7 +236,7 @@ export default function TripDetailPage() {
   const tripPhoto = trip ? getCityPhoto(trip.city) : undefined;
   const tripName = trip?.name || trip?.destination || "";
   const discoverUrl = trip
-    ? `/discover?city=${encodeURIComponent(trip.city)}&tripId=${trip.id}`
+    ? `/discover?city=${encodeURIComponent(trip.city)}&tripId=${trip.id}&day=${currentDay}`
     : "/discover";
 
   // -- Loading --
@@ -258,9 +313,23 @@ export default function TripDetailPage() {
 
           {/* Trip header */}
           <header className="space-y-1">
-            <h1 className="font-sora text-2xl sm:text-3xl font-medium text-ink-100">
-              {trip!.destination}
-            </h1>
+            <div className="flex items-center justify-between">
+              <h1 className="font-sora text-2xl sm:text-3xl font-medium text-ink-100">
+                {trip!.destination}
+              </h1>
+              {myRole === "organizer" && (
+                <button
+                  onClick={() => setShowSettings(prev => !prev)}
+                  className="rounded-lg p-2 text-ink-400 hover:text-ink-100 hover:bg-warm-surface transition-colors"
+                  aria-label="Trip settings"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+                  </svg>
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-3 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
               <span>
                 {trip!.city}, {trip!.country}
@@ -278,7 +347,41 @@ export default function TripDetailPage() {
                 {statusSummary.confirmed}/{statusSummary.total} confirmed
               </span>
             </div>
+            {trip!.status === "planning" && myRole === "organizer" && (
+              <button
+                onClick={handleStartTrip}
+                className="mt-3 rounded-lg bg-accent px-4 py-2 font-sora text-sm font-medium text-white transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              >
+                Start trip
+              </button>
+            )}
           </header>
+
+          {/* Settings panel */}
+          {showSettings && trip && (
+            <TripSettings
+              trip={trip}
+              myRole={myRole!}
+              onClose={() => setShowSettings(false)}
+              onTripUpdate={fetchTrip}
+            />
+          )}
+
+          {/* Completion banner — organizer only, shown after end date */}
+          {trip!.status === "active" && myRole === "organizer" && new Date(trip!.endDate) < new Date() && (
+            <div className="rounded-xl border border-warm-border bg-warm-surface p-4 flex items-center justify-between">
+              <div>
+                <p className="font-sora text-sm font-medium text-ink-100">Trip complete!</p>
+                <p className="font-dm-mono text-xs text-ink-400 mt-0.5">Your trip dates have ended. Ready to wrap up?</p>
+              </div>
+              <button
+                onClick={handleCompleteTrip}
+                className="rounded-lg bg-accent px-3 py-1.5 font-sora text-sm font-medium text-white transition-colors hover:bg-accent/90 shrink-0 ml-4"
+              >
+                Mark as done
+              </button>
+            </div>
+          )}
 
           {/* Day navigation */}
           <DayNavigation
@@ -316,6 +419,7 @@ export default function TripDetailPage() {
             slots={slotsForDay}
             timezone={trip!.timezone}
             onSlotAction={handleSlotAction}
+            totalDays={totalDays}
           />
         </div>
       </div>

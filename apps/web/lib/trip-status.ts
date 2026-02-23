@@ -6,6 +6,8 @@ export function shouldAutoTransition(status: string, startDate: Date): boolean {
   return status === "planning" && startDate <= new Date();
 }
 
+export const DELETABLE_STATUSES = ["draft"];
+
 export const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ["planning"],
   planning: ["active"],
@@ -25,7 +27,7 @@ export function validateTransition(
 
 export const WRITABLE_BY_STATUS: Record<string, string[]> = {
   draft: ["name", "startDate", "endDate", "mode", "presetTemplate", "personaSeed", "status"],
-  planning: ["name", "status", "planningProgress"],
+  planning: ["name", "status", "planningProgress", "startDate", "endDate"],
   active: ["name", "status", "planningProgress"],
   completed: ["status"],
   archived: [],

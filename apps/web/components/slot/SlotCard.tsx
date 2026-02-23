@@ -72,6 +72,14 @@ export interface SlotCardProps {
   showPivot?: boolean;
   /** Track 5: show flag-for-review button */
   showFlag?: boolean;
+  /** Total days in the trip (for move-to-day dropdown) */
+  totalDays?: number;
+  /** Current day number */
+  currentDay?: number;
+  /** Zero-based slot index within the day */
+  slotIndex?: number;
+  /** Total slots in this day */
+  totalSlotsInDay?: number;
 }
 
 // ---------- Helpers ----------
@@ -161,6 +169,10 @@ export function SlotCard({
   showVoting = false,
   showPivot = false,
   showFlag = false,
+  totalDays,
+  currentDay,
+  slotIndex,
+  totalSlotsInDay,
 }: SlotCardProps) {
   const statusConfig = STATUS_CONFIG[slot.status];
 
@@ -184,6 +196,10 @@ export function SlotCard({
         status={slot.status}
         isLocked={slot.isLocked}
         onAction={handleAction}
+        totalDays={totalDays}
+        currentDay={currentDay}
+        slotIndex={slotIndex}
+        totalSlotsInDay={totalSlotsInDay}
       />
 
       {showVoting && (

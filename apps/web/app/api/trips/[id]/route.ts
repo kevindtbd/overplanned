@@ -1,6 +1,7 @@
 /**
- * GET   /api/trips/[id] — Fetch trip detail (must be a TripMember)
- * PATCH /api/trips/[id] — Update trip fields (must be organizer)
+ * GET    /api/trips/[id] — Fetch trip detail (must be a TripMember)
+ * PATCH  /api/trips/[id] — Update trip fields (must be organizer)
+ * DELETE /api/trips/[id] — Delete a draft trip (must be organizer)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -82,16 +83,37 @@ export async function GET(
 
     // Auto-transition: planning -> active when start date has arrived
     // Only organizer role triggers the write to prevent guest-initiated mutations
-    if (
+    const needsTransition =
       membership.role === "organizer" &&
-      shouldAutoTransition(trip.status, new Date(trip.startDate))
-    ) {
+      shouldAutoTransition(trip.status, new Date(trip.startDate));
+
+    // Progress computation: decided = confirmed + skipped, stored as 0.0–1.0 float
+    const totalSlots = trip.slots.length;
+    const decidedSlots = trip.slots.filter(
+      (s) => s.status === "confirmed" || s.status === "skipped"
+    ).length;
+    const computedProgress =
+      totalSlots === 0 ? 0 : Math.round((decidedSlots / totalSlots) * 100) / 100;
+    const needsProgressUpdate =
+      membership.role === "organizer" &&
+      computedProgress !== (trip.planningProgress ?? 0);
+
+    // Combine both writes into a single update call if both fire
+    if (needsTransition || needsProgressUpdate) {
       await prisma.trip.update({
         where: { id: trip.id },
-        data: { status: "active" },
+        data: {
+          ...(needsTransition && { status: "active" }),
+          ...(needsProgressUpdate && { planningProgress: computedProgress }),
+        },
       });
-      trip.status = "active";
-      console.info(`[auto-transition] Trip ${trip.id} planning -> active (organizer: ${userId})`);
+      if (needsTransition) {
+        trip.status = "active";
+        console.info(`[auto-transition] Trip ${trip.id} planning -> active (organizer: ${userId})`);
+      }
+      if (needsProgressUpdate) {
+        trip.planningProgress = computedProgress;
+      }
     }
 
     return NextResponse.json(
@@ -238,6 +260,72 @@ export async function PATCH(
     return NextResponse.json({ trip: updated }, { status: 200 });
   } catch (err) {
     console.error(`[PATCH /api/trips/${tripId}] DB error:`, err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = (session.user as { id: string }).id;
+  const { id: tripId } = params;
+
+  try {
+    // IDOR prevention: require organizer role to delete trip
+    const membership = await prisma.tripMember.findUnique({
+      where: { tripId_userId: { tripId, userId } },
+      select: { role: true, status: true },
+    });
+
+    if (!membership) {
+      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
+    }
+
+    if (membership.status !== "joined") {
+      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
+    }
+
+    if (membership.role !== "organizer") {
+      return NextResponse.json(
+        { error: "Only the trip organizer can delete this trip" },
+        { status: 403 }
+      );
+    }
+
+    // Fetch current trip status — only draft trips can be deleted
+    const currentTrip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      select: { status: true },
+    });
+
+    if (!currentTrip) {
+      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
+    }
+
+    if (currentTrip.status !== "draft") {
+      return NextResponse.json(
+        { error: "Only draft trips can be deleted" },
+        { status: 409 }
+      );
+    }
+
+    // BehavioralSignal and PivotEvent have no cascade — clean up manually.
+    // TripMember, ItinerarySlot, SharedTripToken, InviteToken cascade via Prisma.
+    await prisma.$transaction([
+      prisma.behavioralSignal.deleteMany({ where: { tripId } }),
+      prisma.pivotEvent.deleteMany({ where: { tripId } }),
+      prisma.trip.delete({ where: { id: tripId } }),
+    ]);
+
+    return NextResponse.json({ deleted: true }, { status: 200 });
+  } catch (err) {
+    console.error(`[DELETE /api/trips/${tripId}] DB error:`, err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

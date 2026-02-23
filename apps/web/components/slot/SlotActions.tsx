@@ -1,18 +1,20 @@
 "use client";
 
-// SlotActions — Confirm / Skip / Lock action buttons for a slot card.
+// SlotActions — Confirm / Skip / Lock / Move action buttons for a slot card.
 // Emits BehavioralSignal-shaped callbacks. Used inside SlotCard.
 // Usage: <SlotActions slotId="abc" status="proposed" onAction={handleAction} />
 
-export type SlotActionType = "confirm" | "skip" | "lock";
+export type SlotActionType = "confirm" | "skip" | "lock" | "move";
 
 export interface SlotActionEvent {
   slotId: string;
   action: SlotActionType;
   /** Maps to BehavioralSignal.signalType */
-  signalType: "slot_confirm" | "slot_skip" | "slot_complete";
+  signalType: "slot_confirm" | "slot_skip" | "slot_complete" | "slot_moved";
   /** Maps to BehavioralSignal.signalValue */
   signalValue: number;
+  /** Move-specific payload */
+  moveData?: { dayNumber?: number; sortOrder?: number };
 }
 
 interface SlotActionsProps {
@@ -21,6 +23,14 @@ interface SlotActionsProps {
   isLocked: boolean;
   onAction: (event: SlotActionEvent) => void;
   disabled?: boolean;
+  /** Total days in the trip (enables "Move to Day" dropdown) */
+  totalDays?: number;
+  /** Current day number (to mark in dropdown) */
+  currentDay?: number;
+  /** Zero-based index of this slot within its day */
+  slotIndex?: number;
+  /** Total number of slots in this day (enables up/down reorder arrows) */
+  totalSlotsInDay?: number;
 }
 
 // SVG icons rendered inline per design system (no icon libraries)
@@ -61,6 +71,42 @@ function SkipIcon() {
   );
 }
 
+function ChevronUpIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="4 10 8 6 12 10" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="4 6 8 10 12 6" />
+    </svg>
+  );
+}
+
 function LockIcon({ locked }: { locked: boolean }) {
   return (
     <svg
@@ -95,6 +141,10 @@ export function SlotActions({
   isLocked,
   onAction,
   disabled = false,
+  totalDays,
+  currentDay,
+  slotIndex,
+  totalSlotsInDay,
 }: SlotActionsProps) {
   const isTerminal = status === "completed" || status === "skipped";
 
@@ -125,8 +175,32 @@ export function SlotActions({
     });
   }
 
+  function handleMoveToDay(dayNumber: number) {
+    onAction({
+      slotId,
+      action: "move",
+      signalType: "slot_moved",
+      signalValue: 1.0,
+      moveData: { dayNumber },
+    });
+  }
+
+  function handleReorder(newSortOrder: number) {
+    onAction({
+      slotId,
+      action: "move",
+      signalType: "slot_moved",
+      signalValue: 1.0,
+      moveData: { sortOrder: newSortOrder },
+    });
+  }
+
+  const showMoveToDay = totalDays !== undefined && totalDays > 1;
+  const showReorder =
+    totalSlotsInDay !== undefined && totalSlotsInDay > 1 && slotIndex !== undefined;
+
   return (
-    <div className="flex items-center gap-2" role="group" aria-label="Slot actions">
+    <div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Slot actions">
       {/* Confirm */}
       <button
         type="button"
@@ -192,6 +266,85 @@ export function SlotActions({
         <LockIcon locked={isLocked} />
         <span>{isLocked ? "Locked" : "Lock"}</span>
       </button>
+
+      {/* Reorder arrows */}
+      {showReorder && (
+        <div className="flex items-center gap-0.5" role="group" aria-label="Reorder slot">
+          <button
+            type="button"
+            onClick={() => handleReorder(slotIndex!)}
+            disabled={disabled || isTerminal || isLocked || slotIndex === 0}
+            className="
+              flex items-center justify-center w-8 h-8 rounded-lg
+              bg-surface text-ink-400 border border-ink-700
+              hover:border-ink-500 hover:text-ink-200
+              transition-all duration-150
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
+              disabled:opacity-40 disabled:cursor-not-allowed
+            "
+            aria-label="Move slot up"
+          >
+            <ChevronUpIcon />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleReorder(slotIndex! + 2)}
+            disabled={
+              disabled ||
+              isTerminal ||
+              isLocked ||
+              slotIndex === totalSlotsInDay! - 1
+            }
+            className="
+              flex items-center justify-center w-8 h-8 rounded-lg
+              bg-surface text-ink-400 border border-ink-700
+              hover:border-ink-500 hover:text-ink-200
+              transition-all duration-150
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
+              disabled:opacity-40 disabled:cursor-not-allowed
+            "
+            aria-label="Move slot down"
+          >
+            <ChevronDownIcon />
+          </button>
+        </div>
+      )}
+
+      {/* Move to Day dropdown */}
+      {showMoveToDay && (
+        <select
+          disabled={disabled || isTerminal || isLocked}
+          value=""
+          onChange={(e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val)) handleMoveToDay(val);
+          }}
+          className="
+            font-dm-mono text-xs
+            bg-warm-surface text-ink-300
+            border border-warm-border rounded-lg
+            px-2 py-1.5 h-8
+            transition-all duration-150
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
+            disabled:opacity-40 disabled:cursor-not-allowed
+          "
+          aria-label="Move to day"
+        >
+          <option value="" disabled>
+            Move to...
+          </option>
+          {Array.from({ length: totalDays! }, (_, i) => i + 1).map((day) => (
+            <option
+              key={day}
+              value={day}
+              disabled={day === currentDay}
+            >
+              Day {day}
+              {day === currentDay ? " (current)" : ""}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }

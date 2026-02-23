@@ -25,6 +25,8 @@ interface DayViewProps {
   showPivot?: boolean;
   /** Track 5: enable flag controls on all slots */
   showFlag?: boolean;
+  /** Total days in the trip (for move-to-day dropdown) */
+  totalDays?: number;
 }
 
 function formatTimeMarker(isoString: string, timezone?: string): string {
@@ -95,6 +97,7 @@ export function DayView({
   showVoting = false,
   showPivot = false,
   showFlag = false,
+  totalDays,
 }: DayViewProps) {
   // Sort slots by sortOrder (already from DB) or startTime fallback
   const sortedSlots = [...slots].sort((a, b) => {
@@ -167,6 +170,10 @@ export function DayView({
                 showVoting={showVoting}
                 showPivot={showPivot}
                 showFlag={showFlag}
+                totalDays={totalDays}
+                currentDay={dayNumber}
+                slotIndex={index}
+                totalSlotsInDay={sortedSlots.length}
               />
             </div>
           </div>
