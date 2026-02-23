@@ -1,14 +1,13 @@
 "use client";
 
 // Settings Page -- /settings
-// Single scrollable page with Account (real), stubs for future sections, and About (real).
+// Single scrollable page: Account, Subscription, Preferences, Notifications, Privacy, About.
 
 import { useSession } from "next-auth/react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CardSkeleton, ErrorState } from "@/components/states";
 import { AccountSection } from "@/components/settings/AccountSection";
 import { SubscriptionBadge } from "@/components/settings/SubscriptionBadge";
-import { TravelProfileStub } from "@/components/settings/TravelProfileStub";
 import { PreferencesSection } from "@/components/settings/PreferencesSection";
 import { NotificationsSection } from "@/components/settings/NotificationsSection";
 import { PrivacySection } from "@/components/settings/PrivacySection";
@@ -56,8 +55,6 @@ export default function SettingsPage() {
             />
 
             <SubscriptionBadge tier={session.user.subscriptionTier} />
-
-            <TravelProfileStub />
 
             <PreferencesSection />
 

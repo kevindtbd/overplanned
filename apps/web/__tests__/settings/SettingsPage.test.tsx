@@ -131,7 +131,6 @@ describe("SettingsPage — authenticated", () => {
 
   it("renders all stub sections", () => {
     render(<SettingsPage />);
-    expect(screen.getByText("My Travel Profile")).toBeInTheDocument();
     expect(screen.getByText("My Preferences")).toBeInTheDocument();
     // "Notifications" heading
     expect(screen.getByRole("heading", { name: "Notifications" })).toBeInTheDocument();
