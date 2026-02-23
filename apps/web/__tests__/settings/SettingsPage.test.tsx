@@ -30,9 +30,9 @@ vi.mock("@/components/layout/AppShell", () => ({
   AppShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-// Mock PreferencesSection and NotificationsSection so we don't need fetch mocks for them
-vi.mock("@/components/settings/PreferencesSection", () => ({
-  PreferencesSection: () => <section><h2>My Preferences</h2></section>,
+// Mock section components so we don't need fetch mocks for them
+vi.mock("@/components/settings/TravelStyleSection", () => ({
+  TravelStyleSection: () => <section><h2>Travel Style</h2></section>,
 }));
 
 vi.mock("@/components/settings/NotificationsSection", () => ({
@@ -41,10 +41,6 @@ vi.mock("@/components/settings/NotificationsSection", () => ({
 
 vi.mock("@/components/settings/DisplayPreferences", () => ({
   DisplayPreferences: () => <section><h2>Display Preferences</h2></section>,
-}));
-
-vi.mock("@/components/settings/TravelInterests", () => ({
-  TravelInterests: () => <section><h2>Travel Interests</h2></section>,
 }));
 
 vi.mock("@/components/settings/PrivacySection", () => ({
@@ -142,8 +138,7 @@ describe("SettingsPage — authenticated", () => {
   it("renders all stub sections", () => {
     render(<SettingsPage />);
     expect(screen.getByText("Display Preferences")).toBeInTheDocument();
-    expect(screen.getByText("My Preferences")).toBeInTheDocument();
-    expect(screen.getByText("Travel Interests")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Travel Style" })).toBeInTheDocument();
     // "Notifications" heading
     expect(screen.getByRole("heading", { name: "Notifications" })).toBeInTheDocument();
     expect(screen.getByText("Privacy & Data")).toBeInTheDocument();

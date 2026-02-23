@@ -1,8 +1,8 @@
 "use client";
 
 // Settings Page -- /settings
-// Single scrollable page with anchor nav: Account, Subscription, Display, Preferences,
-// Travel Interests, Notifications, Privacy, About.
+// Single scrollable page with anchor nav: Account, Subscription, Display,
+// Travel Style, Notifications, Privacy, About.
 
 import { useSession } from "next-auth/react";
 import { AppShell } from "@/components/layout/AppShell";
@@ -10,8 +10,7 @@ import { CardSkeleton, ErrorState } from "@/components/states";
 import { AccountSection } from "@/components/settings/AccountSection";
 import { SubscriptionBadge } from "@/components/settings/SubscriptionBadge";
 import { DisplayPreferences } from "@/components/settings/DisplayPreferences";
-import { PreferencesSection } from "@/components/settings/PreferencesSection";
-import { TravelInterests } from "@/components/settings/TravelInterests";
+import { TravelStyleSection } from "@/components/settings/TravelStyleSection";
 import { NotificationsSection } from "@/components/settings/NotificationsSection";
 import { PrivacySection } from "@/components/settings/PrivacySection";
 import { AboutSection } from "@/components/settings/AboutSection";
@@ -20,8 +19,7 @@ const SECTION_ANCHORS = [
   { id: "account", label: "Account" },
   { id: "subscription", label: "Subscription" },
   { id: "display", label: "Display" },
-  { id: "preferences", label: "Preferences" },
-  { id: "travel-interests", label: "Interests" },
+  { id: "travel-style", label: "Travel Style" },
   { id: "notifications", label: "Notifications" },
   { id: "privacy", label: "Privacy" },
   { id: "about", label: "About" },
@@ -87,9 +85,7 @@ export default function SettingsPage() {
 
             <DisplayPreferences />
 
-            <PreferencesSection />
-
-            <TravelInterests />
+            <TravelStyleSection />
 
             <NotificationsSection />
 
