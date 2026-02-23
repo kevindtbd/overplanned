@@ -38,13 +38,10 @@ interface InvitePreview {
 async function fetchInvitePreview(
   token: string
 ): Promise<InvitePreview | null> {
-  const apiBase =
-    process.env.INTERNAL_API_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "";
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
   try {
-    const res = await fetch(`${apiBase}/invites/preview/${encodeURIComponent(token)}`, {
+    const res = await fetch(`${baseUrl}/api/invites/preview/${encodeURIComponent(token)}`, {
       // Cache for 30 seconds — invite previews don't need to be real-time,
       // and this reduces DB load for shared links.
       next: { revalidate: 30 },
@@ -53,9 +50,9 @@ async function fetchInvitePreview(
     if (!res.ok) return null;
 
     const json = await res.json();
-    if (!json.success || !json.data) return null;
+    if (!json.tripId || !json.valid) return null;
 
-    return json.data as InvitePreview;
+    return json as InvitePreview;
   } catch {
     return null;
   }

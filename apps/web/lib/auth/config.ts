@@ -18,6 +18,18 @@ export const authOptions: NextAuthOptions = {
     updateAge: 7 * 24 * 60 * 60, // 7 days (idle timeout)
   },
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // Allow relative URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allow same-origin URLs
+      try {
+        if (new URL(url).origin === baseUrl) return url;
+      } catch {
+        // Invalid URL, fall through to default
+      }
+      // Default to base
+      return baseUrl;
+    },
     async signIn({ user, account, profile }) {
       // First-time Google login - create User with beta tier
       if (account?.provider === "google" && profile?.email) {

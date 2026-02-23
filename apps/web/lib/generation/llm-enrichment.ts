@@ -88,13 +88,13 @@ If no reordering needed, return empty reorder array.`,
       await prisma.$transaction(updates);
     }
 
-    // Apply narrative hints — store in voteState JSON field
+    // Apply narrative hints — store in ownerTip field (not voteState)
     if (result.hints && result.hints.length > 0) {
       const hintUpdates = result.hints.map(h =>
         prisma.itinerarySlot.update({
           where: { id: h.slotId },
           data: {
-            voteState: { narrativeHint: h.hint.slice(0, 100) },
+            ownerTip: h.hint.slice(0, 100),
           },
         })
       );

@@ -37,6 +37,15 @@ const VALID_SIGNAL_TYPES = new Set([
   "scroll_depth",
   "return_visit",
   "share_action",
+  "vote_cast",
+  "invite_accepted",
+  "invite_declined",
+  "trip_shared",
+  "trip_imported",
+  "packing_checked",
+  "packing_unchecked",
+  "mood_reported",
+  "slot_moved",
 ]);
 
 const VALID_PHASES = new Set(["pre_trip", "active", "post_trip"]);

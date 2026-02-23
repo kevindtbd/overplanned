@@ -24,30 +24,6 @@ interface SlotFeedback {
   overrideStatus?: "skipped"; // post-trip can override completed → skipped
 }
 
-// ---------- Signal helper ----------
-
-async function sendBehavioralSignal(payload: {
-  tripId: string;
-  slotId: string;
-  activityNodeId?: string;
-  signalType: string;
-  signalValue: number;
-  rawAction: string;
-}) {
-  try {
-    await fetch("/api/signals/behavioral", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...payload,
-        tripPhase: "post_trip",
-      }),
-    });
-  } catch (err) {
-    console.error("[reflection] Failed to send signal:", err);
-  }
-}
-
 // ---------- Component ----------
 
 export default function ReflectionPage({
@@ -135,54 +111,31 @@ export default function ReflectionPage({
           overrideStatus: overridesStatus ? "skipped" : undefined,
         },
       }));
-
-      // Fire behavioral signal for the rating
-      sendBehavioralSignal({
-        tripId: params.id,
-        slotId: event.slotId,
-        activityNodeId: event.activityNodeId,
-        signalType: event.signalType,
-        signalValue: event.signalValue,
-        rawAction: `reflection_${event.rating}`,
-      });
-
-      // If user marks "skipped" on a completed slot, also fire override signal
-      if (overridesStatus) {
-        sendBehavioralSignal({
-          tripId: params.id,
-          slotId: event.slotId,
-          activityNodeId: event.activityNodeId,
-          signalType: "post_skipped",
-          signalValue: -1.0,
-          rawAction: "reflection_status_override_completed_to_skipped",
-        });
-      }
     },
-    [feedback, slots, params.id]
+    [slots]
   );
 
   const handleSubmit = useCallback(async () => {
     if (submitted) return;
     setSubmitted(true);
 
-    // Send free-text as a post_disliked signal if non-empty
-    // (captures "what would you do differently" as negative-signal data)
-    if (freeText.trim()) {
-      await sendBehavioralSignal({
-        tripId: params.id,
-        slotId: "", // trip-level feedback, no specific slot
-        signalType: "post_disliked",
-        signalValue: 0,
-        rawAction: `reflection_freetext:${freeText.trim().slice(0, 500)}`,
+    try {
+      const response = await fetch(`/api/trips/${params.id}/reflection`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ratings: feedback,
+          feedback: freeText.trim(),
+        }),
       });
-    }
 
-    // In production: POST to /api/trips/[id]/reflection with full feedback payload
-    console.log("[reflection] Submitted:", {
-      tripId: params.id,
-      feedback,
-      freeText: freeText.trim(),
-    });
+      if (!response.ok) {
+        throw new Error("Failed to submit reflection");
+      }
+    } catch (err) {
+      console.error("[reflection] Failed to submit:", err);
+      setSubmitted(false);
+    }
   }, [params.id, feedback, freeText, submitted]);
 
   // ---------- Loading state ----------

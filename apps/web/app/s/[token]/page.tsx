@@ -1,10 +1,10 @@
 /**
  * /s/[token] — Public read-only shared trip itinerary
  *
- * Server component. No auth required.
+ * Server component with client-side import functionality.
  *
  * Security:
- * - CSP: script-src 'none' enforced via headers export.
+ * - CSP allows Next.js hydration for interactive import button.
  * - All strings rendered via React (JSX), which HTML-encodes by default —
  *   no dangerouslySetInnerHTML anywhere.
  * - Token is validated server-side; no user data is exposed.
@@ -15,9 +15,12 @@
 
 import type { Metadata } from "next";
 import Image from "next/image";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth/config";
+import { ImportButton } from "./ImportButton";
 
 // ---------------------------------------------------------------------------
-// CSP header — script-src 'none' as required by spec
+// CSP header — updated to allow Next.js scripts for import functionality
 // ---------------------------------------------------------------------------
 
 export async function generateStaticParams() {
@@ -28,7 +31,7 @@ export async function generateStaticParams() {
 // Next.js 14 headers export (applied at the segment level)
 export const headers = {
   "Content-Security-Policy":
-    "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://images.unsplash.com data:; connect-src 'self'; frame-ancestors 'none';",
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://images.unsplash.com data:; connect-src 'self'; frame-ancestors 'none';",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "no-referrer",
@@ -110,18 +113,13 @@ export async function generateMetadata({
 async function fetchSharedTrip(
   token: string
 ): Promise<SharedTripData | null> {
-  const apiBase =
-    process.env.INTERNAL_API_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "";
-
   // Sanitize token before using in URL
   const safeToken = token.replace(/[^A-Za-z0-9\-_]/g, "").slice(0, 64);
   if (safeToken.length < 10) return null;
 
   try {
     const res = await fetch(
-      `${apiBase}/shared/${encodeURIComponent(safeToken)}`,
+      `${process.env.NEXT_PUBLIC_API_URL || ""}/api/shared/${encodeURIComponent(safeToken)}`,
       {
         // Shared trips should be fresh — 60 second revalidation
         next: { revalidate: 60 },
@@ -130,8 +128,10 @@ async function fetchSharedTrip(
 
     if (!res.ok) return null;
     const json = await res.json();
-    if (!json.success || !json.data) return null;
-    return json.data as SharedTripData;
+
+    // API returns unwrapped data directly
+    if (!json.trip || !json.slotsByDay) return null;
+    return json as SharedTripData;
   } catch {
     return null;
   }
@@ -191,6 +191,7 @@ export default async function SharedTripPage({
   params: { token: string };
 }) {
   const data = await fetchSharedTrip(params.token);
+  const session = await getServerSession(authOptions);
 
   if (!data) {
     return <NotFound />;
@@ -241,18 +242,11 @@ export default async function SharedTripPage({
           >
             overplanned
           </span>
-          <span
-            style={{
-              fontFamily: "var(--font-dm-mono), monospace",
-              fontSize: "0.6875rem",
-              fontWeight: 500,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "var(--ink-400)",
-            }}
-          >
-            Read-only view
-          </span>
+          <ImportButton
+            token={params.token}
+            isSignedIn={!!session}
+            currentUrl={`/s/${params.token}`}
+          />
         </div>
       </header>
 
