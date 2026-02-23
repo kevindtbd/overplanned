@@ -14,6 +14,34 @@ vi.mock("next/navigation", () => ({
   })),
 }));
 
+// Mock dnd-kit (used by LegEditor rendered inside TripSettings)
+vi.mock("@dnd-kit/core", () => ({
+  DndContext: ({ children }: any) => <div>{children}</div>,
+  closestCenter: vi.fn(),
+  KeyboardSensor: vi.fn(),
+  PointerSensor: vi.fn(),
+  useSensor: vi.fn(),
+  useSensors: vi.fn().mockReturnValue([]),
+}));
+
+vi.mock("@dnd-kit/sortable", () => ({
+  SortableContext: ({ children }: any) => <div>{children}</div>,
+  sortableKeyboardCoordinates: vi.fn(),
+  verticalListSortingStrategy: vi.fn(),
+  useSortable: () => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: vi.fn(),
+    transform: null,
+    transition: null,
+    isDragging: false,
+  }),
+}));
+
+vi.mock("@dnd-kit/utilities", () => ({
+  CSS: { Transform: { toString: () => null } },
+}));
+
 // Mock downloadIcsFile
 vi.mock("@/lib/ics-export", () => ({
   downloadIcsFile: vi.fn(),
@@ -43,6 +71,9 @@ function makeTrip(overrides: Record<string, unknown> = {}) {
         country: "Japan",
         timezone: "Asia/Tokyo",
         destination: "Tokyo, Japan",
+        startDate: "2026-07-01T00:00:00Z",
+        endDate: "2026-07-04T00:00:00Z",
+        position: 0,
       },
     ],
     slots: [],

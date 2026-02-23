@@ -6,6 +6,7 @@ import { downloadIcsFile } from "@/lib/ics-export";
 import type { IcsTripData } from "@/lib/ics-export";
 import { toMidnightISO, nightsBetween } from "@/lib/utils/dates";
 import { MAX_TRIP_NIGHTS } from "@/lib/constants/trip";
+import { LegEditor } from "./LegEditor";
 
 interface TripSettingsProps {
   trip: {
@@ -25,6 +26,9 @@ interface TripSettingsProps {
       country: string;
       timezone: string | null;
       destination: string;
+      startDate: string;
+      endDate: string;
+      position: number;
     }>;
     slots: Array<{
       id: string;
@@ -372,6 +376,19 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
           Export to Calendar (.ics)
         </button>
       </div>
+
+      {/* Leg management — organizer only, draft/planning */}
+      {isOrganizer && (trip.status === "draft" || trip.status === "planning") && (
+        <div className="px-5 py-4 border-b border-warm-border">
+          <LegEditor
+            tripId={trip.id}
+            legs={trip.legs}
+            tripStatus={trip.status}
+            isOrganizer={isOrganizer}
+            onLegsChange={onTripUpdate}
+          />
+        </div>
+      )}
 
       {/* Danger zone — organizer only */}
       {isOrganizer &&

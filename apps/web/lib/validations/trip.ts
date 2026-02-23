@@ -154,3 +154,38 @@ export const updateLegSchema = z.object({
   transitCostHint: z.string().max(100).nullable().optional(),
   transitConfirmed: z.boolean().optional(),
 });
+
+// ---------- Leg CRUD schemas ----------
+
+/** POST /api/trips/[id]/legs — Add a new leg */
+export const addLegSchema = z.object({
+  city: cityNameSchema,
+  country: z.string().min(1).max(100),
+  timezone: z.string().max(100).optional(),
+  destination: z.string().min(1).max(200),
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+});
+
+/** PATCH /api/trips/[id]/legs/[legId] — Edit leg city/dates */
+export const patchLegSchema = z.object({
+  city: cityNameSchema.optional(),
+  country: z.string().min(1).max(100).optional(),
+  timezone: z.string().max(100).nullable().optional(),
+  destination: z.string().min(1).max(200).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+});
+
+/** POST /api/trips/[id]/legs/reorder — Reorder legs */
+export const legReorderSchema = z.object({
+  legOrder: z
+    .array(z.string().uuid())
+    .min(1, "legOrder must contain at least one ID")
+    .max(8, "legOrder cannot exceed 8 legs"),
+});
+
+/** POST /api/cities/resolve — Resolve freeform city name */
+export const cityResolveSchema = z.object({
+  city: cityNameSchema,
+});
