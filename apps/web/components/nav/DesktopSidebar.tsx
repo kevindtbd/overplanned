@@ -152,7 +152,23 @@ export function DesktopSidebar() {
         })}
       </ul>
 
-      <div className="mt-auto px-3 pb-4">
+      <div className="mt-auto px-3 pb-4 flex flex-col gap-1">
+        <Link
+          href="/settings"
+          className={`
+            flex items-center gap-3 px-3 py-2.5 rounded-lg
+            text-sm font-medium transition-colors duration-150
+            ${
+              pathname.startsWith("/settings")
+                ? "bg-accent/10 text-accent"
+                : "text-ink-400 hover:text-ink-100 hover:bg-raised"
+            }
+          `}
+          aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+        >
+          <ProfileIcon active={pathname.startsWith("/settings")} />
+          <span>Settings</span>
+        </Link>
         <div className="px-3 py-2">
           <span className="label-mono">
             Beta

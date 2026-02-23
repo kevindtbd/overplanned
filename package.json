@@ -20,12 +20,18 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@exodus/bytes": "^1.14.1",
     "@mrleebo/prisma-ast": "^0.13.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20.11.0",
     "eslint": "^8.56.0",
+    "jsdom": "^28.1.0",
     "json-schema-to-typescript": "^15.0.3",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=18.0.0",

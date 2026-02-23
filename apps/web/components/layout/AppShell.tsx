@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { MobileNav } from "@/components/nav/MobileNav";
 import { DesktopSidebar } from "@/components/nav/DesktopSidebar";
 
@@ -58,8 +59,25 @@ function MobileTopBar() {
       <span className="font-sora font-semibold text-base tracking-[-0.04em] text-ink-100">
         overplanned<span className="text-accent">.</span>
       </span>
-      {/* Avatar slot — placeholder circle */}
-      <div className="w-7 h-7 rounded-full bg-raised" aria-hidden="true" />
+      <Link href="/settings" aria-label="Settings">
+        <div className="w-7 h-7 rounded-full bg-raised flex items-center justify-center">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-ink-400"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="8" r="4" />
+            <path d="M20 21a8 8 0 00-16 0" />
+          </svg>
+        </div>
+      </Link>
     </div>
   );
 }
