@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Subflow ML Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&family=Lora:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
+<style>
+[data-theme="light"] {
+  --bg:#FAF8F5; --bg-s:#FFFFFF; --bg-r:#F3EFE9; --bg-o:#EDE8E1; --bg-i:#E6E0D8;
+  --accent:#B85C3F; --accent-l:#F0E0D9; --accent-m:#D4886E; --accent-on:#8C3A24;
+  --ink-1:#1C1713; --ink-2:#3A302A; --ink-3:#5C5048; --ink-4:#7A6E64;
+  --ink-5:#9C8E84; --ink-6:#BDB0A6; --ink-7:#D6CFC8; --ink-8:#EAE4DE; --ink-9:#F5F1EC;
+  --ok:#4A8A5C; --ok-bg:#E0EEE5; --ok-b:rgba(74,138,92,.2);
+  --warn:#A07830; --warn-bg:#F2EAD8; --warn-b:rgba(160,120,48,.2);
+  --info:#3A6A8C; --info-bg:#D8E8F2; --info-b:rgba(58,106,140,.2);
+  --purple:#6B5E9C; --purple-bg:#EAE6F5; --purple-b:rgba(107,94,156,.2);
+  --sh-sm:0 1px 3px rgba(28,23,19,.06); --sh-md:0 4px 16px rgba(28,23,19,.08);
+  --sh-lg:0 12px 48px rgba(28,23,19,.10); --sh-xl:0 24px 80px rgba(28,23,19,.12);
+}
+[data-theme="dark"] {
+  --bg:#100E0B; --bg-s:#171310; --bg-r:#1F1A15; --bg-o:#28211A; --bg-i:#201C16;
+  --accent:#C96848; --accent-l:rgba(201,104,72,.14); --accent-m:#8C402A; --accent-on:#E8906E;
+  --ink-1:#F0EAE2; --ink-2:#D4C8BC; --ink-3:#A89484; --ink-4:#7A6A5C;
+  --ink-5:#5C4E42; --ink-6:#3D332A; --ink-7:#2E251E; --ink-8:#221C16; --ink-9:#1A1410;
+  --ok:#5A9E6A; --ok-bg:rgba(90,158,106,.12); --ok-b:rgba(90,158,106,.25);
+  --warn:#B8943A; --warn-bg:rgba(184,148,58,.12); --warn-b:rgba(184,148,58,.25);
+  --info:#4A84A8; --info-bg:rgba(74,132,168,.12); --info-b:rgba(74,132,168,.25);
+  --purple:#9080C8; --purple-bg:rgba(144,128,200,.12); --purple-b:rgba(144,128,200,.25);
+  --sh-sm:0 1px 4px rgba(0,0,0,.3); --sh-md:0 4px 20px rgba(0,0,0,.4);
+  --sh-lg:0 16px 60px rgba(0,0,0,.5); --sh-xl:0 32px 80px rgba(0,0,0,.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-1);transition:background .3s,color .3s;min-height:100vh;}
+
+.shell{max-width:1280px;margin:0 auto;padding:48px 40px 100px;}
+@media(max-width:800px){.shell{padding:32px 16px 80px;}}
+
+/* Topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:52px;}
+.logo{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;color:var(--accent);text-transform:uppercase;}
+.theme-pill{display:flex;align-items:center;gap:8px;background:var(--bg-s);border:1px solid var(--ink-7);border-radius:100px;padding:6px 14px 6px 8px;cursor:pointer;box-shadow:var(--sh-sm);transition:border-color .2s;}
+.theme-pill:hover{border-color:var(--accent);}
+.toggle-track{width:28px;height:16px;background:var(--ink-7);border-radius:100px;position:relative;transition:background .2s;flex-shrink:0;}
+[data-theme="dark"] .toggle-track{background:var(--accent);}
+.toggle-thumb{width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:transform .2s;}
+[data-theme="dark"] .toggle-thumb{transform:translateX(12px);}
+.toggle-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);}
+
+/* Page header */
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+.page-title{font-size:28px;font-weight:500;color:var(--ink-1);letter-spacing:-.025em;line-height:1.2;margin-bottom:8px;}
+.page-desc{font-size:13px;color:var(--ink-4);font-weight:300;line-height:1.75;max-width:620px;margin-bottom:48px;}
+
+/* Section labels */
+.sec-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-5);margin-bottom:20px;display:flex;align-items:center;gap:12px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--ink-8);}
+
+/* ── HLLM PIPELINE DIAGRAM ── */
+.hllm-diagram{margin-bottom:64px;}
+.hllm-title{font-size:18px;font-weight:500;color:var(--ink-1);letter-spacing:-.02em;margin-bottom:6px;}
+.hllm-sub{font-size:13px;color:var(--ink-4);font-weight:300;line-height:1.65;margin-bottom:28px;max-width:580px;}
+
+.pipeline-row{display:flex;align-items:stretch;gap:0;margin-bottom:12px;overflow-x:auto;}
+.pipe-node{flex-shrink:0;background:var(--bg-s);border:1.5px solid var(--ink-7);border-radius:14px;padding:16px 18px;min-width:160px;position:relative;transition:all .2s;cursor:pointer;}
+[data-theme="dark"] .pipe-node{background:var(--bg-r);}
+.pipe-node:hover{border-color:var(--ink-5);transform:translateY(-2px);box-shadow:var(--sh-sm);}
+.pipe-node.active{border-color:var(--accent);background:var(--accent-l);}
+.pipe-node.ml{border-color:var(--info-b);}
+.pipe-node.llm{border-color:var(--ok-b);}
+.pipe-node.hybrid{border-color:var(--purple-b);}
+.pipe-node.active.ml,.pipe-node.ml:hover{border-color:var(--info);}
+.pipe-node.active.llm,.pipe-node.llm:hover{border-color:var(--ok);}
+.pipe-node.active.hybrid,.pipe-node.hybrid:hover{border-color:var(--purple);}
+.pipe-tag{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.pipe-tag.ml{color:var(--info);}
+.pipe-tag.llm{color:var(--ok);}
+.pipe-tag.hybrid{color:var(--purple);}
+.pipe-tag.det{color:var(--warn);}
+.pipe-name{font-size:13px;font-weight:500;color:var(--ink-1);margin-bottom:4px;line-height:1.3;}
+.pipe-node.active .pipe-name{color:var(--accent-on);}
+.pipe-detail{font-size:10px;color:var(--ink-5);font-weight:300;line-height:1.5;}
+
+.pipe-arrow{display:flex;align-items:center;padding:0 6px;flex-shrink:0;color:var(--ink-6);}
+.pipe-arrow svg{flex-shrink:0;}
+
+/* HLLM trigger conditions */
+.trigger-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:48px;}
+.trigger-card{background:var(--bg-s);border:1.5px solid var(--ink-8);border-radius:16px;padding:18px;transition:all .2s;cursor:pointer;position:relative;overflow:hidden;}
+[data-theme="dark"] .trigger-card{background:var(--bg-r);border-color:var(--ink-7);}
+.trigger-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:16px 16px 0 0;background:var(--ink-7);transition:background .2s;}
+.trigger-card.t-day1::before{background:var(--accent);}
+.trigger-card.t-energy::before{background:var(--warn);}
+.trigger-card.t-group::before{background:var(--purple);}
+.trigger-card.t-reject::before{background:var(--info);}
+.trigger-card:hover{border-color:var(--ink-6);transform:translateY(-2px);box-shadow:var(--sh-md);}
+.tc-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.t-day1 .tc-eyebrow{color:var(--accent);}
+.t-energy .tc-eyebrow{color:var(--warn);}
+.t-group .tc-eyebrow{color:var(--purple);}
+.t-reject .tc-eyebrow{color:var(--info);}
+.tc-name{font-size:14px;font-weight:500;color:var(--ink-1);margin-bottom:6px;letter-spacing:-.01em;}
+.tc-desc{font-size:11px;color:var(--ink-4);font-weight:300;line-height:1.65;margin-bottom:12px;}
+.tc-trigger{padding:7px 10px;background:var(--bg-r);border-radius:8px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.04em;color:var(--ink-4);border:1px solid var(--ink-7);margin-bottom:6px;}
+[data-theme="dark"] .tc-trigger{background:var(--bg-o);}
+.tc-trigger span{color:var(--ink-2);}
+.tc-cost{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.06em;color:var(--ink-5);display:flex;align-items:center;gap:6px;margin-top:8px;}
+.cost-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);}
+
+/* ── SUBFLOW MODEL REGISTRY ── */
+.subflow-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:64px;}
+.sf-card{background:var(--bg-s);border:1.5px solid var(--ink-8);border-radius:16px;overflow:hidden;transition:all .2s;}
+[data-theme="dark"] .sf-card{background:var(--bg-r);border-color:var(--ink-7);}
+.sf-card:hover{border-color:var(--ink-6);box-shadow:var(--sh-md);}
+.sf-header{padding:16px 18px 12px;border-bottom:1px solid var(--ink-8);}
+[data-theme="dark"] .sf-header{border-color:var(--ink-7);}
+.sf-letter{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:400;color:#fff;margin-bottom:10px;flex-shrink:0;}
+.sf-title{font-size:14px;font-weight:500;color:var(--ink-1);margin-bottom:3px;letter-spacing:-.01em;}
+.sf-sub{font-size:11px;color:var(--ink-4);font-weight:300;line-height:1.5;}
+.sf-body{padding:14px 18px 16px;}
+.sf-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;}
+.sf-row:last-child{margin-bottom:0;}
+.sf-row-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-5);}
+.sf-row-val{font-size:11px;color:var(--ink-3);font-weight:300;text-align:right;max-width:60%;line-height:1.4;}
+.sf-status{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:100px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.08em;text-transform:uppercase;border:1px solid;}
+.sf-status.heuristic{background:var(--warn-bg);border-color:var(--warn-b);color:var(--warn);}
+.sf-status.training{background:var(--info-bg);border-color:var(--info-b);color:var(--info);}
+.sf-status.live{background:var(--ok-bg);border-color:var(--ok-b);color:var(--ok);}
+.sf-status.day0{background:var(--accent-l);border-color:rgba(184,92,63,.2);color:var(--accent);}
+.sf-threshold{margin-top:10px;padding:8px 10px;background:var(--bg-r);border-radius:8px;font-size:10px;color:var(--ink-4);font-weight:300;border-left:2px solid var(--ink-7);}
+[data-theme="dark"] .sf-threshold{background:var(--bg-o);}
+.sf-threshold strong{color:var(--ink-2);font-weight:500;}
+
+/* ── SIGNAL WEIGHT TABLE ── */
+.signal-table{width:100%;border-collapse:collapse;margin-bottom:64px;}
+.signal-table th{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-5);padding:10px 14px;border-bottom:2px solid var(--ink-7);text-align:left;background:var(--bg-r);}
+[data-theme="dark"] .signal-table th{background:var(--bg-o);}
+.signal-table td{font-size:12px;color:var(--ink-3);padding:11px 14px;border-bottom:1px solid var(--ink-8);vertical-align:middle;font-weight:300;}
+[data-theme="dark"] .signal-table td{border-color:var(--ink-7);}
+.signal-table tr:hover td{background:var(--bg-r);}
+[data-theme="dark"] .signal-table tr:hover td{background:var(--bg-o);}
+.weight-bar-wrap{width:80px;height:5px;background:var(--ink-8);border-radius:100px;display:inline-block;vertical-align:middle;margin-right:8px;}
+[data-theme="dark"] .weight-bar-wrap{background:var(--ink-7);}
+.weight-bar{height:100%;border-radius:100px;}
+.w-mono{font-family:'DM Mono',monospace;font-size:10px;vertical-align:middle;}
+.subflow-tag{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.06em;padding:2px 7px;border-radius:100px;border:1px solid;display:inline-flex;align-items:center;}
+
+/* ── TRAINING PIPELINE TIMELINE ── */
+.timeline{position:relative;margin-bottom:64px;}
+.tl-line{position:absolute;left:20px;top:8px;bottom:8px;width:2px;background:var(--ink-7);border-radius:100px;}
+.tl-item{display:flex;gap:20px;margin-bottom:20px;position:relative;}
+.tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px;border:2px solid var(--bg);position:relative;z-index:1;margin-left:16px;}
+.tl-content{flex:1;background:var(--bg-s);border:1.5px solid var(--ink-8);border-radius:14px;padding:14px 16px;}
+[data-theme="dark"] .tl-content{background:var(--bg-r);border-color:var(--ink-7);}
+.tl-phase{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.tl-title{font-size:13px;font-weight:500;color:var(--ink-1);margin-bottom:5px;}
+.tl-desc{font-size:11px;color:var(--ink-4);font-weight:300;line-height:1.6;}
+.tl-models{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+.tl-model-tag{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.06em;padding:2px 8px;border-radius:100px;background:var(--bg-r);border:1px solid var(--ink-7);color:var(--ink-4);}
+[data-theme="dark"] .tl-model-tag{background:var(--bg-o);}
+.tl-model-tag.new{background:var(--accent-l);border-color:rgba(184,92,63,.25);color:var(--accent-on);}
+
+/* ── SCHEMA SNIPPET ── */
+.code-block{background:var(--bg-i);border:1.5px solid var(--ink-7);border-radius:14px;padding:18px 20px;margin-bottom:24px;overflow-x:auto;}
+[data-theme="dark"] .code-block{background:#0D0B08;border-color:var(--ink-6);}
+.code-block pre{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-3);line-height:1.7;white-space:pre;}
+.code-comment{color:var(--ink-6);}
+.code-keyword{color:var(--accent);}
+.code-string{color:var(--ok);}
+.code-type{color:var(--info);}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="logo">Overplanned / Subflow ML Architecture</div>
+    <div class="theme-pill" onclick="toggleTheme()">
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span class="toggle-lbl">Theme</span>
+    </div>
+  </div>
+
+  <div class="page-eyebrow">ML Deep Dive</div>
+  <div class="page-title">HLLM, Hybrid Scoring, and Per-Subflow Systems</div>
+  <div class="page-desc">The main ranking pipeline (BPR → Two-Tower → SASRec) handles warm-user core ranking. Seven subflows have different enough signal structures to need their own models or feature engineering. HLLM isn't used at arbitration by default — it activates on four specific trigger conditions where LLM reasoning about context genuinely beats ML pattern matching.</div>
+
+  <!-- ══════════════════════════════════════
+       HLLM PIPELINE
+  ══════════════════════════════════════ -->
+  <div class="sec-label">HLLM — How It Works</div>
+  <div class="hllm-diagram">
+    <div class="hllm-title">Not LLM vs. ML — ML scores, LLM re-ranks on trigger</div>
+    <div class="hllm-sub">Pure ML handles ~85% of warm-user calls. HLLM fires on ~15%: cases where context reasoning the ML can't encode changes what the right answer is. The trigger is a lightweight classifier, not a hard rule.</div>
+
+    <!-- Common path -->
+    <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-5);margin-bottom:10px;">Common path — 85% of warm calls</div>
+    <div class="pipeline-row" style="margin-bottom:20px;">
+      <div class="pipe-node ml" onclick="toggleActive(this)">
+        <div class="pipe-tag ml">ML</div>
+        <div class="pipe-name">Two-Tower / SASRec</div>
+        <div class="pipe-detail">Scores all candidates from Qdrant pool against user embedding</div>
+      </div>
+      <div class="pipe-arrow"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><path d="M0 8h16M10 2l8 6-8 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="pipe-node" onclick="toggleActive(this)">
+        <div class="pipe-tag det">Deterministic</div>
+        <div class="pipe-name">Top-10 candidates</div>
+        <div class="pipe-detail">ML ranked list, served directly</div>
+      </div>
+      <div class="pipe-arrow"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><path d="M0 8h16M10 2l8 6-8 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="pipe-node" onclick="toggleActive(this)">
+        <div class="pipe-tag ml">ML</div>
+        <div class="pipe-name">HLLM Classifier</div>
+        <div class="pipe-detail">Should we LLM re-rank? Context features in, bool out. ~0ms.</div>
+      </div>
+      <div class="pipe-arrow"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><path d="M0 8h16M10 2l8 6-8 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="pipe-node" onclick="toggleActive(this)">
+        <div class="pipe-tag det">Output</div>
+        <div class="pipe-name">Serve ML ranking</div>
+        <div class="pipe-detail">Classifier fires false → skip LLM entirely</div>
+      </div>
+    </div>
+
+    <!-- HLLM path -->
+    <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:10px;">HLLM path — 15% of warm calls, on trigger</div>
+    <div class="pipeline-row">
+      <div class="pipe-node ml" onclick="toggleActive(this)">
+        <div class="pipe-tag ml">ML</div>
+        <div class="pipe-name">Same ML ranking</div>
+        <div class="pipe-detail">Top-15 candidates with scores and features</div>
+      </div>
+      <div class="pipe-arrow"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><path d="M0 8h16M10 2l8 6-8 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="pipe-node hybrid" onclick="toggleActive(this)">
+        <div class="pipe-tag hybrid">Hybrid</div>
+        <div class="pipe-name">HLLM Classifier</div>
+        <div class="pipe-detail">Fires true + reason_code (day1 / energy_shift / group_conflict / rejection_recovery)</div>
+      </div>
+      <div class="pipe-arrow"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><path d="M0 8h16M10 2l8 6-8 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="pipe-node llm" onclick="toggleActive(this)">
+        <div class="pipe-tag llm">LLM — Haiku</div>
+        <div class="pipe-name">Context re-rank</div>
+        <div class="pipe-detail">Top-15 ML candidates + reason_code → re-ranked top-5. ~$0.001/call.</div>
+      </div>
+      <div class="pipe-arrow"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><path d="M0 8h16M10 2l8 6-8 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="pipe-node hybrid" onclick="toggleActive(this)">
+        <div class="pipe-tag hybrid">Output</div>
+        <div class="pipe-name">Serve LLM re-rank</div>
+        <div class="pipe-detail">LLM order on top of ML-scored candidates. Log disagreement.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       HLLM TRIGGER CONDITIONS
+  ══════════════════════════════════════ -->
+  <div class="sec-label">HLLM Trigger Conditions</div>
+  <div class="trigger-grid" style="margin-bottom:48px;">
+
+    <div class="trigger-card t-day1">
+      <div class="tc-eyebrow">Trigger 1 — Day 1 / Slot 1–2</div>
+      <div class="tc-name">First Morning Orientation</div>
+      <div class="tc-desc">ML has no trip-level sequential context yet — SASRec needs a sequence to model. Day 1 is the cold position even for a warm user. LLM reasons about first-morning context the ML can't encode: "just landed, city is new, what's the right entry experience?"</div>
+      <div class="tc-trigger">trip_day <span>== 1</span> AND slot_index <span>&lt;= 2</span></div>
+      <div class="tc-trigger">warm user only — cold users always get LLM anyway</div>
+      <div class="tc-cost"><div class="cost-dot"></div> ~$0.001/trip · fires once per trip · always worth it</div>
+    </div>
+
+    <div class="trigger-card t-energy">
+      <div class="tc-eyebrow">Trigger 2 — Energy Trajectory Shift</div>
+      <div class="tc-name">Pace Transition Reasoning</div>
+      <div class="tc-desc">SASRec detects an energy trajectory drop in sequence (high-energy morning → ML would recommend another high-energy afternoon slot, but the user's momentum says otherwise). LLM filters the ML's top-15 for energy-appropriate options. The ML had the right candidates — just wrong order.</div>
+      <div class="tc-trigger">energy_trajectory_delta <span>&gt; 0.3</span></div>
+      <div class="tc-trigger">upcoming_slot_energy <span>&gt;</span> current_momentum <span>+ 0.2</span></div>
+      <div class="tc-cost"><div class="cost-dot"></div> ~$0.001/rerank · estimated 20% of afternoon slots</div>
+    </div>
+
+    <div class="trigger-card t-group">
+      <div class="tc-eyebrow">Trigger 3 — Group Conflict Slot</div>
+      <div class="tc-name">Pareto Compromise Finding</div>
+      <div class="tc-desc">ML can score each member individually but can't reason about what a good compromise looks like. LLM receives per-member top-5 lists and finds the Pareto-optimal intersection — what scores high enough for everyone, not just average well. Group fairness is a reasoning problem, not just a scoring problem.</div>
+      <div class="tc-trigger">group_conflict_detected <span>== true</span></div>
+      <div class="tc-trigger">contested_slot <span>== true</span></div>
+      <div class="tc-cost"><div class="cost-dot"></div> fires on contested slots only · low frequency · high stakes</div>
+    </div>
+
+    <div class="trigger-card t-reject">
+      <div class="tc-eyebrow">Trigger 4 — First Creation Rejection</div>
+      <div class="tc-name">Systematic Miss Recovery</div>
+      <div class="tc-desc">2+ swaps in first 90 seconds of first reveal = systematic miss, not one bad slot. LLM analyzes the rejection pattern (both rejected slots were museum/temple → cultural weight too high) and generates a correction_context JSON injected into re-ranking of remaining unconfirmed slots. No full regeneration — just corrected weighting.</div>
+      <div class="tc-trigger">first_creation <span>== true</span></div>
+      <div class="tc-trigger">swap_count <span>&gt;= 2</span> AND time_since_reveal <span>&lt; 90s</span></div>
+      <div class="tc-cost"><div class="cost-dot" style="background:var(--warn)"></div> one-time recovery call · higher cost justified</div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       HLLM TRAINING PIPELINE
+  ══════════════════════════════════════ -->
+  <div class="sec-label">How We Train the HLLM Trigger Classifier</div>
+  <div class="timeline" style="margin-bottom:48px;">
+    <div class="tl-line"></div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--accent);"></div>
+      <div class="tl-content">
+        <div class="tl-phase" style="color:var(--accent);">Phase 1 — Day 0 · No cost</div>
+        <div class="tl-title">Shadow Disagreement Logging</div>
+        <div class="tl-desc">Every shadow mode run logs both LLM and ML rankings. When rank position delta > 3 for top-5, that disagreement is a training candidate. Log: llm_rank, ml_rank, final_user_choice, disagreement_reason (structured JSON from LLM), context features at time of disagreement.</div>
+        <div class="tl-models"><span class="tl-model-tag">behavioral_signals</span><span class="tl-model-tag">shadow_mode</span><span class="tl-model-tag new">disagreement_log (new table)</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--warn);"></div>
+      <div class="tl-content">
+        <div class="tl-phase" style="color:var(--warn);">Phase 2 — ~12K disagreement records (est. Month 4–6)</div>
+        <div class="tl-title">Disagreement Pattern Analysis</div>
+        <div class="tl-desc">Manual + automated pass over shadow disagreement records. Identify systematic patterns: LLM consistently outranks ML on Day 1 slots, LLM better at afternoon→evening transitions, ML better at food repeat patterns. These patterns become the trigger condition definitions.</div>
+        <div class="tl-models"><span class="tl-model-tag">500 users</span><span class="tl-model-tag">3 trips avg</span><span class="tl-model-tag">~8 ranking events/trip</span><span class="tl-model-tag">= ~12K disagreements</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--ok);"></div>
+      <div class="tl-content">
+        <div class="tl-phase" style="color:var(--ok);">Phase 3 — Post-pattern-analysis</div>
+        <div class="tl-title">Train the Binary Classifier</div>
+        <div class="tl-desc">Input: context features (day_part, trip_day, persona_momentum, energy_trajectory, group_flag). Output: use_llm_rerank: bool + confidence. Training labels: from disagreement records where LLM choice = user choice (LLM was right). Tiny model — linear classifier or shallow tree. Runs in ~0ms at inference.</div>
+        <div class="tl-models"><span class="tl-model-tag new">HLLM trigger classifier v1</span><span class="tl-model-tag">shadow mode for 2 weeks</span><span class="tl-model-tag">promotion gate: HR@5 lift > 0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SUBFLOW MODEL REGISTRY
+  ══════════════════════════════════════ -->
+  <div class="sec-label">Subflow Model Registry</div>
+  <div class="subflow-grid">
+
+    <!-- A: Group Dynamics -->
+    <div class="sf-card">
+      <div class="sf-header">
+        <div class="sf-letter" style="background:var(--purple);">A</div>
+        <div class="sf-title">Group Dynamics Ranker</div>
+        <div class="sf-sub">Pareto-optimal scoring across multiple users. min_score weighted 0.5× — avoiding the worst outcome matters more than maximizing the best.</div>
+      </div>
+      <div class="sf-body">
+        <div class="sf-row"><span class="sf-row-lbl">Status</span><span class="sf-status heuristic">Heuristic Until Threshold</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Model type</span><span class="sf-row-val">Two-Tower modified loss (margin on min_score)</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Training signal</span><span class="sf-row-val">Per-member post-trip ratings on shared slots. Label = min(member_ratings)</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Score formula</span><span class="sf-row-val" style="font-family:'DM Mono',monospace;font-size:9px;">0.5×min + 0.3×(1-var) + 0.2×max</span></div>
+        <div class="sf-threshold"><strong>Build trigger:</strong> 50 completed group trips with post-trip member feedback</div>
+      </div>
+    </div>
+
+    <!-- B: Group Split -->
+    <div class="sf-card">
+      <div class="sf-header">
+        <div class="sf-letter" style="background:var(--info);">B</div>
+        <div class="sf-title">Group Split Detector</div>
+        <div class="sf-sub">Binary classifier: should this group split for this slot? Some things split gracefully (solo museums), some don't (dinner). Recommends two parallel activities + sync-back point.</div>
+      </div>
+      <div class="sf-body">
+        <div class="sf-row"><span class="sf-row-lbl">Status</span><span class="sf-status heuristic">Heuristic Until Threshold</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Heuristic rule</span><span class="sf-row-val">preference_delta > 0.6 AND category in [museum, sports, nightclub] AND time in [morning, afternoon]</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Training signal</span><span class="sf-row-val">Split suggestion accept/reject. Feature: delta, category, time, prior split history</span></div>
+        <div class="sf-threshold"><strong>Build trigger:</strong> 20 accepted splits with re-sync confirmation</div>
+      </div>
+    </div>
+
+    <!-- C: Offline Diversifier -->
+    <div class="sf-card">
+      <div class="sf-header">
+        <div class="sf-letter" style="background:var(--warn);">C</div>
+        <div class="sf-title">Offline Alternative Diversifier</div>
+        <div class="sf-sub">Post-processing rule on ML output at trip generation time. Enforces 3-alternative diversity: lower energy + same vibe + different category. Not a separate model — a generation-time constraint.</div>
+      </div>
+      <div class="sf-body">
+        <div class="sf-row"><span class="sf-row-lbl">Status</span><span class="sf-status day0">Day 0 — Deterministic</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Rule</span><span class="sf-row-val">1× energy_score &lt; slot−0.3 · 1× same vibe · 1× different primary tag</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Training signal</span><span class="sf-row-val">Which of 3 alternative types user chose offline. Retrain diversity weights from choice distribution.</span></div>
+        <div class="sf-threshold"><strong>Retune trigger:</strong> 300 offline pivots with alternative type logged</div>
+      </div>
+    </div>
+
+    <!-- D: On-The-Fly Slot Fitter -->
+    <div class="sf-card">
+      <div class="sf-header">
+        <div class="sf-letter" style="background:var(--ok);">D</div>
+        <div class="sf-title">On-The-Fly Slot Fitter</div>
+        <div class="sf-sub">User found venue themselves. Don't rank it — they already chose it. Rank where it goes in the day and what to reschedule. Light model for slot positioning and schedule impact.</div>
+      </div>
+      <div class="sf-body">
+        <div class="sf-row"><span class="sf-row-lbl">Status</span><span class="sf-status day0">Day 0 — Deterministic</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Heuristic</span><span class="sf-row-val">Insert after current slot. Reschedule lowest-scored slot if full. Never suggest alternatives to their choice.</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Signal weight</span><span class="sf-row-val" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ok);">1.5× — deliberate, out-of-system discovery</span></div>
+        <div class="sf-threshold"><strong>Model trigger:</strong> 200 manual addition events with positioning acceptance rate</div>
+      </div>
+    </div>
+
+    <!-- E: Rejection Recovery -->
+    <div class="sf-card">
+      <div class="sf-header">
+        <div class="sf-letter" style="background:var(--accent);">E</div>
+        <div class="sf-title">First-Creation Rejection Recovery</div>
+        <div class="sf-sub">2+ swaps in first 90s = systematic miss. LLM analyzes rejection pattern, generates correction_context JSON, injects into re-ranking of remaining unconfirmed slots. No full regeneration.</div>
+      </div>
+      <div class="sf-body">
+        <div class="sf-row"><span class="sf-row-lbl">Status</span><span class="sf-status day0">Day 0 — HLLM (Trigger 4)</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Correction output</span><span class="sf-row-val">rejection_pattern + correction weights as JSON → injected into re-rank prompt</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Signal weight</span><span class="sf-row-val" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--warn);">0.7× — ambiguous (bad plan vs. mood)</span></div>
+        <div class="sf-threshold"><strong>Track:</strong> correction_confidence vs. post_correction_acceptance_rate. If diverge > 0.3, retune.</div>
+      </div>
+    </div>
+
+    <!-- F: Itinerary Alteration -->
+    <div class="sf-card">
+      <div class="sf-header">
+        <div class="sf-letter" style="background:#7A8C6A;">F</div>
+        <div class="sf-title">Itinerary Alteration Tagger</div>
+        <div class="sf-sub">Not a separate model — a signal classification layer. Three alteration types have different confidence weights: date change (no signal), pre-trip slot swap (1.3×), category restructure (1.4×).</div>
+      </div>
+      <div class="sf-body">
+        <div class="sf-row"><span class="sf-row-lbl">Status</span><span class="sf-status day0">Day 0 — Signal Tagging</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Type 1: date change</span><span class="sf-row-val">No signal. Pure scheduling, no preference revealed.</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Type 2: slot swap (pre-trip)</span><span class="sf-row-val" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--info);">1.3× weight — deliberate, cold</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Type 3: category restructure</span><span class="sf-row-val" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--purple);">1.4× weight — structural preference</span></div>
+        <div class="sf-threshold"><strong>Action:</strong> Add signal_context column to behavioral_signals. That's it.</div>
+      </div>
+    </div>
+
+    <!-- G: Repeat City -->
+    <div class="sf-card">
+      <div class="sf-header">
+        <div class="sf-letter" style="background:#8C6A3A;">G</div>
+        <div class="sf-title">Repeat City / Returning Visitor</div>
+        <div class="sf-sub">User returning to a previously visited city. Modified feature set fed into same Two-Tower. Not a new model — different candidate pool and adjusted weights for novelty and local depth.</div>
+      </div>
+      <div class="sf-body">
+        <div class="sf-row"><span class="sf-row-lbl">Status</span><span class="sf-status day0">Day 0 — Detection + Rules</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Candidate pool</span><span class="sf-row-val">Exclude all previously accepted venues for this city</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Weight adjustments</span><span class="sf-row-val">novelty_score +0.4 · cross_ref threshold −0.15 · local_score min +</span></div>
+        <div class="sf-row"><span class="sf-row-lbl">Training signal</span><span class="sf-row-val">Returning visitor acceptance rate vs. first-time on same city pool</span></div>
+        <div class="sf-threshold"><strong>Detect via:</strong> user_id × city check against completed_trips before candidate pull</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SIGNAL WEIGHT TABLE
+  ══════════════════════════════════════ -->
+  <div class="sec-label">Signal Confidence Weights — Full Map</div>
+  <table class="signal-table">
+    <thead>
+      <tr>
+        <th>Signal Context</th>
+        <th>Subflow</th>
+        <th>Weight</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Post-trip thumbs up/down</td>
+        <td><span class="subflow-tag" style="background:var(--accent-l);border-color:rgba(184,92,63,.2);color:var(--accent);">post_trip</span></td>
+        <td><div class="weight-bar-wrap"><div class="weight-bar" style="width:90%;background:var(--accent);"></div></div><span class="w-mono">1.8×</span></td>
+        <td style="font-size:11px;color:var(--ink-4);">Reflective, deliberate, low sunk-cost bias</td>
+      </tr>
+      <tr>
+        <td>On-the-fly manual add</td>
+        <td><span class="subflow-tag" style="background:var(--ok-bg);border-color:var(--ok-b);color:var(--ok);">subflow_D</span></td>
+        <td><div class="weight-bar-wrap"><div class="weight-bar" style="width:75%;background:var(--ok);"></div></div><span class="w-mono">1.5×</span></td>
+        <td style="font-size:11px;color:var(--ink-4);">Out-of-system discovery = strong preference signal</td>
+      </tr>
+      <tr>
+        <td>Pre-trip itinerary restructure</td>
+        <td><span class="subflow-tag" style="background:var(--purple-bg);border-color:var(--purple-b);color:var(--purple);">subflow_F</span></td>
+        <td><div class="weight-bar-wrap"><div class="weight-bar" style="width:70%;background:var(--purple);"></div></div><span class="w-mono">1.4×</span></td>
+        <td style="font-size:11px;color:var(--ink-4);">Category shift = structural preference signal</td>
+      </tr>
+      <tr>
+        <td>Pre-trip slot swap</td>
+        <td><span class="subflow-tag" style="background:var(--purple-bg);border-color:var(--purple-b);color:var(--purple);">subflow_F</span></td>
+        <td><div class="weight-bar-wrap"><div class="weight-bar" style="width:65%;background:var(--purple);"></div></div><span class="w-mono">1.3×</span></td>
+        <td style="font-size:11px;color:var(--ink-4);">Deliberate, cold decision, no mood pressure</td>
+      </tr>
+      <tr>
+        <td>Group vote (deliberate)</td>
+        <td><span class="subflow-tag" style="background:var(--info-bg);border-color:var(--info-b);color:var(--info);">subflow_A</span></td>
+        <td><div class="weight-bar-wrap"><div class="weight-bar" style="width:60%;background:var(--info);"></div></div><span class="w-mono">1.2×</span></td>
+        <td style="font-size:11px;color:var(--ink-4);">Voting is deliberate > behavioral browsing</td>
+      </tr>
+      <tr>
+        <td>In-trip accept / skip</td>
+        <td><span class="subflow-tag" style="background:var(--bg-r);border-color:var(--ink-7);color:var(--ink-4);">core</span></td>
+        <td><div class="weight-bar-wrap"><div class="weight-bar" style="width:50%;background:var(--ink-5);"></div></div><span class="w-mono">1.0×</span></td>
+        <td style="font-size:11px;color:var(--ink-4);">Baseline. May include sunk-cost / convenience bias.</td>
+      </tr>
+      <tr>
+        <td>First-creation rejection</td>
+        <td><span class="subflow-tag" style="background:var(--warn-bg);border-color:var(--warn-b);color:var(--warn);">subflow_E</span></td>
+        <td><div class="weight-bar-wrap"><div class="weight-bar" style="width:35%;background:var(--warn);"></div></div><span class="w-mono">0.7×</span></td>
+        <td style="font-size:11px;color:var(--ink-4);">Ambiguous: bad plan vs. initial mood mismatch</td>
+      </tr>
+      <tr>
+        <td>Cold-user (< 3 trips) signal</td>
+        <td><span class="subflow-tag" style="background:var(--bg-r);border-color:var(--ink-7);color:var(--ink-4);">cold-start</span></td>
+        <td><div class="weight-bar-wrap"><div class="weight-bar" style="width:25%;background:var(--ink-6);"></div></div><span class="w-mono">0.5×</span></td>
+        <td style="font-size:11px;color:var(--ink-4);">Reacting to our guess, not revealing stable preference</td>
+      </tr>
+      <tr>
+        <td>Synthetic bootstrap signal</td>
+        <td><span class="subflow-tag" style="background:var(--bg-r);border-color:var(--ink-7);color:var(--ink-4);">synthetic</span></td>
+        <td><div class="weight-bar-wrap"><div class="weight-bar" style="width:15%;background:var(--ink-7);"></div></div><span class="w-mono">0.3×</span></td>
+        <td style="font-size:11px;color:var(--ink-4);">Persona init only. Excluded from ranking model training.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ══════════════════════════════════════
+       SCHEMA ADDITION
+  ══════════════════════════════════════ -->
+  <div class="sec-label">Schema Addition — behavioral_signals</div>
+  <div class="code-block">
+    <pre><span class="code-keyword">ALTER TABLE</span> behavioral_signals
+<span class="code-keyword">ADD COLUMN</span> subflow <span class="code-type">VARCHAR</span>(40),
+<span class="code-comment">-- 'core_ranking'            standard warm-user recommendation
+-- 'group_ranking'           Pareto group ranker path
+-- 'group_split'             split detector suggestion
+-- 'offline_pivot'           pre-computed alternative chosen offline
+-- 'onthefly_add'            manual venue addition
+-- 'first_creation_rejection' 2+ swaps within 90s of first reveal
+-- 'itinerary_alteration_pre' pre-trip slot swap
+-- 'itinerary_alteration_restructure' category-level change
+-- 'repeat_city'             returning visitor, modified candidate pool
+-- 'hllm_rerank'             HLLM path was taken (log reason_code separately)</span>
+
+<span class="code-keyword">ADD COLUMN</span> signal_weight <span class="code-type">FLOAT</span> <span class="code-keyword">DEFAULT</span> 1.0,
+<span class="code-comment">-- Set at write time based on context. Values:
+-- post_trip confirmation/correction: 1.8
+-- onthefly_add: 1.5
+-- itinerary_restructure: 1.4
+-- pre-trip alteration (slot): 1.3
+-- group_vote: 1.2
+-- core in-trip: 1.0
+-- first_creation_rejection: 0.7
+-- cold-user (&lt;3 trips): 0.5
+-- synthetic: 0.3</span>
+
+<span class="code-keyword">ADD COLUMN</span> hllm_reason_code <span class="code-type">VARCHAR</span>(30);
+<span class="code-comment">-- NULL if HLLM not used
+-- 'day1_orientation' | 'energy_shift' | 'group_conflict' | 'rejection_recovery'
+-- Enables per-trigger HLLM accuracy analysis post-hoc</span></pre>
+  </div>
+
+</div>
+
+<script>
+function toggleTheme(){
+  const d=document.documentElement;
+  d.dataset.theme=d.dataset.theme==='dark'?'light':'dark';
+}
+function toggleActive(el){
+  el.classList.toggle('active');
+}
+</script>
+</body>
+</html>

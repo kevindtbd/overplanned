@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overplanned — Flow Optimization UI</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=DM+Mono:wght@300;400&family=Lora:ital,wght@0,500;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+[data-theme="light"] {
+  --bg:#FAF8F5; --bg-s:#FFFFFF; --bg-r:#F3EFE9; --bg-o:#EDE8E1;
+  --accent:#B85C3F; --accent-l:#F0E0D9; --accent-m:#D4886E; --accent-on:#8C3A24;
+  --ink-1:#1C1713; --ink-2:#3A302A; --ink-3:#5C5048; --ink-4:#7A6E64;
+  --ink-5:#9C8E84; --ink-6:#BDB0A6; --ink-7:#D6CFC8; --ink-8:#EAE4DE; --ink-9:#F5F1EC;
+  --ok:#4A8A5C; --ok-bg:#E0EEE5; --warn:#A07830; --warn-bg:#F2EAD8;
+  --info:#3A6A8C; --info-bg:#D8E8F2;
+  --sh-sm:0 1px 3px rgba(28,23,19,0.06),0 1px 2px rgba(28,23,19,0.04);
+  --sh-md:0 4px 16px rgba(28,23,19,0.08),0 1px 4px rgba(28,23,19,0.04);
+  --sh-lg:0 12px 48px rgba(28,23,19,0.10),0 2px 8px rgba(28,23,19,0.05);
+  --sh-xl:0 24px 80px rgba(28,23,19,0.12),0 4px 16px rgba(28,23,19,0.06);
+}
+[data-theme="dark"] {
+  --bg:#100E0B; --bg-s:#171310; --bg-r:#1F1A15; --bg-o:#28211A;
+  --accent:#C96848; --accent-l:rgba(201,104,72,0.14); --accent-m:#8C402A; --accent-on:#E8906E;
+  --ink-1:#F0EAE2; --ink-2:#D4C8BC; --ink-3:#A89484; --ink-4:#7A6A5C;
+  --ink-5:#5C4E42; --ink-6:#3D332A; --ink-7:#2E251E; --ink-8:#221C16; --ink-9:#1A1410;
+  --ok:#5A9E6A; --ok-bg:rgba(90,158,106,0.12); --warn:#B8943A; --warn-bg:rgba(184,148,58,0.12);
+  --info:#4A84A8; --info-bg:rgba(74,132,168,0.12);
+  --sh-sm:0 1px 4px rgba(0,0,0,0.3); --sh-md:0 4px 20px rgba(0,0,0,0.4);
+  --sh-lg:0 16px 60px rgba(0,0,0,0.5); --sh-xl:0 32px 80px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;font-size:16px;}
+body{font-family:'Sora',sans-serif;font-weight:300;background:var(--bg);color:var(--ink-1);transition:background .3s,color .3s;min-height:100vh;}
+
+/* ── LAYOUT ── */
+.page-shell{max-width:1320px;margin:0 auto;padding:48px 40px 80px;}
+@media(max-width:900px){.page-shell{padding:32px 16px 60px;}}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:48px;}
+.logo{font-family:'DM Mono',monospace;font-size:13px;letter-spacing:0.12em;color:var(--accent);text-transform:uppercase;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.theme-pill{display:flex;align-items:center;gap:8px;background:var(--bg-s);border:1px solid var(--ink-7);border-radius:100px;padding:6px 14px 6px 8px;box-shadow:var(--sh-sm);cursor:pointer;transition:border-color .2s;}
+.theme-pill:hover{border-color:var(--accent);}
+.toggle-track{width:28px;height:16px;background:var(--ink-7);border-radius:100px;position:relative;transition:background .2s;flex-shrink:0;}
+[data-theme="dark"] .toggle-track{background:var(--accent);}
+.toggle-thumb{width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
+[data-theme="dark"] .toggle-thumb{transform:translateX(12px);}
+.toggle-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);}
+
+/* Flow nav tabs */
+.flow-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:40px;}
+.ftab{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border-radius:100px;border:1.5px solid var(--ink-7);background:var(--bg-s);color:var(--ink-4);cursor:pointer;transition:all .18s;white-space:nowrap;}
+.ftab:hover{border-color:var(--ink-5);color:var(--ink-2);}
+.ftab.active{background:var(--accent-l);border-color:var(--accent);color:var(--accent-on);}
+
+/* Flow section header */
+.flow-header{margin-bottom:32px;}
+.flow-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+.flow-title{font-size:22px;font-weight:500;color:var(--ink-1);letter-spacing:-.025em;line-height:1.2;margin-bottom:6px;}
+.flow-desc{font-size:13px;color:var(--ink-4);font-weight:300;line-height:1.7;max-width:560px;}
+
+/* Signal pills */
+.signal-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+.signal-pill{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:100px;border:1px solid;}
+.signal-pill.dim{background:var(--info-bg);border-color:var(--info);color:var(--info);}
+.signal-pill.weight{background:var(--ok-bg);border-color:var(--ok);color:var(--ok);}
+.signal-pill.note{background:var(--warn-bg);border-color:var(--warn);color:var(--warn);}
+
+/* ── DUAL RENDER LAYOUT ── */
+.render-grid{display:grid;grid-template-columns:390px 1fr;gap:40px;align-items:start;}
+@media(max-width:900px){.render-grid{grid-template-columns:1fr;}}
+
+/* PHONE */
+.phone-wrap{position:sticky;top:32px;}
+.phone{width:390px;height:780px;background:var(--bg-s);border-radius:44px;border:1.5px solid var(--ink-7);box-shadow:var(--sh-xl);overflow:hidden;display:flex;flex-direction:column;position:relative;}
+[data-theme="dark"] .phone{border-color:var(--ink-6);}
+.status-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px 0;flex-shrink:0;}
+.sb-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-1);font-weight:400;}
+.sb-icons{display:flex;align-items:center;gap:5px;color:var(--ink-4);}
+
+/* Screen system */
+.pscreen{display:none;flex-direction:column;flex:1;overflow:hidden;}
+.pscreen.active{display:flex;}
+
+/* ── SCREEN: ONBOARDING HOOK ── */
+.hook-hero{flex:1;position:relative;overflow:hidden;min-height:360px;}
+.hook-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+.hook-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,.96) 0%,rgba(14,10,6,.3) 55%,transparent 100%);}
+[data-theme="light"] .hook-overlay{background:linear-gradient(to top,rgba(20,14,8,.92) 0%,rgba(20,14,8,.22) 55%,transparent 100%);}
+.hook-body{position:absolute;bottom:0;left:0;right:0;padding:24px 26px 32px;}
+.hook-logo{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;}
+.hook-h{font-family:'Lora',serif;font-size:28px;font-weight:500;color:#fff;line-height:1.15;letter-spacing:-.02em;margin-bottom:5px;}
+.hook-h em{font-style:italic;color:#E8C97E;}
+.hook-sub{font-size:12px;color:rgba(255,255,255,.5);font-weight:300;line-height:1.6;margin-bottom:22px;}
+.hook-btn-a{width:100%;background:var(--accent);color:#fff;border:none;border-radius:14px;padding:14px 18px;font-size:14px;font-family:'Sora',sans-serif;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;transition:all .2s;box-shadow:0 4px 20px rgba(184,92,63,.35);}
+.hook-btn-a:hover{transform:translateY(-2px);}
+.hook-btn-a-sub{font-size:10px;font-weight:300;opacity:.7;margin-top:1px;}
+.hook-btn-b{width:100%;background:rgba(255,255,255,.08);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:14px 18px;font-size:14px;font-family:'Sora',sans-serif;font-weight:400;cursor:pointer;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(8px);transition:all .2s;}
+.hook-btn-b:hover{background:rgba(255,255,255,.13);}
+.hook-btn-b-sub{font-size:10px;font-weight:300;opacity:.55;margin-top:1px;}
+.btn-txt{text-align:left;}
+
+/* ── SCREEN: WHO'S GOING ── */
+.plan-nav{padding:16px 22px 12px;border-bottom:1px solid var(--ink-8);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+[data-theme="dark"] .plan-nav{border-color:var(--ink-7);}
+.back-btn{background:none;border:none;cursor:pointer;color:var(--ink-5);display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;transition:color .15s;}
+.back-btn:hover{color:var(--ink-1);}
+.step-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-5);}
+.prog-bar{height:2px;background:var(--ink-8);flex-shrink:0;}
+[data-theme="dark"] .prog-bar{background:var(--ink-7);}
+.prog-fill{height:100%;background:var(--accent);transition:width .4s ease;}
+.plan-body{flex:1;padding:24px 24px 20px;display:flex;flex-direction:column;overflow-y:auto;}
+.plan-q{font-family:'Lora',serif;font-size:24px;font-weight:500;line-height:1.2;letter-spacing:-.02em;color:var(--ink-1);margin-bottom:5px;}
+.plan-q em{font-style:italic;color:var(--accent-on);}
+.plan-hint{font-size:12px;color:var(--ink-4);font-weight:300;line-height:1.6;margin-bottom:24px;}
+.who-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:auto;}
+.who-card{background:var(--bg-r);border:1.5px solid var(--ink-7);border-radius:16px;padding:18px 16px;cursor:pointer;transition:all .18s;text-align:center;}
+[data-theme="dark"] .who-card{background:var(--bg-o);}
+.who-card:hover{border-color:var(--ink-5);}
+.who-card.sel{background:var(--accent-l);border-color:var(--accent);}
+.who-icon{font-size:24px;margin-bottom:8px;}
+.who-label{font-size:13px;font-weight:500;color:var(--ink-2);margin-bottom:2px;}
+.who-card.sel .who-label{color:var(--accent-on);}
+.who-sub{font-size:10px;color:var(--ink-5);font-weight:300;}
+.plan-footer{padding:14px 24px 28px;flex-shrink:0;}
+.next-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:14px;padding:14px;font-size:14px;font-family:'Sora',sans-serif;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;box-shadow:0 4px 16px rgba(184,92,63,.2);}
+.next-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(184,92,63,.32);}
+.next-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* ── SCREEN: SCENARIO CARD ── */
+.scenario-body{flex:1;padding:24px 24px 0;display:flex;flex-direction:column;overflow-y:auto;}
+.sc-q{font-family:'Lora',serif;font-size:22px;font-weight:500;line-height:1.25;letter-spacing:-.02em;color:var(--ink-1);margin-bottom:5px;}
+.sc-hint{font-size:12px;color:var(--ink-4);font-weight:300;margin-bottom:20px;}
+.sc-card{background:var(--bg-r);border:2px solid var(--ink-7);border-radius:18px;padding:18px;cursor:pointer;transition:all .2s;margin-bottom:10px;position:relative;}
+[data-theme="dark"] .sc-card{background:var(--bg-o);}
+.sc-card:hover{border-color:var(--ink-5);transform:translateY(-2px);box-shadow:var(--sh-md);}
+.sc-card.sel{border-color:var(--accent);background:var(--accent-l);}
+.sc-card.sel-b{border-color:var(--info);background:var(--info-bg);}
+.sc-letter{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-5);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.sc-card.sel .sc-letter{color:var(--accent);}
+.sc-card.sel-b .sc-letter{color:var(--info);}
+.sc-dot{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--ink-6);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.sc-card.sel .sc-dot,.sc-card.sel-b .sc-dot{border-color:currentColor;background:currentColor;}
+.sc-dot svg{opacity:0;transition:opacity .15s;}
+.sc-card.sel .sc-dot svg,.sc-card.sel-b .sc-dot svg{opacity:1;}
+.sc-text{font-size:13px;color:var(--ink-3);font-weight:300;line-height:1.65;font-style:italic;}
+.sc-card.sel .sc-text{color:var(--accent-on);}
+.sc-card.sel-b .sc-text{color:var(--info);}
+.sc-dims{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px;}
+.sc-dim{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.06em;padding:2px 7px;border-radius:100px;background:rgba(255,255,255,.5);color:var(--ink-5);border:1px solid var(--ink-7);}
+.sc-card.sel .sc-dim{background:rgba(184,92,63,.1);color:var(--accent);border-color:var(--accent-l);}
+
+/* ── SCREEN: FREE TEXT ── */
+.ft-body{flex:1;padding:24px 24px 0;display:flex;flex-direction:column;}
+.ft-q{font-family:'Lora',serif;font-size:22px;font-weight:500;line-height:1.25;letter-spacing:-.02em;color:var(--ink-1);margin-bottom:5px;}
+.ft-hint{font-size:12px;color:var(--ink-4);font-weight:300;margin-bottom:6px;}
+.ft-optional{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-5);margin-bottom:20px;}
+.ft-area{width:100%;background:var(--bg-r);border:1.5px solid var(--ink-7);border-radius:16px;padding:16px;font-size:13px;font-family:'Sora',sans-serif;font-weight:300;color:var(--ink-1);font-style:italic;resize:none;outline:none;line-height:1.7;transition:border-color .2s;min-height:100px;}
+[data-theme="dark"] .ft-area{background:var(--bg-o);}
+.ft-area:focus{border-color:var(--accent);}
+.ft-area::placeholder{color:var(--ink-6);font-style:italic;}
+.ft-extract{margin-top:14px;padding:12px 14px;background:var(--ok-bg);border-radius:12px;border-left:3px solid var(--ok);display:none;}
+.ft-extract.visible{display:block;}
+.ft-extract-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ok);margin-bottom:5px;}
+.ft-extract-text{font-size:11px;color:var(--ink-3);font-weight:300;line-height:1.55;}
+.ft-skip{display:flex;justify-content:center;margin-top:14px;}
+.ft-skip-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-5);background:none;border:none;cursor:pointer;padding:8px;transition:color .15s;}
+.ft-skip-btn:hover{color:var(--ink-3);}
+
+/* ── SCREEN: BUILDING ── */
+.build-hero{height:200px;position:relative;overflow:hidden;flex-shrink:0;}
+.build-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+.build-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,.88),rgba(14,10,6,.15));}
+[data-theme="light"] .build-overlay{background:linear-gradient(to top,rgba(20,14,8,.85),rgba(20,14,8,.12));}
+.build-hero-text{position:absolute;bottom:16px;left:20px;right:20px;}
+.build-city{font-family:'Lora',serif;font-size:20px;font-weight:500;color:#fff;letter-spacing:-.02em;margin-bottom:1px;}
+.build-dates{font-size:11px;color:rgba(255,255,255,.5);font-weight:300;}
+.build-body{flex:1;padding:20px 22px;display:flex;flex-direction:column;}
+.build-steps{display:flex;flex-direction:column;gap:0;margin-bottom:20px;}
+.bs{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--ink-8);}
+[data-theme="dark"] .bs{border-color:var(--ink-7);}
+.bs:last-child{border-bottom:none;}
+.bs-ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bs-ic.done{background:var(--ok-bg);color:var(--ok);}
+.bs-ic.active{background:var(--accent-l);color:var(--accent);animation:bspulse 1.5s ease-in-out infinite;}
+.bs-ic.wait{background:var(--bg-r);color:var(--ink-6);}
+[data-theme="dark"] .bs-ic.wait{background:var(--bg-o);}
+@keyframes bspulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+.bs-info{flex:1;}
+.bs-lbl{font-size:12px;font-weight:500;color:var(--ink-1);margin-bottom:1px;}
+.bs-sub{font-size:10px;color:var(--ink-5);font-weight:300;font-style:italic;}
+.bs-status{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.04em;}
+.bs-status.done{color:var(--ok);}
+.bs-status.active{color:var(--accent);}
+.bs-status.wait{color:var(--ink-6);}
+
+/* ── SCREEN: REVEAL ── */
+.reveal-header{padding:16px 22px 12px;border-bottom:1px solid var(--ink-8);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+[data-theme="dark"] .reveal-header{border-color:var(--ink-7);}
+.rh-title{font-size:14px;font-weight:500;color:var(--ink-1);}
+.rh-sub{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-5);margin-top:1px;}
+.day-tabs{display:flex;gap:5px;padding:10px 22px;border-bottom:1px solid var(--ink-8);flex-shrink:0;overflow-x:auto;}
+[data-theme="dark"] .day-tabs{border-color:var(--ink-7);}
+.day-tab{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:100px;border:1px solid var(--ink-7);background:none;color:var(--ink-4);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.day-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.slots-scroll{flex:1;overflow-y:auto;padding:14px 18px 20px;}
+.slot{background:var(--bg-s);border:1.5px solid var(--ink-8);border-radius:16px;margin-bottom:10px;overflow:hidden;transition:all .2s;}
+[data-theme="dark"] .slot{background:var(--bg-r);border-color:var(--ink-7);}
+.slot:hover{border-color:var(--ink-6);box-shadow:var(--sh-sm);}
+.slot-img{height:80px;position:relative;overflow:hidden;}
+.slot-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s;}
+.slot:hover .slot-img img{transform:scale(1.05);}
+.slot-img-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(12,9,6,.3) 100%);}
+.slot-src{position:absolute;top:7px;right:8px;font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.08em;text-transform:uppercase;color:rgba(240,234,226,.8);background:rgba(12,9,6,.45);backdrop-filter:blur(6px);padding:2px 7px;border-radius:100px;}
+.slot-gem{position:absolute;bottom:7px;left:8px;display:flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:7px;padding:2px 8px;border-radius:100px;background:rgba(74,138,92,.72);color:#E4F2E8;backdrop-filter:blur(6px);}
+.slot-body{padding:11px 13px 13px;}
+.slot-time{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-5);margin-bottom:4px;}
+.slot-name{font-size:13px;font-weight:500;color:var(--ink-1);letter-spacing:-.01em;margin-bottom:3px;}
+.slot-why{font-size:11px;color:var(--ink-4);font-weight:300;line-height:1.5;margin-bottom:8px;}
+.slot-fit{padding:7px 10px;background:var(--ok-bg);border-radius:8px;font-size:10px;color:var(--ok);font-weight:300;line-height:1.5;margin-bottom:8px;border-left:2px solid var(--ok);}
+.slot-foot{display:flex;align-items:center;justify-content:space-between;}
+.slot-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.slot-tag{font-family:'DM Mono',monospace;font-size:7px;letter-spacing:.06em;padding:2px 7px;border-radius:100px;background:var(--bg-r);border:1px solid var(--ink-7);color:var(--ink-5);}
+[data-theme="dark"] .slot-tag{background:var(--bg-o);}
+.slot-swap{width:24px;height:24px;border-radius:50%;background:var(--bg-r);border:1px solid var(--ink-7);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-5);transition:all .15s;flex-shrink:0;}
+.slot-swap:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── SCREEN: MID-TRIP ── */
+.mt-header{padding:14px 22px 10px;border-bottom:1px solid var(--ink-8);flex-shrink:0;}
+[data-theme="dark"] .mt-header{border-color:var(--ink-7);}
+.mt-trip-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:2px;}
+.mt-day-row{display:flex;align-items:center;justify-content:space-between;}
+.mt-day{font-size:15px;font-weight:500;color:var(--ink-1);}
+.mt-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-5);}
+.mt-mood-bar{margin-top:8px;padding:8px 10px;background:var(--warn-bg);border-radius:10px;display:flex;align-items:center;gap:8px;border:1px solid rgba(160,120,48,.2);}
+.mt-mood-icon{color:var(--warn);flex-shrink:0;}
+.mt-mood-text{font-size:11px;color:var(--ink-3);font-weight:300;flex:1;line-height:1.4;}
+.mt-mood-act{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);background:none;border:none;cursor:pointer;white-space:nowrap;}
+.mt-slots{flex:1;overflow-y:auto;padding:12px 18px;}
+.mt-slot{background:var(--bg-s);border:1.5px solid var(--ink-8);border-radius:14px;margin-bottom:8px;padding:13px 14px;display:flex;align-items:center;gap:12px;transition:all .2s;}
+[data-theme="dark"] .mt-slot{background:var(--bg-r);border-color:var(--ink-7);}
+.mt-slot.done{opacity:.5;}
+.mt-slot.active{border-color:var(--accent);background:var(--accent-l);}
+.mt-slot-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.mt-slot.done .mt-slot-dot{background:var(--ok);}
+.mt-slot.active .mt-slot-dot{background:var(--accent);box-shadow:0 0 0 3px rgba(184,92,63,.2);animation:dotpulse 2s ease-in-out infinite;}
+.mt-slot.upcoming .mt-slot-dot{background:var(--ink-7);}
+@keyframes dotpulse{0%,100%{box-shadow:0 0 0 3px rgba(184,92,63,.2);}50%{box-shadow:0 0 0 6px rgba(184,92,63,.08);}}
+.mt-slot-info{flex:1;}
+.mt-slot-time{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-5);margin-bottom:1px;}
+.mt-slot-name{font-size:12px;font-weight:500;color:var(--ink-1);}
+.mt-slot.active .mt-slot-name{color:var(--accent-on);}
+.mt-slot-why{font-size:10px;color:var(--ink-5);font-weight:300;margin-top:1px;}
+.mt-swap-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-5);background:var(--bg-r);border:1px solid var(--ink-7);border-radius:100px;padding:4px 9px;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
+[data-theme="dark"] .mt-swap-btn{background:var(--bg-o);}
+.mt-swap-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* PIVOT DRAWER */
+.pivot-drawer{position:absolute;bottom:0;left:0;right:0;background:var(--bg-s);border-radius:20px 20px 0 0;box-shadow:0 -8px 40px rgba(28,23,19,.12);padding:16px 20px 28px;transition:transform .35s cubic-bezier(.2,.9,.3,1);z-index:50;}
+[data-theme="dark"] .pivot-drawer{background:var(--bg-r);box-shadow:0 -12px 50px rgba(0,0,0,.5);}
+.pivot-drawer.hidden{transform:translateY(100%);}
+.pivot-handle{width:36px;height:3px;border-radius:100px;background:var(--ink-7);margin:0 auto 16px;}
+.pivot-header{margin-bottom:14px;}
+.pivot-tag{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:5px;}
+.pivot-q{font-size:15px;font-weight:500;color:var(--ink-1);letter-spacing:-.01em;}
+.pivot-options{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+.popt{display:flex;align-items:center;gap:12px;padding:12px 13px;background:var(--bg-r);border:1.5px solid var(--ink-7);border-radius:12px;cursor:pointer;transition:all .18s;}
+[data-theme="dark"] .popt{background:var(--bg-o);}
+.popt:hover,.popt.sel{border-color:var(--accent);background:var(--accent-l);}
+.popt-img{width:42px;height:42px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.popt-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.popt-info{flex:1;}
+.popt-name{font-size:12px;font-weight:500;color:var(--ink-1);margin-bottom:1px;}
+.popt.sel .popt-name{color:var(--accent-on);}
+.popt-src{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-5);}
+.popt-fit{font-size:10px;color:var(--ink-4);font-weight:300;font-style:italic;}
+.popt-gem{font-family:'DM Mono',monospace;font-size:7px;padding:2px 6px;border-radius:100px;background:var(--ok-bg);color:var(--ok);border:1px solid rgba(74,138,92,.2);}
+.pivot-close{width:100%;background:var(--bg-r);border:1px solid var(--ink-7);border-radius:12px;padding:12px;font-size:13px;font-family:'Sora',sans-serif;color:var(--ink-4);cursor:pointer;transition:all .15s;}
+[data-theme="dark"] .pivot-close{background:var(--bg-o);}
+.pivot-close:hover{color:var(--ink-1);}
+
+/* ── SCREEN: GROUP ── */
+.grp-header{padding:14px 22px 10px;border-bottom:1px solid var(--ink-8);flex-shrink:0;}
+[data-theme="dark"] .grp-header{border-color:var(--ink-7);}
+.grp-trip-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-5);margin-bottom:2px;}
+.grp-trip-name{font-size:15px;font-weight:500;color:var(--ink-1);}
+.grp-members{display:flex;gap:-8px;margin-top:8px;align-items:center;}
+.grp-av{width:28px;height:28px;border-radius:50%;border:2px solid var(--bg-s);margin-left:-6px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:#fff;flex-shrink:0;}
+.grp-av:first-child{margin-left:0;}
+.grp-av-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;color:var(--ink-5);margin-left:8px;}
+.grp-body{flex:1;overflow-y:auto;padding:14px 18px;}
+.grp-section-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-5);margin-bottom:10px;margin-top:4px;}
+.grp-conflict{padding:11px 13px;background:var(--warn-bg);border-radius:12px;border-left:3px solid var(--warn);margin-bottom:12px;}
+.grp-conf-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);margin-bottom:3px;}
+.grp-conf-text{font-size:11px;color:var(--ink-3);font-weight:300;line-height:1.5;}
+.grp-conf-action{display:flex;gap:7px;margin-top:8px;}
+.grp-conf-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px;border-radius:100px;border:1px solid;cursor:pointer;transition:all .15s;}
+.grp-conf-btn.yes{background:var(--ok-bg);border-color:var(--ok);color:var(--ok);}
+.grp-conf-btn.no{background:var(--bg-r);border-color:var(--ink-7);color:var(--ink-4);}
+[data-theme="dark"] .grp-conf-btn.no{background:var(--bg-o);}
+.vote-slot{background:var(--bg-s);border:1.5px solid var(--ink-8);border-radius:14px;margin-bottom:8px;overflow:hidden;}
+[data-theme="dark"] .vote-slot{background:var(--bg-r);border-color:var(--ink-7);}
+.vote-slot-body{padding:12px 14px;}
+.vote-slot-name{font-size:13px;font-weight:500;color:var(--ink-1);margin-bottom:2px;}
+.vote-slot-meta{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-5);margin-bottom:8px;}
+.vote-row{display:flex;gap:6px;align-items:center;}
+.vote-face{width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0;}
+.vote-face img{width:100%;height:100%;object-fit:cover;}
+.vote-bar-wrap{flex:1;height:4px;background:var(--ink-8);border-radius:100px;overflow:hidden;}
+[data-theme="dark"] .vote-bar-wrap{background:var(--ink-7);}
+.vote-bar{height:100%;border-radius:100px;transition:width .5s ease;}
+.vote-bar.yes{background:var(--ok);}
+.vote-bar.maybe{background:var(--warn);}
+.vote-bar.no{background:var(--accent);}
+.vote-lbl{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-5);width:28px;text-align:right;}
+.vote-btns{display:flex;gap:6px;padding:0 14px 12px;}
+.vote-btn{flex:1;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.06em;text-transform:uppercase;padding:7px;border-radius:8px;border:1px solid var(--ink-7);background:var(--bg-r);color:var(--ink-4);cursor:pointer;transition:all .15s;text-align:center;}
+[data-theme="dark"] .vote-btn{background:var(--bg-o);}
+.vote-btn:hover{border-color:var(--ink-5);color:var(--ink-2);}
+.vote-btn.in:hover{border-color:var(--ok);color:var(--ok);background:var(--ok-bg);}
+.vote-btn.out:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-l);}
+
+/* ── SCREEN: OFFLINE ── */
+.offline-banner{display:flex;align-items:center;gap:8px;padding:8px 18px;background:var(--warn-bg);border-bottom:1px solid rgba(160,120,48,.2);flex-shrink:0;}
+.offline-dot{width:6px;height:6px;border-radius:50%;background:var(--warn);flex-shrink:0;animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.offline-text{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);}
+.offline-cached{font-size:9px;color:var(--warn);font-weight:300;margin-left:auto;}
+
+/* ── SCREEN: POST-TRIP ── */
+.post-hero{height:220px;position:relative;overflow:hidden;flex-shrink:0;}
+.post-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+.post-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,10,6,.85),transparent);}
+.post-hero-label{position:absolute;bottom:16px;left:20px;right:20px;}
+.post-city{font-family:'Lora',serif;font-size:20px;font-weight:500;color:#fff;letter-spacing:-.02em;margin-bottom:2px;}
+.post-dates{font-size:11px;color:rgba(255,255,255,.5);}
+.post-body{flex:1;overflow-y:auto;padding:18px 20px;}
+.post-section-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-5);margin-bottom:12px;}
+.post-highlight{background:var(--bg-s);border:1.5px solid var(--ink-8);border-radius:14px;margin-bottom:8px;overflow:hidden;display:flex;align-items:center;gap:0;}
+[data-theme="dark"] .post-highlight{background:var(--bg-r);border-color:var(--ink-7);}
+.post-hl-img{width:56px;height:56px;object-fit:cover;flex-shrink:0;}
+.post-hl-body{flex:1;padding:10px 12px;}
+.post-hl-name{font-size:12px;font-weight:500;color:var(--ink-1);margin-bottom:2px;}
+.post-hl-why{font-size:10px;color:var(--ink-5);font-weight:300;}
+.post-hl-votes{display:flex;gap:8px;align-items:center;margin-left:auto;padding-right:12px;}
+.post-vote-btn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--ink-7);background:var(--bg-r);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-5);transition:all .18s;flex-shrink:0;}
+[data-theme="dark"] .post-vote-btn{background:var(--bg-o);}
+.post-vote-btn:hover.up{border-color:var(--ok);color:var(--ok);}
+.post-vote-btn:hover.dn{border-color:var(--accent);color:var(--accent);}
+.post-vote-btn.voted-up{border-color:var(--ok);background:var(--ok-bg);color:var(--ok);}
+.post-vote-btn.voted-dn{border-color:var(--accent);background:var(--accent-l);color:var(--accent);}
+.post-learn{margin-top:14px;padding:12px 14px;background:var(--info-bg);border-radius:12px;border-left:3px solid var(--info);}
+.post-learn-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--info);margin-bottom:4px;}
+.post-learn-text{font-size:11px;color:var(--ink-3);font-weight:300;line-height:1.55;}
+
+/* ── DESKTOP PANEL ── */
+.desk-panel{background:var(--bg-s);border:1.5px solid var(--ink-8);border-radius:20px;overflow:hidden;}
+[data-theme="dark"] .desk-panel{background:var(--bg-r);border-color:var(--ink-7);}
+.desk-header{padding:20px 24px 16px;border-bottom:1px solid var(--ink-8);}
+[data-theme="dark"] .desk-header{border-color:var(--ink-7);}
+.desk-eyebrow{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:5px;}
+.desk-title{font-size:16px;font-weight:500;color:var(--ink-1);letter-spacing:-.015em;}
+.desk-sub{font-size:12px;color:var(--ink-4);font-weight:300;line-height:1.65;margin-top:4px;}
+.desk-body{padding:20px 24px;}
+
+/* ML insight blocks */
+.ml-block{padding:13px 15px;border-radius:12px;margin-bottom:10px;border:1px solid;}
+.ml-block.signal{background:var(--info-bg);border-color:rgba(58,106,140,.2);}
+.ml-block.insight{background:var(--ok-bg);border-color:rgba(74,138,92,.2);}
+.ml-block.note{background:var(--warn-bg);border-color:rgba(160,120,48,.2);}
+.ml-block.flag{background:var(--accent-l);border-color:rgba(184,92,63,.2);}
+.ml-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+.ml-block.signal .ml-lbl{color:var(--info);}
+.ml-block.insight .ml-lbl{color:var(--ok);}
+.ml-block.note .ml-lbl{color:var(--warn);}
+.ml-block.flag .ml-lbl{color:var(--accent);}
+.ml-text{font-size:12px;color:var(--ink-3);font-weight:300;line-height:1.6;}
+
+/* Persona viz */
+.persona-viz{display:flex;flex-direction:column;gap:7px;margin-top:4px;}
+.pv-row{display:flex;align-items:center;gap:10px;}
+.pv-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.04em;color:var(--ink-4);width:130px;flex-shrink:0;}
+.pv-track{flex:1;height:4px;background:var(--ink-8);border-radius:100px;overflow:hidden;}
+[data-theme="dark"] .pv-track{background:var(--ink-7);}
+.pv-fill{height:100%;border-radius:100px;background:var(--accent);transition:width .6s ease;}
+.pv-fill.ok{background:var(--ok);}
+.pv-val{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink-5);width:28px;text-align:right;}
+
+/* Flow notes */
+.flow-note{padding:12px 14px;background:var(--bg-r);border-radius:10px;border-left:3px solid var(--ink-7);margin-bottom:10px;}
+[data-theme="dark"] .flow-note{background:var(--bg-o);}
+.flow-note-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-5);margin-bottom:4px;}
+.flow-note-text{font-size:12px;color:var(--ink-3);font-weight:300;line-height:1.6;}
+
+/* Dimension matrix */
+.dim-matrix{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.dm-cell{padding:10px 12px;background:var(--bg-r);border-radius:10px;border:1px solid var(--ink-8);}
+[data-theme="dark"] .dm-cell{background:var(--bg-o);border-color:var(--ink-7);}
+.dm-dim{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-5);margin-bottom:4px;}
+.dm-val{font-size:18px;font-weight:500;color:var(--ink-1);letter-spacing:-.02em;}
+.dm-delta{font-family:'DM Mono',monospace;font-size:8px;margin-top:1px;}
+.dm-delta.up{color:var(--ok);}
+.dm-delta.dn{color:var(--accent);}
+
+.hidden{display:none!important;}
+
+/* Flow hidden/shown */
+.flow-section{display:none;}
+.flow-section.active{display:block;}
+</style>
+</head>
+<body>
+
+<div class="page-shell">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="logo">Overplanned / Flow Optimization</div>
+    <div class="topbar-right">
+      <div class="theme-pill" onclick="toggleTheme()">
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        <span class="toggle-lbl">Theme</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flow nav -->
+  <div class="flow-tabs">
+    <button class="ftab active" onclick="switchFlow('onboarding',this)">Onboarding</button>
+    <button class="ftab" onclick="switchFlow('reveal',this)">First Reveal</button>
+    <button class="ftab" onclick="switchFlow('midtrip',this)">Mid-Trip Pivot</button>
+    <button class="ftab" onclick="switchFlow('group',this)">Group Planning</button>
+    <button class="ftab" onclick="switchFlow('offline',this)">Offline</button>
+    <button class="ftab" onclick="switchFlow('posttrip',this)">Post-Trip</button>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       FLOW: ONBOARDING
+  ════════════════════════════════════════ -->
+  <div id="flow-onboarding" class="flow-section active">
+    <div class="flow-header">
+      <div class="flow-eyebrow">Flow 01 — Onboarding</div>
+      <div class="flow-title">Zero questions that feel like questions</div>
+      <div class="flow-desc">3 taps before generation starts. Each screen advances the trip plan, not a profile. Signal collection is a byproduct of planning, not the purpose.</div>
+      <div class="signal-row">
+        <span class="signal-pill dim">group_structure</span>
+        <span class="signal-pill dim">social_energy</span>
+        <span class="signal-pill dim">local_vs_tourist_bias</span>
+        <span class="signal-pill dim">food_priority</span>
+        <span class="signal-pill dim">pace_preference</span>
+        <span class="signal-pill weight">5–6 dims from 2 taps</span>
+      </div>
+    </div>
+    <div class="render-grid">
+      <!-- Phone -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="status-bar">
+            <span class="sb-time">09:41</span>
+            <div class="sb-icons">
+              <svg width="12" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1.5 8.5c5.5-5.5 15.5-5.5 21 0"/><path d="M5.5 12.5c3.5-3.5 9.5-3.5 13 0"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+              <svg width="22" height="10" viewBox="0 0 25 12" fill="currentColor"><rect x="0" y="1.5" width="18" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="18.5" y="3.5" width="3" height="5" rx="1"/><rect x="1.5" y="3" width="13" height="6" rx="1"/></svg>
+            </div>
+          </div>
+
+          <!-- Screen: Hook -->
+          <div class="pscreen active" id="ob-hook">
+            <div class="hook-hero" style="flex:1;">
+              <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80&auto=format&fit=crop" alt="Tokyo">
+              <div class="hook-overlay"></div>
+              <div class="hook-body">
+                <div class="hook-logo">Overplanned</div>
+                <div class="hook-h">The plan that knows<br><em>how you actually travel.</em></div>
+                <div class="hook-sub">Local sources. No tourist traps. A plan that changes when you do.</div>
+                <button class="hook-btn-a" onclick="obGo('ob-who')">
+                  <div class="btn-txt">
+                    <div>Plan a trip</div>
+                    <div class="hook-btn-a-sub">I know where I'm going</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+                </button>
+                <button class="hook-btn-b" onclick="obGo('ob-who')">
+                  <div class="btn-txt">
+                    <div>Show me something</div>
+                    <div class="hook-btn-b-sub">Not sure yet — just browsing</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Screen: Who's Going -->
+          <div class="pscreen" id="ob-who">
+            <div class="plan-nav">
+              <button class="back-btn" onclick="obGo('ob-hook')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                Back
+              </button>
+              <span class="step-lbl">Step 1 of 3</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill" style="width:33%"></div></div>
+            <div class="plan-body">
+              <div class="plan-q">Who's <em>traveling?</em></div>
+              <div class="plan-hint">Sets the tone for everything else.</div>
+              <div class="who-grid" id="who-grid">
+                <div class="who-card" onclick="selectWho(this)">
+                  <div class="who-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  </div>
+                  <div class="who-label">Just me</div>
+                  <div class="who-sub">Solo trip</div>
+                </div>
+                <div class="who-card sel" onclick="selectWho(this)">
+                  <div class="who-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><circle cx="15" cy="8" r="3.5"/><path d="M2 20c0-3.5 3.1-6.5 7-6.5"/><path d="M22 20c0-3.5-3.1-6.5-7-6.5"/><path d="M9 13.5c1 0 1.9.2 2.8.5"/></svg>
+                  </div>
+                  <div class="who-label">Two of us</div>
+                  <div class="who-sub">Partner / friend</div>
+                </div>
+                <div class="who-card" onclick="selectWho(this)">
+                  <div class="who-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="6" r="3"/><circle cx="6" cy="13" r="3"/><circle cx="18" cy="13" r="3"/><path d="M9 8.5c-.8.8-1.5 1.8-1.8 3"/><path d="M15 8.5c.8.8 1.5 1.8 1.8 3"/></svg>
+                  </div>
+                  <div class="who-label">Small group</div>
+                  <div class="who-sub">3–5 people</div>
+                </div>
+                <div class="who-card" onclick="selectWho(this)">
+                  <div class="who-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="5" cy="9" r="2.5"/><circle cx="12" cy="7" r="2.5"/><circle cx="19" cy="9" r="2.5"/><circle cx="8" cy="16" r="2.5"/><circle cx="16" cy="16" r="2.5"/></svg>
+                  </div>
+                  <div class="who-label">Big group</div>
+                  <div class="who-sub">6+ people</div>
+                </div>
+              </div>
+            </div>
+            <div class="plan-footer">
+              <button class="next-btn" onclick="obGo('ob-scenario')">
+                Continue
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Screen: Scenario Card -->
+          <div class="pscreen" id="ob-scenario">
+            <div class="plan-nav">
+              <button class="back-btn" onclick="obGo('ob-who')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                Back
+              </button>
+              <span class="step-lbl">Step 2 of 3</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill" style="width:66%"></div></div>
+            <div class="scenario-body">
+              <div class="sc-q">Which <em>afternoon</em> sounds better?</div>
+              <div class="sc-hint">No right answer — just pick what sounds good.</div>
+              <div class="sc-card sel" id="sc-a" onclick="selectScenario('a')">
+                <div class="sc-letter">
+                  <div class="sc-dot">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  Option A
+                </div>
+                <div class="sc-text">"Counter-only spot, no name outside. Owner's been making the same bowl for 20 years. Locals, standing room, cash only."</div>
+                <div class="sc-dims">
+                  <span class="sc-dim">local-first</span>
+                  <span class="sc-dim">food-priority</span>
+                  <span class="sc-dim">no-tourist</span>
+                </div>
+              </div>
+              <div class="sc-card" id="sc-b" onclick="selectScenario('b')">
+                <div class="sc-letter">
+                  <div class="sc-dot">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  Option B
+                </div>
+                <div class="sc-text">"Rooftop bar with a great view. A bit touristy but the cocktails are good and the sunset is worth it."</div>
+                <div class="sc-dims">
+                  <span class="sc-dim">social-scene</span>
+                  <span class="sc-dim">scenic</span>
+                  <span class="sc-dim">comfort</span>
+                </div>
+              </div>
+              <div class="sc-card" style="margin-top:10px;" id="sc-c" onclick="selectScenario('c')">
+                <div class="sc-letter">
+                  <div class="sc-dot">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  How about the day?
+                </div>
+                <div class="sc-text">"Pack every hour — museums, markets, walks, dinner reservations. Full day, zero gaps."</div>
+                <div class="sc-dims"><span class="sc-dim">high-energy</span><span class="sc-dim">packed</span></div>
+              </div>
+            </div>
+            <div class="plan-footer" style="margin-top:auto;">
+              <button class="next-btn" onclick="obGo('ob-freetext')">
+                Continue
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Screen: Free Text -->
+          <div class="pscreen" id="ob-freetext">
+            <div class="plan-nav">
+              <button class="back-btn" onclick="obGo('ob-scenario')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                Back
+              </button>
+              <span class="step-lbl">Step 3 of 3</span>
+            </div>
+            <div class="prog-bar"><div class="prog-fill" style="width:100%"></div></div>
+            <div class="ft-body">
+              <div class="ft-q">One <em>last thing.</em></div>
+              <div class="ft-hint">Helps us get the first plan right.</div>
+              <div class="ft-optional">Optional — skip if you want</div>
+              <textarea class="ft-area" id="ft-input" placeholder="Name a trip you've loved, or a city where you felt most like yourself..." oninput="ftChange(this)" rows="4"></textarea>
+              <div class="ft-extract" id="ft-extract">
+                <div class="ft-extract-lbl">Extracted signals</div>
+                <div class="ft-extract-text" id="ft-extract-text"></div>
+              </div>
+              <div class="ft-skip">
+                <button class="ft-skip-btn" onclick="obGo('ob-build')">Skip this</button>
+              </div>
+            </div>
+            <div class="plan-footer" style="margin-top:auto;">
+              <button class="next-btn" onclick="obGo('ob-build')">
+                Build my trip
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Screen: Building -->
+          <div class="pscreen" id="ob-build">
+            <div class="build-hero">
+              <img src="https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=800&q=80&auto=format&fit=crop" alt="Kyoto">
+              <div class="build-overlay"></div>
+              <div class="build-hero-text">
+                <div class="build-city">Kyoto, Japan</div>
+                <div class="build-dates">Mar 14 – Mar 18 · 2 travelers</div>
+              </div>
+            </div>
+            <div class="build-body">
+              <div class="build-steps">
+                <div class="bs">
+                  <div class="bs-ic done">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  <div class="bs-info">
+                    <div class="bs-lbl">Finding what locals actually recommend...</div>
+                    <div class="bs-sub">Reddit, Eater, local food blogs</div>
+                  </div>
+                  <div class="bs-status done">Done</div>
+                </div>
+                <div class="bs">
+                  <div class="bs-ic active">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+                  </div>
+                  <div class="bs-info">
+                    <div class="bs-lbl">Matching to how you like to travel...</div>
+                    <div class="bs-sub">Applying persona from your answers</div>
+                  </div>
+                  <div class="bs-status active">Running</div>
+                </div>
+                <div class="bs">
+                  <div class="bs-ic wait">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                  </div>
+                  <div class="bs-info">
+                    <div class="bs-lbl">Building your days...</div>
+                    <div class="bs-sub">4 days, ~3 slots each</div>
+                  </div>
+                  <div class="bs-status wait">Queued</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- end phone -->
+      </div><!-- end phone-wrap -->
+
+      <!-- Desktop panel: ML context -->
+      <div>
+        <div class="desk-panel">
+          <div class="desk-header">
+            <div class="desk-eyebrow">ML Signal Map</div>
+            <div class="desk-title">What we learn from each screen</div>
+            <div class="desk-sub">Each onboarding tap resolves persona dimensions. No tap is wasted. Skip paths still produce a usable seed via archetype matching.</div>
+          </div>
+          <div class="desk-body">
+
+            <div class="ml-block signal">
+              <div class="ml-lbl">Screen 0 — Door Choice</div>
+              <div class="ml-text">"Plan a trip" vs "Show me something" seeds intent confidence. Path A users have a destination in mind — expectation is high. Path B users are aspirational — serve broader, lower-stakes first itinerary. Both are valid starting states.</div>
+            </div>
+
+            <div class="ml-block signal">
+              <div class="ml-lbl">Screen 1 — Who's Going</div>
+              <div class="ml-text">Single tap resolves <strong>social_energy</strong> baseline and trip type. Solo → weight intimacy, pace, solo-friendly tags. Couples → weight slow, food, hidden-gem. Group → weight social, shared plates, lively. This one tap narrows the synthetic archetype match from 600 to ~80.</div>
+            </div>
+
+            <div class="ml-block signal">
+              <div class="ml-lbl">Screen 2 — Scenario Card</div>
+              <div class="ml-text">Two-option revealed preference. Card A vs B resolves <strong>local_vs_tourist_bias</strong> + <strong>food_priority</strong> simultaneously. Card C (pace question) resolves <strong>pace_preference</strong> + <strong>adventure_appetite</strong>. Total: 4–5 dimensions from 2 taps. No self-report bias — user is choosing between real scenarios, not describing themselves.</div>
+            </div>
+
+            <div class="ml-block insight">
+              <div class="ml-lbl">Screen 3 — Free Text (Optional)</div>
+              <div class="ml-text">LLM extracts city references → cross-reference against ActivityNode vibe profiles for that city → infer category weights. "We ate everything in Osaka" → food_priority +0.3, local_vs_tourist +0.2. "Just walked around Lisbon" → pace_preference -0.2, adventure +0.1. 1.5× confidence weight vs. scenario card signal.</div>
+            </div>
+
+            <div class="ml-block note">
+              <div class="ml-lbl">Skip Path — Archetype Fallback</div>
+              <div class="ml-text">Any skipped screen maps to A11 (Curious First-Timer) defaults for that dimension. Skip pattern itself is logged: fast skip = disengaged or experienced user. Slow skip = uncertain. Neither penalizes the user — both adjust the confidence weight on that dimension's initial value.</div>
+            </div>
+
+            <div style="margin-top:16px;">
+              <div class="desk-eyebrow" style="margin-bottom:10px;">Persona State After Onboarding</div>
+              <div class="persona-viz">
+                <div class="pv-row"><span class="pv-lbl">local_vs_tourist_bias</span><div class="pv-track"><div class="pv-fill" style="width:87%"></div></div><span class="pv-val">0.87</span></div>
+                <div class="pv-row"><span class="pv-lbl">food_priority</span><div class="pv-track"><div class="pv-fill" style="width:82%"></div></div><span class="pv-val">0.82</span></div>
+                <div class="pv-row"><span class="pv-lbl">pace_preference</span><div class="pv-track"><div class="pv-fill ok" style="width:35%"></div></div><span class="pv-val">0.35</span></div>
+                <div class="pv-row"><span class="pv-lbl">social_energy</span><div class="pv-track"><div class="pv-fill ok" style="width:55%"></div></div><span class="pv-val">0.55</span></div>
+                <div class="pv-row"><span class="pv-lbl">adventure_appetite</span><div class="pv-track"><div class="pv-fill ok" style="width:40%"></div></div><span class="pv-val">0.40</span></div>
+                <div class="pv-row"><span class="pv-lbl">budget_sensitivity</span><div class="pv-track"><div class="pv-fill" style="width:28%"></div></div><span class="pv-val">0.28</span></div>
+              </div>
+              <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink-5);margin-top:8px;letter-spacing:.04em;">Confidence: HIGH on local_bias + food · MEDIUM on pace · LOW on budget (not yet observed)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       FLOW: FIRST REVEAL
+  ════════════════════════════════════════ -->
+  <div id="flow-reveal" class="flow-section">
+    <div class="flow-header">
+      <div class="flow-eyebrow">Flow 02 — First Itinerary Reveal</div>
+      <div class="flow-title">The pitch happens here</div>
+      <div class="flow-desc">First reveal only: source attribution prominent, "why this fits you" on 2–3 slots. After first trip, these disappear — by then trust is earned or it isn't.</div>
+      <div class="signal-row">
+        <span class="signal-pill dim">card_viewed</span>
+        <span class="signal-pill dim">card_accepted</span>
+        <span class="signal-pill dim">dwell_time</span>
+        <span class="signal-pill weight">first-trip signals: persona only, not ranking model</span>
+      </div>
+    </div>
+    <div class="render-grid">
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="status-bar">
+            <span class="sb-time">09:41</span>
+            <div class="sb-icons">
+              <svg width="22" height="10" viewBox="0 0 25 12" fill="currentColor"><rect x="0" y="1.5" width="18" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="18.5" y="3.5" width="3" height="5" rx="1"/><rect x="1.5" y="3" width="13" height="6" rx="1"/></svg>
+            </div>
+          </div>
+          <div class="pscreen active">
+            <div class="reveal-header">
+              <div>
+                <div class="rh-title">Kyoto · 4 days</div>
+                <div class="rh-sub">2 travelers · Local-first</div>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="color:var(--ink-5)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="day-tabs">
+              <button class="day-tab active">Day 1</button>
+              <button class="day-tab">Day 2</button>
+              <button class="day-tab">Day 3</button>
+              <button class="day-tab">Day 4</button>
+            </div>
+            <div class="slots-scroll">
+              <!-- Slot 1 -->
+              <div class="slot">
+                <div class="slot-img">
+                  <img src="https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=600&q=75&auto=format&fit=crop" alt="coffee">
+                  <div class="slot-img-overlay"></div>
+                  <div class="slot-src">4 local blogs</div>
+                  <div class="slot-gem">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Local gem
+                  </div>
+                </div>
+                <div class="slot-body">
+                  <div class="slot-time">Morning · 08:00</div>
+                  <div class="slot-name">Ogawa Coffee Honten</div>
+                  <div class="slot-why">Counter seats, no English menu. What locals do on a Tuesday morning.</div>
+                  <div class="slot-fit">Slow start → this place rewards it. Opens 7am, never crowded before 9.</div>
+                  <div class="slot-foot">
+                    <div class="slot-tags">
+                      <span class="slot-tag">locals-routine</span>
+                      <span class="slot-tag">early-morning</span>
+                      <span class="slot-tag">cash-only</span>
+                    </div>
+                    <button class="slot-swap">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.5 9A9 9 0 0 0 5.2 5.2L1 10M23 14l-4.2 4.8A9 9 0 0 1 3.5 15"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Slot 2 -->
+              <div class="slot">
+                <div class="slot-img">
+                  <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=75&auto=format&fit=crop" alt="nishiki">
+                  <div class="slot-img-overlay"></div>
+                  <div class="slot-src">Reddit r/JapanTravel</div>
+                  <div class="slot-gem" style="background:rgba(74,138,92,.72);color:#E4F2E8;">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Local gem
+                  </div>
+                </div>
+                <div class="slot-body">
+                  <div class="slot-time">Afternoon · 11:30</div>
+                  <div class="slot-name">Nishiki Market walk</div>
+                  <div class="slot-why">Where Kyoto's chefs shop. Go hungry — the vendors will feed you.</div>
+                  <div class="slot-foot">
+                    <div class="slot-tags">
+                      <span class="slot-tag">food-first</span>
+                      <span class="slot-tag">street-food</span>
+                      <span class="slot-tag">locals-routine</span>
+                    </div>
+                    <button class="slot-swap">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.5 9A9 9 0 0 0 5.2 5.2L1 10M23 14l-4.2 4.8A9 9 0 0 1 3.5 15"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Slot 3 -->
+              <div class="slot">
+                <div class="slot-img">
+                  <img src="https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=600&q=75&auto=format&fit=crop" alt="ramen">
+                  <div class="slot-img-overlay"></div>
+                  <div class="slot-src">Eater + 2 blogs</div>
+                </div>
+                <div class="slot-body">
+                  <div class="slot-time">Evening · 18:30</div>
+                  <div class="slot-name">Menya Inoichi</div>
+                  <div class="slot-why">Refined dashi-based ramen. Counter only, eight seats. Book 2 days ahead or queue at 6pm.</div>
+                  <div class="slot-fit">You said food matters → this is the kind of place that justifies the trip.</div>
+                  <div class="slot-foot">
+                    <div class="slot-tags">
+                      <span class="slot-tag">destination-meal</span>
+                      <span class="slot-tag">queue-worthy</span>
+                      <span class="slot-tag">intimate</span>
+                    </div>
+                    <button class="slot-swap">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.5 9A9 9 0 0 0 5.2 5.2L1 10M23 14l-4.2 4.8A9 9 0 0 1 3.5 15"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Desktop -->
+      <div>
+        <div class="desk-panel">
+          <div class="desk-header">
+            <div class="desk-eyebrow">First Reveal Design Decisions</div>
+            <div class="desk-title">What's different about trip #1</div>
+            <div class="desk-sub">Two elements appear only on the first reveal, then disappear. After trip 1, the system has earned trust or it hasn't — no need to explain itself.</div>
+          </div>
+          <div class="desk-body">
+            <div class="ml-block flag">
+              <div class="ml-lbl">Why This Fits You — First Trip Only</div>
+              <div class="ml-text">2–3 slots get a one-sentence "fit" note tied directly to something they answered in onboarding. "Slow start → this place rewards it." After trip 1: removed. The system doesn't keep explaining itself. Users either get it or they swap the slot.</div>
+            </div>
+            <div class="ml-block signal">
+              <div class="ml-lbl">Source Attribution — Prominent on First Reveal</div>
+              <div class="ml-text">"4 local food blogs" and "Reddit r/JapanTravel" on slot cards communicates the core product claim in 3 words. First-time user has no frame of reference for how good these recommendations are — the source attribution establishes that they're not from TripAdvisor before they've had to ask.</div>
+            </div>
+            <div class="ml-block note">
+              <div class="ml-lbl">Tourist Trap Detection — Visible Signal</div>
+              <div class="ml-text">The "local gem" badge on slots is not decoration — it's the ML system's confidence score on low tourist_score + high cross_ref_confidence. First-time users need to see this signal is real. If a first itinerary has no "local gem" badges, the corpus has a gap. Flag for beta review.</div>
+            </div>
+            <div class="ml-block insight">
+              <div class="ml-lbl">First-Trip Signal Handling</div>
+              <div class="ml-text">All behavioral signals from trip 1 go to persona training only (not ranking model). Cold-user signals are labeled as such and given 0.5× weight. Reason: user is reacting to our first guess, not revealing stable preference. The swap button exists — every swap is a correction signal even on trip 1.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       FLOW: MID-TRIP PIVOT
+  ════════════════════════════════════════ -->
+  <div id="flow-midtrip" class="flow-section">
+    <div class="flow-header">
+      <div class="flow-eyebrow">Flow 03 — Mid-Trip Pivot</div>
+      <div class="flow-title">Three states, not one</div>
+      <div class="flow-desc">Micro-pivot (one slot), mood shift (rest of day), full rebuild. The system detects mood shift before the user asks. SASRec owns the energy curve. The pivot drawer is fast, specific, and disappears when it's done.</div>
+      <div class="signal-row">
+        <span class="signal-pill dim">pivot_requested</span>
+        <span class="signal-pill dim">pivot_accepted</span>
+        <span class="signal-pill dim">energy_trajectory</span>
+        <span class="signal-pill weight">SASRec sequential signal — high value</span>
+        <span class="signal-pill note">full_rebuild: 0.5× weight</span>
+      </div>
+    </div>
+    <div class="render-grid">
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="status-bar">
+            <span class="sb-time">15:47</span>
+            <div class="sb-icons">
+              <svg width="12" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1.5 8.5c5.5-5.5 15.5-5.5 21 0"/><path d="M5.5 12.5c3.5-3.5 9.5-3.5 13 0"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+              <svg width="22" height="10" viewBox="0 0 25 12" fill="currentColor"><rect x="0" y="1.5" width="18" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="18.5" y="3.5" width="3" height="5" rx="1"/><rect x="1.5" y="3" width="9" height="6" rx="1"/></svg>
+            </div>
+          </div>
+          <div class="pscreen active" style="position:relative;">
+            <div class="mt-header">
+              <div class="mt-trip-lbl">Day 2 of 4 · Kyoto</div>
+              <div class="mt-day-row">
+                <div class="mt-day">Afternoon</div>
+                <div class="mt-time">15:47</div>
+              </div>
+              <div class="mt-mood-bar">
+                <svg class="mt-mood-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                <div class="mt-mood-text">Feeling like a slower afternoon? You've skipped two high-energy options.</div>
+                <button class="mt-mood-act" onclick="togglePivot()">Adjust</button>
+              </div>
+            </div>
+            <div class="mt-slots">
+              <div class="mt-slot done">
+                <div class="mt-slot-dot"></div>
+                <div class="mt-slot-info">
+                  <div class="mt-slot-time">Morning · 09:00</div>
+                  <div class="mt-slot-name">Arashiyama Bamboo Grove</div>
+                </div>
+              </div>
+              <div class="mt-slot done">
+                <div class="mt-slot-dot"></div>
+                <div class="mt-slot-info">
+                  <div class="mt-slot-time">Late morning · 11:00</div>
+                  <div class="mt-slot-name">Tenryu-ji Garden</div>
+                </div>
+              </div>
+              <div class="mt-slot active">
+                <div class="mt-slot-dot"></div>
+                <div class="mt-slot-info">
+                  <div class="mt-slot-time">Now · 15:47</div>
+                  <div class="mt-slot-name">Philosopher's Path walk</div>
+                  <div class="mt-slot-why">2km canal walk, cherry trees</div>
+                </div>
+                <button class="mt-swap-btn" onclick="togglePivot()">Swap</button>
+              </div>
+              <div class="mt-slot upcoming">
+                <div class="mt-slot-dot"></div>
+                <div class="mt-slot-info">
+                  <div class="mt-slot-time">Evening · 18:30</div>
+                  <div class="mt-slot-name">Pontocho Alley dinner</div>
+                </div>
+                <button class="mt-swap-btn">Swap</button>
+              </div>
+            </div>
+
+            <!-- Pivot Drawer -->
+            <div class="pivot-drawer hidden" id="pivot-drawer">
+              <div class="pivot-handle"></div>
+              <div class="pivot-header">
+                <div class="pivot-tag">Swap · Now</div>
+                <div class="pivot-q">Something slower for this afternoon</div>
+              </div>
+              <div class="pivot-options">
+                <div class="popt sel" onclick="selectPivot(this)">
+                  <div class="popt-img"><img src="https://images.unsplash.com/photo-1542931287-023b922fa89b?w=200&q=75&auto=format&fit=crop" alt="tea"></div>
+                  <div class="popt-info">
+                    <div class="popt-name">Urasenke Tea Ceremony</div>
+                    <div class="popt-src">3 local blogs · slow-burn</div>
+                    <div class="popt-fit">Quiet, 90 min, off the main path</div>
+                  </div>
+                  <div class="popt-gem">gem</div>
+                </div>
+                <div class="popt" onclick="selectPivot(this)">
+                  <div class="popt-img"><img src="https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=200&q=75&auto=format&fit=crop" alt="bookshop"></div>
+                  <div class="popt-info">
+                    <div class="popt-name">Keibunsha Bookshop</div>
+                    <div class="popt-src">Reddit · slow</div>
+                    <div class="popt-fit">Beloved local independent, design books, no rush</div>
+                  </div>
+                </div>
+                <div class="popt" onclick="selectPivot(this)">
+                  <div class="popt-img"><img src="https://images.unsplash.com/photo-1576867757603-05b134ebc379?w=200&q=75&auto=format&fit=crop" alt="coffee"></div>
+                  <div class="popt-info">
+                    <div class="popt-name">Weekenders Coffee</div>
+                    <div class="popt-src">Eater Kyoto · local-only</div>
+                    <div class="popt-fit">Best filter coffee in the city. Sit, decompress.</div>
+                  </div>
+                  <div class="popt-gem">gem</div>
+                </div>
+              </div>
+              <button class="pivot-close" onclick="togglePivot()">Keep current plan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="desk-panel">
+          <div class="desk-header">
+            <div class="desk-eyebrow">Pivot Intelligence</div>
+            <div class="desk-title">Three states, different ML treatment</div>
+            <div class="desk-sub">The system differentiates between a single swap, a mood shift, and a full rebuild. Each has different signal confidence and different ML treatment.</div>
+          </div>
+          <div class="desk-body">
+            <div class="ml-block signal">
+              <div class="ml-lbl">Mood Shift Detection (State 2)</div>
+              <div class="ml-text">SASRec detects: 2+ consecutive skips of high-energy activities within 90 min, OR dwell time below 4s on last two cards. System surfaces a soft prompt before the user has to ask. This is the most valuable signal — it captures preference change in context, not just swap behavior.</div>
+            </div>
+            <div class="ml-block insight">
+              <div class="ml-lbl">Pivot Replacement Ranking</div>
+              <div class="ml-text">Pivot alternatives are not random candidates. The arbitration layer routes to ML for this specific user context: current time, energy trajectory, previously accepted vibes today. The three options shown are the top-3 ML picks for "lower-energy, same city, current time window, this persona." LLM writes the fit note, not the ranking.</div>
+            </div>
+            <div class="ml-block note">
+              <div class="ml-lbl">Full Rebuild Signal Weight (State 3)</div>
+              <div class="ml-text">Full rebuild requests are logged with context: full_rebuild flag, 0.5× training weight. Reason: ambiguous whether the plan was bad or the mood changed. The system can't tell the difference without more context. Over time, if a user's full rebuilds cluster around certain activity types (always rebuilds away from cultural in afternoons) — that becomes a learnable signal.</div>
+            </div>
+            <div class="ml-block flag">
+              <div class="ml-lbl">What the Drawer Must Never Do</div>
+              <div class="ml-text">Show a replacement that's obviously more popular or tourist-heavy than what was there. The drawer is the highest-trust moment — if the LLM defaults to a popular fallback when the ML ranking is unavailable, it should fail silently and show cached alternatives, not surface a TripAdvisor top-10.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       FLOW: GROUP PLANNING
+  ════════════════════════════════════════ -->
+  <div id="flow-group" class="flow-section">
+    <div class="flow-header">
+      <div class="flow-eyebrow">Flow 04 — Group Planning</div>
+      <div class="flow-title">Conflict visible as tension, not a deadlock</div>
+      <div class="flow-desc">Members onboard async, itinerary exists immediately and improves. Voting surfaces divergence without labeling anyone as the problem. Budget vibe resolved as a range, not a dollar amount.</div>
+      <div class="signal-row">
+        <span class="signal-pill dim">group_affinity_matrix</span>
+        <span class="signal-pill dim">vote_pattern</span>
+        <span class="signal-pill dim">budget_vibe</span>
+        <span class="signal-pill weight">conflict detection: divergence > 0.4 on pace or local_bias</span>
+      </div>
+    </div>
+    <div class="render-grid">
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="status-bar">
+            <span class="sb-time">19:14</span>
+            <div class="sb-icons"><svg width="22" height="10" viewBox="0 0 25 12" fill="currentColor"><rect x="0" y="1.5" width="18" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="18.5" y="3.5" width="3" height="5" rx="1"/><rect x="1.5" y="3" width="16" height="6" rx="1"/></svg></div>
+          </div>
+          <div class="pscreen active">
+            <div class="grp-header">
+              <div class="grp-trip-lbl">Group trip · Planning</div>
+              <div class="grp-trip-name">Tokyo · 5 nights</div>
+              <div class="grp-members" style="margin-top:8px;display:flex;align-items:center;gap:0;">
+                <div class="grp-av" style="background:#B85C3F;">K</div>
+                <div class="grp-av" style="background:#3A6A8C;">S</div>
+                <div class="grp-av" style="background:#4A8A5C;">M</div>
+                <div class="grp-av" style="background:#A07830;">J</div>
+                <span class="grp-av-lbl">4 members</span>
+              </div>
+            </div>
+            <div class="grp-body">
+              <div class="grp-conflict">
+                <div class="grp-conf-lbl">Tension detected</div>
+                <div class="grp-conf-text">Two members prefer slow mornings. Two prefer packed days. Day 1 has been adjusted — something for each.</div>
+                <div class="grp-conf-action">
+                  <button class="grp-conf-btn yes">See how</button>
+                  <button class="grp-conf-btn no">Dismiss</button>
+                </div>
+              </div>
+
+              <div class="grp-section-lbl">Day 2 proposals · Vote to lock</div>
+
+              <div class="vote-slot">
+                <div class="vote-slot-body">
+                  <div class="vote-slot-name">Tsukiji Outer Market — morning</div>
+                  <div class="vote-slot-meta">Proposed by K · food-first · 07:00</div>
+                  <div class="vote-row" style="margin-bottom:5px;">
+                    <div class="vote-face" style="overflow:visible;"><div class="grp-av" style="width:20px;height:20px;font-size:8px;background:#B85C3F;">K</div></div>
+                    <div class="vote-bar-wrap"><div class="vote-bar yes" style="width:100%"></div></div>
+                    <span class="vote-lbl">3 in</span>
+                  </div>
+                  <div class="vote-row">
+                    <div class="vote-face" style="overflow:visible;"><div class="grp-av" style="width:20px;height:20px;font-size:8px;background:#A07830;">J</div></div>
+                    <div class="vote-bar-wrap"><div class="vote-bar maybe" style="width:50%"></div></div>
+                    <span class="vote-lbl">1 maybe</span>
+                  </div>
+                </div>
+                <div class="vote-btns">
+                  <button class="vote-btn in">In</button>
+                  <button class="vote-btn" style="border-color:var(--warn);color:var(--warn);">Maybe</button>
+                  <button class="vote-btn out">Out</button>
+                </div>
+              </div>
+
+              <div class="vote-slot">
+                <div class="vote-slot-body">
+                  <div class="vote-slot-name">TeamLab Planets — afternoon</div>
+                  <div class="vote-slot-meta">Proposed by S · immersive · 14:00</div>
+                  <div class="vote-row" style="margin-bottom:5px;">
+                    <div class="vote-bar-wrap"><div class="vote-bar yes" style="width:50%"></div></div>
+                    <span class="vote-lbl">2 in</span>
+                  </div>
+                  <div class="vote-row">
+                    <div class="vote-bar-wrap"><div class="vote-bar no" style="width:50%"></div></div>
+                    <span class="vote-lbl">2 out</span>
+                  </div>
+                </div>
+                <div class="vote-btns">
+                  <button class="vote-btn in">In</button>
+                  <button class="vote-btn" style="border-color:var(--warn);color:var(--warn);">Maybe</button>
+                  <button class="vote-btn out">Out</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="desk-panel">
+          <div class="desk-header">
+            <div class="desk-eyebrow">Group ML Architecture</div>
+            <div class="desk-title">Separate consent, shared intelligence</div>
+            <div class="desk-sub">Group behavioral signals don't automatically update individual personas. Conflict detection runs on divergence scores, not votes.</div>
+          </div>
+          <div class="desk-body">
+            <div class="ml-block signal">
+              <div class="ml-lbl">Async Member Onboarding</div>
+              <div class="ml-text">Trip creator onboards fully. Members get abbreviated 2-screen version (1 scenario card + budget vibe). Itinerary generates immediately from organizer's persona alone, clearly labeled. Re-ranks silently as members complete onboarding. No "waiting for everyone" state.</div>
+            </div>
+            <div class="ml-block flag">
+              <div class="ml-lbl">Conflict Detection Threshold</div>
+              <div class="ml-text">If any two members diverge by > 0.4 on pace_preference OR local_vs_tourist_bias, the group affinity model triggers conflict resolution. User sees "adjusted for everyone" framing, not "two members disagree." The system surfaces the tension as a resolved outcome, not as a problem.</div>
+            </div>
+            <div class="ml-block insight">
+              <div class="ml-lbl">Vote Pattern as Signal</div>
+              <div class="ml-text">Voting behavior is high-quality revealed preference. A member who consistently votes out cultural activities and in food activities is signaling stronger than their onboarding suggested. Vote patterns update that member's persona dimensions with 1.2× confidence weight — higher than behavioral signals because voting is deliberate.</div>
+            </div>
+            <div class="ml-block note">
+              <div class="ml-lbl">Privacy: Group Contributions</div>
+              <div class="ml-text">Group behavioral signals are stored separately from individual persona signals. If a user deletes their account, their group vote history is anonymized (not hard-deleted) to preserve the group model. Individual persona signals are deleted. The distinction is always communicated before the user joins a group trip.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       FLOW: OFFLINE
+  ════════════════════════════════════════ -->
+  <div id="flow-offline" class="flow-section">
+    <div class="flow-header">
+      <div class="flow-eyebrow">Flow 05 — Offline</div>
+      <div class="flow-title">Never useless. Never surprising.</div>
+      <div class="flow-desc">All ML inference pre-computed at trip generation. 3 alternatives pre-ranked per slot. Pivot works without network. Behavioral signals queue and flush on reconnect — training data is prioritized over everything else on sync.</div>
+      <div class="signal-row">
+        <span class="signal-pill dim">offline_pivot</span>
+        <span class="signal-pill weight">sync priority: signals first</span>
+        <span class="signal-pill note">new venue add: fails gracefully, "save for later"</span>
+      </div>
+    </div>
+    <div class="render-grid">
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="status-bar">
+            <span class="sb-time">13:22</span>
+            <div class="sb-icons"><svg width="22" height="10" viewBox="0 0 25 12" fill="currentColor"><rect x="0" y="1.5" width="18" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="18.5" y="3.5" width="3" height="5" rx="1"/><rect x="1.5" y="3" width="5" height="6" rx="1"/></svg></div>
+          </div>
+          <div class="pscreen active" style="position:relative;">
+            <div class="offline-banner">
+              <div class="offline-dot"></div>
+              <span class="offline-text">Offline mode</span>
+              <span class="offline-cached">Cached · all slots available</span>
+            </div>
+            <div class="mt-header">
+              <div class="mt-trip-lbl">Day 3 of 4 · Osaka</div>
+              <div class="mt-day-row">
+                <div class="mt-day">Afternoon</div>
+                <div class="mt-time">13:22</div>
+              </div>
+            </div>
+            <div class="mt-slots">
+              <div class="mt-slot done">
+                <div class="mt-slot-dot"></div>
+                <div class="mt-slot-info">
+                  <div class="mt-slot-time">Morning · 09:00</div>
+                  <div class="mt-slot-name">Kuromon Ichiba Market</div>
+                </div>
+              </div>
+              <div class="mt-slot active">
+                <div class="mt-slot-dot"></div>
+                <div class="mt-slot-info">
+                  <div class="mt-slot-time">Now · 13:22</div>
+                  <div class="mt-slot-name">Hozenji Yokocho alley</div>
+                  <div class="mt-slot-why">Off the main drag, old Osaka atmosphere</div>
+                </div>
+                <button class="mt-swap-btn" onclick="document.getElementById('offline-pivot').style.display='flex'">Swap</button>
+              </div>
+              <div class="mt-slot upcoming">
+                <div class="mt-slot-dot"></div>
+                <div class="mt-slot-info">
+                  <div class="mt-slot-time">Evening · 18:00</div>
+                  <div class="mt-slot-name">Dotonbori street food</div>
+                </div>
+              </div>
+            </div>
+            <!-- Offline pivot result -->
+            <div id="offline-pivot" style="display:none;padding:14px 18px;border-top:1px solid var(--ink-8);background:var(--bg-s);flex-shrink:0;">
+              <div style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--warn);margin-bottom:10px;">Offline — Using cached alternatives</div>
+              <div class="popt" style="margin-bottom:7px;" onclick="this.classList.add('sel')">
+                <div class="popt-img"><img src="https://images.unsplash.com/photo-1564694202779-bc908c327862?w=200&q=75&auto=format&fit=crop" alt="alt1"></div>
+                <div class="popt-info">
+                  <div class="popt-name">Amerika-mura browsing</div>
+                  <div class="popt-src">Pre-ranked · local shops</div>
+                </div>
+              </div>
+              <div class="popt" onclick="this.classList.add('sel')">
+                <div class="popt-img"><img src="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=200&q=75&auto=format&fit=crop" alt="alt2"></div>
+                <div class="popt-info">
+                  <div class="popt-name">Shinsaibashi covered arcade</div>
+                  <div class="popt-src">Pre-ranked · locals + tourists</div>
+                </div>
+              </div>
+              <div style="margin-top:10px;padding:8px 10px;background:var(--info-bg);border-radius:8px;font-size:10px;color:var(--ink-3);font-weight:300;">
+                Signal queued — will sync when you reconnect
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="desk-panel">
+          <div class="desk-header">
+            <div class="desk-eyebrow">Offline Architecture</div>
+            <div class="desk-title">Pre-compute everything, degrade gracefully</div>
+          </div>
+          <div class="desk-body">
+            <div class="ml-block signal">
+              <div class="ml-lbl">What Pre-loads at Trip Generation</div>
+              <div class="ml-text">Full itinerary with all slot details. 3 pre-ranked alternatives per slot (scored at generation time, not at swap time). Narration for all alternatives. Map data for all venues. This is why trip generation takes 4–8 seconds — it's loading the offline payload, not just the itinerary.</div>
+            </div>
+            <div class="ml-block insight">
+              <div class="ml-lbl">Sync Priority on Reconnect</div>
+              <div class="ml-text">Behavioral signal flush is highest priority background task on reconnect. Before UI refresh, before cache warm, before push notification check. A pivot that happened offline is the most time-sensitive training signal — it reflects in-context real-world behavior that can't be replicated.</div>
+            </div>
+            <div class="ml-block note">
+              <div class="ml-lbl">What Fails Gracefully</div>
+              <div class="ml-text">Adding a new venue not in the pre-loaded pool: system says "added to your list, syncs when you reconnect" — doesn't block the user. Real-time alternative ranking: uses pre-computed cache (slightly stale but never wrong). Live venue status checks: not attempted offline, no false closed/open signals.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       FLOW: POST-TRIP
+  ════════════════════════════════════════ -->
+  <div id="flow-posttrip" class="flow-section">
+    <div class="flow-header">
+      <div class="flow-eyebrow">Flow 06 — Post-Trip</div>
+      <div class="flow-title">One tap, not a survey</div>
+      <div class="flow-desc">System pre-selects 3 highlights based on dwell time + acceptance + no pivot. User confirms or corrects. One follow-up question only for thumbs-down. High-confidence signal, zero burden.</div>
+      <div class="signal-row">
+        <span class="signal-pill dim">post_trip_confirmation</span>
+        <span class="signal-pill dim">highlight_correction</span>
+        <span class="signal-pill weight">1.8× confidence weight</span>
+        <span class="signal-pill note">correction follow-up: failure categorization for Pipeline C</span>
+      </div>
+    </div>
+    <div class="render-grid">
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="status-bar">
+            <span class="sb-time">10:03</span>
+            <div class="sb-icons"><svg width="22" height="10" viewBox="0 0 25 12" fill="currentColor"><rect x="0" y="1.5" width="18" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="18.5" y="3.5" width="3" height="5" rx="1"/><rect x="1.5" y="3" width="16" height="6" rx="1"/></svg></div>
+          </div>
+          <div class="pscreen active">
+            <div class="post-hero">
+              <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80&auto=format&fit=crop" alt="Kyoto">
+              <div class="post-overlay"></div>
+              <div class="post-hero-label">
+                <div class="post-city">Kyoto was good.</div>
+                <div class="post-dates">Mar 14–18 · 4 days · 2 travelers</div>
+              </div>
+            </div>
+            <div class="post-body">
+              <div class="post-section-lbl">These seemed like the best parts</div>
+
+              <div class="post-highlight">
+                <img class="post-hl-img" src="https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=200&q=75&auto=format&fit=crop" alt="coffee">
+                <div class="post-hl-body">
+                  <div class="post-hl-name">Ogawa Coffee Honten</div>
+                  <div class="post-hl-why">Stayed 45 min · morning · Day 1</div>
+                </div>
+                <div class="post-hl-votes">
+                  <button class="post-vote-btn voted-up up">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                  </button>
+                  <button class="post-vote-btn dn">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="post-highlight">
+                <img class="post-hl-img" src="https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=200&q=75&auto=format&fit=crop" alt="ramen">
+                <div class="post-hl-body">
+                  <div class="post-hl-name">Menya Inoichi</div>
+                  <div class="post-hl-why">Accepted first slot · Day 1</div>
+                </div>
+                <div class="post-hl-votes">
+                  <button class="post-vote-btn up" onclick="this.classList.add('voted-up');this.nextElementSibling.classList.remove('voted-dn')">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                  </button>
+                  <button class="post-vote-btn dn" onclick="this.classList.add('voted-dn');this.previousElementSibling.classList.remove('voted-up');showFollowup()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="post-highlight">
+                <img class="post-hl-img" src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=200&q=75&auto=format&fit=crop" alt="market">
+                <div class="post-hl-body">
+                  <div class="post-hl-name">Nishiki Market</div>
+                  <div class="post-hl-why">Long dwell · afternoon · Day 1</div>
+                </div>
+                <div class="post-hl-votes">
+                  <button class="post-vote-btn up" onclick="this.classList.add('voted-up')">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                  </button>
+                  <button class="post-vote-btn dn" onclick="this.classList.add('voted-dn')">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Follow-up (hidden until thumbs-down) -->
+              <div id="followup-q" style="display:none;margin-top:4px;padding:12px 14px;background:var(--bg-r);border-radius:12px;border:1px solid var(--ink-7);">
+                <div style="font-size:12px;font-weight:500;color:var(--ink-1);margin-bottom:10px;">What was off with Menya Inoichi?</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                  <button style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.06em;padding:6px 11px;border-radius:100px;border:1px solid var(--ink-7);background:var(--bg-s);color:var(--ink-4);cursor:pointer;" onclick="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';this.style.background='var(--accent-l)'">Too crowded</button>
+                  <button style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.06em;padding:6px 11px;border-radius:100px;border:1px solid var(--ink-7);background:var(--bg-s);color:var(--ink-4);cursor:pointer;" onclick="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';this.style.background='var(--accent-l)'">Not my vibe</button>
+                  <button style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.06em;padding:6px 11px;border-radius:100px;border:1px solid var(--ink-7);background:var(--bg-s);color:var(--ink-4);cursor:pointer;" onclick="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';this.style.background='var(--accent-l)'">Not what I expected</button>
+                  <button style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.06em;padding:6px 11px;border-radius:100px;border:1px solid var(--ink-7);background:var(--bg-s);color:var(--ink-4);cursor:pointer;" onclick="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';this.style.background='var(--accent-l)'">Closed / bad service</button>
+                </div>
+              </div>
+
+              <div class="post-learn">
+                <div class="post-learn-lbl">Your next trip will know this</div>
+                <div class="post-learn-text">local_vs_tourist_bias updated · food_priority confirmed · pace morning preference strengthened. Tokyo next?</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="desk-panel">
+          <div class="desk-header">
+            <div class="desk-eyebrow">Post-Trip Signal Design</div>
+            <div class="desk-title">Highest confidence, lowest friction</div>
+          </div>
+          <div class="desk-body">
+            <div class="ml-block signal">
+              <div class="ml-lbl">Highlight Selection Algorithm</div>
+              <div class="ml-text">System pre-selects 3 venues using: (1) accepted + not pivoted away from, (2) highest dwell time among accepted, (3) no re-ranking needed. This is what the system was most confident about. If the user agrees → 1.8× confidence on those dimension signals. If they correct → the system learns where its confidence was wrong.</div>
+            </div>
+            <div class="ml-block insight">
+              <div class="ml-lbl">Thumbs-Down Follow-Up</div>
+              <div class="ml-text">Single follow-up: 4 options (too crowded / not my vibe / not what I expected / closed). Each maps to a different system failure: "not my vibe" → persona mismatch → update dimensions. "Too crowded" → timing/crowd model issue → update ActivityNode crowd signal. "Closed or bad service" → Pipeline C data freshness issue → trigger recrawl.</div>
+            </div>
+            <div class="ml-block note">
+              <div class="ml-lbl">Persona Update Transparency</div>
+              <div class="ml-text">The "your next trip will know this" note is the only place persona updates are surfaced to users. Plain language, not dimension scores. "local_vs_tourist_bias updated" would mean nothing. "Your next trip will be even more local" means something. The system shows its learning, not its math.</div>
+            </div>
+            <div class="ml-block flag">
+              <div class="ml-lbl">Post-Trip vs. In-Trip Signals</div>
+              <div class="ml-text">Post-trip thumbs-up is 1.8× weight. In-trip acceptance is 1.0×. Reason: post-trip reflection is less biased by sunk cost. A user who accepted a slot because "we were already there" and later confirms it was great is providing cleaner signal than the original acceptance. The two signals are complementary, not redundant.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end page-shell -->
+
+<script>
+function toggleTheme(){
+  const t=document.documentElement;
+  t.dataset.theme=t.dataset.theme==='dark'?'light':'dark';
+}
+
+function switchFlow(id,btn){
+  document.querySelectorAll('.flow-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('flow-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Onboarding navigation
+function obGo(screenId){
+  document.querySelectorAll('#flow-onboarding .pscreen').forEach(s=>s.classList.remove('active'));
+  const t=document.getElementById(screenId);
+  if(t) t.classList.add('active');
+}
+
+// Who's going selection
+function selectWho(card){
+  document.querySelectorAll('.who-card').forEach(c=>c.classList.remove('sel'));
+  card.classList.add('sel');
+}
+
+// Scenario card selection
+function selectScenario(opt){
+  document.getElementById('sc-a').classList.remove('sel');
+  document.getElementById('sc-b').classList.remove('sel','sel-b');
+  document.getElementById('sc-c').classList.remove('sel','sel-b');
+  if(opt==='a'){
+    document.getElementById('sc-a').classList.add('sel');
+  } else if(opt==='b'){
+    document.getElementById('sc-b').classList.add('sel','sel-b');
+  } else {
+    document.getElementById('sc-c').classList.add('sel');
+  }
+}
+
+// Free text extraction simulation
+function ftChange(el){
+  const txt=el.value.toLowerCase();
+  const ex=document.getElementById('ft-extract');
+  const exTxt=document.getElementById('ft-extract-text');
+  if(txt.length>15){
+    ex.classList.add('visible');
+    if(txt.includes('osaka')||txt.includes('tokyo')||txt.includes('japan')){
+      exTxt.textContent='Japan trip detected → food_priority +0.3, local_vs_tourist +0.2, pace moderate';
+    } else if(txt.includes('walk')||txt.includes('wander')){
+      exTxt.textContent='Walk/wander → pace_preference slow, adventure_appetite moderate';
+    } else if(txt.includes('food')||txt.includes('eat')||txt.includes('restaurant')){
+      exTxt.textContent='Food focus detected → food_priority +0.3, destination-meal affinity';
+    } else {
+      exTxt.textContent='Processing trip signals...';
+    }
+  } else {
+    ex.classList.remove('visible');
+  }
+}
+
+// Pivot drawer toggle
+function togglePivot(){
+  const d=document.getElementById('pivot-drawer');
+  d.classList.toggle('hidden');
+}
+
+function selectPivot(el){
+  document.querySelectorAll('.popt').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+  setTimeout(()=>{
+    document.getElementById('pivot-drawer').classList.add('hidden');
+  },600);
+}
+
+function showFollowup(){
+  document.getElementById('followup-q').style.display='block';
+  setTimeout(()=>document.getElementById('followup-q').scrollIntoView({behavior:'smooth',block:'center'}),100);
+}
+</script>
+</body>
+</html>
