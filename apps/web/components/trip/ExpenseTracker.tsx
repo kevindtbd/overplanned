@@ -21,15 +21,15 @@ interface Expense {
   amountCents: number;
   paidById: string;
   paidBy: { id: string; name: string | null; avatarUrl: string | null };
-  splitCount: number;
+  splitWith: string[];
   createdAt: string;
 }
 
-interface Debt {
-  fromUserId: string;
-  fromUser: { id: string; name: string | null; avatarUrl: string | null };
-  toUserId: string;
-  toUser: { id: string; name: string | null; avatarUrl: string | null };
+interface Settlement {
+  fromId: string;
+  fromName: string;
+  toId: string;
+  toName: string;
   amountCents: number;
 }
 
@@ -217,7 +217,7 @@ export function ExpenseTracker({
 }: ExpenseTrackerProps) {
   const [expanded, setExpanded] = useState(true);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [debts, setDebts] = useState<Debt[]>([]);
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -245,8 +245,8 @@ export function ExpenseTracker({
       const expData = await expRes.json();
       const settleData = await settleRes.json();
 
-      setExpenses(expData.expenses ?? expData);
-      setDebts(settleData.debts ?? settleData);
+      setExpenses(expData.expenses ?? []);
+      setSettlements(settleData.settlements ?? []);
       setError(null);
     } catch {
       setError("Network error loading expenses");
@@ -326,9 +326,9 @@ export function ExpenseTracker({
   // Compute total
   const totalCents = expenses.reduce((sum, e) => sum + e.amountCents, 0);
 
-  // Resolve debts relative to current user
-  const myDebts = debts.filter(
-    (d) => d.fromUserId === currentUserId || d.toUserId === currentUserId
+  // Resolve settlements relative to current user
+  const mySettlements = settlements.filter(
+    (s) => s.fromId === currentUserId || s.toId === currentUserId
   );
 
   const zeroDecimal = isZeroDecimal(currency);
@@ -382,8 +382,8 @@ export function ExpenseTracker({
                     </p>
                     <p className="font-mono text-xs text-ink-400 mt-0.5">
                       {expense.paidBy.name ?? "Someone"} paid
-                      {expense.splitCount > 1
-                        ? ` / split ${expense.splitCount} ways`
+                      {expense.splitWith.length > 1
+                        ? ` / split ${expense.splitWith.length} ways`
                         : ""}
                     </p>
                   </div>
@@ -477,39 +477,32 @@ export function ExpenseTracker({
               <h4 className="font-heading text-base text-ink-100 mb-3">
                 Settle Up
               </h4>
-              {myDebts.length === 0 ? (
+              {mySettlements.length === 0 ? (
                 <div className="flex items-center gap-2 text-ink-400 py-2">
                   <CheckCircleIcon />
                   <span className="font-mono text-sm">All settled up!</span>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {myDebts.map((debt, idx) => {
-                    const iOwe = debt.fromUserId === currentUserId;
-                    const otherUser = iOwe ? debt.toUser : debt.fromUser;
+                  {mySettlements.map((s, idx) => {
+                    const iOwe = s.fromId === currentUserId;
+                    const otherName = iOwe ? s.toName : s.fromName;
+                    const otherId = iOwe ? s.toId : s.fromId;
                     const label = iOwe
-                      ? `You owe ${otherUser.name ?? "someone"}`
-                      : `${otherUser.name ?? "Someone"} owes you`;
+                      ? `You owe ${otherName}`
+                      : `${otherName} owes you`;
+
+                    const otherUser = members.find((m) => m.userId === otherId)?.user ?? { name: otherName, avatarUrl: null };
+                    const myUser = members.find((m) => m.userId === currentUserId)?.user ?? { name: "You", avatarUrl: null };
 
                     return (
                       <div
-                        key={`${debt.fromUserId}-${debt.toUserId}-${idx}`}
+                        key={`${s.fromId}-${s.toId}-${idx}`}
                         className="rounded-[13px] bg-warm-background border border-warm-border p-3 flex items-center gap-3"
                       >
                         <div className="flex -space-x-1.5">
-                          <UserAvatar
-                            user={
-                              iOwe
-                                ? (members.find(
-                                    (m) => m.userId === currentUserId
-                                  )?.user ?? {
-                                    name: "You",
-                                    avatarUrl: null,
-                                  })
-                                : debt.fromUser
-                            }
-                          />
-                          <UserAvatar user={otherUser} />
+                          <UserAvatar user={iOwe ? myUser : otherUser} />
+                          <UserAvatar user={iOwe ? otherUser : myUser} />
                         </div>
                         <p className="flex-1 text-sm text-ink-200">{label}</p>
                         <span
@@ -517,7 +510,7 @@ export function ExpenseTracker({
                             iOwe ? "text-red-500" : "text-emerald-600"
                           }`}
                         >
-                          {formatAmount(debt.amountCents, currency)}
+                          {formatAmount(s.amountCents, currency)}
                         </span>
                       </div>
                     );
