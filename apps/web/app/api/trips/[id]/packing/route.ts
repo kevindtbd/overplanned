@@ -1,6 +1,6 @@
 /**
  * POST  /api/trips/[id]/packing — Generate packing list via LLM
- * PATCH /api/trips/[id]/packing — Toggle check state on a packing item
+ * PATCH /api/trips/[id]/packing — Toggle check state or claim/unclaim a packing item
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -11,10 +11,12 @@ import { rateLimit, rateLimitPresets } from "@/lib/rate-limit";
 import {
   packingGenerateSchema,
   packingCheckSchema,
+  packingClaimSchema,
   packingListSchema,
 } from "@/lib/validations/packing";
 import Anthropic from "@anthropic-ai/sdk";
 import crypto from "crypto";
+import { getClimateContext } from "@/lib/climate";
 
 const anthropic = new Anthropic();
 
@@ -129,6 +131,9 @@ export async function POST(
       ? sanitize(String(personaSeed.pace), 50)
       : "moderate";
 
+    const month = trip.startDate.getMonth() + 1;
+    const climate = getClimateContext(city, month);
+
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 800,
@@ -154,7 +159,7 @@ Rules:
 Dates: ${startDate} to ${endDate} (${durationDays} days)
 Trip style: ${template}
 Pace: ${pace}
-
+${climate ? `\n${climate}\n` : ""}
 Generate a packing list for this trip.`,
         },
       ],
@@ -238,15 +243,19 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const parsed = packingCheckSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
-  }
+  // Detect claim vs check: try claim schema first (has claimedBy key)
+  const claimParsed = packingClaimSchema.safeParse(body);
+  const isClaim = claimParsed.success;
 
-  const { itemId, checked } = parsed.data;
+  if (!isClaim) {
+    const parsed = packingCheckSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+  }
 
   try {
     // Auth: verify membership
@@ -272,12 +281,68 @@ export async function PATCH(
     }
 
     const packingList = trip.packingList as {
-      items: Array<{ id: string; text: string; category: string; checked: boolean }>;
+      items: Array<{ id: string; text: string; category: string; checked: boolean; claimedBy?: string | null }>;
       generatedAt: string;
       model: string;
     };
 
-    // Find and update the item
+    if (isClaim) {
+      // ---- Claim/unclaim logic ----
+      const { itemId, claimedBy } = claimParsed.data;
+
+      const itemIndex = packingList.items.findIndex((item) => item.id === itemId);
+      if (itemIndex === -1) {
+        return NextResponse.json({ error: "Item not found" }, { status: 404 });
+      }
+
+      const item = packingList.items[itemIndex];
+      const currentClaimant = item.claimedBy ?? undefined;
+
+      // Permission matrix
+      if (claimedBy !== null && claimedBy !== userId) {
+        // Trying to claim as someone else
+        return NextResponse.json(
+          { error: "Cannot claim an item on behalf of another user" },
+          { status: 403 }
+        );
+      }
+
+      if (claimedBy === null && currentClaimant !== undefined && currentClaimant !== null && currentClaimant !== userId) {
+        // Trying to unclaim someone else's item
+        return NextResponse.json(
+          { error: "Cannot unclaim an item claimed by another user" },
+          { status: 403 }
+        );
+      }
+
+      // Apply the claim change (preserve all other fields including checked)
+      packingList.items[itemIndex] = { ...item, claimedBy };
+
+      const isUnclaim = claimedBy === null;
+
+      await prisma.$transaction([
+        prisma.trip.update({
+          where: { id: tripId },
+          data: { packingList: packingList as unknown as import("@prisma/client").Prisma.InputJsonValue },
+        }),
+        prisma.behavioralSignal.create({
+          data: {
+            userId,
+            tripId,
+            signalType: "share_action",
+            signalValue: isUnclaim ? -1.0 : 1.0,
+            rawAction: `packing_${isUnclaim ? "unclaim" : "claim"}:${itemId}`,
+            tripPhase: "pre_trip",
+          },
+        }),
+      ]);
+
+      return NextResponse.json({ packingList }, { status: 200 });
+    }
+
+    // ---- Check/uncheck logic (existing) ----
+    const { itemId, checked } = packingCheckSchema.parse(body);
+
     const itemIndex = packingList.items.findIndex((item) => item.id === itemId);
     if (itemIndex === -1) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });

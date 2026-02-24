@@ -55,6 +55,10 @@ model User {
   arbitrationEvents       ArbitrationEvent[]
   importJobs              ImportJob[]
   corpusIngestionRequests CorpusIngestionRequest[]
+
+  // Group features
+  messages      Message[]
+  paidExpenses  Expense[]
 }
 
 model Session {
@@ -115,12 +119,16 @@ model Trip {
   activatedAt      DateTime?
   completedAt      DateTime?
 
+  currency     String    @default("USD")
+
   legs         TripLeg[]
   members      TripMember[]
   slots        ItinerarySlot[]
   sharedTokens SharedTripToken[]
   inviteTokens InviteToken[]
   photos       TripPhoto[]
+  messages     Message[]
+  expenses     Expense[]
 }
 
 model TripLeg {
@@ -173,6 +181,35 @@ model TripMember {
   @@index([tripId, status])
 }
 
+model Message {
+  id        String         @id @default(uuid())
+  tripId    String
+  trip      Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  body      String         // plain text, max 2000 chars, HTML-stripped before storage
+  slotRefId String?        // optional embedded slot reference
+  slotRef   ItinerarySlot? @relation(fields: [slotRefId], references: [id], onDelete: SetNull)
+  createdAt DateTime       @default(now())
+
+  @@index([tripId, createdAt])
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  paidById    String
+  paidBy      User     @relation(fields: [paidById], references: [id])
+  description String   // max 200 chars
+  amountCents Int      // stored in smallest currency unit
+  splitWith   String[] // userIds included in split; empty = all joined members
+  slotId      String?  // optional link to an itinerary slot
+  createdAt   DateTime @default(now())
+
+  @@index([tripId, createdAt])
+}
+
 model ItinerarySlot {
   id              String        @id @default(uuid())
   tripId          String
@@ -198,9 +235,12 @@ model ItinerarySlot {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  assignedTo      String[]              @default([])
+
   completionSignal SlotCompletionSignal? // V2 ML: slot outcome classification
 
-  photos TripPhoto[]
+  photos   TripPhoto[]
+  messages Message[]
 
   @@index([tripLegId])
 }

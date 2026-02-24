@@ -524,6 +524,234 @@ describe("PATCH /api/trips/[id]/packing", () => {
 });
 
 // ================================================================
+// PATCH /api/trips/[id]/packing — claims
+// ================================================================
+
+describe("PATCH /api/trips/[id]/packing — claims", () => {
+  let PATCH: typeof import("../../app/api/trips/[id]/packing/route").PATCH;
+
+  const USER_ID = "b2c3d4e5-f6a7-4b8c-9d00-111111111111";
+  const OTHER_USER_ID = "a1b2c3d4-e5f6-4a7b-8c9d-aaaaaaaaaaaa";
+
+  const PACKING_LIST_WITH_CLAIMS = {
+    items: [
+      { id: ITEM_ID_1, text: "Sunscreen SPF 50+", category: "essentials", checked: false },
+      { id: ITEM_ID_2, text: "Passport", category: "documents", checked: true, claimedBy: USER_ID },
+      { id: ITEM_ID_3, text: "Phone charger", category: "tech", checked: false, claimedBy: OTHER_USER_ID },
+    ],
+    generatedAt: "2026-02-22T00:00:00.000Z",
+    model: "claude-haiku-4-5-20251001",
+  };
+
+  beforeEach(async () => {
+    vi.resetAllMocks();
+    const mod = await import("../../app/api/trips/[id]/packing/route");
+    PATCH = mod.PATCH;
+  });
+
+  it("claims own item -> 200, claimedBy set", async () => {
+    authedSession(USER_ID);
+    mockJoinedMember();
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      packingList: { ...PACKING_LIST_WITH_CLAIMS, items: [...PACKING_LIST_WITH_CLAIMS.items] },
+    } as never);
+    mockPrisma.$transaction.mockResolvedValueOnce([{}, {}] as never);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: ITEM_ID_1, claimedBy: USER_ID }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    const item = json.packingList.items.find((i: { id: string }) => i.id === ITEM_ID_1);
+    expect(item.claimedBy).toBe(USER_ID);
+  });
+
+  it("unclaims own item -> 200, claimedBy null", async () => {
+    authedSession(USER_ID);
+    mockJoinedMember();
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      packingList: { ...PACKING_LIST_WITH_CLAIMS, items: [...PACKING_LIST_WITH_CLAIMS.items] },
+    } as never);
+    mockPrisma.$transaction.mockResolvedValueOnce([{}, {}] as never);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: ITEM_ID_2, claimedBy: null }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    const item = json.packingList.items.find((i: { id: string }) => i.id === ITEM_ID_2);
+    expect(item.claimedBy).toBeNull();
+  });
+
+  it("rejects claiming as different userId -> 403", async () => {
+    authedSession(USER_ID);
+    mockJoinedMember();
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      packingList: { ...PACKING_LIST_WITH_CLAIMS, items: [...PACKING_LIST_WITH_CLAIMS.items] },
+    } as never);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: ITEM_ID_1, claimedBy: OTHER_USER_ID }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.error).toContain("Cannot claim");
+  });
+
+  it("rejects unclaiming someone else's item -> 403", async () => {
+    authedSession(USER_ID);
+    mockJoinedMember();
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      packingList: { ...PACKING_LIST_WITH_CLAIMS, items: [...PACKING_LIST_WITH_CLAIMS.items] },
+    } as never);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: ITEM_ID_3, claimedBy: null }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(403);
+    const json = await res.json();
+    expect(json.error).toContain("Cannot unclaim");
+  });
+
+  it("returns 404 when item not found (claim)", async () => {
+    authedSession(USER_ID);
+    mockJoinedMember();
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      packingList: { ...PACKING_LIST_WITH_CLAIMS, items: [...PACKING_LIST_WITH_CLAIMS.items] },
+    } as never);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: "550e8400-e29b-41d4-a716-446655440000", claimedBy: USER_ID }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    expect(json.error).toBe("Item not found");
+  });
+
+  it("returns 404 when packingList is null (claim)", async () => {
+    authedSession(USER_ID);
+    mockJoinedMember();
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      packingList: null,
+    } as never);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: ITEM_ID_1, claimedBy: USER_ID }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    expect(json.error).toContain("No packing list");
+  });
+
+  it("claim does not change checked state", async () => {
+    authedSession(USER_ID);
+    mockJoinedMember();
+    // Item 1 has checked: false — after claiming, checked should still be false
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      packingList: { ...PACKING_LIST_WITH_CLAIMS, items: [...PACKING_LIST_WITH_CLAIMS.items] },
+    } as never);
+    mockPrisma.$transaction.mockResolvedValueOnce([{}, {}] as never);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: ITEM_ID_1, claimedBy: USER_ID }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    const item = json.packingList.items.find((i: { id: string }) => i.id === ITEM_ID_1);
+    expect(item.checked).toBe(false);
+    expect(item.claimedBy).toBe(USER_ID);
+  });
+
+  it("check does not change claimedBy", async () => {
+    authedSession(USER_ID);
+    mockJoinedMember();
+    // Item 2 has claimedBy: USER_ID — toggling checked should preserve claimedBy
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      packingList: { ...PACKING_LIST_WITH_CLAIMS, items: [...PACKING_LIST_WITH_CLAIMS.items] },
+    } as never);
+    mockPrisma.$transaction.mockResolvedValueOnce([{}, {}] as never);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: ITEM_ID_2, checked: false }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    const item = json.packingList.items.find((i: { id: string }) => i.id === ITEM_ID_2);
+    expect(item.checked).toBe(false);
+    expect(item.claimedBy).toBe(USER_ID);
+  });
+
+  it("old items without claimedBy field can be claimed", async () => {
+    authedSession(USER_ID);
+    mockJoinedMember();
+    // MOCK_PACKING_LIST has no claimedBy on items — legacy format
+    mockPrisma.trip.findUnique.mockResolvedValueOnce({
+      packingList: { ...MOCK_PACKING_LIST, items: [...MOCK_PACKING_LIST.items] },
+    } as never);
+    mockPrisma.$transaction.mockResolvedValueOnce([{}, {}] as never);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: ITEM_ID_1, claimedBy: USER_ID }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    const item = json.packingList.items.find((i: { id: string }) => i.id === ITEM_ID_1);
+    expect(item.claimedBy).toBe(USER_ID);
+  });
+
+  it("rejects invalid UUID for itemId in claim", async () => {
+    authedSession(USER_ID);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId: "not-a-uuid", claimedBy: USER_ID }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects missing itemId in claim", async () => {
+    authedSession(USER_ID);
+
+    const req = new NextRequest(`http://localhost:3000/api/trips/${TRIP_ID}/packing`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ claimedBy: USER_ID }),
+    });
+    const res = await PATCH(req, { params: { id: TRIP_ID } });
+    expect(res.status).toBe(400);
+  });
+});
+
+// ================================================================
 // Zod Schema Unit Tests
 // ================================================================
 

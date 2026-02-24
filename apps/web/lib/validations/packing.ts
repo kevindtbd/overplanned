@@ -30,5 +30,11 @@ export const packingListSchema = z.object({
   items: z.array(packingItemSchema).max(50),
 });
 
+export const packingClaimSchema = z.object({
+  itemId: z.string().uuid(),
+  claimedBy: z.string().uuid().nullable(),
+});
+
 export type PackingItem = z.infer<typeof packingItemSchema>;
 export type PackingList = z.infer<typeof packingListSchema>;
+export type PackingClaim = z.infer<typeof packingClaimSchema>;
