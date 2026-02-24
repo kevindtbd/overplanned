@@ -22,17 +22,14 @@ import {
   VALID_TRANSITIONS,
 } from "@/lib/validations/slot";
 
-const ACTION_TO_STATUS: Record<string, string> = {
+const ACTION_TO_STATUS = {
   confirm: "confirmed",
   skip: "skipped",
-};
+} as const;
 
-const ACTION_TO_SIGNAL: Record<
-  string,
-  { signalType: string; signalValue: number }
-> = {
-  confirm: { signalType: "slot_confirm", signalValue: 1.0 },
-  skip: { signalType: "slot_skip", signalValue: -0.5 },
+const ACTION_TO_SIGNAL = {
+  confirm: { signalType: "slot_confirm" as const, signalValue: 1.0 },
+  skip: { signalType: "slot_skip" as const, signalValue: -0.5 },
 };
 
 export async function PATCH(
@@ -141,7 +138,7 @@ export async function PATCH(
   const [updatedSlot] = await prisma.$transaction([
     prisma.itinerarySlot.update({
       where: { id: slotId },
-      data: { status: targetStatus as never, updatedAt: new Date() },
+      data: { status: targetStatus, updatedAt: new Date() },
     }),
     prisma.behavioralSignal.create({
       data: {
@@ -150,7 +147,7 @@ export async function PATCH(
         tripId: slot.tripId,
         slotId,
         activityNodeId: slot.activityNodeId,
-        signalType: signalType as never,
+        signalType: signalType as "slot_confirm" | "slot_skip",
         signalValue,
         tripPhase: "pre_trip",
         rawAction: `slot_${action}`,

@@ -27,7 +27,7 @@ export function MemberAvatars({ members, maxVisible = 4 }: Props) {
       {visible.map((m) => (
         <div
           key={m.id}
-          className="relative h-7 w-7 rounded-full border-2 border-warm-background bg-warm-surface"
+          className="relative h-7 w-7 rounded-full border-2 border-base bg-surface"
           title={m.user.name ?? "Member"}
         >
           {m.user.avatarUrl ? (
@@ -38,14 +38,14 @@ export function MemberAvatars({ members, maxVisible = 4 }: Props) {
               className="h-full w-full rounded-full object-cover"
             />
           ) : (
-            <span className="flex h-full w-full items-center justify-center font-mono text-[10px] text-ink-300">
+            <span className="flex h-full w-full items-center justify-center font-dm-mono text-[10px] text-ink-300">
               {(m.user.name ?? "?")[0].toUpperCase()}
             </span>
           )}
         </div>
       ))}
       {overflow > 0 && (
-        <div className="relative flex h-7 w-7 items-center justify-center rounded-full border-2 border-warm-background bg-warm-surface font-mono text-[10px] text-ink-300">
+        <div className="relative flex h-7 w-7 items-center justify-center rounded-full border-2 border-base bg-surface font-dm-mono text-[10px] text-ink-300">
           +{overflow}
         </div>
       )}

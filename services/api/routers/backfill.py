@@ -28,6 +28,7 @@ Security:
 from __future__ import annotations
 
 import hashlib
+import hmac
 import logging
 import os
 from datetime import datetime, timezone, timedelta
@@ -150,12 +151,7 @@ def _verify_service_token(request: Request) -> str:
 
 def _constant_time_eq(a: str, b: str) -> bool:
     """Constant-time string comparison to prevent timing side-channels."""
-    if len(a) != len(b):
-        return False
-    result = 0
-    for x, y in zip(a.encode(), b.encode()):
-        result |= x ^ y
-    return result == 0
+    return hmac.compare_digest(a.encode(), b.encode())
 
 
 # ---------------------------------------------------------------------------

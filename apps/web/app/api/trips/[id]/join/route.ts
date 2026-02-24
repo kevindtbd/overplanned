@@ -83,7 +83,7 @@ export async function POST(
         data: {
           userId,
           tripId,
-          signalType: "invite_accepted" as never,
+          signalType: "invite_accepted",
           signalValue: 1.0,
           tripPhase: "pre_trip",
           rawAction: `join_via_invite:${token.slice(0, 8)}`,

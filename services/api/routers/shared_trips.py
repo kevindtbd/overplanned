@@ -249,8 +249,8 @@ async def get_shared_trip(
             where={"id": shared.id},
             data={"viewCount": {"increment": 1}},
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Failed to increment view count for token %s: %s", shared.id, exc)
 
     trip = shared.trip
     slots_by_day: dict[int, list[dict]] = {}

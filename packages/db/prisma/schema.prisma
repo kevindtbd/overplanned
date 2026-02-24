@@ -568,6 +568,16 @@ enum SignalType {
   time_preference
   geographic_preference
   pace_signal
+  // Group + social interactions
+  vote_cast
+  invite_accepted
+  invite_declined
+  trip_shared
+  trip_imported
+  packing_checked
+  packing_unchecked
+  mood_reported
+  slot_moved
 }
 
 enum TripPhase {

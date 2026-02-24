@@ -246,7 +246,7 @@ export async function PATCH(
         userId,
         tripId: slot.tripId,
         slotId,
-        signalType: "slot_moved" as never,
+        signalType: "slot_moved",
         signalValue: 1.0,
         tripPhase: "pre_trip",
         rawAction: targetDay

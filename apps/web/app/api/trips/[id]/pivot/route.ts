@@ -205,7 +205,7 @@ export async function POST(
           tripId,
           slotId,
           activityNodeId: slot.activityNode.id,
-          signalType: "pivot_initiated" as never,
+          signalType: "pivot_initiated",
           signalValue: 1.0,
           tripPhase: "active",
           rawAction: `pivot_${trigger}`,

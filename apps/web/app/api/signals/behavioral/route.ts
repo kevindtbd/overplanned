@@ -10,8 +10,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { v4 as uuidv4 } from "uuid";
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
 
-const VALID_SIGNAL_TYPES = new Set([
+const VALID_SIGNAL_TYPES = [
   "discover_swipe_right",
   "discover_swipe_left",
   "discover_shortlist",
@@ -46,9 +47,26 @@ const VALID_SIGNAL_TYPES = new Set([
   "packing_unchecked",
   "mood_reported",
   "slot_moved",
-]);
+] as const;
 
-const VALID_PHASES = new Set(["pre_trip", "active", "post_trip"]);
+const VALID_PHASES = ["pre_trip", "active", "post_trip"] as const;
+
+const behavioralSignalSchema = z.object({
+  tripId: z.string().uuid().optional().nullable(),
+  slotId: z.string().uuid().optional().nullable(),
+  activityNodeId: z.string().uuid().optional().nullable(),
+  signalType: z.enum(VALID_SIGNAL_TYPES, {
+    errorMap: () => ({ message: "Unknown signalType" }),
+  }),
+  signalValue: z.number().optional().default(0),
+  tripPhase: z.enum(VALID_PHASES, {
+    errorMap: () => ({ message: "Unknown tripPhase" }),
+  }),
+  rawAction: z.string().min(1),
+  weatherContext: z.string().optional().nullable(),
+  modelVersion: z.string().optional().nullable(),
+  promptVersion: z.string().optional().nullable(),
+});
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -57,12 +75,23 @@ export async function POST(req: NextRequest) {
   }
 
   const userId = (session.user as { id: string }).id;
-  let body: Record<string, unknown>;
+  let rawBody: unknown;
 
   try {
-    body = await req.json();
+    rawBody = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = behavioralSignalSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
+    const firstError =
+      fieldErrors.signalType?.[0] ??
+      fieldErrors.tripPhase?.[0] ??
+      fieldErrors.rawAction?.[0] ??
+      "Validation failed";
+    return NextResponse.json({ error: firstError }, { status: 400 });
   }
 
   const {
@@ -76,44 +105,23 @@ export async function POST(req: NextRequest) {
     weatherContext,
     modelVersion,
     promptVersion,
-  } = body;
-
-  if (!signalType || !tripPhase || !rawAction) {
-    return NextResponse.json(
-      { error: "signalType, tripPhase, and rawAction are required" },
-      { status: 400 }
-    );
-  }
-
-  if (!VALID_SIGNAL_TYPES.has(String(signalType))) {
-    return NextResponse.json(
-      { error: `Unknown signalType: ${signalType}` },
-      { status: 400 }
-    );
-  }
-
-  if (!VALID_PHASES.has(String(tripPhase))) {
-    return NextResponse.json(
-      { error: `Unknown tripPhase: ${tripPhase}` },
-      { status: 400 }
-    );
-  }
+  } = parsed.data;
 
   try {
     await prisma.behavioralSignal.create({
       data: {
         id: uuidv4(),
         userId,
-        tripId: tripId ? String(tripId) : null,
-        slotId: slotId ? String(slotId) : null,
-        activityNodeId: activityNodeId ? String(activityNodeId) : null,
-        signalType: String(signalType) as never,
-        signalValue: typeof signalValue === "number" ? signalValue : 0,
-        tripPhase: String(tripPhase) as never,
-        rawAction: String(rawAction),
-        weatherContext: weatherContext ? String(weatherContext) : null,
-        modelVersion: modelVersion ? String(modelVersion) : null,
-        promptVersion: promptVersion ? String(promptVersion) : null,
+        tripId: tripId ?? null,
+        slotId: slotId ?? null,
+        activityNodeId: activityNodeId ?? null,
+        signalType,
+        signalValue,
+        tripPhase,
+        rawAction,
+        weatherContext: weatherContext ?? null,
+        modelVersion: modelVersion ?? null,
+        promptVersion: promptVersion ?? null,
       },
     });
 

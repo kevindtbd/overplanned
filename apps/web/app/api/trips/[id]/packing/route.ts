@@ -4,8 +4,6 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, rateLimitPresets } from "@/lib/rate-limit";
 import {
@@ -17,28 +15,19 @@ import {
 import Anthropic from "@anthropic-ai/sdk";
 import crypto from "crypto";
 import { getClimateContext } from "@/lib/climate";
+import { requireAuth, requireTripMember } from "@/lib/api/helpers";
+import { sanitize } from "@/lib/api/sanitize";
 
 const anthropic = new Anthropic();
-
-// Sanitize string for LLM prompt — strip control chars and limit length
-function sanitize(input: string, maxLen = 200): string {
-  return input
-    .replace(/[\x00-\x1f\x7f]/g, "")
-    .replace(/<[^>]*>/g, "")
-    .trim()
-    .slice(0, maxLen);
-}
 
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { userId } = auth;
 
-  const userId = (session.user as { id: string }).id;
   const { id: tripId } = params;
 
   // Rate limit: LLM tier (3 req/hour by userId)
@@ -67,15 +56,8 @@ export async function POST(
   const regenerate = parsed.data?.regenerate ?? false;
 
   try {
-    // Auth: verify membership
-    const membership = await prisma.tripMember.findUnique({
-      where: { tripId_userId: { tripId, userId } },
-      select: { role: true, status: true },
-    });
-
-    if (!membership || membership.status !== "joined") {
-      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
-    }
+    const membership = await requireTripMember(tripId, userId);
+    if (membership instanceof NextResponse) return membership;
 
     // Fetch trip with legs for destination context
     const trip = await prisma.trip.findUnique({
@@ -116,9 +98,9 @@ export async function POST(
       );
     }
 
-    const destination = sanitize(primaryLeg.destination);
-    const city = sanitize(primaryLeg.city);
-    const country = sanitize(primaryLeg.country);
+    const destination = sanitize(primaryLeg.destination, 200);
+    const city = sanitize(primaryLeg.city, 200);
+    const country = sanitize(primaryLeg.country, 200);
     const startDate = trip.startDate.toISOString().split("T")[0];
     const endDate = trip.endDate.toISOString().split("T")[0];
     const durationDays = Math.ceil(
@@ -228,12 +210,10 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { userId } = auth;
 
-  const userId = (session.user as { id: string }).id;
   const { id: tripId } = params;
 
   let body: unknown;
@@ -258,15 +238,8 @@ export async function PATCH(
   }
 
   try {
-    // Auth: verify membership
-    const membership = await prisma.tripMember.findUnique({
-      where: { tripId_userId: { tripId, userId } },
-      select: { role: true, status: true },
-    });
-
-    if (!membership || membership.status !== "joined") {
-      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
-    }
+    const membership = await requireTripMember(tripId, userId);
+    if (membership instanceof NextResponse) return membership;
 
     const trip = await prisma.trip.findUnique({
       where: { id: tripId },

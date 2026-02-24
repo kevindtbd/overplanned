@@ -6,9 +6,9 @@ Approve, edit, archive nodes — all actions logged to AuditLog.
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from pydantic import BaseModel, Field
-from prisma import Prisma
 
 from services.api.middleware.audit import audit_action
+from services.api.routers._admin_deps import require_admin_user, get_db
 
 router = APIRouter(prefix="/admin/nodes", tags=["admin-nodes"])
 
@@ -67,35 +67,6 @@ class NodeSummary(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Dependencies
-# ---------------------------------------------------------------------------
-
-async def get_db() -> Prisma:
-    """Placeholder — wire to actual Prisma client in app startup."""
-    from prisma import Prisma
-    db = Prisma()
-    await db.connect()
-    try:
-        yield db
-    finally:
-        await db.disconnect()
-
-
-async def require_admin_user(request: Request):
-    """
-    Validates admin auth from request headers.
-    In production, wired to session/JWT check.
-    """
-    actor_id = request.headers.get("X-Admin-User-Id")
-    if not actor_id:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    role = request.headers.get("X-Admin-Role")
-    if role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return actor_id
-
-
-# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -146,7 +117,7 @@ async def list_nodes(
     order: str = Query("asc"),
     skip: int = Query(0, ge=0),
     take: int = Query(50, ge=1, le=200),
-    db: Prisma = Depends(get_db),
+    db=Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
@@ -219,7 +190,7 @@ async def list_nodes(
 async def get_node(
     node_id: str,
     request: Request,
-    db: Prisma = Depends(get_db),
+    db=Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """Get single node with full detail for editor."""
@@ -282,7 +253,7 @@ async def update_node(
     node_id: str,
     body: NodeUpdate,
     request: Request,
-    db: Prisma = Depends(get_db),
+    db=Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
@@ -297,7 +268,7 @@ async def update_node(
     before = node_to_snapshot(node)
 
     # Build update data from non-None fields
-    update_data = body.dict(exclude_unset=True)
+    update_data = body.model_dump(exclude_unset=True)
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
 
@@ -338,7 +309,7 @@ async def add_alias(
     node_id: str,
     body: AliasCreate,
     request: Request,
-    db: Prisma = Depends(get_db),
+    db=Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """Add an alias to a node. Logged to AuditLog."""
@@ -372,7 +343,7 @@ async def remove_alias(
     node_id: str,
     alias_id: str,
     request: Request,
-    db: Prisma = Depends(get_db),
+    db=Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """Remove an alias from a node. Logged to AuditLog."""

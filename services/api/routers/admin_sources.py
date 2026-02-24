@@ -16,9 +16,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from pydantic import BaseModel, Field
-from prisma import Prisma
 
 from services.api.middleware.audit import audit_action
+from services.api.routers._admin_deps import require_admin_user, get_db
 
 router = APIRouter(prefix="/admin/sources", tags=["admin-sources"])
 
@@ -69,32 +69,6 @@ class StalenessConfig(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Dependencies
-# ---------------------------------------------------------------------------
-
-async def get_db() -> Prisma:
-    """Placeholder -- wire to actual Prisma client in app startup."""
-    from prisma import Prisma
-    db = Prisma()
-    await db.connect()
-    try:
-        yield db
-    finally:
-        await db.disconnect()
-
-
-async def require_admin_user(request: Request):
-    """Validates admin auth from request headers."""
-    actor_id = request.headers.get("X-Admin-User-Id")
-    if not actor_id:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    role = request.headers.get("X-Admin-Role")
-    if role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return actor_id
-
-
-# ---------------------------------------------------------------------------
 # Staleness config (Redis-backed for persistence)
 # ---------------------------------------------------------------------------
 
@@ -115,7 +89,7 @@ async def _get_staleness_config(redis) -> StalenessConfig:
 async def _set_staleness_config(redis, config: StalenessConfig) -> None:
     """Persist staleness config to Redis."""
     import json
-    await redis.set(STALENESS_CONFIG_KEY, json.dumps(config.dict()))
+    await redis.set(STALENESS_CONFIG_KEY, json.dumps(config.model_dump()))
 
 
 # ---------------------------------------------------------------------------
@@ -142,7 +116,7 @@ def _threshold_for_source(config: StalenessConfig, source_name: str) -> int:
 @router.get("", response_model=SourceListResponse)
 async def list_sources(
     request: Request,
-    db: Prisma = Depends(get_db),
+    db=Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
@@ -207,7 +181,7 @@ async def list_sources(
 @router.get("/alerts", response_model=AlertsResponse)
 async def get_alerts(
     request: Request,
-    db: Prisma = Depends(get_db),
+    db=Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """Return only stale sources exceeding their configured threshold."""
@@ -250,7 +224,7 @@ async def update_source_authority(
     source_name: str,
     body: AuthorityUpdate,
     request: Request,
-    db: Prisma = Depends(get_db),
+    db=Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
@@ -327,7 +301,7 @@ async def get_staleness_config(
 async def update_staleness_config(
     body: StalenessConfig,
     request: Request,
-    db: Prisma = Depends(get_db),
+    db=Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
@@ -345,8 +319,8 @@ async def update_staleness_config(
         action="source.config.update",
         target_type="StalenessConfig",
         target_id="global",
-        before=before.dict(),
-        after=body.dict(),
+        before=before.model_dump(),
+        after=body.model_dump(),
     )
 
     return body

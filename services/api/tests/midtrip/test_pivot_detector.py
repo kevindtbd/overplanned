@@ -24,7 +24,7 @@ import pytest
 
 from services.api.pivot.detector import PivotDetector, _build_alternative_query, MAX_PIVOT_DEPTH
 from services.api.pivot.triggers import TriggerResult
-from tests.conftest import make_trip, make_itinerary_slot, make_activity_node
+from services.api.tests.conftest import make_trip, make_itinerary_slot, make_activity_node
 
 
 # ---------------------------------------------------------------------------

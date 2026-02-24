@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 // --- Types ---
 
@@ -148,41 +149,6 @@ function CheckCircleIcon() {
   );
 }
 
-// --- Avatar helper ---
-
-function UserAvatar({
-  user,
-  size = "sm",
-}: {
-  user: { name: string | null; avatarUrl: string | null };
-  size?: "sm" | "md";
-}) {
-  const dims = size === "sm" ? "h-6 w-6" : "h-7 w-7";
-  const textSize = size === "sm" ? "text-[9px]" : "text-[10px]";
-
-  return (
-    <div
-      className={`relative ${dims} rounded-full border-2 border-warm-background bg-warm-surface flex-shrink-0`}
-      title={user.name ?? "Member"}
-    >
-      {user.avatarUrl ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={user.avatarUrl}
-          alt={user.name ?? ""}
-          className="h-full w-full rounded-full object-cover"
-        />
-      ) : (
-        <span
-          className={`flex h-full w-full items-center justify-center font-mono ${textSize} text-ink-300`}
-        >
-          {(user.name ?? "?")[0].toUpperCase()}
-        </span>
-      )}
-    </div>
-  );
-}
-
 // --- Skeleton loader ---
 
 function ExpenseSkeleton() {
@@ -191,15 +157,15 @@ function ExpenseSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="rounded-[13px] bg-base border border-warm-border p-3"
+          className="rounded-[13px] bg-base border border-ink-700 p-3"
         >
           <div className="flex items-center gap-3">
-            <div className="h-6 w-6 rounded-full bg-warm-border" />
+            <div className="h-6 w-6 rounded-full bg-ink-700" />
             <div className="flex-1 space-y-1.5">
-              <div className="h-3 w-24 rounded bg-warm-border" />
-              <div className="h-2.5 w-16 rounded bg-warm-border" />
+              <div className="h-3 w-24 rounded bg-ink-700" />
+              <div className="h-2.5 w-16 rounded bg-ink-700" />
             </div>
-            <div className="h-4 w-14 rounded bg-warm-border" />
+            <div className="h-4 w-14 rounded bg-ink-700" />
           </div>
         </div>
       ))}
@@ -336,7 +302,7 @@ export function ExpenseTracker({
   const amountStep = zeroDecimal ? "1" : "0.01";
 
   return (
-    <div className="rounded-xl bg-warm-surface border border-warm-border">
+    <div className="rounded-xl bg-surface border border-ink-700">
       {/* Collapsible header */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -345,9 +311,9 @@ export function ExpenseTracker({
         aria-controls="expense-tracker-content"
       >
         <div className="flex items-center gap-3">
-          <h3 className="font-heading text-lg text-ink-100">Expenses</h3>
+          <h3 className="font-sora text-lg text-ink-100">Expenses</h3>
           {!loading && (
-            <span className="font-mono text-xs text-ink-400">
+            <span className="font-dm-mono text-xs text-ink-400">
               {formatAmount(totalCents, currency)}
             </span>
           )}
@@ -365,7 +331,7 @@ export function ExpenseTracker({
           {loading ? (
             <ExpenseSkeleton />
           ) : expenses.length === 0 && !showForm ? (
-            <p className="text-sm text-ink-400 font-mono py-2">
+            <p className="text-sm text-ink-400 font-dm-mono py-2">
               No expenses yet. Add one to start tracking.
             </p>
           ) : (
@@ -373,28 +339,28 @@ export function ExpenseTracker({
               {expenses.map((expense) => (
                 <div
                   key={expense.id}
-                  className="rounded-[13px] bg-base border border-warm-border p-3 flex items-center gap-3"
+                  className="rounded-[13px] bg-base border border-ink-700 p-3 flex items-center gap-3"
                 >
-                  <UserAvatar user={expense.paidBy} />
+                  <UserAvatar name={expense.paidBy.name} avatarUrl={expense.paidBy.avatarUrl} size="sm" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-ink-100 truncate">
                       {expense.description}
                     </p>
-                    <p className="font-mono text-xs text-ink-400 mt-0.5">
+                    <p className="font-dm-mono text-xs text-ink-400 mt-0.5">
                       {expense.paidBy.name ?? "Someone"} paid
                       {expense.splitWith.length > 1
                         ? ` / split ${expense.splitWith.length} ways`
                         : ""}
                     </p>
                   </div>
-                  <span className="font-mono text-sm text-ink-100 flex-shrink-0">
+                  <span className="font-dm-mono text-sm text-ink-100 flex-shrink-0">
                     {formatAmount(expense.amountCents, currency)}
                   </span>
                   {expense.paidById === currentUserId && (
                     <button
                       onClick={() => handleDelete(expense.id)}
                       disabled={deleting === expense.id}
-                      className="flex-shrink-0 p-1 rounded text-ink-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                      className="flex-shrink-0 p-1 rounded text-ink-400 hover:text-error transition-colors disabled:opacity-50"
                       aria-label={`Delete expense: ${expense.description}`}
                     >
                       <XIcon />
@@ -414,7 +380,7 @@ export function ExpenseTracker({
                     setShowForm(true);
                     setTimeout(() => descriptionRef.current?.focus(), 0);
                   }}
-                  className="flex items-center gap-1.5 text-sm text-terracotta hover:text-terracotta/80 transition-colors font-mono"
+                  className="flex items-center gap-1.5 text-sm text-accent hover:text-accent/80 transition-colors font-dm-mono"
                 >
                   <PlusIcon />
                   Add expense
@@ -422,7 +388,7 @@ export function ExpenseTracker({
               ) : (
                 <form
                   onSubmit={handleAdd}
-                  className="rounded-[13px] bg-base border border-warm-border p-3 space-y-3"
+                  className="rounded-[13px] bg-base border border-ink-700 p-3 space-y-3"
                 >
                   <input
                     ref={descriptionRef}
@@ -431,7 +397,7 @@ export function ExpenseTracker({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="What was it for?"
                     maxLength={200}
-                    className="block w-full rounded-lg border border-warm-border bg-warm-surface px-3 py-2 font-mono text-sm text-ink-100 placeholder:text-ink-500 focus:border-terracotta focus:outline-none"
+                    className="block w-full rounded-lg border border-ink-700 bg-surface px-3 py-2 font-dm-mono text-sm text-ink-100 placeholder:text-ink-500 focus:border-accent focus:outline-none"
                     aria-label="Expense description"
                   />
                   <div className="flex gap-2">
@@ -442,19 +408,19 @@ export function ExpenseTracker({
                       placeholder={amountPlaceholder}
                       step={amountStep}
                       min="0"
-                      className="block flex-1 rounded-lg border border-warm-border bg-warm-surface px-3 py-2 font-mono text-sm text-ink-100 placeholder:text-ink-500 focus:border-terracotta focus:outline-none"
+                      className="block flex-1 rounded-lg border border-ink-700 bg-surface px-3 py-2 font-dm-mono text-sm text-ink-100 placeholder:text-ink-500 focus:border-accent focus:outline-none"
                       aria-label={`Amount in ${currency}`}
                     />
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="rounded-lg bg-terracotta px-4 py-2 font-mono text-xs text-white transition hover:bg-terracotta/90 disabled:opacity-50"
+                      className="rounded-lg bg-accent px-4 py-2 font-dm-mono text-xs text-white transition hover:bg-accent/90 disabled:opacity-50"
                     >
                       {submitting ? "Adding..." : "Add"}
                     </button>
                   </div>
                   {formError && (
-                    <p className="text-sm text-red-500">{formError}</p>
+                    <p className="text-sm text-error">{formError}</p>
                   )}
                   <button
                     type="button"
@@ -462,7 +428,7 @@ export function ExpenseTracker({
                       setShowForm(false);
                       setFormError(null);
                     }}
-                    className="text-xs font-mono text-ink-400 hover:text-ink-200 transition-colors"
+                    className="text-xs font-dm-mono text-ink-400 hover:text-ink-200 transition-colors"
                   >
                     Cancel
                   </button>
@@ -474,13 +440,13 @@ export function ExpenseTracker({
           {/* --- Settle Up Section --- */}
           {!loading && (
             <div>
-              <h4 className="font-heading text-base text-ink-100 mb-3">
+              <h4 className="font-sora text-base text-ink-100 mb-3">
                 Settle Up
               </h4>
               {mySettlements.length === 0 ? (
                 <div className="flex items-center gap-2 text-ink-400 py-2">
                   <CheckCircleIcon />
-                  <span className="font-mono text-sm">All settled up!</span>
+                  <span className="font-dm-mono text-sm">All settled up!</span>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -498,16 +464,16 @@ export function ExpenseTracker({
                     return (
                       <div
                         key={`${s.fromId}-${s.toId}-${idx}`}
-                        className="rounded-[13px] bg-base border border-warm-border p-3 flex items-center gap-3"
+                        className="rounded-[13px] bg-base border border-ink-700 p-3 flex items-center gap-3"
                       >
                         <div className="flex -space-x-1.5">
-                          <UserAvatar user={iOwe ? myUser : otherUser} />
-                          <UserAvatar user={iOwe ? otherUser : myUser} />
+                          <UserAvatar name={(iOwe ? myUser : otherUser).name} avatarUrl={(iOwe ? myUser : otherUser).avatarUrl} size="sm" />
+                          <UserAvatar name={(iOwe ? otherUser : myUser).name} avatarUrl={(iOwe ? otherUser : myUser).avatarUrl} size="sm" />
                         </div>
                         <p className="flex-1 text-sm text-ink-200">{label}</p>
                         <span
-                          className={`font-mono text-sm flex-shrink-0 ${
-                            iOwe ? "text-red-500" : "text-emerald-600"
+                          className={`font-dm-mono text-sm flex-shrink-0 ${
+                            iOwe ? "text-error" : "text-success"
                           }`}
                         >
                           {formatAmount(s.amountCents, currency)}

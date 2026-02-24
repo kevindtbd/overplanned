@@ -8,6 +8,7 @@ POST /events/batch
 - Returns count of inserted vs skipped
 """
 
+import logging
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -15,6 +16,8 @@ from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from services.api.config import settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -71,7 +74,7 @@ async def ingest_events(body: BatchRequest, request: Request) -> dict:
 
     # Process in a single transaction
     async with db.transaction():
-        for event in body.events:
+        for i, event in enumerate(body.events):
             event_id = str(uuid4())
             try:
                 await db.execute(
@@ -101,7 +104,8 @@ async def ingest_events(body: BatchRequest, request: Request) -> dict:
                     now,
                 )
                 inserted += 1
-            except Exception:
+            except Exception as exc:
+                logger.warning("Event insert failed for event %d: %s", i, exc)
                 skipped += 1
 
     # Dedup count: events with clientEventId that were skipped

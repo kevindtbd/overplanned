@@ -10,25 +10,11 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from pydantic import BaseModel
-from prisma import Prisma
 
 from services.api.middleware.audit import audit_action
+from services.api.routers._admin_deps import require_admin_user, get_db
 
 router = APIRouter(prefix="/admin/safety", tags=["admin-safety"])
-
-
-# ---------------------------------------------------------------------------
-# Dependencies (wired by app startup)
-# ---------------------------------------------------------------------------
-
-def _get_db() -> Prisma:
-    """Placeholder dependency -- wired by app lifespan."""
-    raise NotImplementedError("Wire Prisma via app lifespan")
-
-
-def _require_admin_user():
-    """Placeholder dependency -- returns admin user dict with 'id' field."""
-    raise NotImplementedError("Wire admin auth dependency")
 
 
 # ---------------------------------------------------------------------------
@@ -96,8 +82,8 @@ async def list_shared_tokens(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     skip: int = Query(0, ge=0),
     take: int = Query(50, ge=1, le=200),
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """List SharedTripTokens with status filtering."""
     now = datetime.now(timezone.utc)
@@ -159,8 +145,8 @@ async def list_shared_tokens(
 async def revoke_shared_token(
     token_id: str,
     request: Request,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """Revoke a SharedTripToken. Audit-logged."""
     token = await db.sharedtriptoken.find_unique(where={"id": token_id})
@@ -179,7 +165,7 @@ async def revoke_shared_token(
     await audit_action(
         db=db,
         request=request,
-        actor_id=admin["id"],
+        actor_id=admin,
         action="shared_token.revoke",
         target_type="SharedTripToken",
         target_id=token_id,
@@ -204,8 +190,8 @@ async def list_invite_tokens(
     trip_id: Optional[str] = Query(None, description="Filter by trip ID"),
     skip: int = Query(0, ge=0),
     take: int = Query(50, ge=1, le=200),
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """List InviteTokens with status filtering."""
     now = datetime.now(timezone.utc)
@@ -266,8 +252,8 @@ async def list_invite_tokens(
 async def revoke_invite_token(
     token_id: str,
     request: Request,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """Revoke an InviteToken. Audit-logged."""
     token = await db.invitetoken.find_unique(where={"id": token_id})
@@ -286,7 +272,7 @@ async def revoke_invite_token(
     await audit_action(
         db=db,
         request=request,
-        actor_id=admin["id"],
+        actor_id=admin,
         action="invite_token.revoke",
         target_type="InviteToken",
         target_id=token_id,
@@ -310,8 +296,8 @@ async def list_flagged_inputs(
     review_status: Optional[str] = Query(None, description="pending | dismissed | confirmed"),
     skip: int = Query(0, ge=0),
     take: int = Query(50, ge=1, le=200),
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     List RawEvents flagged as potential injection attempts.
@@ -366,8 +352,8 @@ async def review_flagged_input(
     event_id: str,
     body: ReviewAction,
     request: Request,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     Mark a flagged injection event as dismissed or confirmed.
@@ -392,7 +378,7 @@ async def review_flagged_input(
     updated_payload = {
         **payload,
         "reviewStatus": body.status,
-        "reviewedBy": admin["id"],
+        "reviewedBy": admin,
         "reviewedAt": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -404,7 +390,7 @@ async def review_flagged_input(
     await audit_action(
         db=db,
         request=request,
-        actor_id=admin["id"],
+        actor_id=admin,
         action=f"injection_flag.{body.status}",
         target_type="RawEvent",
         target_id=event_id,

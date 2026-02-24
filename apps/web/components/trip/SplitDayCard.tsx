@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 interface SubgroupSuggestion {
   memberIds: string[];
@@ -18,35 +19,6 @@ interface SplitDayCardProps {
   isOrganizer: boolean;
   onSplit: () => void;
   onDismiss: () => void;
-}
-
-function MemberAvatar({
-  name,
-  avatarUrl,
-}: {
-  name: string | null;
-  avatarUrl: string | null;
-}) {
-  const initial = name ? name.charAt(0).toUpperCase() : "?";
-
-  if (avatarUrl) {
-    return (
-      <img
-        src={avatarUrl}
-        alt={name || "Member"}
-        className="w-6 h-6 rounded-full border-2 border-warm-surface object-cover"
-      />
-    );
-  }
-
-  return (
-    <div
-      className="w-6 h-6 rounded-full border-2 border-warm-surface bg-warm-border flex items-center justify-center"
-      aria-label={name || "Member"}
-    >
-      <span className="font-mono text-[9px] text-ink-300">{initial}</span>
-    </div>
-  );
 }
 
 function getFirstName(name: string | null): string {
@@ -90,12 +62,11 @@ export function SplitDayCard({
 
   const handleSuggest = useCallback(() => {
     // TODO: Send a chat message suggesting this split to the group
-    console.log("Suggest split", { tripId, dayNumber, subgroups });
   }, [tripId, dayNumber, subgroups]);
 
   return (
-    <div className="rounded-[13px] border border-warm-border bg-warm-surface p-4">
-      <h4 className="font-heading text-sm text-ink-100 mb-3">
+    <div className="rounded-[13px] border border-ink-700 bg-surface p-4">
+      <h4 className="font-sora text-sm text-ink-100 mb-3">
         Split the afternoon?
       </h4>
 
@@ -111,15 +82,17 @@ export function SplitDayCard({
               {/* Overlapping avatars */}
               <div className="flex -space-x-1.5">
                 {groupMembers.map((m) => (
-                  <MemberAvatar
+                  <UserAvatar
                     key={m.id}
                     name={m.user!.name}
                     avatarUrl={m.user!.avatarUrl}
+                    size="sm"
+                    borderClass="border-2 border-ink-700"
                   />
                 ))}
               </div>
               {/* Names */}
-              <span className="font-mono text-[11px] text-ink-300">
+              <span className="font-dm-mono text-[11px] text-ink-300">
                 {groupMembers
                   .map((m) => getFirstName(m.user!.name))
                   .join(" + ")}
@@ -135,14 +108,14 @@ export function SplitDayCard({
           <button
             onClick={handleSplit}
             disabled={submitting}
-            className="bg-terracotta text-white rounded-lg px-4 py-2 text-sm disabled:opacity-50 transition-colors"
+            className="bg-accent text-white rounded-lg px-4 py-2 text-sm disabled:opacity-50 transition-colors"
           >
             {submitting ? "Splitting..." : "Split up"}
           </button>
         ) : (
           <button
             onClick={handleSuggest}
-            className="bg-terracotta text-white rounded-lg px-4 py-2 text-sm transition-colors"
+            className="bg-accent text-white rounded-lg px-4 py-2 text-sm transition-colors"
           >
             Suggest split
           </button>
@@ -150,7 +123,7 @@ export function SplitDayCard({
         <button
           onClick={onDismiss}
           disabled={submitting}
-          className="border border-warm-border text-ink-300 rounded-lg px-4 py-2 text-sm hover:border-ink-400 transition-colors"
+          className="border border-ink-700 text-ink-300 rounded-lg px-4 py-2 text-sm hover:border-ink-400 transition-colors"
         >
           Stay together
         </button>

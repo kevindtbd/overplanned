@@ -4,41 +4,25 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, rateLimitPresets } from "@/lib/rate-limit";
 import { messageCreateSchema, messageCursorSchema } from "@/lib/validations/messages";
-
-function sanitize(input: string): string {
-  return input
-    .replace(/[\x00-\x1f\x7f]/g, "")
-    .replace(/<[^>]*>/g, "")
-    .trim();
-}
+import { requireAuth, requireTripMember } from "@/lib/api/helpers";
+import { sanitize } from "@/lib/api/sanitize";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { userId } = auth;
 
-  const userId = (session.user as { id: string }).id;
   const { id: tripId } = params;
 
   try {
-    // Membership check
-    const membership = await prisma.tripMember.findUnique({
-      where: { tripId_userId: { tripId, userId } },
-      select: { status: true },
-    });
-
-    if (!membership || membership.status !== "joined") {
-      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
-    }
+    const membership = await requireTripMember(tripId, userId);
+    if (membership instanceof NextResponse) return membership;
 
     // Parse query params
     const searchParams = Object.fromEntries(req.nextUrl.searchParams.entries());
@@ -115,28 +99,19 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { userId } = auth;
 
-  const userId = (session.user as { id: string }).id;
   const { id: tripId } = params;
 
   // Rate limit
   const rateLimited = rateLimit(req, rateLimitPresets.authenticated, `chat:${userId}`);
   if (rateLimited) return rateLimited;
 
-  // Membership check
   try {
-    const membership = await prisma.tripMember.findUnique({
-      where: { tripId_userId: { tripId, userId } },
-      select: { status: true },
-    });
-
-    if (!membership || membership.status !== "joined") {
-      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
-    }
+    const membership = await requireTripMember(tripId, userId);
+    if (membership instanceof NextResponse) return membership;
 
     // Parse body
     let body: unknown;

@@ -16,25 +16,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
-from prisma import Prisma
 
 from services.api.middleware.audit import audit_action
+from services.api.routers._admin_deps import require_admin_user, get_db
 
 router = APIRouter(prefix="/admin/pipeline", tags=["admin-pipeline"])
-
-
-# ---------------------------------------------------------------------------
-# Dependencies (wired by app startup)
-# ---------------------------------------------------------------------------
-
-def _get_db() -> Prisma:
-    """Placeholder dependency — wired by app lifespan."""
-    raise NotImplementedError("Wire Prisma via app lifespan")
-
-
-def _require_admin_user():
-    """Placeholder dependency — returns admin user dict with 'id' field."""
-    raise NotImplementedError("Wire admin auth dependency")
 
 
 # ---------------------------------------------------------------------------
@@ -126,8 +112,8 @@ async def get_llm_costs(
     days: int = 7,
     model: Optional[str] = None,
     pipeline_stage: Optional[str] = None,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     LLM costs aggregated by model, date, pipeline stage.
@@ -197,8 +183,8 @@ async def get_llm_costs(
 async def get_api_calls(
     days: int = 7,
     provider: Optional[str] = None,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     External API call counts by provider and date.
@@ -261,8 +247,8 @@ async def get_api_calls(
 async def get_pipeline_jobs(
     limit: int = 50,
     status: Optional[str] = None,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """Pipeline job success/failure rates and recent job list."""
     if limit < 1 or limit > 200:
@@ -341,8 +327,8 @@ async def get_pipeline_jobs(
 
 @router.get("/alerts")
 async def get_cost_alerts(
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     Get current cost alert thresholds with today's spend status.
@@ -397,8 +383,8 @@ async def get_cost_alerts(
 async def update_cost_alerts(
     body: CostAlertConfig,
     request: Request,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     Update cost alert thresholds. Audit-logged.
@@ -432,7 +418,7 @@ async def update_cost_alerts(
     await audit_action(
         db=db,
         request=request,
-        actor_id=admin["id"],
+        actor_id=admin,
         action="pipeline.alert_config_update",
         target_type="CostAlertConfig",
         target_id="global",

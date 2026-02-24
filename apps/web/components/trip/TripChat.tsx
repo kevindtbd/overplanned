@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 
 // ---------- Types ----------
 
@@ -42,7 +43,7 @@ interface ChatMessage {
 // ---------- Category Colors ----------
 
 const CATEGORY_COLORS: Record<string, string> = {
-  anchor: "bg-terracotta/15 text-terracotta",
+  anchor: "bg-accent/15 text-accent",
   meal: "bg-warning-bg text-warning",
   flex: "bg-info-bg text-info",
   rest: "bg-success-bg text-success",
@@ -75,43 +76,6 @@ function relativeTime(isoString: string): string {
     month: "short",
     day: "numeric",
   });
-}
-
-// ---------- Avatar ----------
-
-function Avatar({
-  name,
-  avatarUrl,
-  size = 28,
-}: {
-  name: string;
-  avatarUrl?: string | null;
-  size?: number;
-}) {
-  const initial = name.charAt(0).toUpperCase();
-
-  if (avatarUrl) {
-    return (
-      <img
-        src={avatarUrl}
-        alt={name}
-        width={size}
-        height={size}
-        className="rounded-full object-cover shrink-0"
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-
-  return (
-    <div
-      className="rounded-full bg-terracotta/20 text-terracotta flex items-center justify-center shrink-0 font-sora text-xs font-medium"
-      style={{ width: size, height: size }}
-      aria-hidden="true"
-    >
-      {initial}
-    </div>
-  );
 }
 
 // ---------- Slot Ref Card ----------
@@ -234,7 +198,7 @@ function SendingDots() {
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="w-1.5 h-1.5 rounded-full bg-terracotta/60 animate-pulse"
+          className="w-1.5 h-1.5 rounded-full bg-accent/60 animate-pulse"
           style={{ animationDelay: `${i * 150}ms` }}
         />
       ))}
@@ -545,7 +509,7 @@ export function TripChat({
               >
                 {/* Avatar */}
                 {!isOwn && (
-                  <Avatar name={msg.userName} avatarUrl={msg.avatarUrl} />
+                  <UserAvatar name={msg.userName} avatarUrl={msg.avatarUrl} size="md" />
                 )}
 
                 {/* Bubble */}
@@ -578,7 +542,7 @@ export function TripChat({
                         ${msg._pending ? "opacity-70" : ""}
                         ${
                           isOwn
-                            ? "bg-terracotta text-white rounded-tr-sm"
+                            ? "bg-accent text-white rounded-tr-sm"
                             : "bg-surface text-ink-100 border border-ink-700 rounded-tl-sm"
                         }
                       `}
@@ -610,7 +574,7 @@ export function TripChat({
           {/* Error message */}
           {error && (
             <div className="px-3 pt-2">
-              <p className="font-dm-mono text-[11px] text-red-500">
+              <p className="font-dm-mono text-[11px] text-error">
                 {error}
               </p>
             </div>
@@ -631,7 +595,7 @@ export function TripChat({
                 px-3 py-2
                 font-dm-mono text-[13px] text-ink-100
                 placeholder:text-ink-500
-                focus:border-terracotta focus:outline-none
+                focus:border-accent focus:outline-none
                 transition-colors
               "
               style={{ maxHeight: 72 }}
@@ -641,9 +605,9 @@ export function TripChat({
               onClick={sendMessage}
               disabled={!canSend || sending}
               className="
-                shrink-0 rounded-xl bg-terracotta p-2.5
+                shrink-0 rounded-xl bg-accent p-2.5
                 text-white transition-all
-                hover:bg-terracotta/90
+                hover:bg-accent/90
                 disabled:opacity-40 disabled:cursor-not-allowed
               "
               aria-label="Send message"

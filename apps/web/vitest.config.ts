@@ -7,8 +7,13 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
+    root: ".",
     include: ["__tests__/**/*.test.{ts,tsx}"],
-    exclude: ["__tests__/e2e/**"],
+    exclude: [
+      "__tests__/e2e/**",
+      "**/tracks/**",
+      "**/.claude/**",
+    ],
     globals: true,
     coverage: {
       provider: "v8",

@@ -387,7 +387,7 @@ export default function TripDetailPage() {
           {/* Back to trips */}
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 font-dm-mono text-xs text-ink-400 uppercase tracking-wider hover:text-terracotta transition-colors focus:outline-none focus:ring-2 focus:ring-terracotta focus:ring-offset-2 focus:ring-offset-surface rounded"
+            className="inline-flex items-center gap-2 font-dm-mono text-xs text-ink-400 uppercase tracking-wider hover:text-accent transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface rounded"
           >
             <svg
               className="w-4 h-4"
@@ -422,7 +422,7 @@ export default function TripDetailPage() {
                 {trip!.mode === "group" && (
                   <button
                     onClick={() => setChatOpen(true)}
-                    className="rounded-lg p-2 text-ink-400 hover:text-ink-100 hover:bg-warm-surface transition-colors"
+                    className="rounded-lg p-2 text-ink-400 hover:text-ink-100 hover:bg-surface transition-colors"
                     aria-label="Open trip chat"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -449,7 +449,7 @@ export default function TripDetailPage() {
                   <div className="relative">
                     <button
                       onClick={() => setShowTripMenu(prev => !prev)}
-                      className="rounded-lg p-2 text-ink-400 hover:text-ink-100 hover:bg-warm-surface transition-colors"
+                      className="rounded-lg p-2 text-ink-400 hover:text-ink-100 hover:bg-surface transition-colors"
                       aria-label="Trip menu"
                     >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -459,10 +459,10 @@ export default function TripDetailPage() {
                     </svg>
                   </button>
                   {showTripMenu && (
-                    <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-warm-border bg-surface shadow-lg z-20 overflow-hidden">
+                    <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-ink-700 bg-surface shadow-lg z-20 overflow-hidden">
                       <button
                         onClick={() => { setShowTripMenu(false); setShowSettings(prev => !prev); }}
-                        className="w-full px-4 py-3 text-left font-sora text-sm text-ink-100 hover:bg-warm-surface transition-colors flex items-center gap-2"
+                        className="w-full px-4 py-3 text-left font-sora text-sm text-ink-100 hover:bg-surface transition-colors flex items-center gap-2"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <circle cx="12" cy="12" r="3" />
@@ -470,7 +470,7 @@ export default function TripDetailPage() {
                         </svg>
                         Settings
                       </button>
-                      <div className="border-t border-warm-border" />
+                      <div className="border-t border-ink-700" />
                       {!archiveConfirm ? (
                         <button
                           onClick={() => setArchiveConfirm(true)}
@@ -555,7 +555,7 @@ export default function TripDetailPage() {
 
           {/* Completion banner — organizer only, shown after end date */}
           {trip!.status === "active" && myRole === "organizer" && new Date(trip!.endDate) < new Date() && (
-            <div className="rounded-xl border border-warm-border bg-warm-surface p-4 flex items-center justify-between">
+            <div className="rounded-xl border border-ink-700 bg-surface p-4 flex items-center justify-between">
               <div>
                 <p className="font-sora text-sm font-medium text-ink-100">Trip complete!</p>
                 <p className="font-dm-mono text-xs text-ink-400 mt-0.5">Your trip dates have ended. Ready to wrap up?</p>
@@ -661,7 +661,7 @@ export default function TripDetailPage() {
 
           {/* Reflection link card — completed trips, not yet reflected */}
           {trip!.status === "completed" && !hasReflected && (
-            <div className="rounded-xl border border-warm-border bg-warm-surface p-5">
+            <div className="rounded-xl border border-ink-700 bg-surface p-5">
               <h3 className="font-sora text-base font-semibold text-ink-100">
                 How was your trip?
               </h3>
@@ -672,10 +672,10 @@ export default function TripDetailPage() {
                 href={`/trip/${trip!.id}/reflection`}
                 className="
                   mt-4 inline-flex items-center gap-2 rounded-lg
-                  bg-[#C4694F] px-5 py-2.5
+                  bg-accent px-5 py-2.5
                   font-dm-mono text-sm text-white uppercase tracking-wider
-                  hover:bg-[#C4694F]/90 transition-colors duration-150
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F] focus-visible:ring-offset-2
+                  hover:bg-accent/90 transition-colors duration-150
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
                 "
               >
                 <svg

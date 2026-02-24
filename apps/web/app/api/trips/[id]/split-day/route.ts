@@ -6,45 +6,23 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-import { z } from "zod";
-
-const splitDaySchema = z.object({
-  dayNumber: z.number().int().positive(),
-  subgroups: z
-    .array(
-      z.object({
-        memberIds: z.array(z.string().uuid()).min(1),
-        slotIds: z.array(z.string().uuid()).min(1),
-      })
-    )
-    .min(2)
-    .max(4),
-});
+import { splitDaySchema } from "@/lib/validations/split-day";
+import { requireAuth, requireTripMember } from "@/lib/api/helpers";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { userId } = auth;
 
-  const userId = (session.user as { id: string }).id;
   const { id: tripId } = params;
 
   // Membership check
-  const membership = await prisma.tripMember.findUnique({
-    where: { tripId_userId: { tripId, userId } },
-    select: { role: true, status: true },
-  });
-
-  if (!membership || membership.status !== "joined") {
-    return NextResponse.json({ error: "Trip not found" }, { status: 404 });
-  }
+  const membership = await requireTripMember(tripId, userId);
+  if (membership instanceof NextResponse) return membership;
 
   if (membership.role !== "organizer") {
     return NextResponse.json(

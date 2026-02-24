@@ -14,9 +14,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from prisma import Prisma
 
 from services.api.middleware.audit import audit_action
+from services.api.routers._admin_deps import require_admin_user, get_db
 
 router = APIRouter(prefix="/admin/models", tags=["admin-models"])
 
@@ -71,22 +71,12 @@ class ModelSummary(BaseModel):
     created_at: datetime
 
 
-def _get_db() -> Prisma:
-    """Placeholder dependency — wired by app startup."""
-    raise NotImplementedError("Wire Prisma via app lifespan")
-
-
-def _require_admin_user():
-    """Placeholder dependency — returns admin user dict with 'id' field."""
-    raise NotImplementedError("Wire admin auth dependency")
-
-
 @router.get("")
 async def list_models(
     model_name: Optional[str] = None,
     stage: Optional[str] = None,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     List all registered models with stage badges.
@@ -130,8 +120,8 @@ async def list_models(
 @router.get("/{model_id}")
 async def get_model(
     model_id: str,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """Get single model with full details."""
     model = await db.modelregistry.find_unique(where={"id": model_id})
@@ -162,8 +152,8 @@ async def get_model(
 @router.get("/{model_id}/compare")
 async def compare_with_current(
     model_id: str,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     Compare candidate model's metrics against the current model in the
@@ -235,8 +225,8 @@ async def promote_model(
     model_id: str,
     body: PromoteRequest,
     request: Request,
-    db: Prisma = Depends(_get_db),
-    admin=Depends(_require_admin_user),
+    db=Depends(get_db),
+    admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     Promote a model through the safety gate.
@@ -341,7 +331,7 @@ async def promote_model(
         data={
             "stage": body.target_stage,
             "promotedAt": now,
-            "promotedBy": admin["id"],
+            "promotedBy": admin,
             "updatedAt": now,
         },
     )
@@ -349,14 +339,14 @@ async def promote_model(
     after_state = {
         "stage": body.target_stage,
         "promotedAt": now.isoformat(),
-        "promotedBy": admin["id"],
+        "promotedBy": admin,
     }
 
     # 6. Audit log
     audit_log_id = await audit_action(
         db=db,
         request=request,
-        actor_id=admin["id"],
+        actor_id=admin,
         action="model.promote",
         target_type="ModelRegistry",
         target_id=model_id,

@@ -112,14 +112,14 @@ export function MoodPulse({ tripId, tripStatus, energyProfile }: MoodPulseProps)
   if (hidden) return null;
 
   return (
-    <div className="rounded-xl bg-warm-surface border border-warm-border p-4">
+    <div className="rounded-xl bg-surface border border-ink-700 p-4">
       {confirmed ? (
-        <p className="font-heading text-sm text-ink-100 text-center">
+        <p className="font-sora text-sm text-ink-100 text-center">
           Got it!
         </p>
       ) : (
         <>
-          <h4 className="font-heading text-sm text-ink-100 mb-3">
+          <h4 className="font-sora text-sm text-ink-100 mb-3">
             How&apos;s the energy?
           </h4>
           <div className="flex gap-2">
@@ -130,18 +130,18 @@ export function MoodPulse({ tripId, tripStatus, energyProfile }: MoodPulseProps)
                 disabled={submitting}
                 className="
                   flex-1 flex flex-col items-center gap-1.5
-                  rounded-lg border border-warm-border
+                  rounded-lg border border-ink-700
                   px-3 py-3
                   text-ink-300
-                  hover:border-terracotta hover:text-terracotta
-                  active:bg-terracotta/10
+                  hover:border-accent hover:text-accent
+                  active:bg-accent/10
                   transition-colors
                   disabled:opacity-50 disabled:cursor-not-allowed
                 "
                 aria-label={option.label}
               >
                 {option.icon}
-                <span className="font-mono text-[10px]">{option.label}</span>
+                <span className="font-dm-mono text-[10px]">{option.label}</span>
               </button>
             ))}
           </div>

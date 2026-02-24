@@ -136,7 +136,7 @@ export async function POST(
           tripId: slot.tripId,
           slotId,
           activityNodeId: slot.activityNodeId,
-          signalType: "vote_cast" as never,
+          signalType: "vote_cast",
           signalValue: VOTE_SIGNAL_VALUES[vote],
           tripPhase: "pre_trip",
           rawAction: `vote_${vote}`,

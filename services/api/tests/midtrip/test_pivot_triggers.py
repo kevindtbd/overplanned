@@ -26,7 +26,7 @@ from services.api.pivot.triggers import (
     TriggerResult,
     _parse_hours_range,
 )
-from tests.conftest import make_trip, make_itinerary_slot, make_activity_node
+from services.api.tests.conftest import make_trip, make_itinerary_slot, make_activity_node
 
 
 # ---------------------------------------------------------------------------

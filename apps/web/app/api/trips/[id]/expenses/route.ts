@@ -4,32 +4,23 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { expenseCreateSchema } from "@/lib/validations/expenses";
+import { requireAuth, requireTripMember } from "@/lib/api/helpers";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { userId } = auth;
 
-  const userId = (session.user as { id: string }).id;
   const { id: tripId } = params;
 
   try {
-    const membership = await prisma.tripMember.findUnique({
-      where: { tripId_userId: { tripId, userId } },
-      select: { status: true },
-    });
-
-    if (!membership || membership.status !== "joined") {
-      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
-    }
+    const membership = await requireTripMember(tripId, userId);
+    if (membership instanceof NextResponse) return membership;
 
     const expenses = await prisma.expense.findMany({
       where: { tripId },
@@ -52,12 +43,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { userId } = auth;
 
-  const userId = (session.user as { id: string }).id;
   const { id: tripId } = params;
 
   let body: unknown;
@@ -78,14 +67,8 @@ export async function POST(
   const { description, amountCents, splitWith, slotId } = parsed.data;
 
   try {
-    const membership = await prisma.tripMember.findUnique({
-      where: { tripId_userId: { tripId, userId } },
-      select: { status: true },
-    });
-
-    if (!membership || membership.status !== "joined") {
-      return NextResponse.json({ error: "Trip not found" }, { status: 404 });
-    }
+    const membership = await requireTripMember(tripId, userId);
+    if (membership instanceof NextResponse) return membership;
 
     // Deduplicate splitWith
     const deduped = splitWith ? [...new Set(splitWith)] : [];

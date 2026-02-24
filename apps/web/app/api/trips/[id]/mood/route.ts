@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
 import { moodSchema } from "@/lib/validations/mood";
+import { requireAuth } from "@/lib/api/helpers";
 
 const MOOD_VALUE_MAP: Record<string, number> = {
   high: 1.0,
@@ -14,15 +13,13 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const { userId } = auth;
 
-  const userId = (session.user as { id: string }).id;
   const tripId = params.id;
 
-  // Membership check
+  // Membership check (needs energyProfile so we query directly)
   const member = await prisma.tripMember.findUnique({
     where: { tripId_userId: { tripId, userId } },
     select: { role: true, status: true, energyProfile: true },
