@@ -208,7 +208,7 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
         <div className="rounded-lg bg-surface p-8 shadow-xl">
-          <p className="font-mono text-sm text-ink-500">Loading node...</p>
+          <p className="font-dm-mono text-sm text-ink-500">Loading node...</p>
         </div>
       </div>
     );
@@ -218,8 +218,8 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
         <div className="rounded-lg bg-surface p-8 shadow-xl">
-          <p className="font-mono text-sm text-error">{error || 'Node not found'}</p>
-          <button onClick={onClose} className="mt-4 font-mono text-sm text-accent">
+          <p className="font-dm-mono text-sm text-error">{error || 'Node not found'}</p>
+          <button onClick={onClose} className="mt-4 font-dm-mono text-sm text-accent">
             Close
           </button>
         </div>
@@ -238,19 +238,19 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
         <div className="flex items-center justify-between border-b border-ink-700 px-6 py-4">
           <div>
             <h2 className="font-display text-lg text-ink-100">{node.name}</h2>
-            <p className="font-mono text-xs text-ink-500">
+            <p className="font-dm-mono text-xs text-ink-500">
               {node.city}, {node.country} &middot; {node.slug}
             </p>
           </div>
           <div className="flex items-center gap-3">
             {currentStatus && (
-              <span className={`rounded px-2 py-0.5 font-mono text-xs ${currentStatus.color}`}>
+              <span className={`rounded px-2 py-0.5 font-dm-mono text-xs ${currentStatus.color}`}>
                 {currentStatus.label}
               </span>
             )}
             <button
               onClick={onClose}
-              className="font-mono text-sm text-ink-500 hover:text-ink-200"
+              className="font-dm-mono text-sm text-ink-500 hover:text-ink-200"
             >
               Close
             </button>
@@ -260,7 +260,7 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
         {/* Error banner */}
         {error && (
           <div className="border-b border-error/30 bg-error-bg px-6 py-2">
-            <p className="font-mono text-xs text-error">{error}</p>
+            <p className="font-dm-mono text-xs text-error">{error}</p>
           </div>
         )}
 
@@ -271,7 +271,7 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
               key={s.value}
               onClick={() => handleStatusChange(s.value)}
               disabled={saving}
-              className={`rounded px-3 py-1 font-mono text-xs transition-colors ${s.color} hover:opacity-80 disabled:opacity-40`}
+              className={`rounded px-3 py-1 font-dm-mono text-xs transition-colors ${s.color} hover:opacity-80 disabled:opacity-40`}
             >
               {s.value === 'approved' ? 'Approve' : s.value === 'archived' ? 'Archive' : s.value === 'flagged' ? 'Flag' : 'Set Pending'}
             </button>
@@ -284,7 +284,7 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`border-b-2 px-1 py-2 font-mono text-sm capitalize transition-colors ${
+              className={`border-b-2 px-1 py-2 font-dm-mono text-sm capitalize transition-colors ${
                 activeTab === tab
                   ? 'border-accent text-accent'
                   : 'border-transparent text-ink-500 hover:text-ink-300'
@@ -341,12 +341,12 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
                   onChange={(e) => setNewAlias(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddAlias()}
                   placeholder="Add alias..."
-                  className="flex-1 rounded border border-ink-700 bg-base px-3 py-1.5 font-mono text-sm focus:border-accent focus:outline-none"
+                  className="flex-1 rounded border border-ink-700 bg-base px-3 py-1.5 font-dm-mono text-sm focus:border-accent focus:outline-none"
                 />
                 <button
                   onClick={handleAddAlias}
                   disabled={!newAlias.trim()}
-                  className="rounded bg-accent px-3 py-1.5 font-mono text-sm text-white hover:opacity-90 disabled:opacity-40"
+                  className="rounded bg-accent px-3 py-1.5 font-dm-mono text-sm text-white hover:opacity-90 disabled:opacity-40"
                 >
                   Add
                 </button>
@@ -354,18 +354,18 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
 
               {/* Alias list */}
               {node.aliases.length === 0 ? (
-                <p className="font-mono text-sm text-ink-600">No aliases</p>
+                <p className="font-dm-mono text-sm text-ink-600">No aliases</p>
               ) : (
                 <ul className="space-y-1">
                   {node.aliases.map((a) => (
                     <li key={a.id} className="flex items-center justify-between rounded border border-ink-700 px-3 py-2">
                       <div>
-                        <span className="font-mono text-sm text-ink-100">{a.alias}</span>
-                        <span className="ml-2 font-mono text-xs text-ink-600">({a.source})</span>
+                        <span className="font-dm-mono text-sm text-ink-100">{a.alias}</span>
+                        <span className="ml-2 font-dm-mono text-xs text-ink-600">({a.source})</span>
                       </div>
                       <button
                         onClick={() => handleRemoveAlias(a.id)}
-                        className="font-mono text-xs text-error hover:text-error"
+                        className="font-dm-mono text-xs text-error hover:text-error"
                       >
                         Remove
                       </button>
@@ -381,10 +381,10 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
               {/* Vibe tags */}
               {node.vibeTags.length > 0 && (
                 <div>
-                  <h4 className="mb-2 font-mono text-xs font-semibold uppercase text-ink-500">Vibe Tags</h4>
+                  <h4 className="mb-2 font-dm-mono text-xs font-semibold uppercase text-ink-500">Vibe Tags</h4>
                   <div className="flex flex-wrap gap-1">
                     {node.vibeTags.map((vt) => (
-                      <span key={vt.id} className="rounded bg-base px-2 py-0.5 font-mono text-xs text-ink-300">
+                      <span key={vt.id} className="rounded bg-base px-2 py-0.5 font-dm-mono text-xs text-ink-300">
                         {vt.tagName} ({vt.score.toFixed(2)})
                       </span>
                     ))}
@@ -394,11 +394,11 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
 
               {/* Quality signals */}
               <div>
-                <h4 className="mb-2 font-mono text-xs font-semibold uppercase text-ink-500">Quality Signals</h4>
+                <h4 className="mb-2 font-dm-mono text-xs font-semibold uppercase text-ink-500">Quality Signals</h4>
                 {node.qualitySignals.length === 0 ? (
-                  <p className="font-mono text-sm text-ink-600">No signals</p>
+                  <p className="font-dm-mono text-sm text-ink-600">No signals</p>
                 ) : (
-                  <table className="w-full font-mono text-xs">
+                  <table className="w-full font-dm-mono text-xs">
                     <thead>
                       <tr className="border-b border-ink-700 text-left text-ink-500">
                         <th className="py-1">Source</th>
@@ -426,20 +426,20 @@ export default function NodeEditor({ nodeId, onClose, onSaved }: NodeEditorProps
 
         {/* Footer actions */}
         <div className="flex items-center justify-between border-t border-ink-700 px-6 py-3">
-          <p className="font-mono text-xs text-ink-600">
+          <p className="font-dm-mono text-xs text-ink-600">
             Updated {new Date(node.updatedAt).toLocaleString()}
           </p>
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="rounded border border-ink-700 px-4 py-1.5 font-mono text-sm text-ink-500 hover:bg-base"
+              className="rounded border border-ink-700 px-4 py-1.5 font-dm-mono text-sm text-ink-500 hover:bg-base"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={!hasChanges || saving}
-              className="rounded bg-accent px-4 py-1.5 font-mono text-sm text-white hover:opacity-90 disabled:opacity-40"
+              className="rounded bg-accent px-4 py-1.5 font-dm-mono text-sm text-white hover:opacity-90 disabled:opacity-40"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -465,12 +465,12 @@ function FieldInput({
 }) {
   return (
     <label className="block">
-      <span className="font-mono text-xs text-ink-500">{label}</span>
+      <span className="font-dm-mono text-xs text-ink-500">{label}</span>
       <input
         type="text"
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-0.5 block w-full rounded border border-ink-700 bg-base px-2 py-1 font-mono text-sm focus:border-accent focus:outline-none"
+        className="mt-0.5 block w-full rounded border border-ink-700 bg-base px-2 py-1 font-dm-mono text-sm focus:border-accent focus:outline-none"
       />
     </label>
   );
@@ -487,12 +487,12 @@ function FieldTextarea({
 }) {
   return (
     <label className="block">
-      <span className="font-mono text-xs text-ink-500">{label}</span>
+      <span className="font-dm-mono text-xs text-ink-500">{label}</span>
       <textarea
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
         rows={3}
-        className="mt-0.5 block w-full rounded border border-ink-700 bg-base px-2 py-1 font-mono text-sm focus:border-accent focus:outline-none"
+        className="mt-0.5 block w-full rounded border border-ink-700 bg-base px-2 py-1 font-dm-mono text-sm focus:border-accent focus:outline-none"
       />
     </label>
   );
@@ -511,11 +511,11 @@ function FieldSelect({
 }) {
   return (
     <label className="block">
-      <span className="font-mono text-xs text-ink-500">{label}</span>
+      <span className="font-dm-mono text-xs text-ink-500">{label}</span>
       <select
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-0.5 block w-full rounded border border-ink-700 bg-base px-2 py-1 font-mono text-sm focus:border-accent focus:outline-none"
+        className="mt-0.5 block w-full rounded border border-ink-700 bg-base px-2 py-1 font-dm-mono text-sm focus:border-accent focus:outline-none"
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
@@ -530,8 +530,8 @@ function FieldSelect({
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <span className="font-mono text-xs text-ink-600">{label}</span>
-      <p className="font-mono text-sm text-ink-300">{value}</p>
+      <span className="font-dm-mono text-xs text-ink-600">{label}</span>
+      <p className="font-dm-mono text-sm text-ink-300">{value}</p>
     </div>
   );
 }

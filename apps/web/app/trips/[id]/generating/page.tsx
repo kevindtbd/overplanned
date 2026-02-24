@@ -178,8 +178,8 @@ export default function GeneratingPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-base">
         <div className="flex flex-col items-center gap-4 px-4 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/30">
-            <AlertIcon className="h-7 w-7 text-red-500" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-error-bg dark:bg-red-950/30">
+            <AlertIcon className="h-7 w-7 text-error" />
           </div>
           <div>
             <h2 className="font-sora text-lg font-semibold text-primary">

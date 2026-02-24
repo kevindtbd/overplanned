@@ -50,7 +50,7 @@ export function DraftIdeaCard({ trip }: { trip: TripSummary }) {
   return (
     <Link
       href={`/onboarding?resume=${trip.id}`}
-      className="block rounded-[20px] border border-warm-border bg-warm-surface p-5 transition-colors hover:border-accent/30"
+      className="block rounded-[20px] border border-ink-700 bg-surface p-5 transition-colors hover:border-accent/30"
       aria-label={`Continue planning trip to ${city}${country ? `, ${country}` : ""}`}
       data-testid="draft-idea-card"
     >

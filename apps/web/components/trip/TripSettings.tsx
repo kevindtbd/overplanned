@@ -219,15 +219,15 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
   }, [trip.id, router]);
 
   return (
-    <div className="rounded-xl border border-warm-border bg-warm-surface overflow-hidden">
+    <div className="rounded-xl border border-ink-700 bg-surface overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-warm-border">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-ink-700">
         <h2 className="font-sora text-base font-medium text-ink-100">
           Trip Settings
         </h2>
         <button
           onClick={onClose}
-          className="rounded-lg p-2 text-ink-400 hover:text-ink-100 hover:bg-warm-surface transition-colors"
+          className="rounded-lg p-2 text-ink-400 hover:text-ink-100 hover:bg-surface transition-colors"
           aria-label="Close settings"
         >
           <svg
@@ -255,7 +255,7 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
       )}
 
       {/* Editable fields */}
-      <div className="px-5 py-4 space-y-4 border-b border-warm-border">
+      <div className="px-5 py-4 space-y-4 border-b border-ink-700">
         {/* Trip name */}
         <div className="space-y-1.5">
           <label
@@ -270,7 +270,7 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={trip.destination}
-            className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2.5 font-sora text-sm text-ink-100 placeholder:text-ink-600 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
+            className="w-full rounded-lg border border-ink-700 bg-base px-3 py-2.5 font-sora text-sm text-ink-100 placeholder:text-ink-600 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
           />
         </div>
 
@@ -289,7 +289,7 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2.5 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
+                className="w-full rounded-lg border border-ink-700 bg-base px-3 py-2.5 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
               />
             </div>
             <div>
@@ -302,7 +302,7 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
                 value={endDate}
                 max={maxEndDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2.5 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
+                className="w-full rounded-lg border border-ink-700 bg-base px-3 py-2.5 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
               />
             </div>
           </div>
@@ -321,7 +321,7 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
                 className={`rounded-lg px-4 py-2.5 font-sora text-sm font-medium transition-colors min-h-[44px] ${
                   mode === m
                     ? "bg-accent text-white"
-                    : "border border-warm-border text-ink-400 hover:text-ink-100 hover:border-ink-600"
+                    : "border border-ink-700 text-ink-400 hover:text-ink-100 hover:border-ink-600"
                 }`}
               >
                 {m.charAt(0).toUpperCase() + m.slice(1)}
@@ -349,13 +349,13 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
       </div>
 
       {/* Export */}
-      <div className="px-5 py-4 border-b border-warm-border">
+      <div className="px-5 py-4 border-b border-ink-700">
         <span className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
           Export
         </span>
         <button
           onClick={handleExport}
-          className="mt-2 w-full rounded-lg border border-warm-border px-4 py-2.5 font-sora text-sm font-medium text-ink-100 hover:bg-warm-background transition-colors min-h-[44px] text-left flex items-center gap-2"
+          className="mt-2 w-full rounded-lg border border-ink-700 px-4 py-2.5 font-sora text-sm font-medium text-ink-100 hover:bg-base transition-colors min-h-[44px] text-left flex items-center gap-2"
         >
           <svg
             width="16"
@@ -379,7 +379,7 @@ export function TripSettings({ trip, myRole, onClose, onTripUpdate }: TripSettin
 
       {/* Leg management — organizer only, draft/planning */}
       {isOrganizer && (trip.status === "draft" || trip.status === "planning") && (
-        <div className="px-5 py-4 border-b border-warm-border">
+        <div className="px-5 py-4 border-b border-ink-700">
           <LegEditor
             tripId={trip.id}
             legs={trip.legs}

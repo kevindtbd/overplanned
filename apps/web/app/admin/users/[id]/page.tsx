@@ -184,7 +184,7 @@ export default function AdminUserDetailPage() {
 
   if (loading && !data) {
     return (
-      <div className="py-12 text-center font-mono text-sm text-ink-600">
+      <div className="py-12 text-center font-dm-mono text-sm text-ink-600">
         Loading user...
       </div>
     );
@@ -193,10 +193,10 @@ export default function AdminUserDetailPage() {
   if (error && !data) {
     return (
       <div className="rounded border border-error/30 bg-error-bg px-4 py-3">
-        <p className="font-mono text-sm text-error">{error}</p>
+        <p className="font-dm-mono text-sm text-error">{error}</p>
         <a
           href="/admin/users"
-          className="mt-2 inline-block font-mono text-xs text-accent hover:underline"
+          className="mt-2 inline-block font-dm-mono text-xs text-accent hover:underline"
         >
           Back to Users
         </a>
@@ -211,7 +211,7 @@ export default function AdminUserDetailPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="font-mono text-xs text-ink-600">
+      <div className="font-dm-mono text-xs text-ink-600">
         <a href="/admin/users" className="hover:text-accent">
           Users
         </a>
@@ -236,7 +236,7 @@ export default function AdminUserDetailPage() {
           <h2 className="font-display text-2xl text-ink-100">
             {user.name ?? 'Unnamed User'}
           </h2>
-          <p className="font-mono text-sm text-ink-500">{user.email}</p>
+          <p className="font-dm-mono text-sm text-ink-500">{user.email}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <span
               className={`rounded px-2 py-0.5 text-xs ${
@@ -257,7 +257,7 @@ export default function AdminUserDetailPage() {
             )}
           </div>
         </div>
-        <span className="font-mono text-xs text-ink-600">
+        <span className="font-dm-mono text-xs text-ink-600">
           ID: {user.id.slice(0, 8)}
         </span>
       </div>
@@ -265,50 +265,50 @@ export default function AdminUserDetailPage() {
       {/* Info grid */}
       <div className="grid grid-cols-2 gap-4 rounded-lg border border-ink-700 bg-surface p-4 lg:grid-cols-4">
         <div>
-          <span className="font-mono text-xs text-ink-600">Joined</span>
-          <p className="font-mono text-sm text-ink-100">
+          <span className="font-dm-mono text-xs text-ink-600">Joined</span>
+          <p className="font-dm-mono text-sm text-ink-100">
             {new Date(user.createdAt).toLocaleDateString()}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-ink-600">Last Active</span>
-          <p className="font-mono text-sm text-ink-100">
+          <span className="font-dm-mono text-xs text-ink-600">Last Active</span>
+          <p className="font-dm-mono text-sm text-ink-100">
             {user.lastActiveAt
               ? new Date(user.lastActiveAt).toLocaleDateString()
               : '--'}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-ink-600">Trips</span>
-          <p className="font-mono text-sm text-ink-100">{trips.length}</p>
+          <span className="font-dm-mono text-xs text-ink-600">Trips</span>
+          <p className="font-dm-mono text-sm text-ink-100">{trips.length}</p>
         </div>
         <div>
-          <span className="font-mono text-xs text-ink-600">Signals</span>
-          <p className="font-mono text-sm text-ink-100">
+          <span className="font-dm-mono text-xs text-ink-600">Signals</span>
+          <p className="font-dm-mono text-sm text-ink-100">
             {signalCount.toLocaleString()}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-ink-600">Google ID</span>
-          <p className="font-mono text-sm text-ink-100 truncate">
+          <span className="font-dm-mono text-xs text-ink-600">Google ID</span>
+          <p className="font-dm-mono text-sm text-ink-100 truncate">
             {user.googleId ?? '--'}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-ink-600">Stripe</span>
-          <p className="font-mono text-sm text-ink-100 truncate">
+          <span className="font-dm-mono text-xs text-ink-600">Stripe</span>
+          <p className="font-dm-mono text-sm text-ink-100 truncate">
             {user.stripeCustomerId ?? '--'}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-ink-600">Access Cohort</span>
-          <p className="font-mono text-sm text-ink-100">
+          <span className="font-dm-mono text-xs text-ink-600">Access Cohort</span>
+          <p className="font-dm-mono text-sm text-ink-100">
             {user.accessCohort ?? '--'}
           </p>
         </div>
         <div>
-          <span className="font-mono text-xs text-ink-600">Email Verified</span>
-          <p className="font-mono text-sm text-ink-100">
+          <span className="font-dm-mono text-xs text-ink-600">Email Verified</span>
+          <p className="font-dm-mono text-sm text-ink-100">
             {user.emailVerified
               ? new Date(user.emailVerified).toLocaleDateString()
               : '--'}
@@ -325,7 +325,7 @@ export default function AdminUserDetailPage() {
           {!tierEditing && (
             <button
               onClick={() => setTierEditing(true)}
-              className="font-mono text-xs text-accent hover:underline"
+              className="font-dm-mono text-xs text-accent hover:underline"
             >
               Change
             </button>
@@ -339,7 +339,7 @@ export default function AdminUserDetailPage() {
                 <button
                   key={t}
                   onClick={() => setTierDraft(t)}
-                  className={`rounded px-3 py-1.5 font-mono text-xs capitalize transition-colors ${
+                  className={`rounded px-3 py-1.5 font-dm-mono text-xs capitalize transition-colors ${
                     tierDraft === t
                       ? 'bg-accent text-white'
                       : 'border border-ink-700 bg-base text-ink-500 hover:bg-ink-800'
@@ -353,7 +353,7 @@ export default function AdminUserDetailPage() {
               <button
                 onClick={saveTier}
                 disabled={tierSaving || tierDraft === user.subscriptionTier}
-                className="rounded bg-ink-200 px-3 py-1.5 font-mono text-xs text-white hover:bg-ink-300 disabled:opacity-40"
+                className="rounded bg-ink-200 px-3 py-1.5 font-dm-mono text-xs text-white hover:bg-ink-300 disabled:opacity-40"
               >
                 {tierSaving ? 'Saving...' : 'Save Tier'}
               </button>
@@ -362,15 +362,15 @@ export default function AdminUserDetailPage() {
                   setTierEditing(false);
                   setTierDraft(user.subscriptionTier);
                 }}
-                className="font-mono text-xs text-ink-500 hover:text-ink-300"
+                className="font-dm-mono text-xs text-ink-500 hover:text-ink-300"
               >
                 Cancel
               </button>
             </div>
             {tierMessage && (
               <p
-                className={`font-mono text-xs ${
-                  tierMessage.startsWith('Error') ? 'text-error' : 'text-green-600'
+                className={`font-dm-mono text-xs ${
+                  tierMessage.startsWith('Error') ? 'text-error' : 'text-success'
                 }`}
               >
                 {tierMessage}
@@ -387,7 +387,7 @@ export default function AdminUserDetailPage() {
               {user.subscriptionTier}
             </span>
             {tierMessage && (
-              <p className="mt-2 font-mono text-xs text-green-600">
+              <p className="mt-2 font-dm-mono text-xs text-success">
                 {tierMessage}
               </p>
             )}
@@ -407,7 +407,7 @@ export default function AdminUserDetailPage() {
                 setFlagEditing(true);
                 setFlagDraft(user.featureFlags ?? {});
               }}
-              className="font-mono text-xs text-accent hover:underline"
+              className="font-dm-mono text-xs text-accent hover:underline"
             >
               Edit
             </button>
@@ -428,7 +428,7 @@ export default function AdminUserDetailPage() {
                       <button
                         onClick={() => handleFlagToggle(name)}
                         className={`h-4 w-8 rounded-full transition-colors ${
-                          enabled ? 'bg-green-500' : 'bg-ink-700'
+                          enabled ? 'bg-success' : 'bg-ink-700'
                         }`}
                       >
                         <span
@@ -437,13 +437,13 @@ export default function AdminUserDetailPage() {
                           }`}
                         />
                       </button>
-                      <span className="font-mono text-sm text-ink-300">
+                      <span className="font-dm-mono text-sm text-ink-300">
                         {name}
                       </span>
                     </div>
                     <button
                       onClick={() => handleRemoveFlag(name)}
-                      className="font-mono text-xs text-red-500 hover:text-error"
+                      className="font-dm-mono text-xs text-error hover:text-error"
                     >
                       Remove
                     </button>
@@ -451,7 +451,7 @@ export default function AdminUserDetailPage() {
                 ))}
               </div>
             ) : (
-              <p className="font-mono text-xs text-ink-600">
+              <p className="font-dm-mono text-xs text-ink-600">
                 No flags set
               </p>
             )}
@@ -464,12 +464,12 @@ export default function AdminUserDetailPage() {
                 value={newFlagName}
                 onChange={(e) => setNewFlagName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddFlag()}
-                className="flex-1 rounded border border-ink-700 bg-base px-2 py-1 font-mono text-sm focus:border-accent focus:outline-none"
+                className="flex-1 rounded border border-ink-700 bg-base px-2 py-1 font-dm-mono text-sm focus:border-accent focus:outline-none"
               />
               <button
                 onClick={handleAddFlag}
                 disabled={!newFlagName.trim()}
-                className="rounded border border-ink-700 bg-base px-2 py-1 font-mono text-xs text-ink-500 hover:bg-ink-800 disabled:opacity-40"
+                className="rounded border border-ink-700 bg-base px-2 py-1 font-dm-mono text-xs text-ink-500 hover:bg-ink-800 disabled:opacity-40"
               >
                 Add Flag
               </button>
@@ -480,7 +480,7 @@ export default function AdminUserDetailPage() {
               <button
                 onClick={saveFlags}
                 disabled={flagSaving}
-                className="rounded bg-ink-200 px-3 py-1.5 font-mono text-xs text-white hover:bg-ink-300 disabled:opacity-40"
+                className="rounded bg-ink-200 px-3 py-1.5 font-dm-mono text-xs text-white hover:bg-ink-300 disabled:opacity-40"
               >
                 {flagSaving ? 'Saving...' : 'Save Flags'}
               </button>
@@ -489,15 +489,15 @@ export default function AdminUserDetailPage() {
                   setFlagEditing(false);
                   setFlagDraft(user.featureFlags ?? {});
                 }}
-                className="font-mono text-xs text-ink-500 hover:text-ink-300"
+                className="font-dm-mono text-xs text-ink-500 hover:text-ink-300"
               >
                 Cancel
               </button>
             </div>
             {flagMessage && (
               <p
-                className={`font-mono text-xs ${
-                  flagMessage.startsWith('Error') ? 'text-error' : 'text-green-600'
+                className={`font-dm-mono text-xs ${
+                  flagMessage.startsWith('Error') ? 'text-error' : 'text-success'
                 }`}
               >
                 {flagMessage}
@@ -512,7 +512,7 @@ export default function AdminUserDetailPage() {
                 {Object.entries(user.featureFlags).map(([name, enabled]) => (
                   <span
                     key={name}
-                    className={`rounded px-2 py-0.5 font-mono text-xs ${
+                    className={`rounded px-2 py-0.5 font-dm-mono text-xs ${
                       enabled
                         ? 'bg-green-50 text-green-700'
                         : 'bg-ink-800 text-ink-600 line-through'
@@ -523,10 +523,10 @@ export default function AdminUserDetailPage() {
                 ))}
               </div>
             ) : (
-              <p className="font-mono text-xs text-ink-600">No flags set</p>
+              <p className="font-dm-mono text-xs text-ink-600">No flags set</p>
             )}
             {flagMessage && (
-              <p className="mt-2 font-mono text-xs text-green-600">
+              <p className="mt-2 font-dm-mono text-xs text-success">
                 {flagMessage}
               </p>
             )}
@@ -540,7 +540,7 @@ export default function AdminUserDetailPage() {
           Trips ({trips.length})
         </h3>
         {trips.length === 0 ? (
-          <p className="font-mono text-xs text-ink-600">No trips yet</p>
+          <p className="font-dm-mono text-xs text-ink-600">No trips yet</p>
         ) : (
           <div className="space-y-2">
             {trips.map((trip) => (
@@ -549,15 +549,15 @@ export default function AdminUserDetailPage() {
                 className="flex items-center justify-between rounded bg-base px-3 py-2"
               >
                 <div>
-                  <span className="font-mono text-sm text-ink-100">
+                  <span className="font-dm-mono text-sm text-ink-100">
                     {trip.destination}
                   </span>
-                  <span className="ml-2 font-mono text-xs text-ink-600">
+                  <span className="ml-2 font-dm-mono text-xs text-ink-600">
                     {trip.city}, {trip.country}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs text-ink-600">
+                  <span className="font-dm-mono text-xs text-ink-600">
                     {trip.mode}
                   </span>
                   <span
@@ -567,7 +567,7 @@ export default function AdminUserDetailPage() {
                   >
                     {trip.status}
                   </span>
-                  <span className="font-mono text-xs text-ink-600">
+                  <span className="font-dm-mono text-xs text-ink-600">
                     {new Date(trip.startDate).toLocaleDateString()} --{' '}
                     {new Date(trip.endDate).toLocaleDateString()}
                   </span>
@@ -584,12 +584,12 @@ export default function AdminUserDetailPage() {
           Recent Signals ({signalCount.toLocaleString()} total)
         </h3>
         {recentSignals.length === 0 ? (
-          <p className="font-mono text-xs text-ink-600">
+          <p className="font-dm-mono text-xs text-ink-600">
             No behavioral signals recorded
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full font-mono text-xs">
+            <table className="w-full font-dm-mono text-xs">
               <thead>
                 <tr className="border-b border-ink-700 text-left text-ink-600">
                   <th className="px-2 py-1.5">Type</th>
@@ -610,7 +610,7 @@ export default function AdminUserDetailPage() {
                       <span
                         className={
                           s.signalValue > 0
-                            ? 'text-green-600'
+                            ? 'text-success'
                             : s.signalValue < 0
                               ? 'text-error'
                               : ''

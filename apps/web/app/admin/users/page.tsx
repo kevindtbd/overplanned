@@ -117,11 +117,11 @@ export default function AdminUsersPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="font-display text-2xl text-ink-100">Users</h2>
-          <p className="font-mono text-sm text-ink-500">
+          <p className="font-dm-mono text-sm text-ink-500">
             Search, view, and manage user accounts
           </p>
         </div>
-        <span className="rounded bg-base px-3 py-1 font-mono text-sm text-ink-500">
+        <span className="rounded bg-base px-3 py-1 font-dm-mono text-sm text-ink-500">
           {total} user{total !== 1 ? 's' : ''}
         </span>
       </div>
@@ -134,7 +134,7 @@ export default function AdminUsersPage() {
             <button
               key={t}
               onClick={() => setTierFilter(t)}
-              className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${
+              className={`px-3 py-1.5 font-dm-mono text-xs capitalize transition-colors ${
                 tierFilter === t
                   ? 'bg-accent text-white'
                   : 'bg-surface text-ink-500 hover:bg-base'
@@ -151,20 +151,20 @@ export default function AdminUsersPage() {
           placeholder="Search email or name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="min-w-[240px] rounded border border-ink-700 bg-base px-3 py-1.5 font-mono text-sm focus:border-accent focus:outline-none"
+          className="min-w-[240px] rounded border border-ink-700 bg-base px-3 py-1.5 font-dm-mono text-sm focus:border-accent focus:outline-none"
         />
       </div>
 
       {/* Error */}
       {error && (
         <div className="mb-4 rounded border border-error/30 bg-error-bg px-4 py-2">
-          <p className="font-mono text-sm text-error">{error}</p>
+          <p className="font-dm-mono text-sm text-error">{error}</p>
         </div>
       )}
 
       {/* Table */}
       <div className="overflow-x-auto rounded border border-ink-700">
-        <table className="w-full font-mono text-sm">
+        <table className="w-full font-dm-mono text-sm">
           <thead>
             <tr className="border-b border-ink-700 bg-base text-left text-xs text-ink-500">
               <th className="px-3 py-2">User</th>
@@ -283,7 +283,7 @@ export default function AdminUsersPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="font-mono text-xs text-ink-600">
+          <p className="font-dm-mono text-xs text-ink-600">
             Showing {page * pageSize + 1}--{Math.min((page + 1) * pageSize, total)} of{' '}
             {total}
           </p>
@@ -291,14 +291,14 @@ export default function AdminUsersPage() {
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-dm-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Prev
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-dm-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Next
             </button>

@@ -7,7 +7,7 @@
 // pure SVG with cubic bezier smoothing.
 //
 // Usage:
-//   <PulseLine data={pulseHistory} height={160} accentColor="#C4694F" />
+//   <PulseLine data={pulseHistory} height={160} />
 
 import { useMemo } from "react";
 
@@ -78,7 +78,7 @@ function buildAreaPath(
 export function PulseLine({
   data,
   height = 160,
-  accentColor = "#C4694F",
+  accentColor = "var(--accent)",
   contestedColor = "#f59e0b",
   className = "",
 }: PulseLineProps) {

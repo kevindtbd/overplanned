@@ -117,11 +117,11 @@ export default function AdminNodesPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="font-display text-2xl text-ink-100">Node Queue</h2>
-          <p className="font-mono text-sm text-ink-500">
+          <p className="font-dm-mono text-sm text-ink-500">
             Flagged and low-convergence nodes requiring admin review
           </p>
         </div>
-        <span className="rounded bg-base px-3 py-1 font-mono text-sm text-ink-500">
+        <span className="rounded bg-base px-3 py-1 font-dm-mono text-sm text-ink-500">
           {total} node{total !== 1 ? 's' : ''}
         </span>
       </div>
@@ -134,7 +134,7 @@ export default function AdminNodesPage() {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${
+              className={`px-3 py-1.5 font-dm-mono text-xs capitalize transition-colors ${
                 statusFilter === s
                   ? 'bg-accent text-white'
                   : 'bg-surface text-ink-500 hover:bg-base'
@@ -151,7 +151,7 @@ export default function AdminNodesPage() {
           placeholder="Search name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="rounded border border-ink-700 bg-base px-3 py-1.5 font-mono text-sm focus:border-accent focus:outline-none"
+          className="rounded border border-ink-700 bg-base px-3 py-1.5 font-dm-mono text-sm focus:border-accent focus:outline-none"
         />
 
         {/* City */}
@@ -160,12 +160,12 @@ export default function AdminNodesPage() {
           placeholder="City..."
           value={cityFilter}
           onChange={(e) => setCityFilter(e.target.value)}
-          className="w-32 rounded border border-ink-700 bg-base px-3 py-1.5 font-mono text-sm focus:border-accent focus:outline-none"
+          className="w-32 rounded border border-ink-700 bg-base px-3 py-1.5 font-dm-mono text-sm focus:border-accent focus:outline-none"
         />
 
         {/* Max convergence */}
         <label className="flex items-center gap-1">
-          <span className="font-mono text-xs text-ink-500">Conv &le;</span>
+          <span className="font-dm-mono text-xs text-ink-500">Conv &le;</span>
           <input
             type="number"
             step="0.1"
@@ -174,7 +174,7 @@ export default function AdminNodesPage() {
             placeholder="1.0"
             value={maxConvergence}
             onChange={(e) => setMaxConvergence(e.target.value)}
-            className="w-20 rounded border border-ink-700 bg-base px-2 py-1.5 font-mono text-sm focus:border-accent focus:outline-none"
+            className="w-20 rounded border border-ink-700 bg-base px-2 py-1.5 font-dm-mono text-sm focus:border-accent focus:outline-none"
           />
         </label>
       </div>
@@ -182,13 +182,13 @@ export default function AdminNodesPage() {
       {/* Error */}
       {error && (
         <div className="mb-4 rounded border border-error/30 bg-error-bg px-4 py-2">
-          <p className="font-mono text-sm text-error">{error}</p>
+          <p className="font-dm-mono text-sm text-error">{error}</p>
         </div>
       )}
 
       {/* Table */}
       <div className="overflow-x-auto rounded border border-ink-700">
-        <table className="w-full font-mono text-sm">
+        <table className="w-full font-dm-mono text-sm">
           <thead>
             <tr className="border-b border-ink-700 bg-base text-left text-xs text-ink-500">
               <th className="cursor-pointer px-3 py-2" onClick={() => handleSort('name')}>
@@ -275,21 +275,21 @@ export default function AdminNodesPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="font-mono text-xs text-ink-600">
+          <p className="font-dm-mono text-xs text-ink-600">
             Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} of {total}
           </p>
           <div className="flex gap-1">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-dm-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Prev
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-dm-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Next
             </button>

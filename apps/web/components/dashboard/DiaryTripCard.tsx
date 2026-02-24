@@ -125,7 +125,7 @@ export function DiaryTripCard({ trip }: { trip: BackfillTripSummary }) {
   return (
     <Link
       href={`/diary/${trip.id}`}
-      className="block rounded-[20px] border border-warm-border bg-warm-surface p-5 transition-colors hover:border-accent/30"
+      className="block rounded-[20px] border border-ink-700 bg-surface p-5 transition-colors hover:border-accent/30"
       aria-label={`View diary for ${locationLabel}`}
       data-testid="diary-trip-card"
     >
@@ -161,7 +161,7 @@ export function DiaryTripCard({ trip }: { trip: BackfillTripSummary }) {
         )}
 
         {trip.contextTag && (
-          <span className="rounded-full bg-warm-background px-2 py-0.5 font-dm-mono text-[10px] text-ink-400">
+          <span className="rounded-full bg-base px-2 py-0.5 font-dm-mono text-[10px] text-ink-400">
             {CONTEXT_LABELS[trip.contextTag] || trip.contextTag}
           </span>
         )}

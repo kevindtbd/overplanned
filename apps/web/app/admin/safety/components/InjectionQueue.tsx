@@ -102,7 +102,7 @@ export default function InjectionQueue() {
             <button
               key={f}
               onClick={() => setReviewFilter(f)}
-              className={`px-3 py-1.5 font-mono text-xs capitalize transition-colors ${
+              className={`px-3 py-1.5 font-dm-mono text-xs capitalize transition-colors ${
                 reviewFilter === f
                   ? 'bg-accent text-white'
                   : 'bg-surface text-ink-500 hover:bg-base'
@@ -113,7 +113,7 @@ export default function InjectionQueue() {
           ))}
         </div>
 
-        <span className="rounded bg-base px-3 py-1 font-mono text-sm text-ink-500">
+        <span className="rounded bg-base px-3 py-1 font-dm-mono text-sm text-ink-500">
           {total} flagged input{total !== 1 ? 's' : ''}
         </span>
       </div>
@@ -121,18 +121,18 @@ export default function InjectionQueue() {
       {/* Error */}
       {error && (
         <div className="mb-4 rounded border border-error/30 bg-error-bg px-4 py-2">
-          <p className="font-mono text-sm text-error">{error}</p>
+          <p className="font-dm-mono text-sm text-error">{error}</p>
         </div>
       )}
 
       {/* Queue */}
       <div className="space-y-2">
         {loading ? (
-          <div className="py-8 text-center font-mono text-sm text-ink-600">
+          <div className="py-8 text-center font-dm-mono text-sm text-ink-600">
             Loading...
           </div>
         ) : items.length === 0 ? (
-          <div className="py-8 text-center font-mono text-sm text-ink-600">
+          <div className="py-8 text-center font-dm-mono text-sm text-ink-600">
             No flagged inputs match filters
           </div>
         ) : (
@@ -144,18 +144,18 @@ export default function InjectionQueue() {
               {/* Header row */}
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <span className={`rounded px-1.5 py-0.5 font-mono text-xs ${REVIEW_COLORS[item.reviewStatus]}`}>
+                  <span className={`rounded px-1.5 py-0.5 font-dm-mono text-xs ${REVIEW_COLORS[item.reviewStatus]}`}>
                     {item.reviewStatus}
                   </span>
-                  <span className="font-mono text-sm text-ink-100">
+                  <span className="font-dm-mono text-sm text-ink-100">
                     {item.userEmail ?? item.userId.slice(0, 8)}
                   </span>
                   {item.surface && (
-                    <span className="rounded bg-blue-50 px-1.5 py-0.5 font-mono text-xs text-blue-700">
+                    <span className="rounded bg-blue-50 px-1.5 py-0.5 font-dm-mono text-xs text-blue-700">
                       {item.surface}
                     </span>
                   )}
-                  <span className="font-mono text-xs text-ink-600">
+                  <span className="font-dm-mono text-xs text-ink-600">
                     {new Date(item.createdAt).toLocaleString()}
                   </span>
                 </div>
@@ -163,7 +163,7 @@ export default function InjectionQueue() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                    className="font-mono text-xs text-accent hover:underline"
+                    className="font-dm-mono text-xs text-accent hover:underline"
                   >
                     {expandedId === item.id ? 'Collapse' : 'Details'}
                   </button>
@@ -172,14 +172,14 @@ export default function InjectionQueue() {
                       <button
                         onClick={() => handleReview(item.id, 'dismissed')}
                         disabled={actioning === item.id}
-                        className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
+                        className="rounded border border-ink-700 px-2 py-1 font-dm-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
                       >
                         Dismiss
                       </button>
                       <button
                         onClick={() => handleReview(item.id, 'confirmed')}
                         disabled={actioning === item.id}
-                        className="rounded bg-red-600 px-2 py-1 font-mono text-xs text-white hover:bg-red-700 disabled:opacity-40"
+                        className="rounded bg-error px-2 py-1 font-dm-mono text-xs text-white hover:bg-error/80 disabled:opacity-40"
                       >
                         Confirm Threat
                       </button>
@@ -190,7 +190,7 @@ export default function InjectionQueue() {
 
               {/* Flagged content preview */}
               <div className="border-t border-ink-700/50 px-4 py-2">
-                <p className="font-mono text-sm text-ink-300">
+                <p className="font-dm-mono text-sm text-ink-300">
                   {item.payload?.inputText
                     ? String(item.payload.inputText).slice(0, 200)
                     : JSON.stringify(item.payload).slice(0, 200)}
@@ -202,7 +202,7 @@ export default function InjectionQueue() {
               {/* Expanded details */}
               {expandedId === item.id && (
                 <div className="border-t border-ink-700/50 px-4 py-3">
-                  <div className="grid grid-cols-2 gap-4 font-mono text-xs">
+                  <div className="grid grid-cols-2 gap-4 font-dm-mono text-xs">
                     <div>
                       <span className="text-ink-600">Event ID:</span>{' '}
                       <span className="text-ink-500">{item.id}</span>
@@ -235,8 +235,8 @@ export default function InjectionQueue() {
                     )}
                   </div>
                   <div className="mt-3">
-                    <p className="mb-1 font-mono text-xs text-ink-600">Full payload:</p>
-                    <pre className="max-h-40 overflow-auto rounded bg-base p-2 font-mono text-xs text-ink-500">
+                    <p className="mb-1 font-dm-mono text-xs text-ink-600">Full payload:</p>
+                    <pre className="max-h-40 overflow-auto rounded bg-base p-2 font-dm-mono text-xs text-ink-500">
                       {JSON.stringify(item.payload, null, 2)}
                     </pre>
                   </div>
@@ -250,21 +250,21 @@ export default function InjectionQueue() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
-          <p className="font-mono text-xs text-ink-600">
+          <p className="font-dm-mono text-xs text-ink-600">
             Showing {page * pageSize + 1}--{Math.min((page + 1) * pageSize, total)} of {total}
           </p>
           <div className="flex gap-1">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-dm-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Prev
             </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="rounded border border-ink-700 px-2 py-1 font-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
+              className="rounded border border-ink-700 px-2 py-1 font-dm-mono text-xs text-ink-500 hover:bg-base disabled:opacity-40"
             >
               Next
             </button>

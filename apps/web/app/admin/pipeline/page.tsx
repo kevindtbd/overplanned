@@ -143,12 +143,12 @@ function StatCard({
 }) {
   return (
     <div className="rounded-lg border border-ink-700 bg-surface p-4">
-      <span className="block font-mono text-xs text-ink-500">{label}</span>
+      <span className="block font-dm-mono text-xs text-ink-500">{label}</span>
       <span className="block font-display text-2xl font-semibold text-ink-100 mt-1">
         {value}
       </span>
       {sub && (
-        <span className="block font-mono text-xs text-ink-600 mt-0.5">
+        <span className="block font-dm-mono text-xs text-ink-600 mt-0.5">
           {sub}
         </span>
       )}
@@ -175,7 +175,7 @@ function SectionHeader({
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="rounded-md border border-error/30 bg-error-bg p-3 font-mono text-sm text-error">
+    <div className="rounded-md border border-error/30 bg-error-bg p-3 font-dm-mono text-sm text-error">
       {message}
     </div>
   );
@@ -184,7 +184,7 @@ function ErrorBanner({ message }: { message: string }) {
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="rounded-lg border border-ink-700 bg-surface p-8 text-center">
-      <p className="font-mono text-sm text-ink-600">{message}</p>
+      <p className="font-dm-mono text-sm text-ink-600">{message}</p>
     </div>
   );
 }
@@ -367,7 +367,7 @@ export default function PipelineHealthPage() {
           <h2 className="font-display text-2xl font-semibold text-ink-100">
             Pipeline Health
           </h2>
-          <p className="mt-1 font-mono text-sm text-ink-500">
+          <p className="mt-1 font-dm-mono text-sm text-ink-500">
             LLM costs, API usage, job health, and cost alerts
           </p>
         </div>
@@ -375,7 +375,7 @@ export default function PipelineHealthPage() {
           <select
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
-            className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-mono text-sm text-ink-300"
+            className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-dm-mono text-sm text-ink-300"
           >
             {DAYS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -386,7 +386,7 @@ export default function PipelineHealthPage() {
           <button
             onClick={fetchAll}
             disabled={loading}
-            className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-mono text-sm text-ink-500 transition-colors hover:bg-ink-800 disabled:opacity-50"
+            className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-dm-mono text-sm text-ink-500 transition-colors hover:bg-ink-800 disabled:opacity-50"
           >
             Refresh
           </button>
@@ -404,7 +404,7 @@ export default function PipelineHealthPage() {
           </p>
           <div className="space-y-1">
             {exceededAlerts.map((a) => (
-              <p key={a.pipeline_stage} className="font-mono text-xs text-error">
+              <p key={a.pipeline_stage} className="font-dm-mono text-xs text-error">
                 {a.pipeline_stage}: {formatUSD(a.current_spend_usd)} /{' '}
                 {formatUSD(a.daily_limit_usd)} daily limit ({a.pct_used}%)
               </p>
@@ -415,7 +415,7 @@ export default function PipelineHealthPage() {
 
       {/* Loading state */}
       {loading && !llmCosts && (
-        <div className="py-12 text-center font-mono text-sm text-ink-600">
+        <div className="py-12 text-center font-dm-mono text-sm text-ink-600">
           Loading pipeline data...
         </div>
       )}
@@ -465,25 +465,25 @@ export default function PipelineHealthPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-ink-700 bg-base">
-                    <th className="px-4 py-2 text-left font-mono text-xs text-ink-500">
+                    <th className="px-4 py-2 text-left font-dm-mono text-xs text-ink-500">
                       Model
                     </th>
-                    <th className="px-4 py-2 text-left font-mono text-xs text-ink-500">
+                    <th className="px-4 py-2 text-left font-dm-mono text-xs text-ink-500">
                       Stage
                     </th>
-                    <th className="px-4 py-2 text-left font-mono text-xs text-ink-500">
+                    <th className="px-4 py-2 text-left font-dm-mono text-xs text-ink-500">
                       Date
                     </th>
-                    <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                    <th className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                       Calls
                     </th>
-                    <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                    <th className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                       Cost
                     </th>
-                    <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                    <th className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                       Avg Latency
                     </th>
-                    <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                    <th className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                       Tokens (in/out)
                     </th>
                   </tr>
@@ -496,27 +496,27 @@ export default function PipelineHealthPage() {
                         i % 2 === 0 ? 'bg-surface' : 'bg-base/30'
                       }
                     >
-                      <td className="px-4 py-2 font-mono text-sm text-ink-200">
+                      <td className="px-4 py-2 font-dm-mono text-sm text-ink-200">
                         {row.model}
                       </td>
                       <td className="px-4 py-2">
-                        <span className="rounded-full bg-ink-800 px-2 py-0.5 font-mono text-xs text-ink-500">
+                        <span className="rounded-full bg-ink-800 px-2 py-0.5 font-dm-mono text-xs text-ink-500">
                           {row.pipeline_stage}
                         </span>
                       </td>
-                      <td className="px-4 py-2 font-mono text-xs text-ink-500">
+                      <td className="px-4 py-2 font-dm-mono text-xs text-ink-500">
                         {row.date}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-sm text-ink-300">
+                      <td className="px-4 py-2 text-right font-dm-mono text-sm text-ink-300">
                         {formatNumber(row.call_count)}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-sm font-medium text-ink-100">
+                      <td className="px-4 py-2 text-right font-dm-mono text-sm font-medium text-ink-100">
                         {formatUSD(row.total_cost_usd)}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                      <td className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                         {formatLatency(row.avg_latency_ms)}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                      <td className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                         {formatNumber(row.total_input_tokens)} /{' '}
                         {formatNumber(row.total_output_tokens)}
                       </td>
@@ -555,13 +555,13 @@ export default function PipelineHealthPage() {
                       key={provider}
                       className="rounded-lg border border-ink-700 bg-surface p-4"
                     >
-                      <span className="block font-mono text-xs text-ink-500">
+                      <span className="block font-dm-mono text-xs text-ink-500">
                         {PROVIDER_LABELS[provider] ?? provider}
                       </span>
                       <span className="block font-display text-xl font-semibold text-ink-100 mt-1">
                         {formatNumber(stats.calls)}
                       </span>
-                      <div className="flex items-center gap-3 mt-1 font-mono text-xs">
+                      <div className="flex items-center gap-3 mt-1 font-dm-mono text-xs">
                         <span
                           className={
                             stats.errors > 0 ? 'text-error' : 'text-ink-600'
@@ -582,22 +582,22 @@ export default function PipelineHealthPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-ink-700 bg-base">
-                        <th className="px-4 py-2 text-left font-mono text-xs text-ink-500">
+                        <th className="px-4 py-2 text-left font-dm-mono text-xs text-ink-500">
                           Provider
                         </th>
-                        <th className="px-4 py-2 text-left font-mono text-xs text-ink-500">
+                        <th className="px-4 py-2 text-left font-dm-mono text-xs text-ink-500">
                           Date
                         </th>
-                        <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                        <th className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                           Calls
                         </th>
-                        <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                        <th className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                           Errors
                         </th>
-                        <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                        <th className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                           Error Rate
                         </th>
-                        <th className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                        <th className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                           Avg Latency
                         </th>
                       </tr>
@@ -612,24 +612,24 @@ export default function PipelineHealthPage() {
                               : 'bg-base/30'
                           }
                         >
-                          <td className="px-4 py-2 font-mono text-sm text-ink-200">
+                          <td className="px-4 py-2 font-dm-mono text-sm text-ink-200">
                             {PROVIDER_LABELS[row.provider] ?? row.provider}
                           </td>
-                          <td className="px-4 py-2 font-mono text-xs text-ink-500">
+                          <td className="px-4 py-2 font-dm-mono text-xs text-ink-500">
                             {row.date}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-sm text-ink-300">
+                          <td className="px-4 py-2 text-right font-dm-mono text-sm text-ink-300">
                             {formatNumber(row.call_count)}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-sm text-error">
+                          <td className="px-4 py-2 text-right font-dm-mono text-sm text-error">
                             {row.error_count > 0 ? row.error_count : '-'}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                          <td className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                             {row.call_count > 0
                               ? `${((row.error_count / row.call_count) * 100).toFixed(1)}%`
                               : '-'}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-xs text-ink-500">
+                          <td className="px-4 py-2 text-right font-dm-mono text-xs text-ink-500">
                             {formatLatency(row.avg_latency_ms)}
                           </td>
                         </tr>
@@ -671,25 +671,25 @@ export default function PipelineHealthPage() {
                   className="flex items-center gap-4 rounded-lg border border-ink-700 bg-surface px-4 py-3"
                 >
                   <span
-                    className={`rounded-full px-2 py-0.5 font-mono text-xs ${
+                    className={`rounded-full px-2 py-0.5 font-dm-mono text-xs ${
                       JOB_STATUS_COLORS[job.status] ?? 'bg-ink-800 text-ink-500'
                     }`}
                   >
                     {job.status}
                   </span>
 
-                  <span className="font-mono text-sm text-ink-200">
+                  <span className="font-dm-mono text-sm text-ink-200">
                     {job.job_type}
                   </span>
 
                   {job.city && (
-                    <span className="font-mono text-xs text-ink-500">
+                    <span className="font-dm-mono text-xs text-ink-500">
                       {job.city}
                     </span>
                   )}
 
                   <div className="ml-auto flex items-center gap-4">
-                    <span className="font-mono text-xs text-ink-500">
+                    <span className="font-dm-mono text-xs text-ink-500">
                       {job.items_processed} processed
                       {job.items_failed > 0 && (
                         <span className="text-error">
@@ -698,11 +698,11 @@ export default function PipelineHealthPage() {
                       )}
                     </span>
 
-                    <span className="font-mono text-xs text-ink-600">
+                    <span className="font-dm-mono text-xs text-ink-600">
                       {formatDuration(job.duration_seconds)}
                     </span>
 
-                    <span className="font-mono text-[10px] text-ink-700">
+                    <span className="font-dm-mono text-[10px] text-ink-700">
                       {job.job_id.slice(0, 8)}
                     </span>
                   </div>
@@ -723,7 +723,7 @@ export default function PipelineHealthPage() {
           {!editingAlerts && alerts.length > 0 && (
             <button
               onClick={startEditingAlerts}
-              className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-mono text-sm text-ink-500 transition-colors hover:bg-ink-800"
+              className="rounded-md border border-ink-700 bg-surface px-3 py-1.5 font-dm-mono text-sm text-ink-500 transition-colors hover:bg-ink-800"
             >
               Edit Thresholds
             </button>
@@ -747,21 +747,21 @@ export default function PipelineHealthPage() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-medium text-ink-200">
+                    <span className="font-dm-mono text-sm font-medium text-ink-200">
                       {a.pipeline_stage}
                     </span>
                     {!a.enabled && (
-                      <span className="rounded-full bg-ink-800 px-2 py-0.5 font-mono text-[10px] text-ink-500">
+                      <span className="rounded-full bg-ink-800 px-2 py-0.5 font-dm-mono text-[10px] text-ink-500">
                         disabled
                       </span>
                     )}
                     {a.exceeded && (
-                      <span className="rounded-full bg-red-200 px-2 py-0.5 font-mono text-[10px] text-error">
+                      <span className="rounded-full bg-red-200 px-2 py-0.5 font-dm-mono text-[10px] text-error">
                         exceeded
                       </span>
                     )}
                   </div>
-                  <span className="font-mono text-sm text-ink-500">
+                  <span className="font-dm-mono text-sm text-ink-500">
                     {formatUSD(a.current_spend_usd)} /{' '}
                     {formatUSD(a.daily_limit_usd)}
                   </span>
@@ -774,7 +774,7 @@ export default function PipelineHealthPage() {
                     style={{ width: `${Math.min(a.pct_used, 100)}%` }}
                   />
                 </div>
-                <span className="block mt-1 font-mono text-[10px] text-ink-600 text-right">
+                <span className="block mt-1 font-dm-mono text-[10px] text-ink-600 text-right">
                   {a.pct_used.toFixed(1)}%
                 </span>
               </div>
@@ -790,11 +790,11 @@ export default function PipelineHealthPage() {
                 key={draft.pipeline_stage}
                 className="flex items-center gap-4"
               >
-                <span className="font-mono text-sm text-ink-200 w-40">
+                <span className="font-dm-mono text-sm text-ink-200 w-40">
                   {draft.pipeline_stage}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-ink-500">$</span>
+                  <span className="font-dm-mono text-xs text-ink-500">$</span>
                   <input
                     type="number"
                     min={0}
@@ -808,9 +808,9 @@ export default function PipelineHealthPage() {
                       };
                       setAlertDrafts(next);
                     }}
-                    className="w-24 rounded border border-ink-700 bg-white px-2 py-1 font-mono text-sm text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="w-24 rounded border border-ink-700 bg-white px-2 py-1 font-dm-mono text-sm text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                   />
-                  <span className="font-mono text-xs text-ink-500">
+                  <span className="font-dm-mono text-xs text-ink-500">
                     /day
                   </span>
                 </div>
@@ -825,7 +825,7 @@ export default function PipelineHealthPage() {
                     }}
                     className="h-4 w-4 rounded border-ink-700 text-accent focus:ring-accent"
                   />
-                  <span className="font-mono text-xs text-ink-500">
+                  <span className="font-dm-mono text-xs text-ink-500">
                     Enabled
                   </span>
                 </label>
@@ -836,13 +836,13 @@ export default function PipelineHealthPage() {
               <button
                 onClick={saveAlerts}
                 disabled={alertSaving}
-                className="rounded bg-accent px-4 py-2 font-mono text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                className="rounded bg-accent px-4 py-2 font-dm-mono text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 {alertSaving ? 'Saving...' : 'Save Thresholds'}
               </button>
               <button
                 onClick={() => setEditingAlerts(false)}
-                className="font-mono text-sm text-ink-500 hover:text-ink-300 transition-colors"
+                className="font-dm-mono text-sm text-ink-500 hover:text-ink-300 transition-colors"
               >
                 Cancel
               </button>

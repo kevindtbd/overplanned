@@ -38,7 +38,7 @@ export function AboutSection() {
         About
       </h2>
 
-      <div className="rounded-[20px] border border-warm-border bg-warm-surface p-5 space-y-4">
+      <div className="rounded-[20px] border border-ink-700 bg-surface p-5 space-y-4">
         {/* App version */}
         <div>
           <span className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 block mb-1">
@@ -64,7 +64,7 @@ export function AboutSection() {
         </div>
 
         {/* Feedback */}
-        <div className="pt-3 border-t border-warm-border">
+        <div className="pt-3 border-t border-ink-700">
           <a
             href="mailto:feedback@overplanned.com"
             className="font-sora text-sm text-accent hover:text-accent/80 transition-colors"

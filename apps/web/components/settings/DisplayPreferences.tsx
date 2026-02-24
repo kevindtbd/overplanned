@@ -176,15 +176,15 @@ export function DisplayPreferences() {
         Display Preferences
       </h2>
 
-      <div className="rounded-[20px] border border-warm-border bg-warm-surface p-5 space-y-5">
+      <div className="rounded-[20px] border border-ink-700 bg-surface p-5 space-y-5">
         {loading ? (
           <div className="space-y-4 animate-pulse">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i}>
-                <div className="h-3 w-20 bg-warm-border rounded mb-2" />
+                <div className="h-3 w-20 bg-ink-700 rounded mb-2" />
                 <div className="flex gap-2">
                   {[1, 2].map((j) => (
-                    <div key={j} className="h-8 w-16 bg-warm-border rounded-lg" />
+                    <div key={j} className="h-8 w-16 bg-ink-700 rounded-lg" />
                   ))}
                 </div>
               </div>
@@ -213,7 +213,7 @@ export function DisplayPreferences() {
                             ${useDmMono ? "font-dm-mono text-xs" : "font-sora text-sm"}
                             ${selected
                               ? "border-accent bg-accent/10 text-ink-100"
-                              : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+                              : "border-ink-700 bg-transparent text-ink-300 hover:border-ink-400"
                             }
                           `}
                         >

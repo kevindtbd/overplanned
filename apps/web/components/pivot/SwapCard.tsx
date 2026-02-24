@@ -113,7 +113,7 @@ export function SwapCard({
         transition-all duration-200
         ${onClick ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2" : ""}
         ${isSelected
-          ? "border-accent shadow-[0_0_0_2px_#C4694F20]"
+          ? "border-accent shadow-[0_0_0_2px_rgba(196,105,79,0.125)]"
           : isOriginal
           ? "border-ink-700 bg-surface opacity-75"
           : "border-ink-700 bg-surface hover:border-accent/30"

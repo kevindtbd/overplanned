@@ -205,7 +205,7 @@ function ChipGroup({
               font-sora text-sm transition-colors
               ${checked
                 ? "border-accent bg-accent/10 text-ink-100"
-                : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+                : "border-ink-700 bg-transparent text-ink-300 hover:border-ink-400"
               }
             `}
           >
@@ -247,7 +247,7 @@ function RadioGroup({
             font-sora text-sm transition-colors
             ${selected === value
               ? "border-accent bg-accent/10 text-ink-100"
-              : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+              : "border-ink-700 bg-transparent text-ink-300 hover:border-ink-400"
             }
           `}
         >
@@ -267,7 +267,7 @@ function RadioGroup({
           font-sora text-sm transition-colors
           ${selected === null
             ? "border-accent bg-accent/10 text-ink-100"
-            : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+            : "border-ink-700 bg-transparent text-ink-300 hover:border-ink-400"
           }
         `}
       >
@@ -309,7 +309,7 @@ function NoteTextarea({
         placeholder={placeholder}
         maxLength={maxLength}
         rows={3}
-        className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2 font-sora text-sm text-ink-100 placeholder:text-ink-500 focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+        className="w-full rounded-lg border border-ink-700 bg-base px-3 py-2 font-sora text-sm text-ink-100 placeholder:text-ink-500 focus:outline-none focus:ring-1 focus:ring-accent resize-none"
       />
       {remaining <= 100 && (
         <p className="mt-1 font-dm-mono text-[10px] text-ink-400 text-right">
@@ -438,19 +438,19 @@ export function TravelStyleSection() {
         Travel Style
       </h2>
 
-      <div className="rounded-[20px] border border-warm-border bg-warm-surface p-5">
+      <div className="rounded-[20px] border border-ink-700 bg-surface p-5">
         {loading ? (
           <div className="space-y-4 animate-pulse">
-            <div className="h-4 w-32 bg-warm-border rounded" />
+            <div className="h-4 w-32 bg-ink-700 rounded" />
             <div className="flex flex-wrap gap-2">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-8 w-24 bg-warm-border rounded-lg" />
+                <div key={i} className="h-8 w-24 bg-ink-700 rounded-lg" />
               ))}
             </div>
-            <div className="h-4 w-28 bg-warm-border rounded" />
+            <div className="h-4 w-28 bg-ink-700 rounded" />
             <div className="flex flex-wrap gap-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-8 w-28 bg-warm-border rounded-lg" />
+                <div key={i} className="h-8 w-28 bg-ink-700 rounded-lg" />
               ))}
             </div>
           </div>
@@ -459,7 +459,7 @@ export function TravelStyleSection() {
         ) : (
           <>
             {/* Tab bar */}
-            <div className="flex gap-4 border-b border-warm-border pb-3 mb-4" role="tablist">
+            <div className="flex gap-4 border-b border-ink-700 pb-3 mb-4" role="tablist">
               {TABS.map(({ key, label }) => (
                 <button
                   key={key}
@@ -570,7 +570,7 @@ export function TravelStyleSection() {
                 {VIBE_GROUPS.map((group, groupIdx) => (
                   <div key={group.heading}>
                     {groupIdx > 0 && (
-                      <div className="border-t border-warm-border mb-4" />
+                      <div className="border-t border-ink-700 mb-4" />
                     )}
                     <h3 className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
                       {group.heading}
@@ -586,7 +586,7 @@ export function TravelStyleSection() {
                               font-sora text-sm transition-colors
                               ${checked
                                 ? "border-accent bg-accent/10 text-ink-100"
-                                : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+                                : "border-ink-700 bg-transparent text-ink-300 hover:border-ink-400"
                               }
                             `}
                           >
@@ -605,7 +605,7 @@ export function TravelStyleSection() {
                   </div>
                 ))}
 
-                <div className="border-t border-warm-border" />
+                <div className="border-t border-ink-700" />
 
                 <fieldset>
                   <legend className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">

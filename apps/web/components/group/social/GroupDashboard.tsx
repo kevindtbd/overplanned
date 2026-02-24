@@ -55,7 +55,7 @@ function FairnessIndicator({ score }: { score: number }) {
   const pct = Math.round(score * 100);
   const colorClass =
     score >= 0.75
-      ? "text-emerald-600"
+      ? "text-success"
       : score >= 0.5
       ? "text-warning"
       : "text-error";
@@ -319,7 +319,7 @@ export function GroupDashboard({
         <PulseLine
           data={pulseHistory}
           height={160}
-          accentColor="#C4694F"
+          accentColor="var(--accent)"
         />
       </div>
 

@@ -199,7 +199,7 @@ export default function SeedingPage() {
       {/* Header */}
       <div>
         <h2 className="font-display text-2xl text-ink-100">City Seeding</h2>
-        <p className="mt-1 font-mono text-sm text-ink-500">
+        <p className="mt-1 font-dm-mono text-sm text-ink-500">
           Trigger and monitor data pipeline seed jobs per city.
         </p>
       </div>
@@ -215,7 +215,7 @@ export default function SeedingPage() {
           <div className="flex-1 min-w-[200px]">
             <label
               htmlFor="seed-city"
-              className="block font-mono text-xs text-ink-500 mb-1"
+              className="block font-dm-mono text-xs text-ink-500 mb-1"
             >
               City
             </label>
@@ -225,14 +225,14 @@ export default function SeedingPage() {
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="e.g. Austin"
-              className="w-full rounded border border-ink-700 bg-white px-3 py-2 font-mono text-sm text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded border border-ink-700 bg-white px-3 py-2 font-dm-mono text-sm text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 
           <div className="w-24">
             <label
               htmlFor="seed-country"
-              className="block font-mono text-xs text-ink-500 mb-1"
+              className="block font-dm-mono text-xs text-ink-500 mb-1"
             >
               Country
             </label>
@@ -243,21 +243,21 @@ export default function SeedingPage() {
               onChange={(e) => setCountryCode(e.target.value.toUpperCase())}
               placeholder="US"
               maxLength={3}
-              className="w-full rounded border border-ink-700 bg-white px-3 py-2 font-mono text-sm text-ink-100 uppercase focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded border border-ink-700 bg-white px-3 py-2 font-dm-mono text-sm text-ink-100 uppercase focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 
           <button
             onClick={fetchEstimate}
             disabled={!city.trim() || !countryCode.trim() || estimateLoading}
-            className="rounded bg-ink-200 px-4 py-2 font-mono text-sm text-white hover:bg-ink-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="rounded bg-ink-200 px-4 py-2 font-dm-mono text-sm text-white hover:bg-ink-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {estimateLoading ? 'Estimating...' : 'Get Estimate'}
           </button>
         </div>
 
         {estimateError && (
-          <p className="mt-2 font-mono text-xs text-error">{estimateError}</p>
+          <p className="mt-2 font-dm-mono text-xs text-error">{estimateError}</p>
         )}
 
         {/* Estimate card */}
@@ -267,12 +267,12 @@ export default function SeedingPage() {
               <span className="font-display text-base text-ink-100">
                 {estimate.city} ({estimate.country_code})
               </span>
-              <span className="font-mono text-sm font-medium text-accent">
+              <span className="font-dm-mono text-sm font-medium text-accent">
                 {formatCost(estimate.estimated_cost_usd)} estimated
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 font-mono text-xs text-ink-500">
+            <div className="grid grid-cols-3 gap-4 font-dm-mono text-xs text-ink-500">
               <div>
                 <span className="block text-ink-100 text-sm">
                   {estimate.estimated_api_calls}
@@ -297,7 +297,7 @@ export default function SeedingPage() {
               {estimate.sources.map((s) => (
                 <span
                   key={s}
-                  className="rounded bg-ink-800 px-2 py-0.5 font-mono text-xs text-ink-500"
+                  className="rounded bg-ink-800 px-2 py-0.5 font-dm-mono text-xs text-ink-500"
                 >
                   {s}
                 </span>
@@ -308,25 +308,25 @@ export default function SeedingPage() {
               <button
                 onClick={triggerSeed}
                 disabled={triggerLoading}
-                className="rounded bg-accent px-4 py-2 font-mono text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                className="rounded bg-accent px-4 py-2 font-dm-mono text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 {triggerLoading ? 'Triggering...' : 'Confirm & Seed'}
               </button>
               <button
                 onClick={() => setEstimate(null)}
-                className="font-mono text-sm text-ink-500 hover:text-ink-300 transition-colors"
+                className="font-dm-mono text-sm text-ink-500 hover:text-ink-300 transition-colors"
               >
                 Cancel
               </button>
             </div>
 
             {triggerError && (
-              <p className="font-mono text-xs text-error">{triggerError}</p>
+              <p className="font-dm-mono text-xs text-error">{triggerError}</p>
             )}
           </div>
         )}
 
-        <p className="mt-2 font-mono text-xs text-ink-600">
+        <p className="mt-2 font-dm-mono text-xs text-ink-600">
           Rate limit: 2 seed triggers per minute.
         </p>
       </section>
@@ -338,7 +338,7 @@ export default function SeedingPage() {
             Seed Progress
           </h3>
           {hasActiveJobs && (
-            <span className="inline-flex items-center gap-1.5 font-mono text-xs text-blue-600">
+            <span className="inline-flex items-center gap-1.5 font-dm-mono text-xs text-blue-600">
               <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
               Live — polling every {POLL_INTERVAL_MS / 1000}s
             </span>
@@ -346,11 +346,11 @@ export default function SeedingPage() {
         </div>
 
         {progressError && (
-          <p className="font-mono text-xs text-error">{progressError}</p>
+          <p className="font-dm-mono text-xs text-error">{progressError}</p>
         )}
 
         {jobs.length === 0 && !progressError && (
-          <p className="font-mono text-sm text-ink-600">
+          <p className="font-dm-mono text-sm text-ink-600">
             No seed jobs found. Trigger one above to get started.
           </p>
         )}
@@ -367,19 +367,19 @@ export default function SeedingPage() {
                   <span className="font-display text-base text-ink-100">
                     {job.city}
                   </span>
-                  <span className="font-mono text-xs text-ink-600">
+                  <span className="font-dm-mono text-xs text-ink-600">
                     {job.country_code}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`rounded-full px-2 py-0.5 font-mono text-xs ${
+                    className={`rounded-full px-2 py-0.5 font-dm-mono text-xs ${
                       STATUS_COLORS[job.status] ?? 'bg-ink-800 text-ink-500'
                     }`}
                   >
                     {job.status}
                   </span>
-                  <span className="font-mono text-xs text-ink-600">
+                  <span className="font-dm-mono text-xs text-ink-600">
                     {timeAgo(job.updated_at || job.started_at)}
                   </span>
                 </div>
@@ -394,10 +394,10 @@ export default function SeedingPage() {
                     return (
                       <div key={stage}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-mono text-xs text-ink-500 capitalize">
+                          <span className="font-dm-mono text-xs text-ink-500 capitalize">
                             {stage}
                           </span>
-                          <span className="font-mono text-xs text-ink-300">
+                          <span className="font-dm-mono text-xs text-ink-300">
                             {value}/{job.total_expected}
                           </span>
                         </div>
@@ -415,20 +415,20 @@ export default function SeedingPage() {
 
               {/* Pending — no progress yet */}
               {job.total_expected === 0 && job.status === 'pending' && (
-                <p className="font-mono text-xs text-ink-600">
+                <p className="font-dm-mono text-xs text-ink-600">
                   Waiting for pipeline to pick up job...
                 </p>
               )}
 
               {/* Error display */}
               {job.error && (
-                <p className="mt-2 font-mono text-xs text-error">
+                <p className="mt-2 font-dm-mono text-xs text-error">
                   {job.error}
                 </p>
               )}
 
               {/* Job ID */}
-              <p className="mt-2 font-mono text-[10px] text-ink-700">
+              <p className="mt-2 font-dm-mono text-[10px] text-ink-700">
                 {job.job_id}
               </p>
             </div>

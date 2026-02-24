@@ -22,7 +22,7 @@ export default function AdminSafetyPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="font-display text-2xl text-ink-100">Trust & Safety</h2>
-          <p className="font-mono text-sm text-ink-500">
+          <p className="font-dm-mono text-sm text-ink-500">
             Token management and injection detection review
           </p>
         </div>
@@ -32,7 +32,7 @@ export default function AdminSafetyPage() {
       <div className="mb-6 flex gap-4 border-b border-ink-700">
         <button
           onClick={() => setActiveTab('tokens')}
-          className={`border-b-2 pb-2 font-mono text-sm transition-colors ${
+          className={`border-b-2 pb-2 font-dm-mono text-sm transition-colors ${
             activeTab === 'tokens'
               ? 'border-accent text-accent'
               : 'border-transparent text-ink-500 hover:text-ink-300'
@@ -42,7 +42,7 @@ export default function AdminSafetyPage() {
         </button>
         <button
           onClick={() => setActiveTab('injection')}
-          className={`border-b-2 pb-2 font-mono text-sm transition-colors ${
+          className={`border-b-2 pb-2 font-dm-mono text-sm transition-colors ${
             activeTab === 'injection'
               ? 'border-accent text-accent'
               : 'border-transparent text-ink-500 hover:text-ink-300'

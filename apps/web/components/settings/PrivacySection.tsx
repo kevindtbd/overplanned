@@ -165,13 +165,13 @@ export function PrivacySection({ email }: { email: string }) {
         Privacy & Data
       </h2>
 
-      <div className="rounded-[20px] border border-warm-border bg-warm-surface p-5 space-y-8">
+      <div className="rounded-[20px] border border-ink-700 bg-surface p-5 space-y-8">
         {loading ? (
           <div className="space-y-4 animate-pulse">
             {[1, 2].map((i) => (
               <div key={i} className="flex items-center justify-between">
-                <div className="h-4 w-64 bg-warm-border rounded" />
-                <div className="h-6 w-10 bg-warm-border rounded-full" />
+                <div className="h-4 w-64 bg-ink-700 rounded" />
+                <div className="h-6 w-10 bg-ink-700 rounded-full" />
               </div>
             ))}
           </div>
@@ -187,7 +187,7 @@ export function PrivacySection({ email }: { email: string }) {
 
               {/* Education banner */}
               {bannerVisible && (
-                <div className="rounded-xl border border-warm-border bg-warm-background p-4 mb-4" data-testid="consent-banner">
+                <div className="rounded-xl border border-ink-700 bg-base p-4 mb-4" data-testid="consent-banner">
                   <p className="font-dm-mono text-[10px] uppercase tracking-[0.12em] text-ink-400 mb-2">
                     How your data helps
                   </p>
@@ -249,7 +249,7 @@ export function PrivacySection({ email }: { email: string }) {
               <button
                 onClick={handleExport}
                 disabled={exporting}
-                className="rounded-xl border border-warm-border px-4 py-2 font-sora text-sm text-ink-200 hover:bg-warm-border/50 transition-colors disabled:opacity-50"
+                className="rounded-xl border border-ink-700 px-4 py-2 font-sora text-sm text-ink-200 hover:bg-ink-700/50 transition-colors disabled:opacity-50"
               >
                 {exporting ? "Downloading..." : "Download my data"}
               </button>
@@ -283,7 +283,7 @@ export function PrivacySection({ email }: { email: string }) {
                       value={confirmEmail}
                       onChange={(e) => setConfirmEmail(e.target.value)}
                       placeholder="your@email.com"
-                      className="mt-1 block w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2 font-sora text-sm text-ink-100 placeholder:text-ink-500 focus:outline-none focus:ring-1 focus:ring-accent"
+                      className="mt-1 block w-full rounded-lg border border-ink-700 bg-base px-3 py-2 font-sora text-sm text-ink-100 placeholder:text-ink-500 focus:outline-none focus:ring-1 focus:ring-accent"
                     />
                   </label>
                   <div className="flex gap-3">
@@ -300,7 +300,7 @@ export function PrivacySection({ email }: { email: string }) {
                     <button
                       onClick={handleDelete}
                       disabled={!emailMatch || deleting}
-                      className="rounded-lg bg-red-500/10 px-4 py-2 font-sora text-sm text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="rounded-lg bg-error/10 px-4 py-2 font-sora text-sm text-red-400 hover:bg-error/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Yes, delete my account
                     </button>

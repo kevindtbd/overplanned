@@ -284,7 +284,7 @@ export function LegEditor({
                 type="date"
                 value={addStartDate}
                 onChange={(e) => setAddStartDate(e.target.value)}
-                className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
+                className="w-full rounded-lg border border-ink-700 bg-base px-3 py-2 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
               />
             </div>
             <div>
@@ -300,7 +300,7 @@ export function LegEditor({
                 value={addEndDate}
                 min={addStartDate}
                 onChange={(e) => setAddEndDate(e.target.value)}
-                className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
+                className="w-full rounded-lg border border-ink-700 bg-base px-3 py-2 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
               />
             </div>
           </div>
@@ -332,7 +332,7 @@ export function LegEditor({
       {canEdit && !showAddForm && legs.length < MAX_LEGS && (
         <button
           onClick={openAddForm}
-          className="w-full rounded-lg border border-dashed border-warm-border px-4 py-3 font-sora text-sm text-ink-400 hover:text-ink-100 hover:border-ink-600 transition-colors flex items-center justify-center gap-2 min-h-[44px]"
+          className="w-full rounded-lg border border-dashed border-ink-700 px-4 py-3 font-sora text-sm text-ink-400 hover:text-ink-100 hover:border-ink-600 transition-colors flex items-center justify-center gap-2 min-h-[44px]"
           data-testid="add-leg-button"
         >
           <PlusIcon className="h-4 w-4" />

@@ -55,7 +55,7 @@ const ENERGY_CONFIG: Record<
 > = {
   high: {
     barColor: "#10b981",
-    labelClass: "text-emerald-600",
+    labelClass: "text-success",
     label: "High",
   },
   medium: {
@@ -64,7 +64,7 @@ const ENERGY_CONFIG: Record<
     label: "Mid",
   },
   low: {
-    barColor: "#C4694F",
+    barColor: "var(--accent)",
     labelClass: "text-accent",
     label: "Low",
   },

@@ -7,7 +7,7 @@
  *   dining   -> #DC2626 (red)
  *   culture  -> #2563EB (blue)
  *   outdoors -> #16A34A (green)
- *   default  -> #C4694F (terracotta)
+ *   default  -> var(--accent) (terracotta)
  *
  * Usage:
  *   <MapPin slotType="dining" label="Ramen Nagi" isActive={false} />
@@ -26,7 +26,7 @@ const SLOT_COLORS: Record<string, string> = {
   transit: "#6B7280",
 };
 
-const DEFAULT_COLOR = "#C4694F";
+const DEFAULT_COLOR = "var(--accent)";
 
 function getSlotColor(slotType: string): string {
   return SLOT_COLORS[slotType] ?? DEFAULT_COLOR;

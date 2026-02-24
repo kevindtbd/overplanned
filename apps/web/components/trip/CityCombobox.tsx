@@ -222,7 +222,7 @@ export function CityCombobox({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={resolving}
-          className="w-full rounded-lg border border-warm-border bg-warm-background py-2.5 pl-10 pr-4 font-sora text-sm text-ink-100 placeholder:text-ink-600 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60 transition-colors"
+          className="w-full rounded-lg border border-ink-700 bg-base py-2.5 pl-10 pr-4 font-sora text-sm text-ink-100 placeholder:text-ink-600 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60 transition-colors"
           role="combobox"
           aria-expanded={isOpen}
           aria-controls={`${id}-listbox`}
@@ -262,7 +262,7 @@ export function CityCombobox({
           id={`${id}-listbox`}
           ref={listRef}
           role="listbox"
-          className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-warm-border bg-warm-surface shadow-lg"
+          className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-ink-700 bg-surface shadow-lg"
         >
           {filtered.map((city, i) => (
             <li
@@ -273,7 +273,7 @@ export function CityCombobox({
               className={`cursor-pointer px-3 py-2.5 transition-colors ${
                 i === focusIndex
                   ? "bg-accent/10 text-ink-100"
-                  : "text-ink-100 hover:bg-warm-background"
+                  : "text-ink-100 hover:bg-base"
               } ${value?.city === city.city ? "border-l-2 border-accent" : ""}`}
               onMouseDown={() => handleSelect(city)}
               onMouseEnter={() => setFocusIndex(i)}
@@ -288,7 +288,7 @@ export function CityCombobox({
       )}
 
       {showFreeformOption && (
-        <div className="absolute z-10 mt-1 w-full rounded-lg border border-warm-border bg-warm-surface p-3 shadow-lg">
+        <div className="absolute z-10 mt-1 w-full rounded-lg border border-ink-700 bg-surface p-3 shadow-lg">
           <button
             type="button"
             onMouseDown={() => resolveFreeformCity(query)}

@@ -227,7 +227,7 @@ function SignInContent() {
         {/* Dev-only quick login */}
         {isDev && (
           <div className="mt-6 border-t border-dashed border-ink-700 pt-5">
-            <span className="font-dm-mono text-[9px] tracking-[0.1em] uppercase text-amber-500 block mb-3">
+            <span className="font-dm-mono text-[9px] tracking-[0.1em] uppercase text-warning block mb-3">
               Dev Login
             </span>
             <div className="flex flex-col gap-2">

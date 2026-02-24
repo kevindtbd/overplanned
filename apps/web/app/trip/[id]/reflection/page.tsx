@@ -267,8 +267,8 @@ export default function ReflectionPage({
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
                       ${
                         isSelected
-                          ? "bg-[#C4694F] text-white border-[#C4694F]"
-                          : "bg-warm-surface text-ink-200 border-warm-border hover:border-[#C4694F]"
+                          ? "bg-accent text-white border-accent"
+                          : "bg-surface text-ink-200 border-ink-700 hover:border-accent"
                       }
                     `}
                   >

@@ -313,7 +313,7 @@ export function FlagSheet({
               p-1.5 rounded-lg text-ink-400
               hover:bg-base hover:text-ink-100
               transition-colors
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F]
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
             "
           >
             <CloseIcon />
@@ -338,7 +338,7 @@ export function FlagSheet({
               aria-live="polite"
               aria-busy="true"
             >
-              <div className="w-8 h-8 border-2 border-[#C4694F] border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
               <p className="font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
                 {state.path === "wrong_for_me"
                   ? "Updating your preferences..."
@@ -352,7 +352,7 @@ export function FlagSheet({
               className="flex flex-col items-center gap-3 py-6 text-center"
               aria-live="polite"
             >
-              <span className="text-emerald-600">
+              <span className="text-success">
                 <CheckCircleIcon />
               </span>
               <div className="space-y-1">
@@ -380,10 +380,10 @@ export function FlagSheet({
                   type="button"
                   onClick={handleRetry}
                   className="
-                    flex-1 py-2.5 rounded-lg bg-[#C4694F] text-white
+                    flex-1 py-2.5 rounded-lg bg-accent text-white
                     font-dm-mono text-xs uppercase tracking-wider
-                    hover:bg-[#b35b42] transition-colors
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F]
+                    hover:bg-accent/90 transition-colors
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
                   "
                 >
                   Try again

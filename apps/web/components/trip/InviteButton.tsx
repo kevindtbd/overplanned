@@ -28,7 +28,7 @@ export function InviteButton({ tripId }: Props) {
     <div className="relative">
       <button
         onClick={handleInvite}
-        className="flex items-center gap-1.5 rounded-lg border border-warm-border bg-warm-surface px-3 py-1.5 font-mono text-xs text-ink-200 transition hover:bg-warm-background"
+        className="flex items-center gap-1.5 rounded-lg border border-ink-700 bg-surface px-3 py-1.5 font-dm-mono text-xs text-ink-200 transition hover:bg-base"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -39,7 +39,7 @@ export function InviteButton({ tripId }: Props) {
         {copying ? "Copied!" : "Invite"}
       </button>
       {error && (
-        <p className="absolute top-full mt-1 whitespace-nowrap font-mono text-xs text-red-500">
+        <p className="absolute top-full mt-1 whitespace-nowrap font-dm-mono text-xs text-error">
           {error}
         </p>
       )}

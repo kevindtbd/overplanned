@@ -182,7 +182,7 @@ export function LegEditorRow({
               type="date"
               value={editStartDate}
               onChange={(e) => setEditStartDate(e.target.value)}
-              className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
+              className="w-full rounded-lg border border-ink-700 bg-base px-3 py-2 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
             />
           </div>
           <div>
@@ -198,7 +198,7 @@ export function LegEditorRow({
               value={editEndDate}
               min={editStartDate}
               onChange={(e) => setEditEndDate(e.target.value)}
-              className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
+              className="w-full rounded-lg border border-ink-700 bg-base px-3 py-2 font-dm-mono text-sm text-ink-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors"
             />
           </div>
         </div>
@@ -220,7 +220,7 @@ export function LegEditorRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group flex items-center gap-2 rounded-lg border border-warm-border bg-warm-surface p-3 transition-colors ${
+      className={`group flex items-center gap-2 rounded-lg border border-ink-700 bg-surface p-3 transition-colors ${
         isDragging ? "shadow-lg" : "hover:border-ink-600"
       }`}
       data-testid={`leg-row-${index}`}
@@ -256,7 +256,7 @@ export function LegEditorRow({
         <button
           onClick={() => onMoveUp(leg.id)}
           disabled={index === 0 || disabled}
-          className="rounded p-1.5 text-ink-500 hover:text-ink-100 hover:bg-warm-background disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center"
+          className="rounded p-1.5 text-ink-500 hover:text-ink-100 hover:bg-base disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center"
           aria-label={`Move leg ${index + 1} up`}
           data-testid={`leg-move-up-${index}`}
         >
@@ -267,7 +267,7 @@ export function LegEditorRow({
         <button
           onClick={() => onMoveDown(leg.id)}
           disabled={index === totalLegs - 1 || disabled}
-          className="rounded p-1.5 text-ink-500 hover:text-ink-100 hover:bg-warm-background disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center"
+          className="rounded p-1.5 text-ink-500 hover:text-ink-100 hover:bg-base disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center"
           aria-label={`Move leg ${index + 1} down`}
           data-testid={`leg-move-down-${index}`}
         >
@@ -278,7 +278,7 @@ export function LegEditorRow({
         <button
           onClick={onEdit}
           disabled={disabled}
-          className="rounded p-1.5 text-ink-500 hover:text-ink-100 hover:bg-warm-background disabled:opacity-30 transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center"
+          className="rounded p-1.5 text-ink-500 hover:text-ink-100 hover:bg-base disabled:opacity-30 transition-colors min-h-[32px] min-w-[32px] flex items-center justify-center"
           aria-label={`Edit leg ${index + 1}`}
           data-testid={`leg-edit-${index}`}
         >

@@ -132,13 +132,13 @@ export function NotificationsSection() {
         Notifications
       </h2>
 
-      <div className="rounded-[20px] border border-warm-border bg-warm-surface p-5 space-y-6">
+      <div className="rounded-[20px] border border-ink-700 bg-surface p-5 space-y-6">
         {loading ? (
           <div className="space-y-4 animate-pulse">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center justify-between">
-                <div className="h-4 w-48 bg-warm-border rounded" />
-                <div className="h-6 w-10 bg-warm-border rounded-full" />
+                <div className="h-4 w-48 bg-ink-700 rounded" />
+                <div className="h-6 w-10 bg-ink-700 rounded-full" />
               </div>
             ))}
           </div>
@@ -191,7 +191,7 @@ export function NotificationsSection() {
                               font-sora text-sm transition-colors
                               ${preTripDaysBefore === value
                                 ? "border-accent bg-accent/10 text-ink-100"
-                                : "border-warm-border bg-transparent text-ink-300 hover:border-ink-400"
+                                : "border-ink-700 bg-transparent text-ink-300 hover:border-ink-400"
                               }
                             `}>
                               <input

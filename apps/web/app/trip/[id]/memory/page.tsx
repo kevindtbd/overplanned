@@ -48,7 +48,7 @@ interface ShareState {
 // ---------- Section divider ----------
 
 function SectionDivider() {
-  return <div className="border-t border-warm-border" />;
+  return <div className="border-t border-ink-700" />;
 }
 
 // ---------- Map section (collapsible) ----------
@@ -123,7 +123,7 @@ function PhotoStripSection({
         <h2 className="font-sora text-lg font-semibold text-ink-100">
           Trip Photos
         </h2>
-        <div className="rounded-xl border border-warm-border bg-warm-surface p-5 flex flex-col items-center gap-3">
+        <div className="rounded-xl border border-ink-700 bg-surface p-5 flex flex-col items-center gap-3">
           <svg
             width="32"
             height="32"
@@ -167,7 +167,7 @@ function ReflectionSection({
         <h2 className="font-sora text-lg font-semibold text-ink-100">
           Your Reflection
         </h2>
-        <div className="rounded-xl border border-warm-border bg-warm-surface p-5 space-y-3">
+        <div className="rounded-xl border border-ink-700 bg-surface p-5 space-y-3">
           <p className="font-dm-mono text-sm text-ink-400">
             You have not reflected on this trip yet. It takes about 60 seconds
             and helps us plan better next time.
@@ -176,10 +176,10 @@ function ReflectionSection({
             href={`/trip/${tripId}/reflection`}
             className="
               inline-flex items-center gap-2 rounded-lg
-              bg-[#C4694F] px-5 py-2.5
+              bg-accent px-5 py-2.5
               font-dm-mono text-sm text-white uppercase tracking-wider
-              hover:bg-[#C4694F]/90 transition-colors duration-150
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F] focus-visible:ring-offset-2
+              hover:bg-accent/90 transition-colors duration-150
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
             "
           >
             <svg
@@ -210,7 +210,7 @@ function ReflectionSection({
       <h2 className="font-sora text-lg font-semibold text-ink-100">
         Your Reflection
       </h2>
-      <div className="rounded-xl border border-warm-border bg-warm-surface p-5 space-y-4">
+      <div className="rounded-xl border border-ink-700 bg-surface p-5 space-y-4">
         {/* Rating pills */}
         <div className="flex items-center gap-3 flex-wrap">
           {summary.lovedCount > 0 && (
@@ -220,7 +220,7 @@ function ReflectionSection({
                 height="14"
                 viewBox="0 0 24 24"
                 fill="currentColor"
-                className="text-[#C4694F]"
+                className="text-accent"
                 aria-hidden="true"
               >
                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
@@ -260,7 +260,7 @@ function ReflectionSection({
         {/* Edit link */}
         <Link
           href={`/trip/${tripId}/reflection`}
-          className="inline-flex items-center gap-1.5 font-dm-mono text-xs text-[#C4694F] uppercase tracking-wider hover:text-[#C4694F]/80 transition-colors"
+          className="inline-flex items-center gap-1.5 font-dm-mono text-xs text-accent uppercase tracking-wider hover:text-accent/80 transition-colors"
         >
           Edit reflection
           <svg
@@ -313,7 +313,7 @@ function ShareSection({
         Share This Trip
       </h2>
       {shareState.shareUrl ? (
-        <div className="rounded-xl border border-warm-border bg-warm-surface p-4 space-y-3">
+        <div className="rounded-xl border border-ink-700 bg-surface p-4 space-y-3">
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -325,7 +325,7 @@ function ShareSection({
             <button
               type="button"
               onClick={handleCopy}
-              className="shrink-0 rounded-lg px-3 py-2 border border-warm-border bg-surface font-dm-mono text-xs text-ink-100 uppercase tracking-wider hover:bg-warm-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F] focus-visible:ring-offset-2"
+              className="shrink-0 rounded-lg px-3 py-2 border border-ink-700 bg-surface font-dm-mono text-xs text-ink-100 uppercase tracking-wider hover:bg-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               {copied ? "Copied" : "Copy"}
             </button>
@@ -335,7 +335,7 @@ function ShareSection({
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border border-warm-border bg-warm-surface p-5 space-y-3">
+        <div className="rounded-xl border border-ink-700 bg-surface p-5 space-y-3">
           <p className="font-dm-mono text-sm text-ink-400">
             Create a shareable link so friends can see where you went
           </p>
@@ -350,10 +350,10 @@ function ShareSection({
             disabled={shareState.loading}
             className="
               inline-flex items-center gap-2 rounded-lg
-              border border-warm-border bg-surface px-5 py-2.5
+              border border-ink-700 bg-surface px-5 py-2.5
               font-dm-mono text-sm text-ink-100 uppercase tracking-wider
-              hover:bg-warm-surface transition-colors duration-150
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F] focus-visible:ring-offset-2
+              hover:bg-surface transition-colors duration-150
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
               disabled:opacity-40 disabled:cursor-not-allowed
             "
           >
@@ -548,7 +548,7 @@ export default function MemoryPage() {
             {/* Back to trips */}
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 font-dm-mono text-xs text-ink-400 uppercase tracking-wider hover:text-terracotta transition-colors focus:outline-none focus:ring-2 focus:ring-terracotta focus:ring-offset-2 focus:ring-offset-surface rounded"
+              className="inline-flex items-center gap-2 font-dm-mono text-xs text-ink-400 uppercase tracking-wider hover:text-accent transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface rounded"
             >
               <svg
                 className="w-4 h-4"
@@ -616,10 +616,10 @@ export default function MemoryPage() {
                 href="/explore"
                 className="
                   inline-flex items-center gap-2 rounded-lg
-                  bg-[#C4694F] px-6 py-3
+                  bg-accent px-6 py-3
                   font-sora text-sm font-medium text-white
-                  hover:bg-[#C4694F]/90 transition-colors duration-150
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F] focus-visible:ring-offset-2
+                  hover:bg-accent/90 transition-colors duration-150
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
                 "
               >
                 Find somewhere new

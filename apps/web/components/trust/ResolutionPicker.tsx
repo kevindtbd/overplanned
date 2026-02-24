@@ -118,14 +118,14 @@ export function ResolutionPicker({
         className="
           w-full flex items-center gap-3 p-4 rounded-xl
           border border-ink-700 bg-surface
-          hover:border-[#C4694F]/40 hover:bg-base
+          hover:border-accent/40 hover:bg-base
           transition-all duration-150
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F] focus-visible:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
           text-left group
         "
         aria-label="Flag as wrong for me — not my style"
       >
-        <span className="text-ink-400 group-hover:text-[#C4694F] transition-colors">
+        <span className="text-ink-400 group-hover:text-accent transition-colors">
           <PersonIcon />
         </span>
 
@@ -138,7 +138,7 @@ export function ResolutionPicker({
           </p>
         </div>
 
-        <span className="text-ink-400 group-hover:text-[#C4694F] transition-colors">
+        <span className="text-ink-400 group-hover:text-accent transition-colors">
           <ChevronRightIcon />
         </span>
       </button>

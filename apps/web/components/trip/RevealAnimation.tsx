@@ -301,7 +301,7 @@ function ErrorState({
   return (
     <div className="flex flex-col items-center gap-4 py-12 text-center" role="alert">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-error-bg dark:bg-red-950/30">
-        <AlertIcon className="h-7 w-7 text-red-500" />
+        <AlertIcon className="h-7 w-7 text-error" />
       </div>
       <div>
         <h3 className="font-sora text-lg font-semibold text-primary">

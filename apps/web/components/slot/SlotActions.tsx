@@ -321,8 +321,8 @@ export function SlotActions({
           }}
           className="
             font-dm-mono text-xs
-            bg-warm-surface text-ink-300
-            border border-warm-border rounded-lg
+            bg-surface text-ink-300
+            border border-ink-700 rounded-lg
             px-2 py-1.5 h-8
             transition-all duration-150
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2

@@ -206,7 +206,7 @@ export function PromptBar({
       <div
         className={`
           relative rounded-xl border bg-surface transition-all duration-150
-          ${error ? "border-red-300" : "border-ink-700 focus-within:border-[#C4694F]/60"}
+          ${error ? "border-red-300" : "border-ink-700 focus-within:border-accent/60"}
           ${disabled ? "opacity-60" : ""}
         `}
       >
@@ -244,7 +244,7 @@ export function PromptBar({
             aria-atomic="true"
             className={`
               font-dm-mono text-[10px] uppercase tracking-wider transition-colors
-              ${isAtLimit ? "text-red-500" : isNearLimit ? "text-amber-500" : "text-ink-400"}
+              ${isAtLimit ? "text-error" : isNearLimit ? "text-warning" : "text-ink-400"}
             `}
           >
             {charsRemaining} left
@@ -257,12 +257,12 @@ export function PromptBar({
             aria-label="Submit change request"
             className="
               flex items-center gap-1.5 rounded-lg px-3 py-1.5
-              bg-[#C4694F] text-white
+              bg-accent text-white
               font-dm-mono text-[10px] uppercase tracking-wider
               transition-all duration-150
-              hover:bg-[#b35b42] active:scale-95
-              disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#C4694F]
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F] focus-visible:ring-offset-2
+              hover:bg-accent/90 active:scale-95
+              disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-accent
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
             "
           >
             {isSubmitting ? (

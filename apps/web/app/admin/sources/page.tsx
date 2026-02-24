@@ -280,16 +280,16 @@ export default function AdminSourcesPage() {
           <h2 className="font-display text-2xl text-ink-100">
             Source Freshness
           </h2>
-          <p className="mt-1 font-mono text-sm text-ink-500">
+          <p className="mt-1 font-dm-mono text-sm text-ink-500">
             Monitor scraper health, data freshness, and authority scores
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="font-mono text-sm text-ink-500">
+          <span className="font-dm-mono text-sm text-ink-500">
             {sources.length} source{sources.length !== 1 ? 's' : ''}
           </span>
           {staleCount > 0 && (
-            <span className="rounded bg-red-100 px-2.5 py-1 font-mono text-xs text-error">
+            <span className="rounded bg-red-100 px-2.5 py-1 font-dm-mono text-xs text-error">
               {staleCount} stale
             </span>
           )}
@@ -306,7 +306,7 @@ export default function AdminSourcesPage() {
             {alerts.map((alert) => (
               <div
                 key={alert.source_name}
-                className="flex items-center justify-between font-mono text-xs"
+                className="flex items-center justify-between font-dm-mono text-xs"
               >
                 <span className="text-error font-medium">
                   {alert.source_name}
@@ -325,25 +325,25 @@ export default function AdminSourcesPage() {
       {/* Stats summary */}
       <div className="grid grid-cols-4 gap-4">
         <div className="rounded-lg border border-ink-700 bg-surface p-4">
-          <p className="font-mono text-xs text-ink-500">Total Sources</p>
+          <p className="font-dm-mono text-xs text-ink-500">Total Sources</p>
           <p className="font-display text-2xl text-ink-100 mt-1">
             {sources.length}
           </p>
         </div>
         <div className="rounded-lg border border-ink-700 bg-surface p-4">
-          <p className="font-mono text-xs text-ink-500">Total Signals</p>
+          <p className="font-dm-mono text-xs text-ink-500">Total Signals</p>
           <p className="font-display text-2xl text-ink-100 mt-1">
             {totalSignals.toLocaleString()}
           </p>
         </div>
         <div className="rounded-lg border border-ink-700 bg-surface p-4">
-          <p className="font-mono text-xs text-ink-500">Healthy</p>
+          <p className="font-dm-mono text-xs text-ink-500">Healthy</p>
           <p className="font-display text-2xl text-green-700 mt-1">
             {sources.length - staleCount}
           </p>
         </div>
         <div className="rounded-lg border border-ink-700 bg-surface p-4">
-          <p className="font-mono text-xs text-ink-500">Stale</p>
+          <p className="font-dm-mono text-xs text-ink-500">Stale</p>
           <p className={`font-display text-2xl mt-1 ${staleCount > 0 ? 'text-error' : 'text-ink-100'}`}>
             {staleCount}
           </p>
@@ -353,13 +353,13 @@ export default function AdminSourcesPage() {
       {/* Error */}
       {error && (
         <div className="rounded border border-error/30 bg-error-bg px-4 py-2">
-          <p className="font-mono text-sm text-error">{error}</p>
+          <p className="font-dm-mono text-sm text-error">{error}</p>
         </div>
       )}
 
       {/* Source table */}
       <div className="overflow-x-auto rounded border border-ink-700">
-        <table className="w-full font-mono text-sm">
+        <table className="w-full font-dm-mono text-sm">
           <thead>
             <tr className="border-b border-ink-700 bg-base text-left text-xs text-ink-500">
               <th className="px-3 py-2">Source</th>
@@ -450,14 +450,14 @@ export default function AdminSourcesPage() {
             <h3 className="font-display text-lg text-ink-100 mb-4">
               Edit Authority: {editingSource}
             </h3>
-            <p className="font-mono text-xs text-ink-500 mb-3">
+            <p className="font-dm-mono text-xs text-ink-500 mb-3">
               This will update the authority score for ALL quality signals from
               this source. The change is audit-logged.
             </p>
             <div className="mb-4">
               <label
                 htmlFor="authority-input"
-                className="block font-mono text-xs text-ink-500 mb-1"
+                className="block font-dm-mono text-xs text-ink-500 mb-1"
               >
                 Authority Score (0.0 - 1.0)
               </label>
@@ -469,23 +469,23 @@ export default function AdminSourcesPage() {
                 max="1"
                 value={editAuthority}
                 onChange={(e) => setEditAuthority(e.target.value)}
-                className="w-full rounded border border-ink-700 bg-white px-3 py-2 font-mono text-sm text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full rounded border border-ink-700 bg-white px-3 py-2 font-dm-mono text-sm text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
             {saveError && (
-              <p className="mb-3 font-mono text-xs text-error">{saveError}</p>
+              <p className="mb-3 font-dm-mono text-xs text-error">{saveError}</p>
             )}
             <div className="flex items-center gap-3">
               <button
                 onClick={saveAuthority}
                 disabled={saving}
-                className="rounded bg-accent px-4 py-2 font-mono text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                className="rounded bg-accent px-4 py-2 font-dm-mono text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 {saving ? 'Saving...' : 'Save'}
               </button>
               <button
                 onClick={() => setEditingSource(null)}
-                className="font-mono text-sm text-ink-500 hover:text-ink-300 transition-colors"
+                className="font-dm-mono text-sm text-ink-500 hover:text-ink-300 transition-colors"
               >
                 Cancel
               </button>
@@ -501,14 +501,14 @@ export default function AdminSourcesPage() {
             <h3 className="font-display text-lg text-ink-100">
               Staleness Thresholds
             </h3>
-            <p className="font-mono text-xs text-ink-500 mt-1">
+            <p className="font-dm-mono text-xs text-ink-500 mt-1">
               Configure when a source is considered stale. Changes are audit-logged.
             </p>
           </div>
           {!editingConfig && (
             <button
               onClick={() => setEditingConfig(true)}
-              className="rounded border border-ink-700 px-3 py-1.5 font-mono text-xs text-ink-500 hover:bg-base transition-colors"
+              className="rounded border border-ink-700 px-3 py-1.5 font-dm-mono text-xs text-ink-500 hover:bg-base transition-colors"
             >
               Edit
             </button>
@@ -518,21 +518,21 @@ export default function AdminSourcesPage() {
         {!editingConfig ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs text-ink-500">Default threshold:</span>
-              <span className="font-mono text-sm text-ink-100">
+              <span className="font-dm-mono text-xs text-ink-500">Default threshold:</span>
+              <span className="font-dm-mono text-sm text-ink-100">
                 {config?.default_threshold_hours ?? 72}h
               </span>
             </div>
             {config?.per_source && Object.keys(config.per_source).length > 0 && (
               <div>
-                <span className="font-mono text-xs text-ink-500 block mb-1">
+                <span className="font-dm-mono text-xs text-ink-500 block mb-1">
                   Per-source overrides:
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(config.per_source).map(([name, hours]) => (
                     <span
                       key={name}
-                      className="rounded bg-base px-2 py-0.5 font-mono text-xs text-ink-300"
+                      className="rounded bg-base px-2 py-0.5 font-dm-mono text-xs text-ink-300"
                     >
                       {name}: {hours}h
                     </span>
@@ -546,7 +546,7 @@ export default function AdminSourcesPage() {
             <div>
               <label
                 htmlFor="config-default"
-                className="block font-mono text-xs text-ink-500 mb-1"
+                className="block font-dm-mono text-xs text-ink-500 mb-1"
               >
                 Default threshold (hours)
               </label>
@@ -556,13 +556,13 @@ export default function AdminSourcesPage() {
                 min="1"
                 value={configDraft}
                 onChange={(e) => setConfigDraft(e.target.value)}
-                className="w-32 rounded border border-ink-700 bg-white px-3 py-2 font-mono text-sm text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-32 rounded border border-ink-700 bg-white px-3 py-2 font-dm-mono text-sm text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
             <div>
               <label
                 htmlFor="config-per-source"
-                className="block font-mono text-xs text-ink-500 mb-1"
+                className="block font-dm-mono text-xs text-ink-500 mb-1"
               >
                 Per-source overrides (one per line: source_name=hours)
               </label>
@@ -572,17 +572,17 @@ export default function AdminSourcesPage() {
                 value={perSourceDraft}
                 onChange={(e) => setPerSourceDraft(e.target.value)}
                 placeholder={'foursquare=48\nreddit=168'}
-                className="w-full rounded border border-ink-700 bg-white px-3 py-2 font-mono text-xs text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full rounded border border-ink-700 bg-white px-3 py-2 font-dm-mono text-xs text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
             {configError && (
-              <p className="font-mono text-xs text-error">{configError}</p>
+              <p className="font-dm-mono text-xs text-error">{configError}</p>
             )}
             <div className="flex items-center gap-3">
               <button
                 onClick={saveConfig}
                 disabled={configSaving}
-                className="rounded bg-accent px-4 py-2 font-mono text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                className="rounded bg-accent px-4 py-2 font-dm-mono text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 {configSaving ? 'Saving...' : 'Save Config'}
               </button>
@@ -591,7 +591,7 @@ export default function AdminSourcesPage() {
                   setEditingConfig(false);
                   setConfigError(null);
                 }}
-                className="font-mono text-sm text-ink-500 hover:text-ink-300 transition-colors"
+                className="font-dm-mono text-sm text-ink-500 hover:text-ink-300 transition-colors"
               >
                 Cancel
               </button>
@@ -601,7 +601,7 @@ export default function AdminSourcesPage() {
       </section>
 
       {/* Polling indicator */}
-      <p className="font-mono text-[10px] text-ink-700 text-right">
+      <p className="font-dm-mono text-[10px] text-ink-700 text-right">
         Auto-refreshing every {POLL_INTERVAL_MS / 1000}s
       </p>
     </div>

@@ -64,7 +64,7 @@ export default function SettingsPage() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="shrink-0 rounded-full border border-warm-border px-3 py-1 font-dm-mono text-xs text-ink-400 transition-colors hover:border-terracotta hover:text-terracotta"
+                className="shrink-0 rounded-full border border-ink-700 px-3 py-1 font-dm-mono text-xs text-ink-400 transition-colors hover:border-accent hover:text-accent"
               >
                 {s.label}
               </a>

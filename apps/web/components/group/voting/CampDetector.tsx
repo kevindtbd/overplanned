@@ -193,7 +193,7 @@ function SplitBar({
         style={{ width: `${forPct}%` }}
       />
       <div
-        className="h-full bg-red-400 transition-all duration-300"
+        className="h-full bg-error transition-all duration-300"
         style={{ width: `${againstPct}%` }}
       />
     </div>
@@ -250,7 +250,7 @@ export function CampDetector({
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-red-500 shrink-0"
+          className="text-error shrink-0"
           aria-hidden="true"
         >
           <path d="M8 2L14 14H2L8 2Z" />

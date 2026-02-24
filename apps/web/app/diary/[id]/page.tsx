@@ -177,8 +177,8 @@ function VenueCard({
     <div
       className={`rounded-xl border p-4 ${
         venue.flagged
-          ? "border-ink-700/50 bg-warm-surface/50"
-          : "border-warm-border bg-warm-surface"
+          ? "border-ink-700/50 bg-surface/50"
+          : "border-ink-700 bg-surface"
       }`}
       data-testid="venue-card"
     >
@@ -274,7 +274,7 @@ function VenueCard({
             </div>
           ))}
           {venue.photos.length > 4 && (
-            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-warm-background">
+            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-base">
               <span className="font-dm-mono text-xs text-ink-400">
                 +{venue.photos.length - 4}
               </span>
@@ -562,7 +562,7 @@ export default function DiaryDetailPage() {
                   className={`rounded-full px-3 py-1.5 font-dm-mono text-xs transition-colors ${
                     trip.contextTag === opt.value
                       ? "bg-accent text-white"
-                      : "bg-warm-surface border border-warm-border text-ink-400 hover:border-accent/30"
+                      : "bg-surface border border-ink-700 text-ink-400 hover:border-accent/30"
                   }`}
                   data-testid={`context-tag-${opt.value}`}
                 >

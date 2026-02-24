@@ -14,8 +14,8 @@ export function ReflectionPrompt({ tripId, hasSubmitted }: Props) {
 
   if (submitted) {
     return (
-      <div className="rounded-xl border border-warm-border bg-warm-surface p-4">
-        <p className="font-mono text-xs text-ink-300">
+      <div className="rounded-xl border border-ink-700 bg-surface p-4">
+        <p className="font-dm-mono text-xs text-ink-300">
           Thanks for your feedback! Your reflection helps improve future recommendations.
         </p>
       </div>
@@ -40,9 +40,9 @@ export function ReflectionPrompt({ tripId, hasSubmitted }: Props) {
   const stars = [1, 2, 3, 4, 5];
 
   return (
-    <div className="rounded-xl border border-warm-border bg-warm-surface p-4">
-      <h3 className="font-heading text-base text-ink-100">How was your trip?</h3>
-      <p className="mt-1 font-mono text-xs text-ink-400">
+    <div className="rounded-xl border border-ink-700 bg-surface p-4">
+      <h3 className="font-sora text-base text-ink-100">How was your trip?</h3>
+      <p className="mt-1 font-dm-mono text-xs text-ink-400">
         Rate your experience to help us improve future recommendations.
       </p>
 
@@ -53,11 +53,11 @@ export function ReflectionPrompt({ tripId, hasSubmitted }: Props) {
             onClick={() => setRating(s)}
             className={`h-8 w-8 rounded transition ${
               rating !== null && s <= rating
-                ? "bg-terracotta text-white"
-                : "bg-warm-background text-ink-400 hover:text-terracotta"
+                ? "bg-accent text-white"
+                : "bg-base text-ink-400 hover:text-accent"
             }`}
           >
-            <span className="font-mono text-sm">{s}</span>
+            <span className="font-dm-mono text-sm">{s}</span>
           </button>
         ))}
       </div>
@@ -65,7 +65,7 @@ export function ReflectionPrompt({ tripId, hasSubmitted }: Props) {
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        className="mt-3 block w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2 font-mono text-sm text-ink-100 placeholder:text-ink-500 focus:border-terracotta focus:outline-none"
+        className="mt-3 block w-full rounded-lg border border-ink-700 bg-base px-3 py-2 font-dm-mono text-sm text-ink-100 placeholder:text-ink-500 focus:border-accent focus:outline-none"
         rows={2}
         placeholder="Any thoughts? (optional)"
         maxLength={1000}
@@ -74,7 +74,7 @@ export function ReflectionPrompt({ tripId, hasSubmitted }: Props) {
       <button
         onClick={handleSubmit}
         disabled={rating === null || submitting}
-        className="mt-3 rounded-lg bg-terracotta px-4 py-2 font-mono text-xs text-white transition hover:bg-terracotta/90 disabled:opacity-50"
+        className="mt-3 rounded-lg bg-accent px-4 py-2 font-dm-mono text-xs text-white transition hover:bg-accent/90 disabled:opacity-50"
       >
         {submitting ? "Submitting..." : "Submit reflection"}
       </button>

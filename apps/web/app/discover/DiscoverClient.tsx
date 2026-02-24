@@ -391,7 +391,7 @@ export default function DiscoverClient({
 
       {/* Success toast */}
       {toastMessage && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 rounded-xl bg-warm-surface border border-warm-border px-4 py-3 shadow-lg font-sora text-sm text-ink-100 flex items-center gap-3">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 rounded-xl bg-surface border border-ink-700 px-4 py-3 shadow-lg font-sora text-sm text-ink-100 flex items-center gap-3">
           <span>{toastMessage}</span>
           {tripId && (
             <Link href={`/trip/${tripId}`} className="font-medium text-accent hover:text-accent/80 whitespace-nowrap">

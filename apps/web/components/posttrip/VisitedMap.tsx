@@ -45,7 +45,7 @@ function BoundsUpdater({ positions }: { positions: LatLngTuple[] }) {
 // ---------- Constants ----------
 
 const DAY_COLORS = [
-  "#C4694F", // terracotta
+  "var(--accent)", // terracotta
   "#3B82F6", // blue
   "#10B981", // emerald
   "#F59E0B", // amber

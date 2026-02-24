@@ -45,8 +45,8 @@ export interface AffinityMatrixProps {
 // ---------- Helpers ----------
 
 function affinityToColor(score: number): string {
-  // Warm gradient: low = warm-background, high = terracotta
-  if (score >= 0.8) return "#C4694F"; // accent
+  // Warm gradient: low = base, high = accent
+  if (score >= 0.8) return "var(--accent)"; // accent
   if (score >= 0.6) return "#D68D73"; // terracotta-400
   if (score >= 0.4) return "#E8B09D"; // terracotta-300
   if (score >= 0.2) return "#F2CFC2"; // accent/20
@@ -91,7 +91,7 @@ function SplitCard({
             height="16"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#C4694F"
+            stroke="var(--accent)"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -373,7 +373,7 @@ export function AffinityMatrix({
         <div
           className="flex-1 h-2 rounded-full"
           style={{
-            background: "linear-gradient(to right, #FAEAE4, #C4694F)",
+            background: "linear-gradient(to right, #FAEAE4, var(--accent))",
           }}
           aria-hidden="true"
         />

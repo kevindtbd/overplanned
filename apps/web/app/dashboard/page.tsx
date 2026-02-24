@@ -131,7 +131,7 @@ export default function DashboardPage() {
             <QuickStartGrid />
             <Link
               href="/explore"
-              className="mt-2 inline-flex items-center gap-2 font-dm-mono text-sm text-ink-300 transition-colors hover:text-[#C4694F] hover:underline"
+              className="mt-2 inline-flex items-center gap-2 font-dm-mono text-sm text-ink-300 transition-colors hover:text-accent hover:underline"
             >
               Explore destinations <span aria-hidden="true">&rarr;</span>
             </Link>
@@ -168,7 +168,7 @@ export default function DashboardPage() {
 
             <Link
               href="/explore"
-              className="mt-4 inline-flex items-center gap-2 font-dm-mono text-sm text-ink-400 transition-colors hover:text-[#C4694F] hover:underline"
+              className="mt-4 inline-flex items-center gap-2 font-dm-mono text-sm text-ink-400 transition-colors hover:text-accent hover:underline"
             >
               Explore destinations <span aria-hidden="true">&rarr;</span>
             </Link>
@@ -193,7 +193,7 @@ export default function DashboardPage() {
         {fetchState === "success" &&
           trips.length > 0 &&
           backfillTrips.length === 0 && (
-          <section className="rounded-[20px] border border-warm-border bg-warm-surface p-5">
+          <section className="rounded-[20px] border border-ink-700 bg-surface p-5">
             <p className="font-sora text-sm text-ink-300">
               Traveled before Overplanned?
             </p>

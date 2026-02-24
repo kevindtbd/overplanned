@@ -87,7 +87,7 @@ export function LegReviewStep({
         {legs.map((leg, i) => (
           <div
             key={`${leg.city}-${i}`}
-            className="flex items-center gap-3 rounded-xl border border-warm-border bg-warm-surface px-4 py-3"
+            className="flex items-center gap-3 rounded-xl border border-ink-700 bg-surface px-4 py-3"
             data-testid={`leg-card-${i}`}
           >
             {/* Position badge */}

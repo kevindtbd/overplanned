@@ -216,7 +216,7 @@ export function DayNavigation({
               <div key={group.leg.id} className="flex items-end">
                 {/* Separator between leg groups */}
                 {groupIdx > 0 && (
-                  <div className="w-px h-6 bg-warm-border mx-1 shrink-0" />
+                  <div className="w-px h-6 bg-ink-700 mx-1 shrink-0" />
                 )}
                 {/* Leg group: city label + day tabs */}
                 <div className="flex flex-col">

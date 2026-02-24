@@ -61,7 +61,7 @@ export function StageBadge({ stage }: { stage: string }) {
   const style = STAGE_STYLES[stage] || STAGE_STYLES.archived;
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-mono text-xs font-medium ${style.bg} ${style.text}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-dm-mono text-xs font-medium ${style.bg} ${style.text}`}
     >
       {style.label}
     </span>
@@ -71,13 +71,13 @@ export function StageBadge({ stage }: { stage: string }) {
 export function ArtifactHashDisplay({ hash }: { hash: string | null }) {
   if (!hash) {
     return (
-      <span className="font-mono text-xs text-ink-600">
+      <span className="font-dm-mono text-xs text-ink-600">
         No hash recorded
       </span>
     );
   }
   return (
-    <span className="font-mono text-xs text-ink-500" title={hash}>
+    <span className="font-dm-mono text-xs text-ink-500" title={hash}>
       SHA-256: {hash.slice(0, 12)}...
     </span>
   );
@@ -99,7 +99,7 @@ function MetricsTable({
   ).sort();
 
   return (
-    <table className="w-full font-mono text-sm">
+    <table className="w-full font-dm-mono text-sm">
       <thead>
         <tr className="border-b border-ink-700 text-left">
           <th className="pb-2 pr-4 text-ink-500">Metric</th>
@@ -231,7 +231,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
           <button
             onClick={fetchComparison}
             disabled={loading}
-            className="rounded-md bg-base px-3 py-1.5 font-mono text-xs text-ink-300 transition-colors hover:bg-ink-800 disabled:opacity-50"
+            className="rounded-md bg-base px-3 py-1.5 font-dm-mono text-xs text-ink-300 transition-colors hover:bg-ink-800 disabled:opacity-50"
           >
             {loading ? 'Loading...' : 'Compare Metrics'}
           </button>
@@ -239,7 +239,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
       </div>
 
       {error && (
-        <p className="mt-2 font-mono text-xs text-error">{error}</p>
+        <p className="mt-2 font-dm-mono text-xs text-error">{error}</p>
       )}
 
       {comparison && (
@@ -252,7 +252,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
           />
 
           {comparison.current.id && (
-            <p className="font-mono text-xs text-ink-500">
+            <p className="font-dm-mono text-xs text-ink-500">
               Current {STAGE_STYLES[comparison.target_stage]?.label}:{' '}
               {comparison.current.version}
               {' — will be archived on promotion'}
@@ -260,7 +260,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
           )}
 
           {!comparison.current.id && (
-            <p className="font-mono text-xs text-ink-500">
+            <p className="font-dm-mono text-xs text-ink-500">
               No model currently in {STAGE_STYLES[comparison.target_stage]?.label}.
               This will be the first.
             </p>
@@ -272,25 +272,25 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
                 {!showConfirm ? (
                   <button
                     onClick={() => setShowConfirm(true)}
-                    className="rounded-md bg-accent px-4 py-2 font-mono text-sm text-white transition-colors hover:bg-[#B85C3F]"
+                    className="rounded-md bg-accent px-4 py-2 font-dm-mono text-sm text-white transition-colors hover:bg-[#B85C3F]"
                   >
                     Promote to {STAGE_STYLES[nextStage]?.label}
                   </button>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-ink-500">
+                    <span className="font-dm-mono text-xs text-ink-500">
                       Confirm promotion?
                     </span>
                     <button
                       onClick={executePromotion}
                       disabled={promoting}
-                      className="rounded-md bg-green-700 px-4 py-2 font-mono text-sm text-white transition-colors hover:bg-green-800 disabled:opacity-50"
+                      className="rounded-md bg-green-700 px-4 py-2 font-dm-mono text-sm text-white transition-colors hover:bg-green-800 disabled:opacity-50"
                     >
                       {promoting ? 'Promoting...' : 'Yes, Promote'}
                     </button>
                     <button
                       onClick={() => setShowConfirm(false)}
-                      className="rounded-md border border-ink-700 px-3 py-2 font-mono text-xs text-ink-500 transition-colors hover:bg-ink-800"
+                      className="rounded-md border border-ink-700 px-3 py-2 font-dm-mono text-xs text-ink-500 transition-colors hover:bg-ink-800"
                     >
                       Cancel
                     </button>
@@ -298,7 +298,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
                 )}
               </>
             ) : (
-              <p className="font-mono text-sm text-error">
+              <p className="font-dm-mono text-sm text-error">
                 Gate blocked: candidate does not beat current on{' '}
                 {comparison.comparison.primary_metric}
               </p>
@@ -308,7 +308,7 @@ export function PromotionGate({ model, onPromoted }: PromotionGateProps) {
                 setComparison(null);
                 setShowConfirm(false);
               }}
-              className="ml-auto font-mono text-xs text-ink-600 hover:text-ink-500"
+              className="ml-auto font-dm-mono text-xs text-ink-600 hover:text-ink-500"
             >
               Dismiss
             </button>

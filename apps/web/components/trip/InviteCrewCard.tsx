@@ -34,7 +34,7 @@ export function InviteCrewCard({ tripId, onDismiss }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-warm-border bg-warm-surface p-4 relative">
+    <div className="rounded-xl border border-ink-700 bg-surface p-4 relative">
       <button
         onClick={onDismiss}
         className="absolute top-3 right-3 rounded-lg p-1 text-ink-400 hover:text-ink-100 transition-colors"
@@ -78,7 +78,7 @@ export function InviteCrewCard({ tripId, onDismiss }: Props) {
             type="text"
             readOnly
             value={fallbackUrl}
-            className="w-full rounded-lg border border-warm-border bg-warm-background px-3 py-2 font-dm-mono text-xs text-ink-200 select-all"
+            className="w-full rounded-lg border border-ink-700 bg-base px-3 py-2 font-dm-mono text-xs text-ink-200 select-all"
             onClick={(e) => (e.target as HTMLInputElement).select()}
           />
         </div>

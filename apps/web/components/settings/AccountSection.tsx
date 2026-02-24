@@ -118,7 +118,7 @@ export function AccountSection({ name, email, provider }: AccountSectionProps) {
         Account
       </h2>
 
-      <div className="rounded-[20px] border border-warm-border bg-warm-surface p-5 space-y-5">
+      <div className="rounded-[20px] border border-ink-700 bg-surface p-5 space-y-5">
         {/* Display name */}
         <div>
           <label
@@ -138,7 +138,7 @@ export function AccountSection({ name, email, provider }: AccountSectionProps) {
               maxLength={100}
               disabled={saving}
               className="
-                flex-1 bg-transparent border border-warm-border rounded-lg
+                flex-1 bg-transparent border border-ink-700 rounded-lg
                 px-3 py-2 font-sora text-sm text-ink-100
                 focus:outline-none focus:border-accent
                 disabled:opacity-50
@@ -147,7 +147,7 @@ export function AccountSection({ name, email, provider }: AccountSectionProps) {
               placeholder="Your name"
             />
             {saveStatus === "saved" && (
-              <span className="text-green-500 flex items-center gap-1">
+              <span className="text-success flex items-center gap-1">
                 <CheckIcon />
               </span>
             )}
@@ -173,7 +173,7 @@ export function AccountSection({ name, email, provider }: AccountSectionProps) {
             Connected accounts
           </span>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-lg border border-warm-border px-3 py-1.5">
+            <div className="flex items-center gap-2 rounded-lg border border-ink-700 px-3 py-1.5">
               <GoogleIcon />
               <span className="font-sora text-sm text-ink-300 capitalize">{provider}</span>
             </div>
@@ -181,7 +181,7 @@ export function AccountSection({ name, email, provider }: AccountSectionProps) {
         </div>
 
         {/* Sign out */}
-        <div className="pt-2 border-t border-warm-border">
+        <div className="pt-2 border-t border-ink-700">
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="font-sora text-sm text-ink-400 hover:text-ink-100 transition-colors"

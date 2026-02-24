@@ -95,8 +95,8 @@ function VibeCard({
         focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2
         ${
           selected
-            ? "border-[#C4694F] shadow-md"
-            : "border-ink-700 hover:border-[#C4694F]"
+            ? "border-accent shadow-md"
+            : "border-ink-700 hover:border-accent"
         }
       `}
     >

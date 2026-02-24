@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
               <h1 className="font-display text-xl text-ink-100">
                 Admin Panel
               </h1>
-              <div className="flex gap-4 font-mono text-sm">
+              <div className="flex gap-4 font-dm-mono text-sm">
                 <a
                   href="/admin/users"
                   className="text-ink-500 hover:text-accent transition-colors"
@@ -87,7 +87,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
             </div>
             <a
               href="/"
-              className="font-mono text-sm text-ink-500 hover:text-accent transition-colors"
+              className="font-dm-mono text-sm text-ink-500 hover:text-accent transition-colors"
             >
               ← Back to App
             </a>

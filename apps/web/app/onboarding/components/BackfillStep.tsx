@@ -193,7 +193,7 @@ export function BackfillStep({ onSkip, onContinue }: BackfillStepProps) {
                   className={`rounded-full px-3 py-1 font-dm-mono text-xs transition-colors ${
                     context === opt.value
                       ? "bg-accent text-white"
-                      : "bg-warm-surface text-ink-300 hover:bg-warm-border"
+                      : "bg-surface text-ink-300 hover:bg-ink-700"
                   }`}
                   data-testid={`backfill-context-${opt.value}`}
                 >
