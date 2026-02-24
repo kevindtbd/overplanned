@@ -1,14 +1,22 @@
 """
 PostTrip completion logic.
 Auto-transitions trips to completed status when endDate passes.
+
+On completion, each ItinerarySlot is classified via the SlotOutcomeClassifier
+(Phase 1.1) so the ``completionSignal`` column is populated for downstream ML.
 """
 
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 from zoneinfo import ZoneInfo
 
 from prisma import Prisma
 from prisma.models import Trip
+
+from services.api.posttrip.slot_classifier import classify_slot_outcome
+
+logger = logging.getLogger(__name__)
 
 
 async def should_complete_trip(trip: Trip) -> bool:
@@ -67,7 +75,59 @@ async def mark_trip_completed(
         }
     )
 
+    # Phase 1.1: classify slot outcomes now that the trip is done
+    await classify_trip_slots(db, trip_id)
+
     return trip
+
+
+async def classify_trip_slots(db: Prisma, trip_id: str) -> int:
+    """
+    Classify all ItinerarySlots for a completed trip and persist the result.
+
+    Writes the ``completionSignal`` enum column on each slot so the training-
+    data pipeline has a clean label without needing to re-derive it.
+
+    Args:
+        db: Prisma client instance
+        trip_id: ID of the completed trip
+
+    Returns:
+        Number of slots updated
+    """
+    slots = await db.itineraryslot.find_many(
+        where={"tripId": trip_id}
+    )
+
+    updated = 0
+    for slot in slots:
+        slot_dict = {
+            "pivotEventId": getattr(slot, "pivotEventId", None),
+            "wasSwapped": getattr(slot, "wasSwapped", False),
+            "status": getattr(slot, "status", ""),
+        }
+        outcome = classify_slot_outcome(slot_dict)
+
+        try:
+            await db.itineraryslot.update(
+                where={"id": slot.id},
+                data={"completionSignal": outcome},
+            )
+            updated += 1
+        except Exception:
+            logger.exception(
+                "Failed to write completionSignal for slot %s (trip %s)",
+                slot.id,
+                trip_id,
+            )
+
+    logger.info(
+        "classify_trip_slots: trip=%s classified %d/%d slots",
+        trip_id,
+        updated,
+        len(slots),
+    )
+    return updated
 
 
 async def auto_complete_trips(db: Prisma) -> list[str]:

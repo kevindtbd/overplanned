@@ -36,10 +36,10 @@ logger = logging.getLogger(__name__)
 # Common suffixes stripped during normalization (case-insensitive).
 # Order matters: longest first to avoid partial matches.
 STRIP_SUFFIXES = [
-    "restaurant", "ristorante", "restaurante",
-    "cafe", "café", "coffee shop", "coffee house",
-    "bar", "pub", "tavern", "izakaya",
-    "bistro", "brasserie", "trattoria",
+    # English
+    "restaurant", "coffee shop", "coffee house",
+    "cafe", "bar", "pub", "tavern", "izakaya",
+    "bistro", "brasserie",
     "hotel", "hostel", "inn", "motel",
     "museum", "gallery", "theater", "theatre",
     "park", "garden", "gardens",
@@ -47,6 +47,30 @@ STRIP_SUFFIXES = [
     "shop", "store", "boutique", "market",
     "temple", "shrine", "church", "mosque",
     "station", "terminal",
+    # Italian
+    "ristorante", "trattoria",
+    # Spanish (with and without accents -- NFKC handles some,
+    # but we list both forms for safety)
+    "restaurante",
+    "taqueria", "taquería",
+    "cantina",
+    "mercado",
+    "panaderia", "panadería",
+    "cerveceria", "cervecería",
+    "pulqueria", "pulquería",
+    "mezcaleria", "mezcalería",
+    "fonda",
+    "comedor",
+    "loncheria", "lonchería",
+    "cocina",
+    "antojitos",
+    # Spanish prefixes handled as suffixes (they appear at word boundaries)
+    "el", "la", "los", "las",
+    # French (common in New Orleans)
+    "boulangerie", "patisserie", "pâtisserie",
+    "boucherie",
+    # Accented cafe/café (both forms)
+    "café",
 ]
 
 # Katakana ↔ Hiragana offset (Unicode block distance)
@@ -66,29 +90,50 @@ def _katakana_to_hiragana(text: str) -> str:
     return "".join(result)
 
 
+def strip_accents(text: str) -> str:
+    """
+    Remove diacritical marks (accents) from text.
+
+    e with accent -> e, n with tilde -> n, etc.
+    Uses NFD decomposition to split base characters from combining marks,
+    then strips the combining marks.
+
+    This is applied AFTER NFKC normalization and is specifically for
+    cross-language matching (e.g. "taqueria" == "taquería").
+    """
+    # NFD decomposes accented chars into base + combining mark
+    nfd = unicodedata.normalize("NFD", text)
+    # Filter out combining marks (category "M")
+    return "".join(ch for ch in nfd if unicodedata.category(ch)[0] != "M")
+
+
 def normalize_name(raw_name: str) -> str:
     """
     Normalize a venue name for comparison.
 
     Steps:
       1. Unicode NFKC normalization (collapses fullwidth, compatibility chars)
-      2. Katakana → Hiragana equivalence
+      2. Katakana -> Hiragana equivalence
       3. Lowercase
-      4. Strip punctuation (keep CJK, letters, digits, spaces)
-      5. Strip common suffixes
-      6. Collapse whitespace
+      4. Strip diacritical marks (accents) for cross-language matching
+      5. Strip punctuation (keep CJK, letters, digits, spaces)
+      6. Strip common suffixes
+      7. Collapse whitespace
     """
     if not raw_name:
         return ""
 
-    # NFKC normalization — handles CJK fullwidth, compatibility forms
+    # NFKC normalization -- handles CJK fullwidth, compatibility forms
     text = unicodedata.normalize("NFKC", raw_name)
 
-    # Katakana → Hiragana
+    # Katakana -> Hiragana
     text = _katakana_to_hiragana(text)
 
     # Lowercase
     text = text.lower()
+
+    # Strip accents/diacriticals (cafe == cafe, taqueria == taqueria)
+    text = strip_accents(text)
 
     # Strip punctuation but keep CJK ideographs, letters, digits, spaces
     # CJK Unified Ideographs: U+4E00..U+9FFF
@@ -103,7 +148,9 @@ def normalize_name(raw_name: str) -> str:
 
     # Strip common suffixes (word-boundary match)
     for suffix in STRIP_SUFFIXES:
-        text = re.sub(rf"\b{re.escape(suffix)}\b", "", text)
+        # Also strip the accent-stripped version of the suffix
+        stripped_suffix = strip_accents(suffix)
+        text = re.sub(rf"\b{re.escape(stripped_suffix)}\b", "", text)
 
     # Collapse whitespace
     text = re.sub(r"\s+", " ", text).strip()
