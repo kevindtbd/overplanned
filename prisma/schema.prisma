@@ -45,6 +45,7 @@ model User {
   backfillTrips  BackfillTrip[]
   backfillSignals BackfillSignal[]
   personaDeltas  PersonaDelta[]
+  tripPhotos     TripPhoto[]
 
   userPreference          UserPreference?
   notificationPreference  NotificationPreference?
@@ -114,6 +115,7 @@ model Trip {
   slots            ItinerarySlot[]
   sharedTokens     SharedTripToken[]
   inviteTokens     InviteToken[]
+  photos           TripPhoto[]
 }
 
 model TripLeg {
@@ -190,6 +192,8 @@ model ItinerarySlot {
   ownerTip        String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
+
+  photos          TripPhoto[]
 
   @@index([tripLegId])
 }
@@ -292,6 +296,23 @@ model QualitySignal {
   createdAt       DateTime     @default(now())
 
   @@index([activityNodeId, sourceName])
+}
+
+model CityVibeProfile {
+  id          String   @id @default(uuid())
+  city        String      // canonical city name
+  country     String
+  vibeKey     String      // maps to vibe archetype: "warm_slow", "dense_late", "remote_physical", "old_layered"
+  score       Float       // 0.0 - 1.0, how well this city matches the vibe
+  nodeCount   Int         // total approved ActivityNodes for this city (readiness gate)
+  catCount    Int         // distinct categories represented (readiness gate)
+  imageUrl    String?     // atmospheric Unsplash photo URL
+  tagline     String?     // one-line "why this city" (pre-generated, cached)
+  computedAt  DateTime    @default(now())
+
+  @@unique([city, vibeKey])
+  @@index([vibeKey, score])
+  @@index([city])
 }
 
 // ============================================================================
@@ -579,6 +600,28 @@ model BackfillPhoto {
   @@index([backfillVenueId])
 }
 
+model TripPhoto {
+  id               String        @id @default(uuid())
+  trip             Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  tripId           String
+  slot             ItinerarySlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  slotId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  gcsPath          String        // GCS object path
+  originalFilename String
+  mimeType         String        // image/jpeg, image/png, image/webp
+  sizeBytes        Int?
+  exifLat          Float?
+  exifLng          Float?
+  exifTimestamp    DateTime?
+  createdAt        DateTime      @default(now())
+
+  @@index([tripId])
+  @@index([slotId])
+  @@index([userId])
+}
+
 model BackfillSignal {
   id              String         @id @default(uuid())
   userId          String
@@ -776,6 +819,8 @@ enum SignalType {
   pivot_accepted
   pivot_rejected
   pivot_initiated
+  // Trip-level
+  trip_vibe_rating
   // Passive
   dwell_time
   scroll_depth

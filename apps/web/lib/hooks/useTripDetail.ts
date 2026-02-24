@@ -79,10 +79,20 @@ export interface ApiTrip {
 
 export type FetchState = "loading" | "error" | "success";
 
+export interface ReflectionSummary {
+  lovedCount: number;
+  skippedCount: number;
+  missedCount: number;
+  feedback: string | null;
+  submittedAt: string | null;
+}
+
 export function useTripDetail(tripId: string) {
   const [trip, setTrip] = useState<ApiTrip | null>(null);
   const [myRole, setMyRole] = useState<string | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [hasReflected, setHasReflected] = useState(false);
+  const [reflectionSummary, setReflectionSummary] = useState<ReflectionSummary | null>(null);
   const [fetchState, setFetchState] = useState<FetchState>("loading");
   const [errorMessage, setErrorMessage] = useState("Failed to load trip");
 
@@ -100,7 +110,7 @@ export function useTripDetail(tripId: string) {
         }
         throw new Error(data.error || "Failed to load trip");
       }
-      const { trip: tripData, myRole: role, myUserId: odId } = await res.json();
+      const { trip: tripData, myRole: role, myUserId: odId, hasReflected: reflected, reflectionSummary: refSummary } = await res.json();
       // Derive convenience fields from first leg
       const leg0 = tripData.legs?.[0];
       tripData.city = leg0?.city ?? "";
@@ -110,6 +120,8 @@ export function useTripDetail(tripId: string) {
       setTrip(tripData);
       setMyRole(role);
       setMyUserId(odId ?? null);
+      setHasReflected(reflected ?? false);
+      setReflectionSummary(refSummary ?? null);
       setFetchState("success");
     } catch (err) {
       setErrorMessage(
@@ -123,5 +135,5 @@ export function useTripDetail(tripId: string) {
     fetchTrip();
   }, [fetchTrip]);
 
-  return { trip, setTrip, myRole, myUserId, fetchState, errorMessage, fetchTrip };
+  return { trip, setTrip, myRole, myUserId, hasReflected, reflectionSummary, fetchState, errorMessage, fetchTrip };
 }

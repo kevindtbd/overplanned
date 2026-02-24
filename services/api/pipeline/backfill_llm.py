@@ -1,8 +1,9 @@
 """
 LLM helpers for the backfill ingestion pipeline.
 
-Three functions, two models:
+Functions (two models):
   - classify_submission()  — Haiku: tier classification (tier_3 vs tier_4)
+  - extract_cities()       — Haiku: multi-city route extraction from diary text
   - extract_venues()       — Sonnet with tool use: structured venue extraction
   - validate_venues()      — Haiku: plausibility validation per venue
 
@@ -48,6 +49,10 @@ SONNET_OUTPUT_CPM = 15.00
 CLASSIFY_PROMPT_VERSION = "backfill-classify-v1"
 EXTRACT_PROMPT_VERSION = "backfill-extract-v1"
 VALIDATE_PROMPT_VERSION = "backfill-validate-v1"
+CITY_EXTRACT_PROMPT_VERSION = "backfill-cities-v1"
+
+# Minimum confidence to create a BackfillLeg from an extracted city
+CITY_CONFIDENCE_THRESHOLD = 0.4
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +103,249 @@ def _log_llm_call(
         cost_usd,
         context,
     )
+
+
+# ---------------------------------------------------------------------------
+# Data structures (shared)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class ExtractedCity:
+    """
+    A single city extracted from diary text by the city extraction stage.
+
+    confidence: float 0-1. Legs are created only for confidence >= CITY_CONFIDENCE_THRESHOLD.
+    position: 0-indexed travel order derived from approximate_order in LLM response.
+    """
+    city: str
+    country: str
+    position: int
+    confidence: float
+
+
+# ---------------------------------------------------------------------------
+# Stage 1.5: City extraction (Haiku)
+# ---------------------------------------------------------------------------
+
+_CITY_EXTRACT_SYSTEM = """\
+You are a travel route extractor for a trip intelligence system.
+
+Your job: identify all cities the author of this travel diary ACTUALLY VISITED \
+as travel destinations, in the order they appear in the narrative.
+
+Rules:
+- Only include cities where the author spent time as a traveler.
+- Exclude cities mentioned as comparisons ("better than the ramen in Sapporo"), \
+  future plans ("next time I want to visit Nara"), or other people's locations \
+  ("my friend in Berlin").
+- "We took the shinkansen to Kyoto" = visited Kyoto. Include it.
+- "We flew via Dubai" with no activities described = transit only. Exclude it. \
+  But "12-hour layover in Dubai, explored the souks" = visited. Include it.
+- If a city name is ambiguous (e.g. "Paris"), use surrounding context — nearby city \
+  names, country mentions, currency, language clues — to identify the country. \
+  If still ambiguous, return the most commonly traveled version and lower the \
+  confidence score.
+- Return cities in approximate narrative/travel order (1-indexed approximate_order).
+- Do NOT invent cities not present in the text.
+- Confidence: 0.9+ = clearly visited, 0.7 = probably visited, 0.5 = mentioned in \
+  ambiguous context, 0.3 or lower = uncertain.
+
+Use the extract_cities tool to return structured data."""
+
+_CITY_EXTRACT_USER_TEMPLATE = """\
+Extract the cities visited from this travel diary.
+City hint (user-provided, may be null or partial): {city_hint}
+
+<user_diary>
+{text}
+</user_diary>"""
+
+_CITY_EXTRACT_TOOL = {
+    "name": "extract_cities",
+    "description": (
+        "Return the ordered list of cities visited in this travel diary. "
+        "Each item is one city actually visited, not merely mentioned."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "cities": {
+                "type": "array",
+                "description": "Cities visited, in travel order",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "city": {
+                            "type": "string",
+                            "description": "City name",
+                        },
+                        "country": {
+                            "type": "string",
+                            "description": "Country name (e.g. Japan, France, United States)",
+                        },
+                        "approximate_order": {
+                            "type": "integer",
+                            "description": "1-indexed position in narrative travel order",
+                        },
+                        "confidence": {
+                            "type": "number",
+                            "description": "Confidence 0.0-1.0 that this city was actually visited",
+                        },
+                    },
+                    "required": ["city", "country", "approximate_order", "confidence"],
+                },
+            }
+        },
+        "required": ["cities"],
+    },
+}
+
+
+async def extract_cities(
+    client: anthropic.AsyncAnthropic,
+    text: str,
+    city_hint: Optional[str],
+) -> list[ExtractedCity]:
+    """
+    Extract the ordered list of cities visited from diary text using Haiku.
+
+    Uses tool use to enforce structured output. Applies a 10-second timeout.
+    On any failure or empty result, returns an empty list — caller falls back
+    to city_hint.
+
+    Only cities with confidence >= CITY_CONFIDENCE_THRESHOLD are returned.
+    """
+    import asyncio
+
+    city_hint_str = city_hint if city_hint else "not provided"
+    user_msg = _CITY_EXTRACT_USER_TEMPLATE.format(
+        city_hint=city_hint_str,
+        text=text[:8000],
+    )
+
+    t0 = time.monotonic()
+    try:
+        response = await asyncio.wait_for(
+            client.messages.create(
+                model=HAIKU_MODEL,
+                max_tokens=1024,
+                system=_CITY_EXTRACT_SYSTEM,
+                tools=[_CITY_EXTRACT_TOOL],
+                tool_choice={"type": "any"},
+                messages=[{"role": "user", "content": user_msg}],
+            ),
+            timeout=10.0,
+        )
+    except asyncio.TimeoutError:
+        logger.warning("extract_cities: Haiku call timed out after 10s — returning empty")
+        return []
+    except Exception as exc:
+        logger.error("extract_cities: LLM call failed: %s — returning empty", exc)
+        return []
+
+    latency = time.monotonic() - t0
+
+    input_tok = response.usage.input_tokens
+    output_tok = response.usage.output_tokens
+
+    _log_llm_call(
+        model=HAIKU_MODEL,
+        prompt_version=CITY_EXTRACT_PROMPT_VERSION,
+        latency_s=latency,
+        input_tokens=input_tok,
+        output_tokens=output_tok,
+        input_cpm=HAIKU_INPUT_CPM,
+        output_cpm=HAIKU_OUTPUT_CPM,
+        context="extract_cities",
+    )
+
+    tool_input: dict = {}
+    for block in response.content:
+        if block.type == "tool_use" and block.name == "extract_cities":
+            tool_input = block.input
+            break
+
+    if not tool_input:
+        logger.warning("extract_cities: no tool_use block in response — returning empty")
+        return []
+
+    raw_cities = tool_input.get("cities", [])
+    if not isinstance(raw_cities, list):
+        logger.warning("extract_cities: 'cities' field is not a list — returning empty")
+        return []
+
+    results: list[ExtractedCity] = []
+    for item in raw_cities:
+        if not isinstance(item, dict):
+            continue
+
+        city_name = item.get("city", "")
+        country_name = item.get("country", "")
+        approximate_order = item.get("approximate_order", 1)
+        confidence = item.get("confidence", 0.0)
+
+        # Sanitize string fields: trim, cap, strip HTML-significant chars
+        city_name = _sanitize_city_string(city_name, max_len=200)
+        country_name = _sanitize_city_string(country_name, max_len=100)
+
+        if not city_name:
+            continue
+
+        # Validate approximate_order is a sane positive integer
+        try:
+            order_int = int(approximate_order)
+        except (TypeError, ValueError):
+            order_int = len(results) + 1
+        order_int = max(1, min(order_int, 20))
+
+        # Validate confidence is a float in [0, 1]
+        try:
+            conf_float = float(confidence)
+        except (TypeError, ValueError):
+            conf_float = 0.0
+        conf_float = max(0.0, min(conf_float, 1.0))
+
+        if conf_float < CITY_CONFIDENCE_THRESHOLD:
+            logger.info(
+                "extract_cities: dropping %r (confidence=%.2f < threshold=%.2f)",
+                city_name, conf_float, CITY_CONFIDENCE_THRESHOLD,
+            )
+            continue
+
+        results.append(ExtractedCity(
+            city=city_name,
+            country=country_name,
+            position=order_int - 1,  # convert to 0-indexed
+            confidence=conf_float,
+        ))
+
+    # Sort by position so legs are created in travel order
+    results.sort(key=lambda c: c.position)
+
+    # Re-assign positions as 0-indexed sequential integers (handles gaps/duplicates
+    # in approximate_order from the LLM)
+    for idx, ec in enumerate(results):
+        ec.position = idx
+
+    logger.info(
+        "extract_cities: extracted %d cities (above threshold=%.1f): %s",
+        len(results),
+        CITY_CONFIDENCE_THRESHOLD,
+        [(c.city, c.country, c.confidence) for c in results],
+    )
+    return results
+
+
+def _sanitize_city_string(value: str, max_len: int) -> str:
+    """Trim, cap length, and strip angle brackets from LLM string output."""
+    if not isinstance(value, str):
+        return ""
+    # Strip leading/trailing whitespace
+    value = value.strip()
+    # Remove angle brackets to prevent HTML injection in downstream rendering
+    value = value.replace("<", "").replace(">", "")
+    # Cap length
+    return value[:max_len]
 
 
 # ---------------------------------------------------------------------------

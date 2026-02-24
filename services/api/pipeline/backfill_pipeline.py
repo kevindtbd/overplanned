@@ -1,15 +1,17 @@
 """
-Backfill ingestion pipeline — 5-stage async processor.
+Backfill ingestion pipeline — async processor.
 
 Entry point: process_backfill(pool, backfill_trip_id)
 
 Stages:
-  1. Source classification  — Haiku tier detection
-  2. LLM extraction         — Sonnet tool-use venue extraction
-  2.5 LLM validation        — Haiku plausibility gate
-  3. Entity resolution      — pg_trgm similarity against ActivityNode
-  4. Anomaly checks         — geographic, temporal, density, duplicate flags
-  5. Signal generation      — BackfillSignal rows weighted by tier
+  1.   Source classification  — Haiku tier detection
+  1.5  City extraction        — Haiku multi-city route detection + BackfillLeg creation
+  2.   LLM extraction         — Sonnet tool-use venue extraction (multi-city aware)
+  2.5  LLM validation         — Haiku plausibility gate
+  3.   Entity resolution      — pg_trgm similarity against ActivityNode (per-venue city)
+  3.5  Venue-to-leg assignment — deterministic city match
+  4.   Anomaly checks         — geographic, temporal, density, duplicate flags
+  5.   Signal generation      — BackfillSignal rows weighted by tier
 
 Each stage writes BackfillTrip.status before doing work so crash recovery
 knows where to resume (or at minimum, where the job died).
@@ -32,8 +34,10 @@ import anthropic
 import asyncpg
 
 from services.api.pipeline.backfill_llm import (
+    ExtractedCity,
     ExtractedVenue,
     classify_submission,
+    extract_cities,
     extract_venues,
     validate_venues,
 )
@@ -103,6 +107,7 @@ class ResolvedVenue:
     latitude: Optional[float]
     longitude: Optional[float]
     price_level: Optional[int]
+    backfill_leg_id: Optional[str] = None  # set during venue-to-leg assignment
 
 
 @dataclass
@@ -149,10 +154,14 @@ async def _fetch_backfill_trip(
 ) -> Optional[dict]:
     row = await conn.fetchrow(
         """
-        SELECT id, "userId", city, country, "rawSubmission",
-               "confidenceTier", status
-        FROM "BackfillTrip"
-        WHERE id = $1
+        SELECT bt.id, bt."userId", bt."rawSubmission",
+               bt."confidenceTier", bt.status,
+               bl.city, bl.country
+        FROM "BackfillTrip" bt
+        LEFT JOIN "BackfillLeg" bl
+          ON bl."backfillTripId" = bt.id
+          AND bl.position = 0
+        WHERE bt.id = $1
         """,
         backfill_trip_id,
     )
@@ -173,6 +182,131 @@ async def _reject_trip(
         reason,
         backfill_trip_id,
     )
+
+
+# ---------------------------------------------------------------------------
+# Stage 1.5 helpers: city extraction + leg creation
+# ---------------------------------------------------------------------------
+
+async def _create_or_update_legs(
+    conn: asyncpg.Connection,
+    backfill_trip_id: str,
+    extracted_cities: list[ExtractedCity],
+) -> list[dict]:
+    """
+    Synchronize BackfillLeg rows for this trip against the extracted city list.
+
+    The router already created a leg at position=0 with a provisional city_hint.
+    Strategy:
+    - If extraction returned 1 city: UPDATE leg[0] with the extracted city/country.
+    - If extraction returned N cities: UPDATE leg[0] with the first city, then
+      INSERT legs at positions 1..N-1.
+    - If extraction returned 0 cities: do nothing — leg[0] stays as created by
+      the router (city = cityHint or "unknown").
+
+    Returns the final list of leg dicts: [{ id, position, city, country }, ...]
+    sorted by position ascending.
+    """
+    now = datetime.now(timezone.utc)
+
+    if extracted_cities:
+        # Update leg[0] with the first extracted city
+        first = extracted_cities[0]
+        await conn.execute(
+            """
+            UPDATE "BackfillLeg"
+            SET city = $1, country = $2
+            WHERE "backfillTripId" = $3 AND position = 0
+            """,
+            first.city,
+            first.country,
+            backfill_trip_id,
+        )
+        logger.info(
+            "_create_or_update_legs: updated leg[0] to city=%r country=%r trip=%s",
+            first.city, first.country, backfill_trip_id,
+        )
+
+        # Insert additional legs for positions 1..N-1
+        for ec in extracted_cities[1:]:
+            leg_id = str(uuid4())
+            await conn.execute(
+                """
+                INSERT INTO "BackfillLeg" (
+                    id, "backfillTripId", position, city, country, "createdAt"
+                ) VALUES ($1, $2, $3, $4, $5, $6)
+                ON CONFLICT ("backfillTripId", position) DO UPDATE
+                  SET city = EXCLUDED.city, country = EXCLUDED.country
+                """,
+                leg_id,
+                backfill_trip_id,
+                ec.position,
+                ec.city,
+                ec.country,
+                now,
+            )
+            logger.info(
+                "_create_or_update_legs: upserted leg position=%d city=%r trip=%s",
+                ec.position, ec.city, backfill_trip_id,
+            )
+
+    # Fetch and return current legs for this trip
+    rows = await conn.fetch(
+        """
+        SELECT id, position, city, country
+        FROM "BackfillLeg"
+        WHERE "backfillTripId" = $1
+        ORDER BY position ASC
+        """,
+        backfill_trip_id,
+    )
+    legs = [dict(r) for r in rows]
+    logger.info(
+        "_create_or_update_legs: trip=%s final legs=%s",
+        backfill_trip_id,
+        [(l["position"], l["city"]) for l in legs],
+    )
+    return legs
+
+
+def _assign_venues_to_legs(
+    resolved_venues: list[ResolvedVenue],
+    legs: list[dict],
+) -> list[ResolvedVenue]:
+    """
+    Assign each ResolvedVenue to a BackfillLeg by matching venue.extracted.city
+    to leg.city (case-insensitive). First matching leg wins.
+
+    If no leg matches, backfill_leg_id stays None — the venue remains assigned
+    to the trip but not to a specific leg.
+
+    Returns the same list with backfill_leg_id populated in-place.
+    """
+    if not legs:
+        return resolved_venues
+
+    # Build a lookup: city_lower -> leg_id (first match by position)
+    city_to_leg: dict[str, str] = {}
+    for leg in sorted(legs, key=lambda l: l["position"]):
+        key = leg["city"].strip().lower()
+        if key not in city_to_leg:
+            city_to_leg[key] = leg["id"]
+
+    for rv in resolved_venues:
+        venue_city = rv.extracted.city
+        if not venue_city:
+            continue
+        key = venue_city.strip().lower()
+        leg_id = city_to_leg.get(key)
+        if leg_id:
+            rv.backfill_leg_id = leg_id
+
+    assigned = sum(1 for rv in resolved_venues if rv.backfill_leg_id is not None)
+    logger.info(
+        "_assign_venues_to_legs: assigned %d/%d venues to legs",
+        assigned, len(resolved_venues),
+    )
+    return resolved_venues
 
 
 # ---------------------------------------------------------------------------
@@ -271,21 +405,27 @@ async def _resolve_single_venue(
 
 def _check_geographic_impossibility(resolved_venues: list[ResolvedVenue]) -> dict[str, str]:
     """
-    Flag venue pairs that are >500 miles apart on the same date.
+    Flag venue pairs that are >500 miles apart on the same date AND in the same city.
+
+    Cross-city venue pairs on the same date are exempt — this is expected behavior
+    for transit days in multi-city trips (e.g. morning in Tokyo, evening in Kyoto).
+    Grouping uses venue.extracted.city (from Sonnet extraction) as the city key.
 
     Returns a dict of venue index -> quarantine reason for flagged venues.
     """
     quarantine: dict[str, str] = {}
 
-    # Group resolved venues by date_or_range
-    by_date: dict[str, list[tuple[int, ResolvedVenue]]] = {}
+    # Group resolved venues by (date_or_range, city) — cross-city pairs are exempt
+    by_date_city: dict[tuple[str, str], list[tuple[int, ResolvedVenue]]] = {}
     for i, rv in enumerate(resolved_venues):
         date_key = rv.extracted.date_or_range or "_no_date"
-        if date_key not in by_date:
-            by_date[date_key] = []
-        by_date[date_key].append((i, rv))
+        city_key = (rv.extracted.city or "_no_city").strip().lower()
+        bucket = (date_key, city_key)
+        if bucket not in by_date_city:
+            by_date_city[bucket] = []
+        by_date_city[bucket].append((i, rv))
 
-    for date_key, group in by_date.items():
+    for (date_key, city_key), group in by_date_city.items():
         if date_key == "_no_date" or len(group) < 2:
             continue
 
@@ -307,7 +447,7 @@ def _check_geographic_impossibility(resolved_venues: list[ResolvedVenue]) -> dic
                     reason = (
                         f"geographic_impossibility: {rv_a.extracted.name!r} and "
                         f"{rv_b.extracted.name!r} are {dist:.0f} miles apart "
-                        f"on same date {date_key!r}"
+                        f"on same date {date_key!r} in city {city_key!r}"
                     )
                     quarantine[str(i)] = reason
                     quarantine[str(j)] = reason
@@ -383,11 +523,14 @@ async def _check_duplicate_submission(
     """
     row = await conn.fetchrow(
         """
-        SELECT id FROM "BackfillTrip"
-        WHERE "userId" = $1
-          AND lower(city) = lower($2)
-          AND id != $3
-          AND status NOT IN ('rejected', 'archived')
+        SELECT bt.id FROM "BackfillTrip" bt
+        JOIN "BackfillLeg" bl
+          ON bl."backfillTripId" = bt.id
+          AND bl.position = 0
+        WHERE bt."userId" = $1
+          AND lower(bl.city) = lower($2)
+          AND bt.id != $3
+          AND bt.status NOT IN ('rejected', 'archived')
         LIMIT 1
         """,
         user_id,
@@ -427,7 +570,7 @@ async def _write_venues(
         await conn.execute(
             """
             INSERT INTO "BackfillVenue" (
-                id, "backfillTripId", "activityNodeId",
+                id, "backfillTripId", "backfillLegId", "activityNodeId",
                 "extractedName", "extractedCategory", "extractedDate",
                 "extractedSentiment", latitude, longitude,
                 "resolutionScore", "isResolved",
@@ -435,11 +578,12 @@ async def _write_venues(
                 "createdAt", "updatedAt"
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7, $8, $9,
-                $10, $11, $12, $13, $14, $14
+                $10, $11, $12, $13, $14, $15, $15
             )
             """,
             venue_id,
             backfill_trip_id,
+            rv.backfill_leg_id,  # populated by _assign_venues_to_legs, or None
             rv.activity_node_id,
             ev.name,
             ev.category,
@@ -542,14 +686,16 @@ async def process_backfill(pool: asyncpg.Pool, backfill_trip_id: str) -> None:
             return
 
         user_id: str = trip["userId"]
-        city: str = trip["city"]
+        # city comes from leg[0] via the LEFT JOIN in _fetch_backfill_trip.
+        # May be None if no leg exists yet (defensive fallback).
+        city_hint: Optional[str] = trip.get("city") or None
         raw_text: str = trip["rawSubmission"]
 
         logger.info(
-            "process_backfill: starting pipeline for trip=%s user=%s city=%s",
+            "process_backfill: starting pipeline for trip=%s user=%s city_hint=%s",
             backfill_trip_id,
             user_id,
-            city,
+            city_hint,
         )
 
         # ------------------------------------------------------------------
@@ -573,12 +719,68 @@ async def process_backfill(pool: asyncpg.Pool, backfill_trip_id: str) -> None:
         )
 
         # ------------------------------------------------------------------
+        # Stage 1.5: City extraction + BackfillLeg creation
+        # ------------------------------------------------------------------
+        extracted_cities: list[ExtractedCity] = []
+        try:
+            extracted_cities = await extract_cities(
+                anthropic_client, raw_text, city_hint
+            )
+        except Exception as exc:
+            logger.exception(
+                "process_backfill: stage 1.5 city extraction failed for %s: %s",
+                backfill_trip_id, exc,
+            )
+            # Fall through with empty list — legs stay as router created them
+
+        # Create or update BackfillLeg rows based on extracted cities.
+        # Falls back gracefully if extraction returned nothing.
+        try:
+            legs = await _create_or_update_legs(
+                conn, backfill_trip_id, extracted_cities
+            )
+        except Exception as exc:
+            logger.exception(
+                "process_backfill: stage 1.5 leg creation failed for %s: %s",
+                backfill_trip_id, exc,
+            )
+            # Fetch existing legs without modification
+            rows = await conn.fetch(
+                """
+                SELECT id, position, city, country
+                FROM "BackfillLeg"
+                WHERE "backfillTripId" = $1
+                ORDER BY position ASC
+                """,
+                backfill_trip_id,
+            )
+            legs = [dict(r) for r in rows]
+
+        # Derive the primary city context for venue extraction (first leg's city,
+        # or fall back to city_hint, then "unknown")
+        primary_city: str = (
+            legs[0]["city"] if legs else (city_hint or "unknown")
+        )
+
+        logger.info(
+            "process_backfill: stage 1.5 complete legs=%d primary_city=%r trip=%s",
+            len(legs), primary_city, backfill_trip_id,
+        )
+
+        # ------------------------------------------------------------------
         # Stage 2: LLM extraction
         # ------------------------------------------------------------------
         await _update_status(conn, backfill_trip_id, "extracting")
 
+        # Build cities context string for Sonnet (all extracted cities, or just
+        # primary_city if extraction returned nothing)
+        if legs:
+            cities_context = ", ".join(l["city"] for l in legs)
+        else:
+            cities_context = primary_city
+
         try:
-            venues = await extract_venues(anthropic_client, raw_text, city)
+            venues = await extract_venues(anthropic_client, raw_text, cities_context)
         except Exception as exc:
             logger.exception(
                 "process_backfill: stage 2 extraction failed for %s: %s",
@@ -611,7 +813,7 @@ async def process_backfill(pool: asyncpg.Pool, backfill_trip_id: str) -> None:
         # Stage 2.5: LLM validation
         # ------------------------------------------------------------------
         try:
-            validated = await validate_venues(anthropic_client, venues, city)
+            validated = await validate_venues(anthropic_client, venues, primary_city)
         except Exception as exc:
             logger.exception(
                 "process_backfill: stage 2.5 validation failed for %s: %s",
@@ -635,14 +837,17 @@ async def process_backfill(pool: asyncpg.Pool, backfill_trip_id: str) -> None:
             return
 
         # ------------------------------------------------------------------
-        # Stage 3: Entity resolution
+        # Stage 3: Entity resolution (per-venue city)
         # ------------------------------------------------------------------
         await _update_status(conn, backfill_trip_id, "resolving")
 
         resolved_venues: list[ResolvedVenue] = []
         for venue in valid_venues:
+            # Resolve against the venue's own extracted city first;
+            # fall back to primary_city if the venue has no city field.
+            resolve_city = venue.city or primary_city
             try:
-                rv = await _resolve_single_venue(conn, venue, city)
+                rv = await _resolve_single_venue(conn, venue, resolve_city)
             except Exception as exc:
                 logger.error(
                     "process_backfill: resolution failed for %r: %s",
@@ -666,6 +871,11 @@ async def process_backfill(pool: asyncpg.Pool, backfill_trip_id: str) -> None:
         )
 
         # ------------------------------------------------------------------
+        # Stage 3.5: Venue-to-leg assignment
+        # ------------------------------------------------------------------
+        resolved_venues = _assign_venues_to_legs(resolved_venues, legs)
+
+        # ------------------------------------------------------------------
         # Stage 4: Anomaly checks
         # ------------------------------------------------------------------
         await _update_status(conn, backfill_trip_id, "checking")
@@ -674,11 +884,11 @@ async def process_backfill(pool: asyncpg.Pool, backfill_trip_id: str) -> None:
         temporal_flags = _check_temporal_impossibility(resolved_venues)
         density_flags = _check_density_outlier(resolved_venues)
 
-        # Duplicate submission check
+        # Duplicate submission check uses primary city (first leg)
         dup_reason = await _check_duplicate_submission(
             conn,
             user_id=user_id,
-            city=city,
+            city=primary_city,
             start_date=trip.get("startDate"),
             end_date=trip.get("endDate"),
             current_backfill_id=backfill_trip_id,

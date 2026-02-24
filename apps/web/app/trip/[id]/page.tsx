@@ -15,7 +15,6 @@ import { MemberAvatars } from "@/components/trip/MemberAvatars";
 import { InviteButton } from "@/components/trip/InviteButton";
 import { ShareButton } from "@/components/trip/ShareButton";
 import { PackingList } from "@/components/trip/PackingList";
-import { ReflectionPrompt } from "@/components/trip/ReflectionPrompt";
 import { type SlotData } from "@/components/slot/SlotCard";
 import { type SlotActionEvent } from "@/components/slot/SlotActions";
 import { TripSettings } from "@/components/trip/TripSettings";
@@ -59,7 +58,7 @@ export default function TripDetailPage() {
   const router = useRouter();
   const tripId = params.id;
 
-  const { trip, setTrip, myRole, myUserId, fetchState, errorMessage, fetchTrip } =
+  const { trip, setTrip, myRole, myUserId, hasReflected, fetchState, errorMessage, fetchTrip } =
     useTripDetail(tripId);
 
   const [currentDay, setCurrentDay] = useState(1);
@@ -608,12 +607,42 @@ export default function TripDetailPage() {
             />
           )}
 
-          {/* Reflection prompt — completed trips only */}
-          {trip!.status === "completed" && (
-            <ReflectionPrompt
-              tripId={trip!.id}
-              hasSubmitted={false}
-            />
+          {/* Reflection link card — completed trips, not yet reflected */}
+          {trip!.status === "completed" && !hasReflected && (
+            <div className="rounded-xl border border-warm-border bg-warm-surface p-5">
+              <h3 className="font-sora text-base font-semibold text-ink-100">
+                How was your trip?
+              </h3>
+              <p className="mt-1 font-dm-mono text-xs text-ink-400">
+                Share your thoughts and help us plan better next time
+              </p>
+              <Link
+                href={`/trip/${trip!.id}/reflection`}
+                className="
+                  mt-4 inline-flex items-center gap-2 rounded-lg
+                  bg-[#C4694F] px-5 py-2.5
+                  font-dm-mono text-sm text-white uppercase tracking-wider
+                  hover:bg-[#C4694F]/90 transition-colors duration-150
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C4694F] focus-visible:ring-offset-2
+                "
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+                Share reflection
+              </Link>
+            </div>
           )}
         </div>
       </div>

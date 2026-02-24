@@ -8,6 +8,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { SlotRating, type SlotRatingEvent, type SlotRatingValue } from "./components/SlotRating";
+import { VIBE_CHIP_MAP, type VibeOption } from "@/lib/validations/reflection";
 
 // ---------- Types ----------
 
@@ -44,6 +45,7 @@ export default function ReflectionPage({
 
   const [feedback, setFeedback] = useState<Record<string, SlotFeedback>>({});
   const [freeText, setFreeText] = useState("");
+  const [selectedVibe, setSelectedVibe] = useState<VibeOption | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
@@ -120,12 +122,20 @@ export default function ReflectionPage({
     setSubmitted(true);
 
     try {
+      // Transform Record<slotId, SlotFeedback> into the array format
+      // that the Zod schema expects: [{ slotId, rating }]
+      const ratingsArray = Object.entries(feedback).map(([slotId, fb]) => ({
+        slotId,
+        rating: fb.rating,
+      }));
+
       const response = await fetch(`/api/trips/${params.id}/reflection`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ratings: feedback,
-          feedback: freeText.trim(),
+          ratings: ratingsArray,
+          ...(freeText.trim() ? { feedback: freeText.trim() } : {}),
+          ...(selectedVibe ? { vibe: selectedVibe } : {}),
         }),
       });
 
@@ -136,7 +146,7 @@ export default function ReflectionPage({
       console.error("[reflection] Failed to submit:", err);
       setSubmitted(false);
     }
-  }, [params.id, feedback, freeText, submitted]);
+  }, [params.id, feedback, freeText, selectedVibe, submitted]);
 
   // ---------- Loading state ----------
   if (loading) {
@@ -235,6 +245,41 @@ export default function ReflectionPage({
             each highlight
           </p>
         </header>
+
+        {/* Trip-level vibe */}
+        <section className="space-y-3" aria-label="Overall trip vibe">
+          <h2 className="font-sora text-lg font-semibold text-ink-100">
+            How was the overall vibe?
+          </h2>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Trip vibe rating">
+            {(Object.entries(VIBE_CHIP_MAP) as [VibeOption, typeof VIBE_CHIP_MAP[VibeOption]][]).map(
+              ([key, chip]) => {
+                const isSelected = selectedVibe === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => setSelectedVibe(isSelected ? null : key)}
+                    className={`
+                      font-dm-mono text-sm px-4 py-2 rounded-full
+                      border transition-colors duration-150
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2
+                      ${
+                        isSelected
+                          ? "bg-[#C4694F] text-white border-[#C4694F]"
+                          : "bg-warm-surface text-ink-200 border-warm-border hover:border-[#C4694F]"
+                      }
+                    `}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              }
+            )}
+          </div>
+        </section>
 
         {/* Per-slot ratings */}
         <section className="space-y-3" aria-label="Rate your activities">

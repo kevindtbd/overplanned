@@ -139,8 +139,42 @@ export async function GET(
       }
     }
 
+    // Derive hasReflected: check if this user already submitted a reflection
+    const reflectionData = (trip.reflectionData as Record<string, unknown>) ?? {};
+    const hasReflected = userId in reflectionData;
+
+    // Build reflection summary for the current user (safe — only their own data)
+    let reflectionSummary: {
+      lovedCount: number;
+      skippedCount: number;
+      missedCount: number;
+      feedback: string | null;
+      submittedAt: string | null;
+    } | null = null;
+
+    if (hasReflected) {
+      const userReflection = reflectionData[userId] as {
+        ratings?: Array<{ slotId: string; rating: string }>;
+        feedback?: string | null;
+        submittedAt?: string | null;
+      } | undefined;
+
+      if (userReflection?.ratings) {
+        reflectionSummary = {
+          lovedCount: userReflection.ratings.filter(r => r.rating === "loved").length,
+          skippedCount: userReflection.ratings.filter(r => r.rating === "skipped").length,
+          missedCount: userReflection.ratings.filter(r => r.rating === "missed").length,
+          feedback: userReflection.feedback ?? null,
+          submittedAt: userReflection.submittedAt ?? null,
+        };
+      }
+    }
+
+    // Strip reflectionData from response (contains other users' data)
+    const { reflectionData: _rd, ...tripPayload } = trip;
+
     return NextResponse.json(
-      { trip, myRole: membership.role, myStatus: membership.status, myUserId: userId },
+      { trip: tripPayload, myRole: membership.role, myStatus: membership.status, myUserId: userId, hasReflected, reflectionSummary },
       { status: 200 }
     );
   } catch (err) {

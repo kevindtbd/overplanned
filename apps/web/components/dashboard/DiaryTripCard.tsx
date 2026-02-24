@@ -10,9 +10,18 @@ import Link from "next/link";
 
 // ---------- Types ----------
 
+export interface BackfillLeg {
+  city: string;
+  country: string;
+  position: number;
+}
+
 export interface BackfillTripSummary {
   id: string;
+  legs?: BackfillLeg[];
+  /** @deprecated Use legs[0].city — kept for backward compat */
   city: string;
+  /** @deprecated Use legs[0].country — kept for backward compat */
   country: string;
   startDate: string | null;
   endDate: string | null;
@@ -32,6 +41,33 @@ function formatDateRange(start: string, end: string): string {
   const startStr = s.toLocaleDateString("en-US", opts);
   const endStr = e.toLocaleDateString("en-US", { ...opts, year: "numeric" });
   return `${startStr} - ${endStr}`;
+}
+
+/**
+ * Build a route string from backfill legs for card display.
+ * For 5+ cities, truncates to: "Tokyo \u2192 Kyoto \u2192 ... \u2192 Hiroshima"
+ */
+function buildBackfillRouteString(legs: BackfillLeg[]): string {
+  const sorted = [...legs].sort((a, b) => a.position - b.position);
+  const cities = sorted.map((l) => l.city);
+  if (cities.length <= 4) {
+    return cities.join(" \u2192 ");
+  }
+  return `${cities[0]} \u2192 ${cities[1]} \u2192 ... \u2192 ${cities[cities.length - 1]}`;
+}
+
+/**
+ * Derive the country subtitle for multi-city trips.
+ * Single country: "Japan"
+ * Two countries: "Japan & Thailand"
+ * Three+: "Japan, Thailand & more"
+ */
+function buildCountrySubtitle(legs: BackfillLeg[]): string {
+  const sorted = [...legs].sort((a, b) => a.position - b.position);
+  const countries = [...new Set(sorted.map((l) => l.country))];
+  if (countries.length === 1) return countries[0];
+  if (countries.length === 2) return `${countries[0]} & ${countries[1]}`;
+  return `${countries[0]}, ${countries[1]} & more`;
 }
 
 const CONTEXT_LABELS: Record<string, string> = {
@@ -76,22 +112,34 @@ function ProcessingIndicator() {
 
 export function DiaryTripCard({ trip }: { trip: BackfillTripSummary }) {
   const isProcessing = trip.status === "processing";
+  const isMultiCity = trip.legs && trip.legs.length >= 2;
+
+  // Build display strings
+  const locationLabel = isMultiCity
+    ? buildBackfillRouteString(trip.legs!)
+    : trip.city;
+  const subtitleLabel = isMultiCity
+    ? buildCountrySubtitle(trip.legs!)
+    : trip.country;
 
   return (
     <Link
       href={`/diary/${trip.id}`}
       className="block rounded-[20px] border border-warm-border bg-warm-surface p-5 transition-colors hover:border-accent/30"
-      aria-label={`View diary for ${trip.city}, ${trip.country}`}
+      aria-label={`View diary for ${locationLabel}`}
       data-testid="diary-trip-card"
     >
-      {/* City name */}
-      <h3 className="font-sora text-lg font-medium text-ink-100">
-        {trip.city}
+      {/* Route / City name */}
+      <h3
+        className="font-sora text-lg font-medium text-ink-100"
+        data-testid="diary-trip-location"
+      >
+        {locationLabel}
       </h3>
 
       {/* Country */}
       <p className="font-dm-mono text-xs text-ink-400 mt-0.5">
-        {trip.country}
+        {subtitleLabel}
       </p>
 
       {/* Dates */}

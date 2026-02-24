@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { reflectionSchema, REFLECTION_SIGNAL_MAP } from "@/lib/validations/reflection";
+import { reflectionSchema, REFLECTION_SIGNAL_MAP, VIBE_CHIP_MAP } from "@/lib/validations/reflection";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
@@ -95,6 +95,7 @@ export async function POST(
       [userId]: {
         ratings: parsed.data.ratings,
         feedback: parsed.data.feedback ?? null,
+        vibe: parsed.data.vibe ?? null,
         submittedAt: new Date().toISOString(),
       },
     };
@@ -115,6 +116,25 @@ export async function POST(
         },
       });
     });
+
+    // If vibe was provided, create a trip-level behavioral signal
+    if (parsed.data.vibe) {
+      const vibeMapping = VIBE_CHIP_MAP[parsed.data.vibe];
+      signalCreates.push(
+        prisma.behavioralSignal.create({
+          data: {
+            userId,
+            tripId,
+            slotId: null,
+            activityNodeId: null,
+            signalType: vibeMapping.signalType,
+            signalValue: vibeMapping.signalValue,
+            tripPhase: "post_trip",
+            rawAction: `vibe_${parsed.data.vibe}`,
+          },
+        })
+      );
+    }
 
     // Atomic: update reflectionData + log all signals in one transaction
     await prisma.$transaction([

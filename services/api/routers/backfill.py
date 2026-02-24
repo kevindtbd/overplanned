@@ -288,40 +288,56 @@ async def submit_backfill(
             "status": str(existing["status"]),
         }
 
-    # Derive city from hint — required field on BackfillTrip, default to hint or "unknown"
+    # Derive city from hint — stored on BackfillLeg, not BackfillTrip
     city = (body.city_hint or "unknown").strip()
     country = "unknown"  # enriched by pipeline if needed
 
     now = datetime.now(timezone.utc)
     backfill_trip_id = str(uuid4())
+    backfill_leg_id = str(uuid4())
 
     # Create BackfillTrip row — status=processing immediately
     await db.execute(
         """
         INSERT INTO "BackfillTrip" (
-            id, "userId", city, country,
+            id, "userId",
             "rawSubmission", "confidenceTier",
             source, "tripNote", "contextTag", status,
             "createdAt", "updatedAt"
         ) VALUES (
-            $1, $2, $3, $4, $5, 'tier_4',
-            'freeform', $6, $7, 'processing',
-            $8, $8
+            $1, $2, $3, 'tier_4',
+            'freeform', $4, $5, 'processing',
+            $6, $6
         )
         """,
         backfill_trip_id,
         user_id,
-        city,
-        country,
         body.text,
         dedup_hash,  # stored in tripNote for dedup lookup
         body.context_tag,
         now,
     )
 
-    logger.info(
-        "backfill/submit: created trip=%s user=%s city=%s",
+    # Create the primary leg (position=0) carrying city/country for this submission
+    await db.execute(
+        """
+        INSERT INTO "BackfillLeg" (
+            id, "backfillTripId", position, city, country, "createdAt"
+        ) VALUES (
+            $1, $2, 0, $3, $4, $5
+        )
+        """,
+        backfill_leg_id,
         backfill_trip_id,
+        city,
+        country,
+        now,
+    )
+
+    logger.info(
+        "backfill/submit: created trip=%s leg=%s user=%s city=%s",
+        backfill_trip_id,
+        backfill_leg_id,
         user_id,
         city,
     )
