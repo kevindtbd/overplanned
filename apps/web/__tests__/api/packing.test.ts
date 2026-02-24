@@ -52,6 +52,10 @@ vi.mock("@anthropic-ai/sdk", () => {
   };
 });
 
+vi.mock("@/lib/climate", () => ({
+  getClimateContext: vi.fn().mockReturnValue(null),
+}));
+
 vi.mock("@/lib/validations/packing", async () => {
   const actual = await import("../../lib/validations/packing");
   return actual;

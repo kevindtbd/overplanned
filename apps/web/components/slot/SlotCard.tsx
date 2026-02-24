@@ -58,6 +58,8 @@ export interface SlotData {
   activityNodeId?: string;
   /** Raw group vote state JSON from the DB */
   voteState?: Record<string, unknown> | null;
+  /** Booking hint from quality signals */
+  bookingHint?: "reservable online" | "check website" | "call ahead" | "limited hours" | "walk-in";
 }
 
 export interface SlotCardProps {
@@ -84,6 +86,8 @@ export interface SlotCardProps {
   onPivotCreated?: () => void;
   /** Track 5: show flag-for-review button */
   showFlag?: boolean;
+  /** Callback to share a slot into trip chat */
+  onShareToChat?: (slot: { id: string; name: string; category: string; dayNumber: number }) => void;
   /** Total days in the trip (for move-to-day dropdown) */
   totalDays?: number;
   /** Current day number */
@@ -170,6 +174,36 @@ function getSlotTypeColorClass(slotType: SlotTypeLabel): string {
   }
 }
 
+// Booking hint pill styles
+function getBookingHintStyle(hint: string): string {
+  switch (hint) {
+    case "reservable online":
+      return "text-success bg-success-bg";
+    case "check website":
+      return "text-ink-400 bg-base";
+    case "call ahead":
+    case "limited hours":
+      return "text-warning bg-warning-bg";
+    default:
+      return "text-ink-400 bg-base";
+  }
+}
+
+function getBookingHintLabel(hint: string): string {
+  switch (hint) {
+    case "reservable online":
+      return "Reservable online";
+    case "check website":
+      return "Check website";
+    case "call ahead":
+      return "Call ahead";
+    case "limited hours":
+      return "Limited hours";
+    default:
+      return hint;
+  }
+}
+
 // ---------- Component ----------
 
 export function SlotCard({
@@ -185,6 +219,7 @@ export function SlotCard({
   showPivot = false,
   onPivotCreated,
   showFlag = false,
+  onShareToChat,
   totalDays,
   currentDay,
   slotIndex,
@@ -225,9 +260,45 @@ export function SlotCard({
   const durationDisplay = formatDuration(slot.durationMinutes);
   const isDimmed = slot.status === "completed" || slot.status === "skipped";
 
+  // Share to chat button element
+  const shareButton = onShareToChat ? (
+    <button
+      onClick={() =>
+        onShareToChat({
+          id: slot.id,
+          name: slot.activityName,
+          category: slot.slotType,
+          dayNumber: currentDay || 1,
+        })
+      }
+      className="text-ink-400 hover:text-ink-200 transition-colors p-1"
+      aria-label={`Share ${slot.activityName} to chat`}
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M4 12V7a4 4 0 018 0v1" />
+        <path d="M8 1v8" />
+        <path d="M5 4l3-3 3 3" />
+        <rect x="2" y="10" width="12" height="5" rx="1" />
+      </svg>
+    </button>
+  ) : null;
+
   // Shared action/voting/pivot footer
   const cardFooter = (
     <>
+      {shareButton && (
+        <div className="flex justify-end mb-1">{shareButton}</div>
+      )}
       <SlotActions
         slotId={slot.id}
         status={slot.status}
@@ -389,6 +460,13 @@ export function SlotCard({
                   `}
                 >
                   {slot.bookingStatus === "confirmed" ? "Booked" : "Pending"}
+                </span>
+              )}
+              {slot.bookingHint && slot.bookingHint !== "walk-in" && (
+                <span
+                  className={`font-dm-mono text-[10px] px-1.5 py-0.5 rounded ${getBookingHintStyle(slot.bookingHint)}`}
+                >
+                  {getBookingHintLabel(slot.bookingHint)}
                 </span>
               )}
             </div>
@@ -575,6 +653,29 @@ export function SlotCard({
               <span aria-hidden="true" className="text-ink-700">|</span>
             )}
             {durationDisplay && <span>{durationDisplay}</span>}
+            {slot.bookingHint && slot.bookingHint !== "walk-in" && (
+              <>
+                {(timeDisplay || durationDisplay) && (
+                  <span aria-hidden="true" className="text-ink-700">|</span>
+                )}
+                <span
+                  className={`font-dm-mono text-[10px] px-1.5 py-0.5 rounded ${getBookingHintStyle(slot.bookingHint)}`}
+                >
+                  {getBookingHintLabel(slot.bookingHint)}
+                </span>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Booking hint when no time/duration row exists */}
+        {!timeDisplay && !durationDisplay && slot.bookingHint && slot.bookingHint !== "walk-in" && (
+          <div className="flex items-center gap-2 label-mono text-ink-400">
+            <span
+              className={`font-dm-mono text-[10px] px-1.5 py-0.5 rounded ${getBookingHintStyle(slot.bookingHint)}`}
+            >
+              {getBookingHintLabel(slot.bookingHint)}
+            </span>
           </div>
         )}
 

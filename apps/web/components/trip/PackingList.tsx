@@ -7,6 +7,7 @@ interface PackingItem {
   text: string;
   category: "essentials" | "clothing" | "documents" | "tech" | "toiletries" | "misc";
   checked: boolean;
+  claimedBy?: string | null;
 }
 
 interface PackingListData {
@@ -19,6 +20,11 @@ interface PackingListProps {
   tripId: string;
   packingList: PackingListData | null;
   onUpdate: () => void;
+  currentUserId?: string;
+  members?: Array<{
+    userId: string;
+    user: { name: string | null; avatarUrl: string | null };
+  }>;
 }
 
 const CATEGORY_ORDER = [
@@ -39,10 +45,82 @@ const CATEGORY_LABELS: Record<string, string> = {
   misc: "Misc",
 };
 
-export function PackingList({ tripId, packingList, onUpdate }: PackingListProps) {
+function ClaimPill({
+  item,
+  currentUserId,
+  members,
+  onClaim,
+  onUnclaim,
+}: {
+  item: PackingItem;
+  currentUserId?: string;
+  members?: Map<string, { name: string | null; avatarUrl: string | null }>;
+  onClaim: (itemId: string) => void;
+  onUnclaim: (itemId: string) => void;
+}) {
+  if (!currentUserId) return null;
+
+  // Unclaimed
+  if (!item.claimedBy) {
+    return (
+      <button
+        onClick={() => onClaim(item.id)}
+        className="border border-dashed border-ink-700 rounded-full px-2 py-0.5 text-[10px] font-mono text-ink-400 cursor-pointer hover:border-ink-400 transition-colors"
+        aria-label={`Claim ${item.text}`}
+      >
+        claim
+      </button>
+    );
+  }
+
+  // Claimed by current user
+  if (item.claimedBy === currentUserId) {
+    return (
+      <button
+        onClick={() => onUnclaim(item.id)}
+        className="bg-terracotta/10 border border-terracotta/30 rounded-full px-2 py-0.5 text-[10px] font-mono text-terracotta inline-flex items-center gap-1 cursor-pointer"
+        aria-label={`Unclaim ${item.text}`}
+      >
+        <span className="w-3.5 h-3.5 rounded-full bg-terracotta/20 flex items-center justify-center text-[8px] font-mono text-terracotta">
+          {members?.get(currentUserId)?.name?.charAt(0)?.toUpperCase() || "Y"}
+        </span>
+        you
+      </button>
+    );
+  }
+
+  // Claimed by someone else
+  const claimer = members?.get(item.claimedBy);
+  const claimerName = claimer?.name?.split(" ")[0] || "Someone";
+  const claimerInitial = claimer?.name?.charAt(0)?.toUpperCase() || "?";
+
+  return (
+    <span className="bg-warm-border rounded-full px-2 py-0.5 text-[10px] font-mono text-ink-300 inline-flex items-center gap-1">
+      {claimer?.avatarUrl ? (
+        <img
+          src={claimer.avatarUrl}
+          alt={claimerName}
+          className="w-3.5 h-3.5 rounded-full object-cover"
+        />
+      ) : (
+        <span className="w-3.5 h-3.5 rounded-full bg-ink-700 flex items-center justify-center text-[8px]">
+          {claimerInitial}
+        </span>
+      )}
+      {claimerName}
+    </span>
+  );
+}
+
+export function PackingList({ tripId, packingList, onUpdate, currentUserId, members }: PackingListProps) {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState<string | null>(null);
+  const [claiming, setClaiming] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const memberMap = members
+    ? new Map(members.map((m) => [m.userId, m.user]))
+    : undefined;
 
   const generate = useCallback(
     async (regenerate = false) => {
@@ -85,6 +163,45 @@ export function PackingList({ tripId, packingList, onUpdate }: PackingListProps)
         // Silently fail — optimistic UI will revert on next fetch
       } finally {
         setChecking(null);
+      }
+    },
+    [tripId, onUpdate]
+  );
+
+  const claimItem = useCallback(
+    async (itemId: string) => {
+      if (!currentUserId) return;
+      setClaiming(itemId);
+      try {
+        const res = await fetch(`/api/trips/${tripId}/packing`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ itemId, claimedBy: currentUserId }),
+        });
+        if (res.ok) onUpdate();
+      } catch {
+        // Silently fail
+      } finally {
+        setClaiming(null);
+      }
+    },
+    [tripId, currentUserId, onUpdate]
+  );
+
+  const unclaimItem = useCallback(
+    async (itemId: string) => {
+      setClaiming(itemId);
+      try {
+        const res = await fetch(`/api/trips/${tripId}/packing`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ itemId, claimedBy: null }),
+        });
+        if (res.ok) onUpdate();
+      } catch {
+        // Silently fail
+      } finally {
+        setClaiming(null);
       }
     },
     [tripId, onUpdate]
@@ -166,7 +283,7 @@ export function PackingList({ tripId, packingList, onUpdate }: PackingListProps)
             </h4>
             <ul className="space-y-1.5">
               {items.map((item) => (
-                <li key={item.id} className="flex items-center gap-3">
+                <li key={item.id} className="flex items-center gap-2">
                   <button
                     onClick={() => toggleItem(item.id, !item.checked)}
                     disabled={checking === item.id}
@@ -195,6 +312,13 @@ export function PackingList({ tripId, packingList, onUpdate }: PackingListProps)
                       </svg>
                     )}
                   </button>
+                  <ClaimPill
+                    item={item}
+                    currentUserId={currentUserId}
+                    members={memberMap}
+                    onClaim={claimItem}
+                    onUnclaim={unclaimItem}
+                  />
                   <span
                     className={`text-sm transition-colors ${
                       item.checked ? "text-ink-400 line-through" : "text-ink-200"
