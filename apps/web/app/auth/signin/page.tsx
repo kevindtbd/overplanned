@@ -32,6 +32,7 @@ function GoogleIcon() {
   );
 }
 
+/* BETA: AppleIcon kept for when provider is configured */
 function AppleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -40,6 +41,7 @@ function AppleIcon() {
   );
 }
 
+/* BETA: FacebookIcon kept for when provider is configured */
 function FacebookIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -74,6 +76,12 @@ function SignInContent() {
   const [devLoading, setDevLoading] = useState(false);
   const isDev = process.env.NODE_ENV === "development";
 
+  // Beta gate state
+  const [betaValidated, setBetaValidated] = useState(false);
+  const [betaCode, setBetaCode] = useState("");
+  const [betaError, setBetaError] = useState<string | null>(null);
+  const [betaLoading, setBetaLoading] = useState(false);
+
   async function devLogin(devEmail: string) {
     setDevLoading(true);
     try {
@@ -90,6 +98,33 @@ function SignInContent() {
       }
     } finally {
       setDevLoading(false);
+    }
+  }
+
+  async function handleBetaVerify(e: React.FormEvent) {
+    e.preventDefault();
+    if (!betaCode.trim()) return;
+
+    setBetaLoading(true);
+    setBetaError(null);
+
+    try {
+      const res = await fetch("/api/auth/beta-validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: betaCode }),
+      });
+
+      if (res.ok) {
+        setBetaValidated(true);
+      } else {
+        const data = await res.json();
+        setBetaError(data.error || "Invalid beta code. Try again.");
+      }
+    } catch {
+      setBetaError("Something went wrong. Please try again.");
+    } finally {
+      setBetaLoading(false);
     }
   }
 
@@ -124,104 +159,162 @@ function SignInContent() {
         {/* Divider */}
         <div className="border-t border-ink-700 mb-8" />
 
-        {/* Social sign-in — desktop: full buttons, mobile: circles */}
-        <div className="hidden sm:flex flex-col gap-4">
-          <button
-            onClick={() => signIn("google", { callbackUrl })}
-            className="w-full flex items-center justify-center gap-3 rounded-full py-3.5 px-4 text-[14px] font-medium bg-white text-[#1f1f1f] border border-ink-700 hover:border-ink-500 hover:shadow-sm transition-all cursor-pointer"
-            aria-label="Continue with Google"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
+        {/* Beta code gate */}
+        {!betaValidated ? (
+          <div>
+            <p className="font-sora text-[16px] font-medium text-ink-100 mb-1">
+              Early Access
+            </p>
+            <p className="text-ink-400 font-light text-[13px] mb-5">
+              Enter your beta code to continue.
+            </p>
 
-          <button
-            onClick={() => signIn("apple", { callbackUrl })}
-            className="w-full flex items-center justify-center gap-3 rounded-full py-3.5 px-4 text-[14px] font-medium bg-[#1a1a1a] text-white hover:bg-black transition-colors cursor-pointer"
-            aria-label="Continue with Apple"
-          >
-            <AppleIcon />
-            Continue with Apple
-          </button>
+            <form onSubmit={handleBetaVerify} className="flex flex-col gap-3">
+              <input
+                type="text"
+                value={betaCode}
+                onChange={(e) => {
+                  setBetaCode(e.target.value);
+                  if (betaError) setBetaError(null);
+                }}
+                placeholder="Beta access code"
+                autoFocus
+                autoComplete="off"
+                className="w-full bg-input border border-ink-700 rounded-full px-5 py-3 text-[14px] text-ink-100 outline-none placeholder:text-ink-500 focus:border-accent transition-colors font-dm-mono tracking-[0.04em]"
+                aria-label="Beta access code"
+              />
 
-          <button
-            onClick={() => signIn("facebook", { callbackUrl })}
-            className="w-full flex items-center justify-center gap-3 rounded-full py-3.5 px-4 text-[14px] font-medium bg-[#1877F2] text-white hover:bg-[#166fe5] transition-colors cursor-pointer"
-            aria-label="Continue with Facebook"
-          >
-            <FacebookIcon />
-            Continue with Facebook
-          </button>
-        </div>
+              {betaError && (
+                <p className="font-dm-mono text-[11px] tracking-[0.04em] text-red-400 px-1">
+                  {betaError}
+                </p>
+              )}
 
-        {/* Mobile: icon circles */}
-        <div className="flex sm:hidden items-center justify-center gap-5">
-          <button
-            onClick={() => signIn("google", { callbackUrl })}
-            className="w-[52px] h-[52px] rounded-full bg-white border border-ink-700 flex items-center justify-center hover:border-ink-500 hover:shadow-sm transition-all cursor-pointer"
-            aria-label="Continue with Google"
-          >
-            <GoogleIcon />
-          </button>
-          <button
-            onClick={() => signIn("apple", { callbackUrl })}
-            className="w-[52px] h-[52px] rounded-full bg-[#1a1a1a] flex items-center justify-center text-white hover:bg-black transition-colors cursor-pointer"
-            aria-label="Continue with Apple"
-          >
-            <AppleIcon />
-          </button>
-          <button
-            onClick={() => signIn("facebook", { callbackUrl })}
-            className="w-[52px] h-[52px] rounded-full bg-[#1877F2] flex items-center justify-center text-white hover:bg-[#166fe5] transition-colors cursor-pointer"
-            aria-label="Continue with Facebook"
-          >
-            <FacebookIcon />
-          </button>
-        </div>
-
-        {/* Divider with "or" */}
-        <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 border-t border-ink-700" />
-          <span className="font-dm-mono text-[9px] tracking-[0.1em] uppercase text-ink-500">or</span>
-          <div className="flex-1 border-t border-ink-700" />
-        </div>
-
-        {/* Email sign-in */}
-        {!showEmail ? (
-          <button
-            onClick={() => setShowEmail(true)}
-            className="w-full flex items-center justify-center gap-3 rounded-full py-3.5 px-4 text-[14px] font-medium text-ink-100 bg-raised border border-ink-700 hover:border-ink-500 transition-all cursor-pointer"
-            aria-label="Continue with email"
-          >
-            <EmailIcon />
-            Continue with email
-          </button>
+              <button
+                type="submit"
+                disabled={betaLoading || !betaCode.trim()}
+                className="btn-primary w-full py-3.5 text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {betaLoading ? "Verifying..." : "Verify"}
+              </button>
+            </form>
+          </div>
         ) : (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (email.includes("@")) {
-                signIn("email", { email, callbackUrl });
-              }
-            }}
-            className="flex flex-col gap-3"
-          >
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              autoFocus
-              className="w-full bg-input border border-ink-700 rounded-full px-5 py-3 text-[14px] text-ink-100 outline-none placeholder:text-ink-500 focus:border-accent transition-colors"
-              aria-label="Email address"
-            />
-            <button
-              type="submit"
-              className="btn-primary w-full py-3.5 text-[14px]"
-            >
-              Send magic link
-            </button>
-          </form>
+          <>
+            {/* Social sign-in — desktop: full buttons, mobile: circles */}
+            <div className="hidden sm:flex flex-col gap-4">
+              <button
+                onClick={() => signIn("google", { callbackUrl })}
+                className="w-full flex items-center justify-center gap-3 rounded-full py-3.5 px-4 text-[14px] font-medium bg-white text-[#1f1f1f] border border-ink-700 hover:border-ink-500 hover:shadow-sm transition-all cursor-pointer"
+                aria-label="Continue with Google"
+              >
+                <GoogleIcon />
+                Continue with Google
+              </button>
+
+              {/* BETA: Apple sign-in disabled — re-enable when provider is configured */}
+              {/*
+              <button
+                onClick={() => signIn("apple", { callbackUrl })}
+                className="w-full flex items-center justify-center gap-3 rounded-full py-3.5 px-4 text-[14px] font-medium bg-[#1a1a1a] text-white hover:bg-black transition-colors cursor-pointer"
+                aria-label="Continue with Apple"
+              >
+                <AppleIcon />
+                Continue with Apple
+              </button>
+              */}
+
+              {/* BETA: Facebook sign-in disabled — re-enable when provider is configured */}
+              {/*
+              <button
+                onClick={() => signIn("facebook", { callbackUrl })}
+                className="w-full flex items-center justify-center gap-3 rounded-full py-3.5 px-4 text-[14px] font-medium bg-[#1877F2] text-white hover:bg-[#166fe5] transition-colors cursor-pointer"
+                aria-label="Continue with Facebook"
+              >
+                <FacebookIcon />
+                Continue with Facebook
+              </button>
+              */}
+            </div>
+
+            {/* Mobile: icon circles */}
+            <div className="flex sm:hidden items-center justify-center gap-5">
+              <button
+                onClick={() => signIn("google", { callbackUrl })}
+                className="w-[52px] h-[52px] rounded-full bg-white border border-ink-700 flex items-center justify-center hover:border-ink-500 hover:shadow-sm transition-all cursor-pointer"
+                aria-label="Continue with Google"
+              >
+                <GoogleIcon />
+              </button>
+
+              {/* BETA: Apple sign-in disabled — re-enable when provider is configured */}
+              {/*
+              <button
+                onClick={() => signIn("apple", { callbackUrl })}
+                className="w-[52px] h-[52px] rounded-full bg-[#1a1a1a] flex items-center justify-center text-white hover:bg-black transition-colors cursor-pointer"
+                aria-label="Continue with Apple"
+              >
+                <AppleIcon />
+              </button>
+              */}
+
+              {/* BETA: Facebook sign-in disabled — re-enable when provider is configured */}
+              {/*
+              <button
+                onClick={() => signIn("facebook", { callbackUrl })}
+                className="w-[52px] h-[52px] rounded-full bg-[#1877F2] flex items-center justify-center text-white hover:bg-[#166fe5] transition-colors cursor-pointer"
+                aria-label="Continue with Facebook"
+              >
+                <FacebookIcon />
+              </button>
+              */}
+            </div>
+
+            {/* Divider with "or" */}
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-1 border-t border-ink-700" />
+              <span className="font-dm-mono text-[9px] tracking-[0.1em] uppercase text-ink-500">or</span>
+              <div className="flex-1 border-t border-ink-700" />
+            </div>
+
+            {/* Email sign-in */}
+            {!showEmail ? (
+              <button
+                onClick={() => setShowEmail(true)}
+                className="w-full flex items-center justify-center gap-3 rounded-full py-3.5 px-4 text-[14px] font-medium text-ink-100 bg-raised border border-ink-700 hover:border-ink-500 transition-all cursor-pointer"
+                aria-label="Continue with email"
+              >
+                <EmailIcon />
+                Continue with email
+              </button>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (email.includes("@")) {
+                    signIn("email", { email, callbackUrl });
+                  }
+                }}
+                className="flex flex-col gap-3"
+              >
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoFocus
+                  className="w-full bg-input border border-ink-700 rounded-full px-5 py-3 text-[14px] text-ink-100 outline-none placeholder:text-ink-500 focus:border-accent transition-colors"
+                  aria-label="Email address"
+                />
+                <button
+                  type="submit"
+                  className="btn-primary w-full py-3.5 text-[14px]"
+                >
+                  Send magic link
+                </button>
+              </form>
+            )}
+          </>
         )}
 
         {/* Dev-only quick login */}

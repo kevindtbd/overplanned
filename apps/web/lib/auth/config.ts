@@ -1,7 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { enforceConcurrentSessionLimit } from "./session";
 import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
@@ -13,9 +12,8 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: "database",
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 7 * 24 * 60 * 60, // 7 days (idle timeout)
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
@@ -54,22 +52,21 @@ export const authOptions: NextAuthOptions = {
 
       return true;
     },
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
-        session.user.subscriptionTier = user.subscriptionTier;
-        session.user.systemRole = user.systemRole;
+    async jwt({ token, user }) {
+      if (user) {
+        // First sign-in — encode user data into JWT
+        token.id = user.id;
+        token.subscriptionTier = user.subscriptionTier;
+        token.systemRole = user.systemRole;
       }
-
-      // Update lastActiveAt on every session load
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { lastActiveAt: new Date() },
-      });
-
-      // Enforce concurrent session limit (max 5 sessions per user)
-      await enforceConcurrentSessionLimit(user.id);
-
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.subscriptionTier = token.subscriptionTier as string;
+        session.user.systemRole = token.systemRole as string;
+      }
       return session;
     },
   },

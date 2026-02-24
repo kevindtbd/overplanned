@@ -1,3 +1,14 @@
+/**
+ * NOTE: Session strategy is JWT — the Session table is no longer written to by NextAuth.
+ * The functions below (enforceConcurrentSessionLimit, getActiveSessionCount,
+ * revokeAllUserSessions, cleanupExpiredSessions) query the Session table and are
+ * therefore inactive under the current auth configuration. They are retained here
+ * for potential future use (e.g., if strategy reverts to "database", or for manual
+ * admin-triggered revocation flows). Do not call them from auth callbacks.
+ *
+ * updateUserActivity remains valid and can be called from API routes or middleware
+ * to update lastActiveAt on a per-request basis when needed.
+ */
 import { prisma } from "@/lib/prisma";
 
 /**

@@ -20,9 +20,11 @@ import { v4 as uuidv4 } from "uuid";
 const IS_DEV = process.env.NODE_ENV === "development";
 
 export async function POST(req: NextRequest) {
-  // Runtime guard — only available in development
+  // Runtime guard — only available in development.
+  // Returns a bare 404 with no body so it is indistinguishable from
+  // a non-existent route (defense-in-depth alongside the middleware block).
   if (!IS_DEV) {
-    return NextResponse.json({ error: "Not available" }, { status: 404 });
+    return new NextResponse(null, { status: 404 });
   }
 
   let body: { email?: string };

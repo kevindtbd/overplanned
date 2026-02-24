@@ -1,22 +1,29 @@
 # ── Overplanned Cloud Build — build + deploy to Cloud Run ─────────────
-# Triggered on push to main. Builds both services, pushes to Artifact
-# Registry, deploys web (public) and api (internal-only, IAM-authed).
+# Triggered on push to main. Builds web service, pushes to Artifact
+# Registry, deploys to Cloud Run (public).
 # ──────────────────────────────────────────────────────────────────────
 
 substitutions:
   _REGION: us-central1
   _REPO: overplanned
   _WEB_SERVICE: overplanned-web
-  _API_SERVICE: overplanned-api
   _WEB_MIN_INSTANCES: '0'
   _WEB_MAX_INSTANCES: '10'
-  _API_MIN_INSTANCES: '0'
-  _API_MAX_INSTANCES: '5'
 
 steps:
+  # ── Run tests ──
+  - id: test-web
+    name: node:20
+    waitFor: ['-']
+    entrypoint: bash
+    args:
+      - -c
+      - cd apps/web && npm ci && npx vitest run --exclude '.claude/**'
+
   # ── Build web image ──
   - id: build-web
     name: gcr.io/cloud-builders/docker
+    waitFor: ['test-web']
     args:
       - build
       - -f
@@ -27,19 +34,6 @@ steps:
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_WEB_SERVICE}:latest'
       - .
 
-  # ── Build api image ──
-  - id: build-api
-    name: gcr.io/cloud-builders/docker
-    args:
-      - build
-      - -f
-      - Dockerfile.api
-      - -t
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_API_SERVICE}:${SHORT_SHA}'
-      - -t
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_API_SERVICE}:latest'
-      - .
-
   # ── Push web image ──
   - id: push-web
     name: gcr.io/cloud-builders/docker
@@ -48,15 +42,6 @@ steps:
       - push
       - '--all-tags'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_WEB_SERVICE}'
-
-  # ── Push api image ──
-  - id: push-api
-    name: gcr.io/cloud-builders/docker
-    waitFor: ['build-api']
-    args:
-      - push
-      - '--all-tags'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_API_SERVICE}'
 
   # ── Deploy web (public-facing) ──
   - id: deploy-web
@@ -76,37 +61,17 @@ steps:
       - --memory=512Mi
       - --min-instances=${_WEB_MIN_INSTANCES}
       - --max-instances=${_WEB_MAX_INSTANCES}
+      - --concurrency=40
+      - --timeout=30s
+      - --add-cloudsql-instances=overplanned-app:us-central1:overplanned-db
       - --set-env-vars=NODE_ENV=production
-      - --set-secrets=DATABASE_URL=database-url:latest,NEXTAUTH_SECRET=nextauth-secret:latest,NEXTAUTH_URL=nextauth-url:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest,SENTRY_DSN=sentry-dsn-web:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest,RESEND_API_KEY=resend-api-key:latest
-
-  # ── Deploy api (internal-only, IAM-authenticated) ──
-  - id: deploy-api
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    waitFor: ['push-api']
-    entrypoint: gcloud
-    args:
-      - run
-      - deploy
-      - ${_API_SERVICE}
-      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_API_SERVICE}:${SHORT_SHA}
-      - --region=${_REGION}
-      - --platform=managed
-      - --no-allow-unauthenticated
-      - --ingress=internal
-      - --port=8000
-      - --cpu=2
-      - --memory=1Gi
-      - --min-instances=${_API_MIN_INSTANCES}
-      - --max-instances=${_API_MAX_INSTANCES}
-      - --set-env-vars=ENVIRONMENT=production,PYTHONUNBUFFERED=1
-      - --set-secrets=DATABASE_URL=database-url:latest,REDIS_URL=redis-url:latest,SENTRY_DSN=sentry-dsn-api:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,QDRANT_URL=qdrant-url:latest,QDRANT_API_KEY=qdrant-api-key:latest
+      - --set-secrets=DATABASE_URL=database-url:latest,NEXTAUTH_SECRET=nextauth-secret:latest,NEXTAUTH_URL=nextauth-url:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest,SENTRY_DSN=sentry-dsn-web:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest,RESEND_API_KEY=resend-api-key:latest,BETA_CODE=beta-code:latest,QDRANT_URL=qdrant-url:latest,QDRANT_API_KEY=qdrant-api-key:latest
 
 images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_WEB_SERVICE}:${SHORT_SHA}'
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_API_SERVICE}:${SHORT_SHA}'
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: E2_HIGHCPU_8
+  machineType: E2_MEDIUM
 
 timeout: 1200s

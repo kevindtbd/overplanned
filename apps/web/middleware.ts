@@ -12,24 +12,32 @@ const PUBLIC_PATHS = [
   "/s/",
   "/invite/",
   "/api/auth/",
+  "/api/health",
   // Dev-mode dashboard access (bypasses auth in local development)
   ...(process.env.NODE_ENV === "development" ? ["/dashboard", "/dashboard/"] : []),
 ];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(
-    (p) => pathname === p || (p.endsWith("/") && pathname.startsWith(p))
+    // Exact match OR prefix match — but only treat multi-character paths as
+    // prefixes (prevents "/" from matching every route via startsWith).
+    (p) => pathname === p || (p.length > 1 && p.endsWith("/") && pathname.startsWith(p))
   );
 }
 
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
+  // Block /dev/* routes in production (belt-and-suspenders with the dev layout).
+  if (process.env.NODE_ENV === "production" && path.startsWith("/dev/")) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   if (isPublicPath(path)) {
     return NextResponse.next();
   }
 
-  // Database sessions use a session cookie — check for its presence.
+  // Session cookie check (works for both JWT and database strategies).
   // In production (HTTPS), NextAuth prefixes with __Secure-.
   const sessionToken =
     req.cookies.get("next-auth.session-token") ||
@@ -42,8 +50,7 @@ export function middleware(req: NextRequest) {
   }
 
   // Admin and subscription-tier checks happen server-side via
-  // getServerSession() in pages/API routes — the session cookie
-  // doesn't carry claims like a JWT would.
+  // getServerSession() in pages/API routes.
   return NextResponse.next();
 }
 
