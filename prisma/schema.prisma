@@ -947,6 +947,9 @@ enum SignalType {
   packing_unchecked
   mood_reported
   slot_moved
+  // V2 ML: disambiguation + preference (Phase 2.3)
+  post_disambiguation
+  negative_preference
 }
 
 enum TripPhase {

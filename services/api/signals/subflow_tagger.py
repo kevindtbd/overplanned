@@ -103,7 +103,7 @@ def tag_subflow(signal: dict, context: dict) -> str | None:
     Returns:
         A SubflowTag string, or None if both dicts are empty/None.
     """
-    if not signal and not context:
+    if signal is None and context is None:
         return None
 
     # Merge signal-level flags into the context lookup dict.
