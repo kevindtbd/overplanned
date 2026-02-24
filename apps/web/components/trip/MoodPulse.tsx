@@ -78,18 +78,6 @@ export function MoodPulse({ tripId, tripStatus, energyProfile }: MoodPulseProps)
   const [confirmed, setConfirmed] = useState(false);
   const [hidden, setHidden] = useState(false);
 
-  // Only render for active trips
-  if (tripStatus !== "active") return null;
-
-  // If mood was captured within the last 12 hours, don't show
-  if (energyProfile?.updatedAt) {
-    const elapsed = Date.now() - new Date(energyProfile.updatedAt).getTime();
-    if (elapsed < TWELVE_HOURS_MS) return null;
-  }
-
-  // After confirmation animation completes, fully hide
-  if (hidden) return null;
-
   const handleTap = useCallback(
     async (mood: MoodLevel) => {
       if (submitting) return;
@@ -110,6 +98,18 @@ export function MoodPulse({ tripId, tripStatus, energyProfile }: MoodPulseProps)
     },
     [tripId, submitting]
   );
+
+  // Only render for active trips
+  if (tripStatus !== "active") return null;
+
+  // If mood was captured within the last 12 hours, don't show
+  if (energyProfile?.updatedAt) {
+    const elapsed = Date.now() - new Date(energyProfile.updatedAt).getTime();
+    if (elapsed < TWELVE_HOURS_MS) return null;
+  }
+
+  // After confirmation animation completes, fully hide
+  if (hidden) return null;
 
   return (
     <div className="rounded-xl bg-warm-surface border border-warm-border p-4">
