@@ -126,8 +126,8 @@ function SlotRefCard({
   return (
     <div
       className={`
-        mt-1.5 rounded-lg border border-warm-border bg-warm-background px-2.5 py-1.5
-        cursor-pointer transition-colors hover:bg-warm-surface
+        mt-1.5 rounded-lg border border-ink-700 bg-base px-2.5 py-1.5
+        cursor-pointer transition-colors hover:bg-surface
         ${slotRef.isStale ? "opacity-50" : ""}
         ${compact ? "max-w-[200px]" : ""}
       `}
@@ -171,7 +171,7 @@ function SharedSlotPreview({
   onClear: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 border-b border-warm-border bg-warm-surface/50">
+    <div className="flex items-center gap-2 px-3 py-2 border-b border-ink-700 bg-surface/50">
       <div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
         <svg
           width="12"
@@ -289,7 +289,8 @@ export function TripChat({
         `/api/trips/${tripId}/messages?limit=50`
       );
       if (!res.ok) throw new Error("Failed to load messages");
-      const data: ChatMessage[] = await res.json();
+      const json = await res.json();
+      const data: ChatMessage[] = json.messages ?? [];
       setMessages((prev) => {
         // Preserve any pending messages whose IDs haven't appeared in the server response
         const serverIds = new Set(data.map((m) => m.id));
@@ -317,8 +318,8 @@ export function TripChat({
         );
         if (!res.ok) throw new Error("Failed to load messages");
         if (cancelled) return;
-        const data: ChatMessage[] = await res.json();
-        setMessages(data);
+        const json = await res.json();
+        setMessages(json.messages ?? []);
         setTimeout(scrollToBottom, 50);
       } catch {
         if (!cancelled) showError("Could not load messages");
@@ -478,7 +479,7 @@ export function TripChat({
         className="
           fixed top-0 right-0 z-50 flex h-full flex-col
           w-full sm:w-[400px]
-          bg-warm-background border-l border-warm-border
+          bg-base border-l border-ink-700
           shadow-xl
           animate-slide-in-right
         "
@@ -487,13 +488,13 @@ export function TripChat({
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-warm-border bg-warm-surface/50">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-ink-700 bg-surface/50">
           <h2 className="font-sora text-base font-semibold text-ink-100">
             Trip Chat
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-ink-400 hover:text-ink-200 hover:bg-warm-surface transition-colors"
+            className="rounded-lg p-1.5 text-ink-400 hover:text-ink-200 hover:bg-surface transition-colors"
             aria-label="Close chat"
           >
             <svg
@@ -578,7 +579,7 @@ export function TripChat({
                         ${
                           isOwn
                             ? "bg-terracotta text-white rounded-tr-sm"
-                            : "bg-warm-surface text-ink-100 border border-warm-border rounded-tl-sm"
+                            : "bg-surface text-ink-100 border border-ink-700 rounded-tl-sm"
                         }
                       `}
                     >
@@ -597,7 +598,7 @@ export function TripChat({
         </div>
 
         {/* Input area */}
-        <div className="border-t border-warm-border">
+        <div className="border-t border-ink-700">
           {/* Shared slot preview */}
           {sharedSlotRef && onClearSharedSlot && (
             <SharedSlotPreview
@@ -626,7 +627,7 @@ export function TripChat({
               rows={1}
               className="
                 flex-1 resize-none
-                rounded-xl border border-warm-border bg-warm-surface
+                rounded-xl border border-ink-700 bg-surface
                 px-3 py-2
                 font-dm-mono text-[13px] text-ink-100
                 placeholder:text-ink-500

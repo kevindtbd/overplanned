@@ -191,7 +191,7 @@ function ExpenseSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="rounded-[13px] bg-warm-background border border-warm-border p-3"
+          className="rounded-[13px] bg-base border border-warm-border p-3"
         >
           <div className="flex items-center gap-3">
             <div className="h-6 w-6 rounded-full bg-warm-border" />
@@ -373,7 +373,7 @@ export function ExpenseTracker({
               {expenses.map((expense) => (
                 <div
                   key={expense.id}
-                  className="rounded-[13px] bg-warm-background border border-warm-border p-3 flex items-center gap-3"
+                  className="rounded-[13px] bg-base border border-warm-border p-3 flex items-center gap-3"
                 >
                   <UserAvatar user={expense.paidBy} />
                   <div className="flex-1 min-w-0">
@@ -422,7 +422,7 @@ export function ExpenseTracker({
               ) : (
                 <form
                   onSubmit={handleAdd}
-                  className="rounded-[13px] bg-warm-background border border-warm-border p-3 space-y-3"
+                  className="rounded-[13px] bg-base border border-warm-border p-3 space-y-3"
                 >
                   <input
                     ref={descriptionRef}
@@ -498,7 +498,7 @@ export function ExpenseTracker({
                     return (
                       <div
                         key={`${s.fromId}-${s.toId}-${idx}`}
-                        className="rounded-[13px] bg-warm-background border border-warm-border p-3 flex items-center gap-3"
+                        className="rounded-[13px] bg-base border border-warm-border p-3 flex items-center gap-3"
                       >
                         <div className="flex -space-x-1.5">
                           <UserAvatar user={iOwe ? myUser : otherUser} />
