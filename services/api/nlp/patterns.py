@@ -209,6 +209,7 @@ DIMENSION_PATTERNS: dict[str, list[PatternSpec]] = {
         _ph("culinary experience", "food_driven"),
         _ph("food tour", "food_driven"),
         _ph("food market", "food_driven"),
+        _ph("food markets", "food_driven"),
         _ph("street food", "food_driven"),
         _ph("not picky", "food_secondary"),
         _ph("eat anything", "food_secondary"),
