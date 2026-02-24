@@ -686,7 +686,7 @@ export default function LandingPage() {
           overplanned<span className="text-accent">.</span>
         </span>
         <span className="font-dm-mono text-[9px] tracking-[0.08em] uppercase text-ink-600">
-          Built on behavioral signals, not demographics
+          We&apos;re type A for people who are type B
         </span>
       </footer>
     </>
