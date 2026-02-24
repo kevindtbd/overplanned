@@ -317,7 +317,7 @@ class TestBPRRegistration:
                 version="2.0.0",
                 artifact_path=path,
                 metrics_dict={"final_loss": 0.3},
-                stage="shadow",
+                stage="ab_test",
                 model_type="bpr",
             )
 
@@ -325,7 +325,7 @@ class TestBPRRegistration:
             # args[0] = SQL, args[1] = id, args[2] = modelName, etc.
             assert args[2] == "bpr-v1"
             assert args[3] == "2.0.0"
-            assert args[4] == "shadow"
+            assert args[4] == "ab_test"
             assert args[5] == "bpr"
 
     @pytest.mark.asyncio

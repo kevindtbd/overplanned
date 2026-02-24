@@ -442,7 +442,7 @@ class SASRecModel:
         metrics_dict: dict[str, Any],
         description: str | None = None,
         model_type: str = "sasrec",
-        stage: str = "candidate",
+        stage: str = "staging",
         training_data_range: dict | None = None,
     ) -> str:
         """Write model metadata to the ModelRegistry table.

@@ -81,7 +81,7 @@ VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10, $11)
 _GET_SHADOW_MODEL_SQL = """
 SELECT "modelName", "modelVersion", "artifactPath", "configSnapshot"
 FROM "ModelRegistry"
-WHERE "stage" = 'shadow'
+WHERE "stage" = 'ab_test'
 ORDER BY "createdAt" DESC
 LIMIT 1
 """

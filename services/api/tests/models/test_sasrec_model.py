@@ -449,11 +449,11 @@ class TestSASRecRegistration:
                 version="1.0.0",
                 artifact_path=path,
                 metrics_dict={"final_loss": 2.1},
-                stage="shadow",
+                stage="ab_test",
             )
 
             args = mock_pool.execute.call_args[0]
-            assert args[4] == "shadow"
+            assert args[4] == "ab_test"
 
 
 # ---------------------------------------------------------------------------

@@ -260,7 +260,7 @@ class BPRModel:
         metrics_dict: dict[str, Any],
         description: str | None = None,
         model_type: str = "bpr",
-        stage: str = "candidate",
+        stage: str = "staging",
         training_data_range: dict | None = None,
     ) -> str:
         """Write model metadata to the ModelRegistry table.
@@ -273,7 +273,7 @@ class BPRModel:
             metrics_dict: training metrics (loss, AUC, etc.).
             description: human-readable description.
             model_type: model type string.
-            stage: ModelStage enum value (candidate, shadow, champion, retired, archived).
+            stage: ModelStage enum value (staging, ab_test, production, archived).
             training_data_range: optional JSON dict with date range info.
 
         Returns:
