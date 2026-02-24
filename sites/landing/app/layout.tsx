@@ -25,7 +25,7 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "overplanned. -- Travel that knows you",
+  title: "Overplanned. Travel that knows you",
   description:
     "Overplanned builds your itinerary from how you actually travel. Local sources. Real-time adaptation. A plan that changes when you do.",
 };

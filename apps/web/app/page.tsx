@@ -18,7 +18,7 @@ const ItineraryCard = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: "overplanned. -- Travel that knows you",
+  title: "Overplanned. Travel that knows you",
   description:
     "Overplanned builds your itinerary from how you actually travel. Local sources. Real-time adaptation. A plan that changes when you do.",
 };
@@ -222,14 +222,14 @@ function GroupPhones() {
             Day 3 &middot; Kyoto
           </div>
           <div className="px-2.5 py-[7px] text-[10px] text-ink-400 opacity-50 border-b border-dashed border-ink-700 italic">
-            Arashiyama bamboo -- outdoor
+            Arashiyama bamboo &middot; outdoor
           </div>
           <div className="px-2.5 py-2 bg-accent-light border-t border-dashed border-accent/30">
             <div className="font-dm-mono text-[7px] tracking-[0.06em] uppercase text-accent-fg mb-[3px]">
               System &middot; Weather
             </div>
             <div className="text-[9px] text-ink-200 font-normal mb-[5px] leading-[1.4]">
-              Rain at 14:00 -- swapping outdoor slot
+              Rain at 14:00 &middot; swapping outdoor slot
             </div>
             <div className="flex gap-1">
               <span className="font-dm-mono text-[7px] tracking-[0.04em] uppercase rounded-full px-2 py-[3px] bg-accent text-white cursor-pointer">
@@ -329,8 +329,8 @@ export default function LandingPage() {
 
           {/* Sub */}
           <p className="text-[16px] text-ink-400 font-light leading-[1.74] max-w-[440px] mb-[42px] animate-[fadeUp_0.7s_ease_both_0.24s]">
-            Overplanned builds your itinerary from how you actually travel -- not
-            your demographics. Plans your next trip. Remembers every one
+            Overplanned builds your itinerary from how you actually travel,
+            not your demographics. Plans your next trip. Remembers every one
             you&apos;ve taken. Local sources, real-time adaptation, and a plan
             that changes when you do.
           </p>
@@ -386,12 +386,12 @@ export default function LandingPage() {
             <p className="text-[15px] text-ink-400 font-light leading-[1.75] max-w-[480px]">
               Not a highlights reel. Slots chosen from behavioral signals, sourced
               from locals, with honest booking states and a suggestion line
-              that&apos;s specific -- not &ldquo;great for foodies.&rdquo;
+              that actually means something.
             </p>
             <DotList
               items={[
-                "Source attribution on every slot -- not a black box",
-                "Booking states that reflect reality -- \"call ahead\" when that's the truth",
+                "Source attribution on every slot",
+                "Booking states that reflect reality: \"call ahead\" when that's the truth",
                 "Busy window signals so you know when to actually arrive",
               ]}
             />
@@ -418,8 +418,7 @@ export default function LandingPage() {
               <em className="italic text-gold">if you already knew.</em>
             </h2>
             <p className="text-[15px] text-ink-400 font-light leading-[1.75] text-center mx-auto">
-              Most travel apps show you the same city. Overplanned shows you your
-              city -- the one that fits how you actually move through the world.
+              Most travel apps show you the same city. Overplanned shows you yours.
             </p>
           </div>
         </RevealOnScroll>
@@ -487,8 +486,7 @@ export default function LandingPage() {
                 <em className="italic text-gold">the ground floor.</em>
               </h2>
               <p className="text-[15px] text-ink-400 font-light leading-[1.75] text-center mx-auto">
-                Every recommendation traces back to a real source -- not a
-                five-star rating from someone who visited once. We pull from the
+                Every recommendation traces back to a real source. We pull from the
                 places locals actually use.
               </p>
             </div>
@@ -517,7 +515,7 @@ export default function LandingPage() {
                     </svg>
                   ),
                   title: "Always current, never stale",
-                  body: "Closures caught before you show up. Hours that changed last week, already in your plan. Seasonal menus reflected in real time -- not a snapshot from two years ago.",
+                  body: "Closures caught before you show up. Hours verified against local sources. Seasonal context baked in.",
                   tag: "Continuous Updates",
                   tagClass: "bg-info-bg text-info",
                 },
@@ -571,15 +569,15 @@ export default function LandingPage() {
             </h2>
             <p className="text-[15px] text-ink-400 font-light leading-[1.75] max-w-[480px]">
               No onboarding quiz. No self-reported preferences. Overplanned
-              detects travel patterns from what you actually do -- what you skip,
+              detects travel patterns from what you actually do: what you skip,
               linger on, search after midnight, and book twice.
             </p>
             <DotList
               items={[
-                "Compounds across trips -- not reset each time",
-                "Updates mid-trip -- tired on day four reads differently than tired on day one",
-                "Never surfaced as a label -- translated directly into what you see",
-                "Works offline -- swipe through pre-cached activities, signals sync when you reconnect",
+                "Compounds across trips, never resets",
+                "Updates mid-trip as your energy shifts",
+                "Never surfaced as a label. Just better recommendations.",
+                "Works offline. Signals sync when you reconnect.",
               ]}
             />
           </RevealOnScroll>
@@ -606,10 +604,10 @@ export default function LandingPage() {
             </p>
             <DotList
               items={[
-                "Shared packing list -- see who's bringing what, avoid duplicates",
-                "Split budget tracker -- expenses logged per person, settled at the end",
-                "Split days -- everyone gets a half-day to do their own thing, then regroup",
-                "Group chat built into the trip -- no separate WhatsApp thread",
+                "Shared packing list. See who's bringing what, skip the duplicates.",
+                "Split budget tracker that settles up at the end",
+                "Split days: half-day solo, then regroup",
+                "Group chat built into the trip, not a separate thread",
               ]}
             />
           </RevealOnScroll>
@@ -631,7 +629,7 @@ export default function LandingPage() {
                 leaves <em className="italic text-gold">a trace.</em>
               </h2>
               <p className="text-[15px] text-ink-400 font-light leading-[1.75] max-w-[360px]">
-                After each trip, Overplanned renders the route you took -- every
+                After each trip, Overplanned renders the route you took. Every
                 slot, every transit, in the order it happened. Not navigation. Just
                 a satisfying artifact of where you actually went, and the data that
                 makes your next trip better.
@@ -639,7 +637,7 @@ export default function LandingPage() {
               <DotList
                 items={[
                   "Compounds into your behavioral profile for next time",
-                  "Shareable -- export as an image or keep it private",
+                  "Shareable as an image, or keep it private",
                 ]}
               />
             </RevealOnScroll>
