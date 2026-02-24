@@ -140,7 +140,7 @@ export async function POST(
     await prisma.$transaction([
       prisma.trip.update({
         where: { id: tripId },
-        data: { reflectionData: merged },
+        data: { reflectionData: merged as unknown as import("@prisma/client").Prisma.InputJsonValue },
       }),
       ...signalCreates,
     ]);

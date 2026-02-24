@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         eventType: String(eventType),
         intentClass: String(intentClass) as "explicit" | "implicit" | "contextual",
         surface: surface ? String(surface) : null,
-        payload: (payload ?? {}) as Record<string, unknown>,
+        payload: (payload ?? {}) as import("@prisma/client").Prisma.InputJsonValue,
         platform: platform ? String(platform) : null,
         screenWidth: screenWidth ? Number(screenWidth) : null,
         networkType: networkType ? String(networkType) : null,

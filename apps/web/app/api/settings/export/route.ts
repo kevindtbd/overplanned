@@ -10,14 +10,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
-
-const RATE_LIMIT_MS = 10 * 60 * 1000; // 10 minutes
-const rateLimitMap = new Map<string, number>();
-
-// Exposed for test reset only
-export function _resetRateLimitForTest() {
-  rateLimitMap.clear();
-}
+import { checkRateLimit, recordRateLimit } from "./rate-limit";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -28,8 +21,7 @@ export async function GET() {
   const userId = (session.user as { id: string }).id;
 
   // Rate limit check
-  const lastExport = rateLimitMap.get(userId);
-  if (lastExport && Date.now() - lastExport < RATE_LIMIT_MS) {
+  if (checkRateLimit(userId)) {
     return NextResponse.json(
       { error: "Please wait before requesting another export." },
       { status: 429 }
@@ -79,8 +71,15 @@ export async function GET() {
       select: {
         trip: {
           select: {
-            name: true, destination: true, city: true, country: true,
+            name: true,
             startDate: true, endDate: true, status: true, mode: true, createdAt: true,
+            legs: {
+              select: {
+                destination: true, city: true, country: true, position: true,
+                startDate: true, endDate: true,
+              },
+              orderBy: { position: "asc" },
+            },
             slots: {
               select: {
                 dayNumber: true, slotType: true, status: true,
@@ -116,7 +115,11 @@ export async function GET() {
     prisma.backfillTrip.findMany({
       where: { userId },
       select: {
-        city: true, country: true, startDate: true,
+        startDate: true,
+        legs: {
+          select: { city: true, country: true, position: true },
+          orderBy: { position: "asc" },
+        },
         venues: {
           select: { extractedName: true, extractedCategory: true },
         },
@@ -125,7 +128,7 @@ export async function GET() {
   ]);
 
   // Record rate limit timestamp
-  rateLimitMap.set(userId, Date.now());
+  recordRateLimit(userId);
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const exportData = {
@@ -165,8 +168,10 @@ export async function GET() {
       createdAt: re.createdAt,
     })),
     backfillTrips: backfillTrips.map((bt: any) => ({
-      city: bt.city,
-      country: bt.country,
+      legs: bt.legs.map((leg: any) => ({
+        city: leg.city,
+        country: leg.country,
+      })),
       traveledAt: bt.startDate,
       venues: bt.venues.map((v: any) => ({
         name: v.extractedName,

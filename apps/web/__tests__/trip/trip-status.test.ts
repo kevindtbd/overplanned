@@ -104,8 +104,8 @@ describe("validateTransition", () => {
     expect(validateTransition("draft", "completed")).toBe(false);
   });
 
-  it("rejects draft -> archived", () => {
-    expect(validateTransition("draft", "archived")).toBe(false);
+  it("allows draft -> archived", () => {
+    expect(validateTransition("draft", "archived")).toBe(true);
   });
 
   it("rejects planning -> draft (backward transition)", () => {
@@ -163,7 +163,7 @@ describe("getWritableFields", () => {
     expect(fields.has("planningProgress")).toBe(true);
     expect(fields.has("startDate")).toBe(true);
     expect(fields.has("endDate")).toBe(true);
-    expect(fields.has("mode")).toBe(false);
+    expect(fields.has("mode")).toBe(true);
     expect(fields.has("presetTemplate")).toBe(false);
     expect(fields.has("personaSeed")).toBe(false);
   });

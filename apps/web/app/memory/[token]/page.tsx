@@ -17,20 +17,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 
 // ---------------------------------------------------------------------------
-// CSP header — script-src 'none' as required by spec
+// CSP header — script-src 'none' enforced via next.config.js headers()
+// for /memory/:token routes. No page-level export needed.
 // ---------------------------------------------------------------------------
 
 export async function generateStaticParams() {
   return [];
 }
-
-export const headers = {
-  "Content-Security-Policy":
-    "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://images.unsplash.com https://storage.googleapis.com data:; connect-src 'self'; frame-ancestors 'none';",
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "Referrer-Policy": "no-referrer",
-};
 
 // ---------------------------------------------------------------------------
 // Types

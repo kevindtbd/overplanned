@@ -35,8 +35,9 @@ vi.mock("@/lib/auth/config", () => ({
 
 const { getServerSession } = await import("next-auth");
 const { prisma } = await import("@/lib/prisma");
-const { GET, _resetRateLimitForTest } = await import(
-  "../../app/api/settings/export/route"
+const { GET } = await import("../../app/api/settings/export/route");
+const { _resetRateLimitForTest } = await import(
+  "../../app/api/settings/export/rate-limit"
 );
 
 const mockGetServerSession = vi.mocked(getServerSession);

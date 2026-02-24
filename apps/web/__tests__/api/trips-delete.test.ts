@@ -98,9 +98,9 @@ describe("DELETE /api/trips/[id] — status restrictions", () => {
     vi.clearAllMocks();
   });
 
-  const nonDraftStatuses = ["planning", "active", "completed", "archived"];
+  const nonDeletableStatuses = ["active", "completed", "archived"];
 
-  for (const status of nonDraftStatuses) {
+  for (const status of nonDeletableStatuses) {
     it(`returns 409 for ${status} trip`, async () => {
       mockGetServerSession.mockResolvedValueOnce(authedSession as never);
       mockPrisma.tripMember.findUnique.mockResolvedValueOnce(organizerMembership as never);

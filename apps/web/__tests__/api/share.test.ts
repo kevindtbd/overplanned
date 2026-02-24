@@ -8,6 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
 
 // ---- Mocks ----
@@ -594,7 +595,7 @@ describe("POST /api/shared/[token]/import", () => {
       expect(tx.itinerarySlot.create).toHaveBeenCalledTimes(1);
       const slotData = tx.itinerarySlot.create.mock.calls[0][0].data;
       expect(slotData.status).toBe("proposed"); // Reset
-      expect(slotData.voteState).toBeNull(); // Cleared
+      expect(slotData.voteState).toBe(Prisma.JsonNull); // Cleared
       expect(slotData.isLocked).toBe(false);
       expect(slotData.wasSwapped).toBe(false);
       expect(slotData.isContested).toBe(false);

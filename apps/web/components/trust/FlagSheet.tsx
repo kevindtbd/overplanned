@@ -440,8 +440,8 @@ export function FlagTrigger({ onClick, disabled = false }: FlagTriggerProps) {
   );
 }
 
-// Re-export FlagIcon for use in SlotCard
-function FlagIcon() {
+// Small FlagIcon variant for use in SlotCard
+export function FlagIconSmall() {
   return (
     <svg
       width="14"

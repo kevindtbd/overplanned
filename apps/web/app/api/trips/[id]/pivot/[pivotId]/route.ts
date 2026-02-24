@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { v4 as uuidv4 } from "uuid";
 import { authOptions } from "@/lib/auth/config";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { pivotResolveSchema } from "@/lib/validations/pivot";
 
@@ -112,7 +113,7 @@ export async function PATCH(
             wasSwapped: true,
             swappedFromId: pivotEvent.originalNodeId,
             pivotEventId: pivotEvent.id,
-            voteState: null,
+            voteState: Prisma.JsonNull,
             isContested: false,
             updatedAt: new Date(),
           },

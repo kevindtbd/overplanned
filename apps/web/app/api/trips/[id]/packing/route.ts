@@ -205,7 +205,7 @@ Generate a packing list for this trip.`,
     // Store in Trip.packingList JSONB
     await prisma.trip.update({
       where: { id: tripId },
-      data: { packingList: packingList as unknown as Record<string, unknown> },
+      data: { packingList: packingList as unknown as import("@prisma/client").Prisma.InputJsonValue },
     });
 
     console.log(
@@ -289,7 +289,7 @@ export async function PATCH(
     await prisma.$transaction([
       prisma.trip.update({
         where: { id: tripId },
-        data: { packingList: packingList as unknown as Record<string, unknown> },
+        data: { packingList: packingList as unknown as import("@prisma/client").Prisma.InputJsonValue },
       }),
       prisma.behavioralSignal.create({
         data: {
@@ -297,7 +297,8 @@ export async function PATCH(
           tripId,
           signalType: checked ? "packing_checked" : "packing_unchecked",
           signalValue: checked ? 1.0 : -1.0,
-          metadata: { itemId, itemText: packingList.items[itemIndex].text },
+          rawAction: `packing_${checked ? "check" : "uncheck"}:${itemId}`,
+          tripPhase: "pre_trip",
         },
       }),
     ]);

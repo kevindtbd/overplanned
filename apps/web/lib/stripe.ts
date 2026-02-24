@@ -5,7 +5,7 @@ const globalForStripe = globalThis as unknown as { stripe?: Stripe };
 export const stripe =
   globalForStripe.stripe ??
   new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2024-06-20",
+    apiVersion: "2026-01-28.clover",
     typescript: true,
   });
 

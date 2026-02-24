@@ -147,7 +147,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: {
-        voteState: (updatedSlot.voteState as VoteState),
+        voteState: updatedSlot.voteState as unknown as VoteState,
         slotStatus: updatedSlot.status,
       },
     });

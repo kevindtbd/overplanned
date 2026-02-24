@@ -20,22 +20,14 @@ import { authOptions } from "@/lib/auth/config";
 import { ImportButton } from "./ImportButton";
 
 // ---------------------------------------------------------------------------
-// CSP header — updated to allow Next.js scripts for import functionality
+// CSP headers for /s/:token routes are set via next.config.js headers().
+// No page-level export needed.
 // ---------------------------------------------------------------------------
 
 export async function generateStaticParams() {
   // Dynamic — no static params
   return [];
 }
-
-// Next.js 14 headers export (applied at the segment level)
-export const headers = {
-  "Content-Security-Policy":
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://images.unsplash.com data:; connect-src 'self'; frame-ancestors 'none';",
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "Referrer-Policy": "no-referrer",
-};
 
 // ---------------------------------------------------------------------------
 // Types

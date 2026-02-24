@@ -15,7 +15,7 @@ const securityHeaders = [
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' https://images.unsplash.com https://lh3.googleusercontent.com data: blob:",
       "connect-src 'self' https://accounts.google.com http://localhost:8000 https://*.overplanned.app" +
-        (isDev ? " ws://localhost:3000" : ""),
+        (isDev ? " ws://localhost:* http://localhost:*" : ""),
       "frame-src 'self' https://accounts.google.com",
       "object-src 'none'",
       "base-uri 'self'",
@@ -64,6 +64,50 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        // Stricter CSP for public memory pages — no scripts at all
+        source: "/memory/:token*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'none'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' https://images.unsplash.com https://storage.googleapis.com data:",
+              "connect-src 'self'",
+              "frame-ancestors 'none'",
+            ].join("; "),
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        // Shared itinerary pages need scripts for import button
+        source: "/s/:token*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              isDev
+                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+                : "script-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' https://images.unsplash.com data:",
+              "connect-src 'self'",
+              "frame-ancestors 'none'",
+            ].join("; "),
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
       {
         source: "/(.*)",
         headers: securityHeaders,

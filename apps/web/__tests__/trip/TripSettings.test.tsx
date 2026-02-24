@@ -202,7 +202,7 @@ describe("TripSettings — danger zone visibility", () => {
     expect(screen.queryByText("Delete trip")).not.toBeInTheDocument();
   });
 
-  it("shows delete button only for draft trips + organizer", () => {
+  it("shows delete and archive buttons for draft trips + organizer", () => {
     render(
       <TripSettings
         trip={makeTrip({ status: "draft" })}
@@ -213,7 +213,7 @@ describe("TripSettings — danger zone visibility", () => {
     );
 
     expect(screen.getByText("Delete trip")).toBeInTheDocument();
-    expect(screen.queryByText("Archive trip")).not.toBeInTheDocument();
+    expect(screen.getByText("Archive trip")).toBeInTheDocument();
   });
 
   it("hides danger zone for non-organizer", () => {
@@ -230,7 +230,7 @@ describe("TripSettings — danger zone visibility", () => {
     expect(screen.queryByText("Archive trip")).not.toBeInTheDocument();
   });
 
-  it("hides danger zone for planning status", () => {
+  it("shows delete + archive for planning status organizer", () => {
     render(
       <TripSettings
         trip={makeTrip({ status: "planning" })}
@@ -240,11 +240,11 @@ describe("TripSettings — danger zone visibility", () => {
       />
     );
 
-    expect(screen.queryByText("Delete trip")).not.toBeInTheDocument();
-    expect(screen.queryByText("Archive trip")).not.toBeInTheDocument();
+    expect(screen.getByText("Delete trip")).toBeInTheDocument();
+    expect(screen.getByText("Archive trip")).toBeInTheDocument();
   });
 
-  it("hides danger zone for active status", () => {
+  it("shows archive only for active status organizer", () => {
     render(
       <TripSettings
         trip={makeTrip({ status: "active" })}
@@ -255,7 +255,7 @@ describe("TripSettings — danger zone visibility", () => {
     );
 
     expect(screen.queryByText("Delete trip")).not.toBeInTheDocument();
-    expect(screen.queryByText("Archive trip")).not.toBeInTheDocument();
+    expect(screen.getByText("Archive trip")).toBeInTheDocument();
   });
 });
 
@@ -280,13 +280,13 @@ describe("TripSettings — delete confirmation", () => {
 
     // Click delete to show confirmation
     await user.click(screen.getByText("Delete trip"));
-    expect(screen.getByText("Delete this draft? This cannot be undone.")).toBeInTheDocument();
+    expect(screen.getByText("Delete this trip? This cannot be undone.")).toBeInTheDocument();
 
     // Cancel the confirmation — use getAllByText since both form Cancel and confirmation Cancel exist
     const cancelButtons = screen.getAllByText("Cancel");
     // The confirmation Cancel is the last one rendered (inside the danger zone)
     await user.click(cancelButtons[cancelButtons.length - 1]);
-    expect(screen.queryByText("Delete this draft? This cannot be undone.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Delete this trip? This cannot be undone.")).not.toBeInTheDocument();
     expect(global.fetch).not.toHaveBeenCalled();
   });
 

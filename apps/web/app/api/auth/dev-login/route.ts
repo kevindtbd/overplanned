@@ -13,21 +13,15 @@
  * Sets: next-auth.session-token cookie
  */
 
-// Layer 1: Build-time guard — module refuses to load outside dev
-if (process.env.NODE_ENV !== "development") {
-  throw new Error(
-    "CRITICAL: dev-login route loaded in non-development environment. " +
-    "This file must NEVER be deployed to production."
-  );
-}
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 
+const IS_DEV = process.env.NODE_ENV === "development";
+
 export async function POST(req: NextRequest) {
-  // Layer 2: Runtime guard (defense in depth)
-  if (process.env.NODE_ENV !== "development") {
+  // Runtime guard — only available in development
+  if (!IS_DEV) {
     return NextResponse.json({ error: "Not available" }, { status: 404 });
   }
 

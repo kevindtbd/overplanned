@@ -340,7 +340,7 @@ describe("PrivacySection", () => {
       expect(screen.getAllByRole("switch")).toHaveLength(2);
     });
 
-    expect(screen.getByText("Help us learn your travel style")).toBeInTheDocument();
+    expect(screen.getByText("Improve your recommendations")).toBeInTheDocument();
     expect(screen.getByText("Contribute to travel insights")).toBeInTheDocument();
   });
 
@@ -356,10 +356,10 @@ describe("PrivacySection", () => {
     });
 
     expect(
-      screen.getByText(/We use your trip patterns and preferences/i)
+      screen.getByText(/Your trip patterns and preferences/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Your anonymized data helps us understand/i)
+      screen.getByText(/Anonymized data helps us spot travel trends/i)
     ).toBeInTheDocument();
   });
 

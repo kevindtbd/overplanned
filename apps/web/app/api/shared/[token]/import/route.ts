@@ -9,6 +9,7 @@ import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, rateLimitPresets } from "@/lib/rate-limit";
 import { sanitizeToken } from "@/lib/validations/share";
@@ -155,7 +156,7 @@ export async function POST(
             endTime: slot.endTime,
             durationMinutes: slot.durationMinutes,
             isLocked: false,
-            voteState: null, // Clear voting data
+            voteState: Prisma.JsonNull, // Clear voting data
             isContested: false,
             wasSwapped: false,
           },
