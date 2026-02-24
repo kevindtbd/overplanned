@@ -211,8 +211,7 @@ export default function ReflectionPage({
             Thanks for reflecting
           </h1>
           <p className="font-dm-mono text-sm text-ink-400 max-w-sm">
-            Your feedback helps us learn what you love so future trips feel even
-            more you.
+            Noted, your feedback helps us learn for your next trip.
           </p>
           <a
             href={`/trip/${params.id}`}

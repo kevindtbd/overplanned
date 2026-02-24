@@ -437,14 +437,14 @@ export default function LandingPage() {
               {
                 num: "02",
                 title: "Builds the plan you'd forget to make",
-                body: "Auto-generated packing lists based on your destination and trip length. Budget estimates before you book. Offline access to your full itinerary \u2014 no signal required. The logistics layer that actually saves you time.",
+                body: "Packing lists built from your destination and weather. Budget estimates before you book. Your full itinerary works offline. The stuff that falls through the cracks, handled.",
                 tag: "Smart Planning",
                 tagClass: "bg-info-bg text-info",
               },
               {
                 num: "03",
                 title: "Adapts when the trip does",
-                body: "Flight delayed. Restaurant closed. Rain all afternoon. The plan reshuffles one slot at a time \u2014 not a full rebuild. You approve every change before it happens.",
+                body: "Flight delayed. Restaurant closed. Rain all afternoon. The plan reshuffles one slot at a time, not a full rebuild. You approve every change before it happens.",
                 tag: "Real-Time",
                 tagClass: "bg-accent-light text-accent-fg",
               },

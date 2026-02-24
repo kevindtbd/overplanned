@@ -20,13 +20,13 @@ const DEFAULTS: ConsentState = {
 const CONSENT_ITEMS: { field: ConsentField; label: string; sub: string }[] = [
   {
     field: "modelTraining",
-    label: "Help us learn your travel style",
-    sub: "We use your trip patterns and preferences to surface better recommendations for you and travelers like you.",
+    label: "Improve your recommendations",
+    sub: "Your trip patterns and preferences make your recommendations more accurate, and help us improve for similar travelers.",
   },
   {
     field: "anonymizedResearch",
     label: "Contribute to travel insights",
-    sub: "Your anonymized data helps us understand travel trends and improve our recommendation engine for everyone.",
+    sub: "Anonymized data helps us spot travel trends and improve recommendations across the board.",
   },
 ];
 
@@ -193,8 +193,7 @@ export function PrivacySection({ email }: { email: string }) {
                   </p>
                   <p className="font-sora text-sm text-ink-300 mb-3">
                     Your preferences and trip patterns help us learn what makes great
-                    recommendations. Users who share their data see up to 40% more
-                    relevant suggestions within their first 3 trips.
+                    recommendations.
                   </p>
                   <p className="font-sora text-sm text-ink-300 mb-3">
                     You can enable or change these options anytime.

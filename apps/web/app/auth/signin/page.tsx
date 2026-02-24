@@ -118,7 +118,7 @@ function SignInContent() {
 
         {/* Subtext */}
         <p className="text-ink-400 font-light text-[14px] mb-8">
-          Your itinerary is waiting.
+          Pick up where you left off.
         </p>
 
         {/* Divider */}

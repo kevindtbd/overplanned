@@ -98,7 +98,7 @@ export default function DashboardPage() {
               Your trips
             </h1>
             <p className="mt-1 font-dm-mono text-xs text-ink-400 uppercase tracking-wider">
-              Plan, track, and relive
+              Plan, track, revisit
             </p>
           </div>
           {fetchState === "success" && trips.length > 0 && (

@@ -34,7 +34,7 @@ const NOTIF_GROUPS: NotifGroup[] = [
     heading: "Discovery",
     items: [
       { field: "citySeeded", label: "When new cities are added" },
-      { field: "inspirationNudges", label: "Destination ideas based on your style" },
+      { field: "inspirationNudges", label: "Destination ideas that match how you travel" },
     ],
   },
   {

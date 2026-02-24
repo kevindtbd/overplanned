@@ -43,7 +43,7 @@ function WarningIcon() {
 const ERROR_MESSAGES: Record<string, string> = {
   Configuration: "There is a problem with the server configuration.",
   AccessDenied: "You do not have permission to sign in.",
-  Verification: "The verification link may have expired or already been used.",
+  Verification: "The verification link expired or was already used.",
   OAuthSignin: "Could not start the sign-in process. Please try again.",
   OAuthCallback: "Could not complete the sign-in process. Please try again.",
   OAuthCreateAccount: "Could not create your account. Please try again.",
@@ -51,7 +51,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   Callback: "Something went wrong during authentication.",
   OAuthAccountNotLinked: "This email is already associated with another sign-in method.",
   SessionRequired: "You need to be signed in to access this page.",
-  Default: "An unexpected error occurred. Please try again.",
+  Default: "Something didn't work. Try signing in again.",
 };
 
 function getErrorMessage(error: string | null): string {

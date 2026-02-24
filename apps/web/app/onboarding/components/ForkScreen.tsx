@@ -53,8 +53,7 @@ export function ForkScreen({ onPlanTrip, onExplore }: ForkScreenProps) {
         What brings you here?
       </h1>
       <p className="mt-3 max-w-md text-center text-secondary">
-        Whether you have a trip in mind or just want to discover new places,
-        we'll tailor the experience for you.
+        Got a trip coming up, or just browsing?
       </p>
 
       <div className="mt-10 grid w-full max-w-lg gap-4 sm:grid-cols-2">

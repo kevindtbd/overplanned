@@ -414,7 +414,7 @@ export default async function SharedTripPage({
         >
           Shared via{" "}
           <span style={{ color: "var(--accent)" }}>overplanned</span>{" "}
-          &mdash; behavioral-driven travel planning
+          -- behavioral-driven travel planning
         </p>
       </footer>
     </div>
@@ -680,8 +680,7 @@ function NotFound() {
           lineHeight: 1.6,
         }}
       >
-        The share link may have expired or been removed by the trip organizer.
-        Ask them for a new link.
+        This share link expired or was removed. Ask the organizer for a new one.
       </p>
     </div>
   );

@@ -340,8 +340,8 @@ function InvalidInvite() {
           maxWidth: "340px",
         }}
       >
-        The invite link may have expired, been revoked, or already been used.
-        Ask the trip organizer to send a new one.
+        This invite link expired or was already used. Ask the organizer for a
+        new one.
       </p>
     </main>
   );

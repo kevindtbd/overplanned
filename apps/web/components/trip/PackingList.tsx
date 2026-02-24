@@ -96,7 +96,7 @@ export function PackingList({ tripId, packingList, onUpdate }: PackingListProps)
       <div className="rounded-xl bg-warm-surface border border-warm-border p-6">
         <h3 className="font-heading text-lg text-ink-100 mb-2">Packing List</h3>
         <p className="text-sm text-ink-300 mb-4">
-          Generate a personalized packing list based on your destination and dates.
+          Build a packing list from your destination, dates, and weather.
         </p>
         {error && (
           <p className="text-sm text-red-500 mb-3">{error}</p>
