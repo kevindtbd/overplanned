@@ -15,6 +15,9 @@ import { MemberAvatars } from "@/components/trip/MemberAvatars";
 import { InviteButton } from "@/components/trip/InviteButton";
 import { ShareButton } from "@/components/trip/ShareButton";
 import { PackingList } from "@/components/trip/PackingList";
+import { TripChat } from "@/components/trip/TripChat";
+import { ExpenseTracker } from "@/components/trip/ExpenseTracker";
+import { MoodPulse } from "@/components/trip/MoodPulse";
 import { type SlotData } from "@/components/slot/SlotCard";
 import { type SlotActionEvent } from "@/components/slot/SlotActions";
 import { TripSettings } from "@/components/trip/TripSettings";
@@ -93,6 +96,20 @@ export default function TripDetailPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [showTripMenu, setShowTripMenu] = useState(false);
   const [archiveConfirm, setArchiveConfirm] = useState(false);
+
+  // -- Chat drawer --
+  const [chatOpen, setChatOpen] = useState(false);
+  const [sharedSlotRef, setSharedSlotRef] = useState<{
+    id: string; name: string; category: string; dayNumber: number;
+  } | null>(null);
+
+  const handleShareToChat = useCallback(
+    (slot: { id: string; name: string; category: string; dayNumber: number }) => {
+      setSharedSlotRef(slot);
+      setChatOpen(true);
+    },
+    []
+  );
 
   // -- FAB scroll collapse --
   const [fabCompact, setFabCompact] = useState(false);
@@ -401,6 +418,19 @@ export default function TripDetailPage() {
                   <MemberAvatars members={trip!.members} />
                 )}
 
+                {/* Chat toggle — group trips */}
+                {trip!.mode === "group" && (
+                  <button
+                    onClick={() => setChatOpen(true)}
+                    className="rounded-lg p-2 text-ink-400 hover:text-ink-100 hover:bg-warm-surface transition-colors"
+                    aria-label="Open trip chat"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                    </svg>
+                  </button>
+                )}
+
                 {/* Invite button — group organizer, planning or active */}
                 {trip!.mode === "group" &&
                   myRole === "organizer" &&
@@ -584,6 +614,15 @@ export default function TripDetailPage() {
           </div>
 
           {/* Timeline day view */}
+          {/* Mood pulse — active trips only, auto-hides */}
+          {trip!.status === "active" && myUserId && (
+            <MoodPulse
+              tripId={trip!.id}
+              tripStatus={trip!.status}
+              energyProfile={trip!.energyProfile}
+            />
+          )}
+
           <DayView
             dayNumber={currentDay}
             slots={slotsForDay}
@@ -596,6 +635,7 @@ export default function TripDetailPage() {
             onVote={handleVote}
             showPivot={trip!.mode === "group" && (trip!.status === "planning" || trip!.status === "active")}
             onPivotCreated={fetchTrip}
+            onShareToChat={trip!.mode === "group" ? handleShareToChat : undefined}
           />
 
           {/* Packing list — active or completed trips only */}
@@ -604,6 +644,18 @@ export default function TripDetailPage() {
               tripId={trip!.id}
               packingList={trip!.packingList}
               onUpdate={fetchTrip}
+              currentUserId={myUserId ?? undefined}
+              members={trip!.members?.filter(m => m.status === "joined")}
+            />
+          )}
+
+          {/* Expense tracker — group trips only */}
+          {trip!.mode === "group" && trip!.members && myUserId && (
+            <ExpenseTracker
+              tripId={trip!.id}
+              currentUserId={myUserId}
+              currency={trip!.currency ?? "USD"}
+              members={trip!.members.filter(m => m.status === "joined")}
             />
           )}
 
@@ -689,6 +741,18 @@ export default function TripDetailPage() {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 rounded-lg bg-ink-100 px-4 py-2.5 shadow-lg">
           <p className="font-dm-mono text-sm text-white">{toastMessage}</p>
         </div>
+      )}
+
+      {/* Trip chat drawer — group trips */}
+      {trip!.mode === "group" && myUserId && (
+        <TripChat
+          tripId={trip!.id}
+          isOpen={chatOpen}
+          onClose={() => setChatOpen(false)}
+          currentUserId={myUserId}
+          sharedSlotRef={sharedSlotRef}
+          onClearSharedSlot={() => setSharedSlotRef(null)}
+        />
       )}
     </AppShell>
   );

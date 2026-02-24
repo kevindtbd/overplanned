@@ -36,6 +36,8 @@ interface DayViewProps {
   /** Total days in the trip (for move-to-day dropdown) */
   totalDays?: number;
   timeFormat?: "12h" | "24h";
+  /** Callback to share a slot into trip chat */
+  onShareToChat?: (slot: { id: string; name: string; category: string; dayNumber: number }) => void;
 }
 
 function formatTimeMarker(isoString: string, timezone?: string, timeFormat?: "12h" | "24h"): string {
@@ -112,6 +114,7 @@ export function DayView({
   showFlag = false,
   totalDays,
   timeFormat = "12h",
+  onShareToChat,
 }: DayViewProps) {
   // Sort slots by sortOrder (already from DB) or startTime fallback
   const sortedSlots = [...slots].sort((a, b) => {
@@ -192,6 +195,7 @@ export function DayView({
                 currentDay={dayNumber}
                 slotIndex={index}
                 totalSlotsInDay={sortedSlots.length}
+                onShareToChat={onShareToChat}
               />
             </div>
           </div>

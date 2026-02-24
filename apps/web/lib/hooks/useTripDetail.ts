@@ -52,10 +52,13 @@ export interface ApiTrip {
       text: string;
       category: "essentials" | "clothing" | "documents" | "tech" | "toiletries" | "misc";
       checked: boolean;
+      claimedBy?: string | null;
     }>;
     generatedAt: string;
     model: string;
   } | null;
+  currency: string;
+  energyProfile?: { lastMood?: string; updatedAt?: string } | null;
   legs: ApiLeg[];
   slots: ApiSlot[];
   members: {
