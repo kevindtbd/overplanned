@@ -230,6 +230,14 @@ def make_activity_node(**overrides: Any) -> dict:
         "flagReason": None,
         "resolvedToId": None,
         "isCanonical": True,
+        # V2 ML: scoring + feedback loop
+        "tourist_score": None,
+        "tourist_local_divergence": None,
+        "impression_count": 0,
+        "acceptance_count": 0,
+        "behavioral_quality_score": 0.5,
+        "llm_served_count": 0,
+        "ml_served_count": 0,
         "createdAt": now,
         "updatedAt": now,
     }
@@ -253,6 +261,10 @@ def make_behavioral_signal(user_id: str | None = None, **overrides: Any) -> dict
         "weatherContext": None,
         "modelVersion": None,
         "promptVersion": None,
+        # V2 ML: signal quality + provenance
+        "subflow": None,
+        "signal_weight": 1.0,
+        "source": "user_behavioral",
         "createdAt": now,
     }
     base.update(overrides)
@@ -328,6 +340,9 @@ def make_itinerary_slot(trip_id: str | None = None, **overrides: Any) -> dict:
         "swappedFromId": None,
         "pivotEventId": None,
         "wasSwapped": False,
+        "ownerTip": None,
+        # V2 ML: slot outcome classification
+        "completionSignal": None,
         "createdAt": now,
         "updatedAt": now,
     }
@@ -347,6 +362,100 @@ def make_quality_signal(activity_node_id: str | None = None, **overrides: Any) -
         "signalType": "positive_mention",
         "rawExcerpt": "This place is amazing",
         "extractedAt": now,
+        "createdAt": now,
+    }
+    base.update(overrides)
+    return base
+
+
+# ---------------------------------------------------------------------------
+# V2 ML Factory functions
+# ---------------------------------------------------------------------------
+
+def make_arbitration_event(user_id: str | None = None, **overrides: Any) -> dict:
+    """Factory for ArbitrationEvent records."""
+    now = datetime.now(timezone.utc)
+    base = {
+        "id": _gen_id(),
+        "userId": user_id or _gen_id(),
+        "tripId": _gen_id(),
+        "mlTop3": [_gen_id() for _ in range(3)],
+        "llmTop3": [_gen_id() for _ in range(3)],
+        "arbitrationRule": "llm_wins",
+        "servedSource": "llm",
+        "accepted": None,
+        "agreementScore": None,
+        "contextSnapshot": None,
+        "createdAt": now,
+    }
+    base.update(overrides)
+    return base
+
+
+def make_import_job(user_id: str | None = None, **overrides: Any) -> dict:
+    """Factory for ImportJob records."""
+    now = datetime.now(timezone.utc)
+    base = {
+        "id": _gen_id(),
+        "userId": user_id or _gen_id(),
+        "status": "pending",
+        "parserVersion": None,
+        "conversationsFound": 0,
+        "travelConversations": 0,
+        "signalsExtracted": 0,
+        "errorMessage": None,
+        "createdAt": now,
+        "updatedAt": now,
+    }
+    base.update(overrides)
+    return base
+
+
+def make_import_preference_signal(import_job_id: str | None = None, **overrides: Any) -> dict:
+    """Factory for ImportPreferenceSignal records."""
+    now = datetime.now(timezone.utc)
+    base = {
+        "id": _gen_id(),
+        "importJobId": import_job_id or _gen_id(),
+        "dimension": "energy_level",
+        "direction": "positive",
+        "confidence": 0.75,
+        "sourceText": None,
+        "piiScrubbed": False,
+        "sourceTextExpiresAt": now + timedelta(days=90),
+        "trainingExcluded": False,
+        "createdAt": now,
+    }
+    base.update(overrides)
+    return base
+
+
+def make_corpus_ingestion_request(user_id: str | None = None, **overrides: Any) -> dict:
+    """Factory for CorpusIngestionRequest records."""
+    now = datetime.now(timezone.utc)
+    base = {
+        "id": _gen_id(),
+        "userId": user_id or _gen_id(),
+        "tripId": None,
+        "rawPlaceName": "Some Local Restaurant",
+        "source": "off_plan_add",
+        "status": "pending",
+        "createdAt": now,
+    }
+    base.update(overrides)
+    return base
+
+
+def make_write_back_run(**overrides: Any) -> dict:
+    """Factory for WriteBackRun records."""
+    now = datetime.now(timezone.utc)
+    base = {
+        "id": _gen_id(),
+        "runDate": now,
+        "status": "success",
+        "rowsUpdated": 0,
+        "durationMs": None,
+        "errorMessage": None,
         "createdAt": now,
     }
     base.update(overrides)
