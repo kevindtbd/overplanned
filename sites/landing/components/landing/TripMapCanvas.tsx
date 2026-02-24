@@ -147,6 +147,10 @@ export default function TripMapCanvas() {
     const themeObs = new MutationObserver(() => {
       cachedBgStone = getComputedStyle(document.documentElement)
         .getPropertyValue("--bg-stone").trim();
+      // Redraw canvas with current theme colors
+      if (doneRef.current) {
+        drawFrame(1);
+      }
     });
     themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
