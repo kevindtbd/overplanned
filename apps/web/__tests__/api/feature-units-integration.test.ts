@@ -60,6 +60,7 @@ vi.mock("@/lib/prisma", () => ({
     $queryRaw: vi.fn(),
     $transaction: vi.fn(),
   },
+  PrismaJsonNull: "DbNull",
 }));
 
 vi.mock("@/lib/auth/config", () => ({

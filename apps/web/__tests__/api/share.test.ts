@@ -44,6 +44,7 @@ vi.mock("@/lib/prisma", () => ({
     },
     $transaction: vi.fn(),
   },
+  PrismaJsonNull: Prisma.JsonNull,
 }));
 
 vi.mock("@/lib/auth/config", () => ({
