@@ -5,7 +5,7 @@
 
 # --- Stage 1: Dependencies ---
 FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 # Install workspace root deps (needed for npm workspaces resolution)
@@ -23,6 +23,7 @@ RUN npx prisma generate --schema=packages/db/prisma/schema.prisma --generator cl
 
 # --- Stage 2: Build ---
 FROM node:20-alpine AS builder
+RUN apk add --no-cache openssl
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -40,10 +41,14 @@ COPY package.json package-lock.json ./
 
 # next.config.js must enable standalone output for Docker
 ENV NEXT_TELEMETRY_DISABLED=1
+# Dummy secrets so next build can collect page data without crashing on
+# module-level initializations (Stripe, etc.). Never used at runtime.
+ENV STRIPE_SECRET_KEY=sk_build_placeholder
 RUN npm run build --workspace=@overplanned/web
 
 # --- Stage 3: Production ---
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl
 WORKDIR /app
 
 ENV NODE_ENV=production
