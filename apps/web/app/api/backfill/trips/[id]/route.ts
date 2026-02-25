@@ -104,7 +104,7 @@ export async function GET(
 
         const venuePhotos = venue.photos;
         const photos = await Promise.all(
-          venuePhotos.map(async (photo) => {
+          venuePhotos.map(async (photo: (typeof venuePhotos)[number]) => {
             let signedUrl: string | null = null;
             try {
               signedUrl = await getSignedUrl(photo.gcsPath);
