@@ -57,7 +57,7 @@ export async function GET(_req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    const result = trips.map((trip) => ({
+    const result = trips.map((trip: (typeof trips)[number]) => ({
       id: trip.id,
       legs: trip.legs,
       city: trip.legs[0]?.city ?? null,
