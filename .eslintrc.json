@@ -11,6 +11,11 @@
   },
   "overrides": [
     {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "parser": "@typescript-eslint/parser",
+      "plugins": ["@typescript-eslint"]
+    },
+    {
       "files": ["apps/web/**/*.ts", "apps/web/**/*.tsx"],
       "rules": {
         "no-restricted-imports": [
