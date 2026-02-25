@@ -1,4 +1,5 @@
 import type { NextAuthOptions } from "next-auth";
+import type { SubscriptionTier, SystemRole } from "@prisma/client";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
@@ -64,8 +65,8 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.subscriptionTier = token.subscriptionTier as string;
-        session.user.systemRole = token.systemRole as string;
+        session.user.subscriptionTier = token.subscriptionTier as SubscriptionTier;
+        session.user.systemRole = token.systemRole as SystemRole;
       }
       return session;
     },

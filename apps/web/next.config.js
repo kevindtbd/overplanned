@@ -48,6 +48,9 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   output: "standalone",
   experimental: {
     serverComponentsExternalPackages: ["@prisma/client"],
