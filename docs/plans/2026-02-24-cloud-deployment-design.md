@@ -15,13 +15,14 @@
                [Cloud Run: web]     <- public, custom domain, beta-gated
               Next.js 14 standalone
                       |
-                Cloud SQL           Qdrant Cloud (free tier)
-                (Postgres 16)       (pre-seeded, read-only)
+                Cloud SQL
+                (Postgres 16)
                 via Auth Proxy
 ```
 
-**What's deployed:** 1 Cloud Run service (Next.js) + Cloud SQL + Qdrant Cloud free tier
-**What's NOT deployed:** FastAPI, Redis, scrapers (run locally when needed)
+**What's deployed:** 1 Cloud Run service (Next.js) + Cloud SQL
+**What's NOT deployed:** FastAPI, Redis, Qdrant, scrapers (run locally when needed)
+**Qdrant:** Stubbed secrets for now. Self-hosted on Cloud Run when two-tower model goes live (~Month 9). NOT Qdrant Cloud managed tier.
 **Rollback strategy:** Git revert bad commit, push to main, Cloud Build redeploys
 
 ## Decisions Made (Brainstorm + Deepening)
@@ -29,7 +30,7 @@
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Environment count | Single prod | Beta, hand-picked users, add staging later |
-| Managed services | Cloud SQL only | Self-host nothing else; Qdrant Cloud free tier for vectors |
+| Managed services | Cloud SQL only | Self-host nothing else; Qdrant self-hosted on Cloud Run when needed |
 | Redis | Not deployed | Cache-only use case, not needed at beta scale |
 | FastAPI/scrapers | Not deployed | Run locally to seed data, no 24/7 spend |
 | DB connection | Cloud SQL Auth Proxy | Built into Cloud Run, handles auth + encryption |
@@ -149,11 +150,10 @@ gcloud artifacts repositories create overplanned \
 ### 1.3 — Google OAuth
 Add authorized redirect URI: `https://www.overplanned.app/api/auth/callback/google`
 
-### 1.4 — Qdrant Cloud
-1. Go to qdrant.io, create free cluster (1GB)
-2. Get URL + API key
-3. Seed data from local: run scraper pipeline locally, point at Qdrant Cloud URL
-4. Add URL + key to Secret Manager
+### 1.4 — Qdrant (DEFERRED)
+Qdrant is not needed for beta launch — vector search powers the two-tower model (~Month 9).
+Stub `qdrant-url` and `qdrant-api-key` secrets with placeholder values.
+When ready: deploy self-hosted Qdrant as a Cloud Run service (not Qdrant Cloud managed tier).
 
 ### 1.5 — Cloud Build trigger
 ```bash
@@ -174,7 +174,7 @@ DATABASE_URL="postgresql://overplanned:PASSWORD@/overplanned?host=/cloudsql/over
 **Phase 1 Checkpoint:**
 - `gcloud sql connect` works
 - All secrets present and correctly formatted
-- Qdrant Cloud cluster accessible with data
+- Qdrant secrets stubbed with placeholders
 - Artifact Registry repo exists
 - Cloud Build trigger created
 - Prisma migration applied, tables exist
@@ -231,9 +231,13 @@ Authorize server, pick channel, set alert rules (new issue, regression).
 Create uptime check on `https://www.overplanned.app/api/health`.
 Alert on 2 consecutive failures.
 
-### 3.3 — Cloud SQL backups
-Enable automated daily backups + point-in-time recovery.
-Set maintenance window to low-traffic hours.
+### 3.3 — Cloud SQL backups (MOVED to Phase 1.6)
+Already enabled before migration. Verify:
+```bash
+gcloud sql instances patch INSTANCE_NAME \
+  --backup-start-time=04:00 \
+  --enable-point-in-time-recovery
+```
 
 ### 3.4 — Budget alert
 Set billing budget alert at $25/mo.
@@ -351,7 +355,7 @@ Set billing budget alert at $25/mo.
 |---------|-------------|
 | Cloud Run (web, free tier) | $0 |
 | Cloud SQL (Postgres 16, small) | $7-10 |
-| Qdrant Cloud (free tier, 1GB) | $0 |
+| Qdrant (deferred, not deployed) | $0 |
 | Secret Manager | ~$0.06 |
 | Cloud Build (free tier, 120 min/day) | $0 |
 | Artifact Registry (storage) | ~$0.10 |
@@ -366,6 +370,7 @@ Set billing budget alert at $25/mo.
 - Redis (not needed at beta scale)
 - Staging environment (add when needed)
 - PgBouncer (Cloud SQL Auth Proxy handles connections)
+- Qdrant deployment (stub secrets, deploy self-hosted on Cloud Run when two-tower model is ready)
 - Apple/Facebook OAuth (buttons commented out)
 - Rate limiting (in-memory acceptable for beta)
 - CDN / Cloud CDN (Cloud Run handles it fine)

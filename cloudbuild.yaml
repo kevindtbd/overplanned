@@ -65,7 +65,7 @@ steps:
       - --timeout=30s
       - --add-cloudsql-instances=overplanned-app:us-central1:overplanned-db
       - --set-env-vars=NODE_ENV=production
-      - --set-secrets=DATABASE_URL=database-url:latest,NEXTAUTH_SECRET=nextauth-secret:latest,NEXTAUTH_URL=nextauth-url:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest,SENTRY_DSN=sentry-dsn-web:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest,RESEND_API_KEY=resend-api-key:latest,BETA_CODE=beta-code:latest,QDRANT_URL=qdrant-url:latest,QDRANT_API_KEY=qdrant-api-key:latest
+      - --set-secrets=DATABASE_URL=DATABASE_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,NEXTAUTH_URL=NEXTAUTH_URL:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,SENTRY_DSN=SENTRY_DSN:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,RESEND_API_KEY=RESEND_API_KEY:latest,BETA_CODE=BETA_CODE:latest
 
 images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_WEB_SERVICE}:${SHORT_SHA}'
