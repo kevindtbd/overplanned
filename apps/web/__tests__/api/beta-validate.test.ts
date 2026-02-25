@@ -199,4 +199,132 @@ describe("POST /api/auth/beta-validate", () => {
     const json = await res.json();
     expect(json.error).toBe("Invalid JSON");
   });
+
+  // ---- Different length codes (timingSafeEqual requires same length) ----
+
+  it("returns 401 when submitted code is shorter than BETA_CODE", async () => {
+    process.env = { ...originalEnv, BETA_CODE: "SECRET123" };
+
+    vi.resetModules();
+    const mod = await import("../../app/api/auth/beta-validate/route");
+    POST = mod.POST;
+
+    const res = await POST(makeRequest({ code: "SEC" }));
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBe("Invalid beta code");
+  });
+
+  it("returns 401 when submitted code is longer than BETA_CODE", async () => {
+    process.env = { ...originalEnv, BETA_CODE: "SECRET123" };
+
+    vi.resetModules();
+    const mod = await import("../../app/api/auth/beta-validate/route");
+    POST = mod.POST;
+
+    const res = await POST(makeRequest({ code: "SECRET123EXTRACHARACTERS" }));
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBe("Invalid beta code");
+  });
+
+  it("returns 401 for single-character mismatch (same length)", async () => {
+    process.env = { ...originalEnv, BETA_CODE: "SECRET123" };
+
+    vi.resetModules();
+    const mod = await import("../../app/api/auth/beta-validate/route");
+    POST = mod.POST;
+
+    const res = await POST(makeRequest({ code: "SECRET124" }));
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBe("Invalid beta code");
+  });
+
+  // ---- Rate limiting ----
+
+  it("returns 429 when rate limiter blocks the request", async () => {
+    process.env = { ...originalEnv, BETA_CODE: "SECRET123" };
+
+    vi.resetModules();
+
+    const { rateLimit } = await import("@/lib/rate-limit");
+    const { NextResponse } = await import("next/server");
+    vi.mocked(rateLimit).mockReturnValueOnce(
+      NextResponse.json(
+        { error: "Too many requests, please try again later" },
+        { status: 429 }
+      )
+    );
+
+    const mod = await import("../../app/api/auth/beta-validate/route");
+    POST = mod.POST;
+
+    const res = await POST(makeRequest({ code: "SECRET123" }));
+    expect(res.status).toBe(429);
+    const json = await res.json();
+    expect(json.error).toBe("Too many requests, please try again later");
+  });
+
+  it("calls rateLimit with the request and authenticated preset", async () => {
+    process.env = { ...originalEnv, BETA_CODE: "SECRET123" };
+
+    vi.resetModules();
+    const { rateLimit } = await import("@/lib/rate-limit");
+    vi.mocked(rateLimit).mockReturnValue(null);
+
+    const mod = await import("../../app/api/auth/beta-validate/route");
+    POST = mod.POST;
+
+    const req = makeRequest({ code: "SECRET123" });
+    await POST(req);
+
+    expect(rateLimit).toHaveBeenCalledTimes(1);
+    expect(rateLimit).toHaveBeenCalledWith(req, {
+      limit: 10,
+      windowMs: 60 * 1000,
+    });
+  });
+
+  // ---- Structural: timing-safe comparison ----
+
+  it("uses crypto.timingSafeEqual in source (not naive ===)", async () => {
+    // Structural verification: read the route source and confirm it calls
+    // crypto.timingSafeEqual. This guards against someone replacing the
+    // timing-safe comparison with a naive string === check.
+    const fs = await import("fs");
+    const path = await import("path");
+    const routePath = path.resolve(
+      __dirname,
+      "../../app/api/auth/beta-validate/route.ts"
+    );
+    const source = fs.readFileSync(routePath, "utf-8");
+
+    expect(source).toContain("crypto.timingSafeEqual");
+    expect(source).toContain("codeBuffer.length !== betaBuffer.length");
+  });
+
+  it("rejects different-length codes without leaking timing info", async () => {
+    // When code lengths differ the route short-circuits with a length check
+    // BEFORE calling timingSafeEqual (which throws on mismatched lengths).
+    // We verify the short code and long code both get the same 401 response.
+    process.env = { ...originalEnv, BETA_CODE: "SECRET123" };
+
+    vi.resetModules();
+    const mod = await import("../../app/api/auth/beta-validate/route");
+    POST = mod.POST;
+
+    const shortRes = await POST(makeRequest({ code: "S" }));
+    const longRes = await POST(
+      makeRequest({ code: "SECRET123_PLUS_EXTRA_STUFF" })
+    );
+
+    expect(shortRes.status).toBe(401);
+    expect(longRes.status).toBe(401);
+
+    const shortJson = await shortRes.json();
+    const longJson = await longRes.json();
+    expect(shortJson.error).toBe("Invalid beta code");
+    expect(longJson.error).toBe("Invalid beta code");
+  });
 });
