@@ -400,10 +400,11 @@ describe("TravelStyleSection — character counter", () => {
       /I always need a gym nearby/i
     );
 
-    // Type enough to bring remaining characters to <=100
-    // MAX_NOTE_LENGTH is typically 500; type 401 chars to get to 99 remaining
+    // Set value directly — user.type with 401 chars causes CI timeout
+    // (401 individual keystroke simulations > 5s on slow machines)
     const longText = "a".repeat(401);
-    await user.type(textarea, longText);
+    await user.clear(textarea);
+    fireEvent.change(textarea, { target: { value: longText } });
 
     // Counter should appear — showing "X characters remaining"
     await waitFor(() => {
