@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
 /* ------------------------------------------------------------------ */
@@ -71,13 +71,28 @@ const DEV_USERS = [
 function SignInContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const { status } = useSession();
+  const router = useRouter();
   const [showEmail, setShowEmail] = useState(false);
   const [email, setEmail] = useState("");
   const [devLoading, setDevLoading] = useState(false);
   const isDev = process.env.NODE_ENV === "development";
 
-  // Beta gate state — auto-bypass in dev so sign-in buttons show immediately
-  const [betaValidated, setBetaValidated] = useState(isDev);
+  // Auto-redirect authenticated users — no reason to show signin page
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace(callbackUrl);
+    }
+  }, [status, callbackUrl, router]);
+
+  // Beta gate state — check localStorage so it survives OAuth redirects
+  const [betaValidated, setBetaValidated] = useState(() => {
+    if (isDev) return true;
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("beta_validated") === "true";
+    }
+    return false;
+  });
   const [betaCode, setBetaCode] = useState("");
   const [betaError, setBetaError] = useState<string | null>(null);
   const [betaLoading, setBetaLoading] = useState(false);
@@ -116,6 +131,7 @@ function SignInContent() {
       });
 
       if (res.ok) {
+        localStorage.setItem("beta_validated", "true");
         setBetaValidated(true);
       } else {
         const data = await res.json();
