@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import { AppShell } from "@/components/layout/AppShell";
 import { VIBE_ARCHETYPE_LIST, type VibeKey } from "@/lib/vibes";
 
 /* ------------------------------------------------------------------ */
@@ -242,7 +243,7 @@ export default function ExploreClient({ userId: _userId }: ExploreClientProps) {
   // ------- State 2: Shortlist -------
   if (selectedVibe && (loading || cities !== null || error)) {
     return (
-      <div className="min-h-screen bg-base">
+      <AppShell context="app">
         <div className="mx-auto max-w-xl px-5 py-12">
           {/* Back button */}
           <button
@@ -311,13 +312,13 @@ export default function ExploreClient({ userId: _userId }: ExploreClientProps) {
             </div>
           )}
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   // ------- State 1: Vibe Selection -------
   return (
-    <div className="min-h-screen bg-base">
+    <AppShell context="app">
       <div className="mx-auto max-w-xl px-5 py-12">
         {/* Header */}
         <div className="mb-8">
@@ -346,6 +347,6 @@ export default function ExploreClient({ userId: _userId }: ExploreClientProps) {
           ))}
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

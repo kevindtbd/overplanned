@@ -91,7 +91,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Trips", href: "/dashboard", Icon: TripsIcon },
-  { label: "Explore", href: "/discover", Icon: ExploreIcon },
+  { label: "Explore", href: "/explore", Icon: ExploreIcon },
 ];
 
 // ---------- Component ----------

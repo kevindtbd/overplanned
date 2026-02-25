@@ -579,7 +579,7 @@ function OnboardingContent() {
         {step === "fork" && (
           <ForkScreen
             onPlanTrip={() => setStep("backfill")}
-            onExplore={() => router.push("/discover")}
+            onExplore={() => router.push("/explore")}
           />
         )}
 

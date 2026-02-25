@@ -76,8 +76,8 @@ function SignInContent() {
   const [devLoading, setDevLoading] = useState(false);
   const isDev = process.env.NODE_ENV === "development";
 
-  // Beta gate state
-  const [betaValidated, setBetaValidated] = useState(false);
+  // Beta gate state — auto-bypass in dev so sign-in buttons show immediately
+  const [betaValidated, setBetaValidated] = useState(isDev);
   const [betaCode, setBetaCode] = useState("");
   const [betaError, setBetaError] = useState<string | null>(null);
   const [betaLoading, setBetaLoading] = useState(false);
