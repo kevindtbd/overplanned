@@ -13,7 +13,6 @@ vi.mock("next/navigation", () => ({
 // Mock Next.js Image
 vi.mock("next/image", () => ({
   default: ({ src, alt }: { src: string; alt: string }) => (
-    // eslint-disable-next-line @next/next/no-img-element
     <img src={src} alt={alt} />
   ),
 }));
@@ -97,44 +96,20 @@ describe("Dashboard Edge Cases", () => {
     // Should render without crashing - date formatting handles null
   });
 
-  it("documents crash on missing trips key in API response", async () => {
-    // BUG: Dashboard destructures { trips } from response. If key is missing,
-    // trips is undefined, and .filter() throws TypeError.
-    // This test documents the bug exists. M-011 error boundary catches it in prod.
+  it("handles missing trips key in API response gracefully", async () => {
+    // Previously crashed: Dashboard destructured { trips } from response,
+    // trips was undefined, .filter() threw TypeError. Fixed with ?? [].
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({}), // No trips key — triggers crash
+      json: async () => ({}), // No trips key — should not crash
     });
 
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    // Wrap in inline error boundary to catch the expected crash
-    class ErrorCatcher extends (await import("react")).Component<
-      { children: React.ReactNode },
-      { hasError: boolean }
-    > {
-      state = { hasError: false };
-      static getDerivedStateFromError() { return { hasError: true }; }
-      render() {
-        return this.state.hasError
-          ? <div data-testid="error-caught" />
-          : this.props.children;
-      }
-    }
-
-    render(
-      <ErrorCatcher>
-        <DashboardPage />
-      </ErrorCatcher>
-    );
+    render(<DashboardPage />);
 
     await waitFor(() => {
-      // Either the error boundary caught it, or React logged the error
-      const caught = screen.queryByTestId("error-caught");
-      expect(caught || consoleSpy.mock.calls.length > 0).toBeTruthy();
+      // Page renders without crashing — shows empty state
+      expect(screen.getByText("Your trips")).toBeTruthy();
     });
-
-    consoleSpy.mockRestore();
   });
 
   it("handles malformed JSON response", async () => {
