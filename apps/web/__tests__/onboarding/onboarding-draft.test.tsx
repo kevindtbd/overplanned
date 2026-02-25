@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 // ---------------------------------------------------------------------------
@@ -680,10 +680,9 @@ describe("Onboarding — completion branching", () => {
       expect(screen.getByText("Name your trip")).toBeInTheDocument();
     });
 
-    // Type trip name
+    // Set trip name directly — user.type with 15 chars * 5 invocations causes CI timeout
     const nameInput = screen.getByPlaceholderText(/tokyo golden week/i);
-    await user.clear(nameInput);
-    await user.type(nameInput, "Tokyo Adventure");
+    fireEvent.change(nameInput, { target: { value: "Tokyo Adventure" } });
 
     // name -> dna
     await user.click(screen.getByRole("button", { name: /continue/i }));
