@@ -11,19 +11,29 @@ substitutions:
   _WEB_MAX_INSTANCES: '10'
 
 steps:
-  # ── Run tests (parallel with docker build) ──
+  # ── Run tests (parallel with cache pull + docker build) ──
   - id: test-web
     name: node:20
     waitFor: ['-']
+    timeout: 300s
     entrypoint: bash
     args:
       - -c
       - npm ci && cd apps/web && npx vitest run --reporter=dot --maxWorkers=2
 
-  # ── Build web image (starts immediately, parallel with tests) ──
-  - id: build-web
+  # ── Pull cache image (best-effort, parallel with tests) ──
+  - id: pull-cache
     name: gcr.io/cloud-builders/docker
     waitFor: ['-']
+    entrypoint: bash
+    args:
+      - -c
+      - docker pull ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_WEB_SERVICE}:latest || true
+
+  # ── Build web image (starts after cache pull, parallel with tests) ──
+  - id: build-web
+    name: gcr.io/cloud-builders/docker
+    waitFor: ['pull-cache']
     args:
       - build
       - -f
@@ -64,7 +74,8 @@ steps:
       - --min-instances=${_WEB_MIN_INSTANCES}
       - --max-instances=${_WEB_MAX_INSTANCES}
       - --concurrency=40
-      - --timeout=30s
+      - --timeout=300s
+      - --cpu-boost
       - --add-cloudsql-instances=overplanned-app:us-central1:overplanned-db
       - --set-env-vars=NODE_ENV=production
       - --set-secrets=DATABASE_URL=DATABASE_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,NEXTAUTH_URL=NEXTAUTH_URL:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,SENTRY_DSN=SENTRY_DSN:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,RESEND_API_KEY=RESEND_API_KEY:latest,BETA_CODE=BETA_CODE:latest
