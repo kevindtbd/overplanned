@@ -60,7 +60,7 @@ const { getServerSession } = await import("next-auth");
 const { prisma } = await import("@/lib/prisma");
 
 const mockSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 // ---- Helpers ----
 
@@ -298,8 +298,9 @@ describe("POST /api/trips/[id]/expenses", () => {
     expect(res.status).toBe(201);
 
     // Verify deduped in findMany call
-    const findManyCall = mockPrisma.tripMember.findMany.mock.calls[0][0];
-    expect(findManyCall.where.userId.in).toHaveLength(1);
+    const findManyCall = mockPrisma.tripMember.findMany.mock.calls[0]?.[0];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((findManyCall as any)?.where?.userId?.in).toHaveLength(1);
   });
 
   it("returns 400 for amountCents 0", async () => {

@@ -27,7 +27,8 @@ const mockCtx = {
 };
 
 beforeEach(() => {
-  HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCtx as unknown as CanvasRenderingContext2D);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (HTMLCanvasElement.prototype as any).getContext = vi.fn(() => mockCtx as unknown as CanvasRenderingContext2D);
 
   vi.stubGlobal("IntersectionObserver", class {
     observe = vi.fn();

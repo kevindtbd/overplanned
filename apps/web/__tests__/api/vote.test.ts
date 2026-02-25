@@ -41,7 +41,7 @@ const { POST } = await import(
 );
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 function makeVoteRequest(body: unknown): NextRequest {
   return new NextRequest("http://localhost:3000/api/slots/slot-123/vote", {
@@ -172,7 +172,7 @@ describe("POST /api/slots/[slotId]/vote — first vote (no quorum)", () => {
 
     await POST(makeVoteRequest({ vote: "yes" }), mockParams);
 
-    const txCall = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txCall = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
     // Verify $transaction was called (signal is inside the transaction array)
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
   });

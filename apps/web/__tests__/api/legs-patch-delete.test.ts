@@ -33,7 +33,7 @@ const { PATCH, DELETE } = await import(
 );
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 // ---------------------------------------------------------------------------
 // Helpers

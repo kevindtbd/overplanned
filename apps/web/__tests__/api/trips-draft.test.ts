@@ -36,7 +36,7 @@ const { prisma } = await import("@/lib/prisma");
 const { POST } = await import("../../app/api/trips/draft/route");
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 const validLeg = {
   city: "Tokyo",

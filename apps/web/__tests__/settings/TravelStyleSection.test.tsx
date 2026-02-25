@@ -29,7 +29,7 @@ const GET_DEFAULTS = {
 
 // ---------- Mock helpers ----------
 
-function mockFetchSuccess(getData = GET_DEFAULTS) {
+function mockFetchSuccess(getData: Record<string, unknown> = GET_DEFAULTS) {
   const fetchMock = vi.fn();
   fetchMock.mockResolvedValueOnce({ ok: true, json: async () => getData });
   fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ...getData }) });
@@ -208,8 +208,8 @@ describe("TravelStyleSection — Practical tab chip toggles (immediate PATCH)", 
     fireEvent.click(hostelChip);
 
     await waitFor(() => {
-      const patchCalls = fetchMock.mock.calls.filter(
-        (c: [string, RequestInit]) => c[1]?.method === "PATCH"
+      const patchCalls = (fetchMock.mock.calls as [string, RequestInit][]).filter(
+        (c) => c[1]?.method === "PATCH"
       );
       expect(patchCalls.length).toBe(1);
       expect(patchCalls[0][0]).toBe("/api/settings/preferences");
@@ -227,8 +227,8 @@ describe("TravelStyleSection — Practical tab chip toggles (immediate PATCH)", 
     fireEvent.click(midRangeRadio);
 
     await waitFor(() => {
-      const patchCalls = fetchMock.mock.calls.filter(
-        (c: [string, RequestInit]) => c[1]?.method === "PATCH"
+      const patchCalls = (fetchMock.mock.calls as [string, RequestInit][]).filter(
+        (c) => c[1]?.method === "PATCH"
       );
       expect(patchCalls.length).toBe(1);
       const body = JSON.parse(patchCalls[0][1].body as string);
@@ -249,8 +249,8 @@ describe("TravelStyleSection — Practical tab chip toggles (immediate PATCH)", 
     fireEvent.click(noPreferenceRadios[0]);
 
     await waitFor(() => {
-      const patchCalls = fetchMock.mock.calls.filter(
-        (c: [string, RequestInit]) => c[1]?.method === "PATCH"
+      const patchCalls = (fetchMock.mock.calls as [string, RequestInit][]).filter(
+        (c) => c[1]?.method === "PATCH"
       );
       expect(patchCalls.length).toBe(1);
       const body = JSON.parse(patchCalls[0][1].body as string);
@@ -268,12 +268,13 @@ describe("TravelStyleSection — Practical tab chip toggles (immediate PATCH)", 
       /I always need a gym nearby/i
     );
 
-    await user.type(textarea, "Never book hostels, always need a gym");
+    await user.click(textarea); // focus it
+    fireEvent.change(textarea, { target: { value: "Never book hostels, always need a gym" } });
     await user.tab();
 
     await waitFor(() => {
-      const patchCalls = fetchMock.mock.calls.filter(
-        (c: [string, RequestInit]) => c[1]?.method === "PATCH"
+      const patchCalls = (fetchMock.mock.calls as [string, RequestInit][]).filter(
+        (c) => c[1]?.method === "PATCH"
       );
       expect(patchCalls.length).toBeGreaterThanOrEqual(1);
       const lastPatch = patchCalls[patchCalls.length - 1];
@@ -312,8 +313,8 @@ describe("TravelStyleSection — Vibes tab chip toggles (debounced at 500ms)", (
     });
 
     // No PATCH should have fired yet
-    const patchCallsBefore = (fetchMock as Mock).mock.calls.filter(
-      (c: [string, RequestInit]) => c[1]?.method === "PATCH"
+    const patchCallsBefore = ((fetchMock as Mock).mock.calls as [string, RequestInit][]).filter(
+      (c) => c[1]?.method === "PATCH"
     );
     expect(patchCallsBefore.length).toBe(0);
 
@@ -322,8 +323,8 @@ describe("TravelStyleSection — Vibes tab chip toggles (debounced at 500ms)", (
       await vi.advanceTimersByTimeAsync(600);
     });
 
-    const patchCallsAfter = (fetchMock as Mock).mock.calls.filter(
-      (c: [string, RequestInit]) => c[1]?.method === "PATCH"
+    const patchCallsAfter = ((fetchMock as Mock).mock.calls as [string, RequestInit][]).filter(
+      (c) => c[1]?.method === "PATCH"
     );
     expect(patchCallsAfter.length).toBe(1);
     expect(patchCallsAfter[0][0]).toBe("/api/settings/preferences");
@@ -343,12 +344,13 @@ describe("TravelStyleSection — Vibes tab chip toggles (debounced at 500ms)", (
       /I always hunt for the best coffee spot/i
     );
 
-    await user.type(textarea, "Best coffee in every city");
+    await user.click(textarea); // focus it
+    fireEvent.change(textarea, { target: { value: "Best coffee in every city" } });
     await user.tab();
 
     await waitFor(() => {
-      const patchCalls = (fetchMock as Mock).mock.calls.filter(
-        (c: [string, RequestInit]) => c[1]?.method === "PATCH"
+      const patchCalls = ((fetchMock as Mock).mock.calls as [string, RequestInit][]).filter(
+        (c) => c[1]?.method === "PATCH"
       );
       expect(patchCalls.length).toBeGreaterThanOrEqual(1);
       const lastPatch = patchCalls[patchCalls.length - 1];

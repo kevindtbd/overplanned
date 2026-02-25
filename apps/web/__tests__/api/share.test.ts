@@ -68,7 +68,7 @@ const { getServerSession } = await import("next-auth");
 const { prisma } = await import("@/lib/prisma");
 
 const mockSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 // ---- Helpers ----
 
@@ -746,11 +746,13 @@ describe("POST /api/shared/[token]/import", () => {
     );
     await handler(req, { params: { token: VALID_TOKEN } });
 
-    expect(capturedTripData?.personaSeed).toEqual({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const captured = capturedTripData as any;
+    expect(captured?.personaSeed).toEqual({
       adventurousness: 0.9,
       foodie: 0.7,
     });
-    expect(capturedTripData?.presetTemplate).toBe("foodie_paradise");
+    expect(captured?.presetTemplate).toBe("foodie_paradise");
   });
 });
 

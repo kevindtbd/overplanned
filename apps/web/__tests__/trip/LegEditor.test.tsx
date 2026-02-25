@@ -94,7 +94,7 @@ describe("LegEditor", () => {
         legs={makeTestLegs()}
         tripStatus="planning"
         isOrganizer={true}
-        onLegsChange={onLegsChange}
+        onLegsChange={onLegsChange as unknown as Parameters<typeof LegEditor>[0]["onLegsChange"]}
         {...overrides}
       />
     );

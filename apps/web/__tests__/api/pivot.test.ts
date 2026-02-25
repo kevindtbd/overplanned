@@ -43,7 +43,7 @@ const { PATCH } = await import(
 );
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 const authedSession = { user: { id: "user-abc" } };
 const tripId = "trip-1";
@@ -600,7 +600,7 @@ describe("PATCH /api/trips/[id]/pivot/[pivotId] — accept", () => {
     );
 
     // Verify the transaction includes voteState: null, isContested: false
-    const txCall = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txCall = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
     // Transaction should have 3 operations: pivotEvent update, slot update, signal create
     expect(txCall).toHaveLength(3);

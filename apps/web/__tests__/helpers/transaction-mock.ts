@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { PrismaClient } from "@prisma/client";
 
 /**
@@ -21,7 +22,7 @@ export function createTransactionMock(): PrismaClient {
           {},
           {
             get() {
-              return jest.fn().mockResolvedValue(null);
+              return vi.fn().mockResolvedValue(null);
             },
           }
         );
@@ -40,7 +41,7 @@ export function createTransactionMock(): PrismaClient {
  * ```
  */
 export function mockTransaction() {
-  return jest.fn(async (fn: (tx: PrismaClient) => Promise<unknown>) => {
+  return vi.fn(async (fn: (tx: PrismaClient) => Promise<unknown>) => {
     const mockTx = createTransactionMock();
     return fn(mockTx);
   });

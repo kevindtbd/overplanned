@@ -26,7 +26,7 @@ const { prisma } = await import("@/lib/prisma");
 const { DELETE } = await import("../../app/api/settings/account/route");
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 function makeDeleteRequest(body: unknown): NextRequest {
   return new NextRequest("http://localhost:3000/api/settings/account", {
@@ -120,9 +120,9 @@ describe("DELETE /api/settings/account — deletion", () => {
       user: { delete: vi.fn().mockResolvedValue({}) },
     };
 
-    mockPrisma.$transaction.mockImplementationOnce(async (cb: (tx: typeof mockTx) => Promise<void>) => {
+    mockPrisma.$transaction.mockImplementationOnce((async (cb: (tx: typeof mockTx) => Promise<void>) => {
       await cb(mockTx);
-    });
+    }) as never);
 
     await DELETE(makeDeleteRequest({ confirmEmail: "test@example.com" }));
 

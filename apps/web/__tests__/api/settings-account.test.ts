@@ -27,7 +27,7 @@ const { prisma } = await import("@/lib/prisma");
 const { PATCH } = await import("../../app/api/settings/account/route");
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 function makePatchRequest(body: unknown): NextRequest {
   return new NextRequest("http://localhost:3000/api/settings/account", {

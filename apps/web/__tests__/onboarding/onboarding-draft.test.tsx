@@ -527,10 +527,9 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
       expect(screen.getByText("Name your trip")).toBeInTheDocument();
     });
 
-    // Fill name
+    // Fill name — use fireEvent.change to avoid per-keystroke overhead in CI
     const nameInput = screen.getByPlaceholderText(/tokyo golden week/i);
-    await user.clear(nameInput);
-    await user.type(nameInput, "Tokyo Spring");
+    fireEvent.change(nameInput, { target: { value: "Tokyo Spring" } });
 
     // Continue -> dna
     await user.click(screen.getByRole("button", { name: /continue/i }));

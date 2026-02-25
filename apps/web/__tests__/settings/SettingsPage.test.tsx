@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SettingsPage from "@/app/settings/page";
 
@@ -153,8 +153,6 @@ describe("SettingsPage — authenticated", () => {
 });
 
 describe("SettingsPage — AccountSection interaction", () => {
-  const user = userEvent.setup();
-
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseSession.mockReturnValue(authenticatedSession);
@@ -162,6 +160,7 @@ describe("SettingsPage — AccountSection interaction", () => {
   });
 
   it("calls PATCH on blur with updated name", async () => {
+    const user = userEvent.setup();
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ name: "New Name" }),
@@ -170,8 +169,8 @@ describe("SettingsPage — AccountSection interaction", () => {
     render(<SettingsPage />);
     const input = screen.getByDisplayValue("Kevin");
 
-    await user.clear(input);
-    await user.type(input, "New Name");
+    await user.click(input); // focus it
+    fireEvent.change(input, { target: { value: "New Name" } });
     await user.tab(); // trigger blur
 
     await waitFor(() => {
@@ -186,6 +185,7 @@ describe("SettingsPage — AccountSection interaction", () => {
   });
 
   it("reverts name on PATCH failure", async () => {
+    const user = userEvent.setup();
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: false,
       status: 500,
@@ -194,8 +194,8 @@ describe("SettingsPage — AccountSection interaction", () => {
     render(<SettingsPage />);
     const input = screen.getByDisplayValue("Kevin");
 
-    await user.clear(input);
-    await user.type(input, "Will Fail");
+    await user.click(input); // focus it
+    fireEvent.change(input, { target: { value: "Will Fail" } });
     await user.tab();
 
     await waitFor(() => {
@@ -204,6 +204,7 @@ describe("SettingsPage — AccountSection interaction", () => {
   });
 
   it("does not call PATCH when name is unchanged", async () => {
+    const user = userEvent.setup();
     render(<SettingsPage />);
     const input = screen.getByDisplayValue("Kevin");
 
@@ -214,6 +215,7 @@ describe("SettingsPage — AccountSection interaction", () => {
   });
 
   it("calls signOut when sign out button is clicked", async () => {
+    const user = userEvent.setup();
     const { signOut } = await import("next-auth/react");
     render(<SettingsPage />);
 

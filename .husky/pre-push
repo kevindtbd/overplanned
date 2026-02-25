@@ -1,7 +1,1 @@
-ERRORS=$(cd apps/web && npx tsc --noEmit 2>&1 | grep "error TS" | grep -v __tests__ | grep -v __mocks__ || true)
-if [ -n "$ERRORS" ]; then
-  echo ""
-  echo "[pre-push] Type errors in production code:"
-  echo "$ERRORS"
-  exit 1
-fi
+cd apps/web && npx tsc --noEmit

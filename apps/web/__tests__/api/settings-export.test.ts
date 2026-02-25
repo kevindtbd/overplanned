@@ -41,7 +41,7 @@ const { _resetRateLimitForTest } = await import(
 );
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 const authedSession = { user: { id: "user-abc", email: "test@example.com" } };
 
@@ -141,7 +141,8 @@ describe("GET /api/settings/export", () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
 
     const data = makeEmptyExportData();
-    data[4] = [{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (data as any)[4] = [{
       trip: {
         name: "Rome Trip",
         destination: "Rome",
@@ -184,7 +185,8 @@ describe("GET /api/settings/export", () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
 
     const data = makeEmptyExportData();
-    data[1] = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (data as any)[1] = {
       dietary: ["vegetarian", "gluten-free"],
       mobility: ["wheelchair"],
       languages: ["en", "es"],
@@ -221,7 +223,8 @@ describe("GET /api/settings/export", () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
 
     const data = makeEmptyExportData();
-    data[2] = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (data as any)[2] = {
       tripReminders: true,
       morningBriefing: false,
       groupActivity: true,

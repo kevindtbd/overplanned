@@ -6,7 +6,6 @@ import { type TripSummary } from "@/components/dashboard/TripHeroCard";
 // Mock Next.js components
 vi.mock("next/image", () => ({
   default: ({ src, alt }: { src: string; alt: string }) => (
-    // eslint-disable-next-line @next/next/no-img-element
     <img src={src} alt={alt} />
   ),
 }));
@@ -25,6 +24,7 @@ const mockTrip: TripSummary = {
   primaryDestination: "Paris, France",
   primaryCity: "Paris",
   primaryCountry: "France",
+  routeString: "Paris",
   mode: "solo",
   status: "completed",
   startDate: "2025-12-10",

@@ -31,7 +31,7 @@ const { GET, PATCH } = await import(
 );
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 function makeGetRequest(): NextRequest {
   return new NextRequest("http://localhost:3000/api/settings/preferences", {
@@ -573,8 +573,9 @@ describe("PATCH /api/settings/preferences — field whitelisting", () => {
 
     await PATCH(makePatchRequest({ budgetComfort: "mix" }));
 
-    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0][0];
-    const selectKeys = Object.keys(upsertCall.select);
+    const upsertCall = mockPrisma.userPreference.upsert.mock.calls[0]?.[0];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const selectKeys = Object.keys((upsertCall as any)?.select ?? {});
 
     expect(selectKeys).toContain("dietary");
     expect(selectKeys).toContain("mobility");

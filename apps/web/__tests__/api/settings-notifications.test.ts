@@ -30,7 +30,7 @@ const { GET, PATCH } = await import(
 );
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 function makeGetRequest(): NextRequest {
   return new NextRequest("http://localhost:3000/api/settings/notifications", {

@@ -65,10 +65,10 @@ vi.mock("@/lib/validations/packing", async () => {
 const { getServerSession } = await import("next-auth");
 const { prisma } = await import("@/lib/prisma");
 const { rateLimit } = await import("@/lib/rate-limit");
-const { __mockCreate: mockLLMCreate } = await import("@anthropic-ai/sdk") as { __mockCreate: ReturnType<typeof vi.fn> };
+const { __mockCreate: mockLLMCreate } = await import("@anthropic-ai/sdk") as unknown as { __mockCreate: ReturnType<typeof vi.fn> };
 
 const mockSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 const mockRateLimit = vi.mocked(rateLimit);
 
 // ---- Helpers ----
@@ -497,7 +497,7 @@ describe("PATCH /api/trips/[id]/packing", () => {
 
     // Verify $transaction was called with both update and signal create
     expect(mockPrisma.$transaction).toHaveBeenCalledOnce();
-    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
     expect(txArgs).toHaveLength(2);
   });
 

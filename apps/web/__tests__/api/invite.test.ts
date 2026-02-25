@@ -53,7 +53,7 @@ const { getServerSession } = await import("next-auth");
 const { prisma } = await import("@/lib/prisma");
 
 const mockSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 // ---- Helpers ----
 
@@ -304,7 +304,7 @@ describe("POST /api/trips/[id]/join", () => {
 
     // Verify transaction was called with create (not update)
     expect(mockPrisma.$transaction).toHaveBeenCalledOnce();
-    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
     expect(txArgs).toHaveLength(2); // membership create + signal create
   });
 

@@ -42,7 +42,7 @@ const { prisma } = await import("@/lib/prisma");
 const { DELETE } = await import("../../app/api/trips/[id]/route");
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 function makeDeleteRequest(): NextRequest {
   return new NextRequest("http://localhost:3000/api/trips/trip-123", {

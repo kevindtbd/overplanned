@@ -100,7 +100,7 @@ describe('SlotCard', () => {
       ['meal', 'meal'],
       ['rest', 'rest'],
       ['transit', 'transit'],
-    ] as const)('renders %s variant correctly', (slotType) => {
+    ] as [SlotCardProps['slot']['slotType'], SlotCardProps['slot']['slotType']][])('renders %s variant correctly', (slotType) => {
       const slot = makeSlotProps({ slotType });
       expect(slot.slotType).toBe(slotType);
     });

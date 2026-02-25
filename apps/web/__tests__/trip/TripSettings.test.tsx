@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TripSettings } from "@/components/trip/TripSettings";
 
@@ -140,8 +140,7 @@ describe("TripSettings — save behavior", () => {
     );
 
     const nameInput = screen.getByLabelText("Trip name");
-    await user.clear(nameInput);
-    await user.type(nameInput, "Renamed Trip");
+    fireEvent.change(nameInput, { target: { value: "Renamed Trip" } });
 
     await user.click(screen.getByText("Save changes"));
 
@@ -347,8 +346,7 @@ describe("TripSettings — date validation errors", () => {
 
     const endInput = screen.getByLabelText("End date");
     // Set end date before start date
-    await user.clear(endInput);
-    await user.type(endInput, "2026-06-28");
+    fireEvent.change(endInput, { target: { value: "2026-06-28" } });
 
     await user.click(screen.getByText("Save changes"));
 
@@ -376,8 +374,7 @@ describe("TripSettings — date validation errors", () => {
     );
 
     const endInput = screen.getByLabelText("End date");
-    await user.clear(endInput);
-    await user.type(endInput, "2026-07-20");
+    fireEvent.change(endInput, { target: { value: "2026-07-20" } });
 
     await user.click(screen.getByText("Save changes"));
 

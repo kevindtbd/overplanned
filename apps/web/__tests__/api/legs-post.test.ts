@@ -30,7 +30,7 @@ const { generateLegItinerary } = await import(
 const { POST } = await import("../../app/api/trips/[id]/legs/route");
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 const mockGenerateLeg = vi.mocked(generateLegItinerary);
 
 // ---------------------------------------------------------------------------

@@ -30,7 +30,7 @@ const { POST } = await import(
 );
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 function makeRequest(body: unknown): NextRequest {
   return new NextRequest("http://localhost:3000/api/trips/trip-1/reflection", {
@@ -242,7 +242,7 @@ describe("POST /api/trips/[id]/reflection — happy path", () => {
 
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
     // 1 trip update + 2 signal creates = 3 operations
-    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
     expect(txArgs).toHaveLength(3);
   });
 
@@ -266,7 +266,7 @@ describe("POST /api/trips/[id]/reflection — happy path", () => {
     await POST(makeRequest(validBody), mockParams);
 
     // Verify the trip.update call inside the transaction contains merged data
-    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
     // First element should be the trip update
     expect(mockPrisma.trip.update).toHaveBeenCalled();
     const updateCall = mockPrisma.trip.update.mock.calls[0][0];

@@ -16,6 +16,7 @@ const baseDraft: TripSummary = {
   primaryDestination: "Tokyo, Japan",
   primaryCity: "Tokyo",
   primaryCountry: "Japan",
+  routeString: null,
   mode: "solo",
   status: "draft",
   startDate: "2026-04-10",

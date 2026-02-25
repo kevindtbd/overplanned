@@ -38,7 +38,7 @@ const { prisma } = await import("@/lib/prisma");
 const { PATCH } = await import("../../app/api/slots/[slotId]/move/route");
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 function makeMoveRequest(body: unknown): NextRequest {
   return new NextRequest("http://localhost:3000/api/slots/slot-123/move", {
@@ -169,7 +169,7 @@ describe("PATCH /api/slots/[slotId]/move — day move", () => {
     mockPrisma.itinerarySlot.findUnique.mockResolvedValueOnce(baseSlot as never);
 
     // $transaction receives a callback; we mock it to execute the callback
-    mockPrisma.$transaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
+    mockPrisma.$transaction.mockImplementation((async (cb: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         itinerarySlot: {
           aggregate: vi.fn().mockResolvedValue({ _max: { sortOrder: 3 } }),
@@ -178,7 +178,7 @@ describe("PATCH /api/slots/[slotId]/move — day move", () => {
         },
       };
       return cb(tx);
-    });
+    }) as never);
     mockPrisma.behavioralSignal.create.mockResolvedValueOnce({} as never);
 
     const res = await PATCH(makeMoveRequest({ dayNumber: 2 }), mockParams);
@@ -191,7 +191,7 @@ describe("PATCH /api/slots/[slotId]/move — day move", () => {
   it("logs behavioral signal after move", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.itinerarySlot.findUnique.mockResolvedValueOnce(baseSlot as never);
-    mockPrisma.$transaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
+    mockPrisma.$transaction.mockImplementation((async (cb: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         itinerarySlot: {
           aggregate: vi.fn().mockResolvedValue({ _max: { sortOrder: 1 } }),
@@ -200,7 +200,7 @@ describe("PATCH /api/slots/[slotId]/move — day move", () => {
         },
       };
       return cb(tx);
-    });
+    }) as never);
     mockPrisma.behavioralSignal.create.mockResolvedValueOnce({} as never);
 
     await PATCH(makeMoveRequest({ dayNumber: 2 }), mockParams);
@@ -225,7 +225,7 @@ describe("PATCH /api/slots/[slotId]/move — reorder within same day", () => {
   it("reorders slot to target sortOrder within same day", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.itinerarySlot.findUnique.mockResolvedValueOnce(baseSlot as never);
-    mockPrisma.$transaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
+    mockPrisma.$transaction.mockImplementation((async (cb: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         itinerarySlot: {
           updateMany: vi.fn(),
@@ -233,7 +233,7 @@ describe("PATCH /api/slots/[slotId]/move — reorder within same day", () => {
         },
       };
       return cb(tx);
-    });
+    }) as never);
     mockPrisma.behavioralSignal.create.mockResolvedValueOnce({} as never);
 
     const res = await PATCH(makeMoveRequest({ sortOrder: 1 }), mockParams);
@@ -255,7 +255,7 @@ describe("PATCH /api/slots/[slotId]/move — both dayNumber and sortOrder", () =
   it("moves to different day at specific position", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.itinerarySlot.findUnique.mockResolvedValueOnce(baseSlot as never);
-    mockPrisma.$transaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
+    mockPrisma.$transaction.mockImplementation((async (cb: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         itinerarySlot: {
           updateMany: vi.fn(),
@@ -263,7 +263,7 @@ describe("PATCH /api/slots/[slotId]/move — both dayNumber and sortOrder", () =
         },
       };
       return cb(tx);
-    });
+    }) as never);
     mockPrisma.behavioralSignal.create.mockResolvedValueOnce({} as never);
 
     const res = await PATCH(makeMoveRequest({ dayNumber: 3, sortOrder: 2 }), mockParams);
@@ -281,7 +281,7 @@ describe("PATCH /api/slots/[slotId]/move — signal failure is non-blocking", ()
   it("succeeds even when behavioral signal logging fails", async () => {
     mockGetServerSession.mockResolvedValueOnce(authedSession as never);
     mockPrisma.itinerarySlot.findUnique.mockResolvedValueOnce(baseSlot as never);
-    mockPrisma.$transaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
+    mockPrisma.$transaction.mockImplementation((async (cb: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         itinerarySlot: {
           aggregate: vi.fn().mockResolvedValue({ _max: { sortOrder: 0 } }),
@@ -290,7 +290,7 @@ describe("PATCH /api/slots/[slotId]/move — signal failure is non-blocking", ()
         },
       };
       return cb(tx);
-    });
+    }) as never);
     mockPrisma.behavioralSignal.create.mockRejectedValueOnce(new Error("DB failure"));
 
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});

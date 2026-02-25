@@ -59,7 +59,7 @@ const { promoteDraftToPlanning } = await import("@/lib/generation/promote-draft"
 const { PATCH } = await import("../../app/api/trips/[id]/route");
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 const mockPromoteDraft = vi.mocked(promoteDraftToPlanning);
 
 function makePatchRequest(body: unknown): NextRequest {

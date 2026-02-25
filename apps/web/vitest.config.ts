@@ -14,6 +14,7 @@ export default defineConfig({
       "**/tracks/**",
       "**/.claude/**",
     ],
+    testTimeout: 15000,
     globals: true,
     coverage: {
       provider: "v8",

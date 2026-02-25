@@ -60,7 +60,7 @@ const { prisma } = await import("@/lib/prisma");
 const { rateLimit } = await import("@/lib/rate-limit");
 
 const mockSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 const mockRateLimit = vi.mocked(rateLimit);
 
 // ---- Helpers ----
@@ -396,7 +396,7 @@ describe("POST /api/trips/[id]/messages", () => {
     expect(res.status).toBe(201);
 
     // Transaction should include 2 operations (message + signal)
-    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
     expect(txArgs).toHaveLength(2);
   });
 
@@ -524,7 +524,7 @@ describe("POST /api/trips/[id]/messages", () => {
     expect(res.status).toBe(201);
 
     // Verify the sanitized body was passed to prisma
-    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
     // The first arg to $transaction is an array of PrismaPromises
     // We check the create call was made with sanitized body
     const createCall = mockPrisma.message.create.mock.calls[0][0];

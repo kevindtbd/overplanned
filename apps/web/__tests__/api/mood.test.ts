@@ -44,7 +44,7 @@ const { getServerSession } = await import("next-auth");
 const { prisma } = await import("@/lib/prisma");
 
 const mockSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 // ---- Helpers ----
 
@@ -171,7 +171,7 @@ describe("POST /api/trips/[id]/mood", () => {
     });
     expect(res.status).toBe(200);
 
-    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
     expect(txArgs).toHaveLength(2);
   });
 
@@ -237,7 +237,7 @@ describe("POST /api/trips/[id]/mood", () => {
     expect(res.status).toBe(200);
 
     // Verify the transaction was called — check the update arg includes merged profile
-    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
     expect(txArgs).toHaveLength(2);
   });
 

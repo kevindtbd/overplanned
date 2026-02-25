@@ -17,6 +17,7 @@
     },
     {
       "files": ["apps/web/**/*.ts", "apps/web/**/*.tsx"],
+      "excludedFiles": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
       "rules": {
         "no-restricted-imports": [
           "error",

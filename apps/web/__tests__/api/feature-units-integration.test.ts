@@ -82,7 +82,7 @@ const { getServerSession } = await import("next-auth");
 const { prisma } = await import("@/lib/prisma");
 
 const mockSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
+const mockPrisma = vi.mocked(prisma, true);
 
 function authedSession(userId = "user-123") {
   mockSession.mockResolvedValueOnce({ user: { id: userId } } as never);
@@ -410,7 +410,7 @@ describe("Vote quorum after invite: Quorum adjusts with membership", () => {
           { id: "m-3", userId: "user-3", status: "joined" }, // New member
         ],
       },
-    };
+    } as never;
 
     mockPrisma.itinerarySlot.findUnique.mockResolvedValueOnce(slot as never);
     mockPrisma.tripMember.count.mockResolvedValueOnce(3); // 3 members now
@@ -422,7 +422,7 @@ describe("Vote quorum after invite: Quorum adjusts with membership", () => {
         votes: { "user-1": "yes", "user-2": "yes" },
         updatedAt: "",
       },
-    };
+    } as never;
     mockPrisma.$transaction.mockResolvedValueOnce([updatedSlot, {}] as never);
 
     voteReq = new NextRequest(`http://localhost/api/slots/${SLOT_ID}/vote`, {

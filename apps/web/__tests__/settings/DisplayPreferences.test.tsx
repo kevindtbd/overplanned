@@ -143,8 +143,8 @@ describe("DisplayPreferences — selection triggers PATCH", () => {
     await waitFor(() => {
       const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
       // Second call is the PATCH (first was GET on mount)
-      const patchCall = calls.find(
-        (c: [string, RequestInit]) => c[1]?.method === "PATCH"
+      const patchCall = (calls as [string, RequestInit][]).find(
+        (c) => c[1]?.method === "PATCH"
       );
       expect(patchCall).toBeDefined();
       expect(patchCall![0]).toBe("/api/settings/display");

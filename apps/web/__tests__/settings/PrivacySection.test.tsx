@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PrivacySection } from "@/components/settings/PrivacySection";
 
@@ -209,7 +209,7 @@ describe("PrivacySection", () => {
     expect(confirmBtn).toBeDisabled();
 
     const input = screen.getByPlaceholderText("your@email.com");
-    await user.type(input, "test@example.com");
+    fireEvent.change(input, { target: { value: "test@example.com" } });
 
     expect(confirmBtn).not.toBeDisabled();
   });
@@ -233,7 +233,7 @@ describe("PrivacySection", () => {
     await user.click(screen.getByText("Delete my account"));
 
     const input = screen.getByPlaceholderText("your@email.com");
-    await user.type(input, "test@example.com");
+    fireEvent.change(input, { target: { value: "test@example.com" } });
     await user.click(screen.getByText("Yes, delete my account"));
 
     await waitFor(() => {
@@ -267,7 +267,7 @@ describe("PrivacySection", () => {
     await user.click(screen.getByText("Delete my account"));
 
     const input = screen.getByPlaceholderText("your@email.com");
-    await user.type(input, "test@example.com");
+    fireEvent.change(input, { target: { value: "test@example.com" } });
     await user.click(screen.getByText("Yes, delete my account"));
 
     await waitFor(() => {

@@ -41,8 +41,8 @@ const { POST } = await import(
 );
 
 const mockGetServerSession = vi.mocked(getServerSession);
-const mockPrisma = vi.mocked(prisma);
-const mockStripe = vi.mocked(stripe);
+const mockPrisma = vi.mocked(prisma, true);
+const mockStripe = vi.mocked(stripe, true);
 
 function makePostRequest(): NextRequest {
   return new NextRequest("http://localhost:3000/api/settings/billing-portal", {
@@ -128,9 +128,10 @@ describe("POST /api/settings/billing-portal — happy path", () => {
     expect(json.url).toBe("https://billing.stripe.com/session/test_abc");
 
     // Verify Stripe was called with correct customer and return_url
-    const createCall = mockStripe.billingPortal.sessions.create.mock.calls[0][0];
-    expect(createCall.customer).toBe("cus_test123");
-    expect(createCall.return_url).toBe("http://localhost:3000/settings");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const createCall = mockStripe.billingPortal.sessions.create.mock.calls[0]?.[0] as any;
+    expect(createCall?.customer).toBe("cus_test123");
+    expect(createCall?.return_url).toBe("http://localhost:3000/settings");
   });
 
   it("looks up stripeCustomerId from DB, not session", async () => {
