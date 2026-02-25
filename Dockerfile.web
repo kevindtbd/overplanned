@@ -44,6 +44,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Dummy secrets so next build can collect page data without crashing on
 # module-level initializations (Stripe, etc.). Never used at runtime.
 ENV STRIPE_SECRET_KEY=sk_build_placeholder
+# Sentry DSN must be available at build time for client-side bundle inlining.
+# Passed as build arg from cloudbuild.yaml; falls back to empty (disables client Sentry).
+ARG NEXT_PUBLIC_SENTRY_DSN=""
+ENV NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
 RUN npm run build --workspace=@overplanned/web
 
 # --- Stage 3: Production ---

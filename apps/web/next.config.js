@@ -1,4 +1,5 @@
 const path = require("path");
+const { withSentryConfig } = require("@sentry/nextjs");
 
 /** @type {import('next').NextConfig} */
 
@@ -16,7 +17,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' https://images.unsplash.com https://lh3.googleusercontent.com data: blob:",
-      "connect-src 'self' https://accounts.google.com http://localhost:8000 https://*.overplanned.app" +
+      "connect-src 'self' https://accounts.google.com http://localhost:8000 https://*.overplanned.app https://*.ingest.sentry.io" +
         (isDev ? " ws://localhost:* http://localhost:*" : ""),
       "frame-src 'self' https://accounts.google.com",
       "object-src 'none'",
@@ -122,4 +123,21 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withSentryConfig(nextConfig, {
+  // No source map upload — just error capture for now
+  sourcemaps: {
+    disable: true,
+  },
+
+  // No telemetry to Sentry about the build process
+  telemetry: false,
+
+  // Minimize bundle size — tree-shake debug-only code in production
+  disableLogger: true,
+
+  // Do not widen the Webpack config with Sentry's default source map settings
+  hideSourceMaps: true,
+
+  // Silence build logs about missing auth token (we are not uploading source maps)
+  silent: true,
+});
