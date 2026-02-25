@@ -9,8 +9,7 @@ import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prisma, TransactionClient, PrismaJsonNull } from "@/lib/prisma";
 import { rateLimit, rateLimitPresets } from "@/lib/rate-limit";
 import { sanitizeToken } from "@/lib/validations/share";
 
@@ -85,7 +84,7 @@ export async function POST(
     const sourceTrip = tokenRecord.trip;
 
     // Clone in a transaction — fresh UUIDs for everything
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: TransactionClient) => {
       // 1. Create new Trip (solo mode, planning status)
       const newTripId = crypto.randomUUID();
       const newTrip = await tx.trip.create({
@@ -156,7 +155,7 @@ export async function POST(
             endTime: slot.endTime,
             durationMinutes: slot.durationMinutes,
             isLocked: false,
-            voteState: Prisma.JsonNull, // Clear voting data
+            voteState: PrismaJsonNull, // Clear voting data
             isContested: false,
             wasSwapped: false,
           },

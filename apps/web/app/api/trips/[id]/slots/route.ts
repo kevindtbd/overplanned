@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { prisma } from "@/lib/prisma";
+import { prisma, TransactionClient } from "@/lib/prisma";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 
@@ -146,7 +146,7 @@ export async function POST(
     const slotId = uuidv4();
     const signalId = uuidv4();
 
-    const [slot] = await prisma.$transaction(async (tx) => {
+    const [slot] = await prisma.$transaction(async (tx: TransactionClient) => {
       // Max sortOrder for existing slots on the requested day
       const agg = await tx.itinerarySlot.aggregate({
         where: { tripId, dayNumber: requestedDay },

@@ -17,7 +17,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { authOptions } from "@/lib/auth/config";
-import { prisma } from "@/lib/prisma";
+import { prisma, TransactionClient } from "@/lib/prisma";
 
 const moveSlotSchema = z
   .object({
@@ -114,7 +114,7 @@ export async function PATCH(
   }
 
   // Execute move inside a transaction
-  const updatedSlot = await prisma.$transaction(async (tx) => {
+  const updatedSlot = await prisma.$transaction(async (tx: TransactionClient) => {
     const currentDay = slot.dayNumber;
     const currentSort = slot.sortOrder;
 

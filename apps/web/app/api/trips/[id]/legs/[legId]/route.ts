@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
-import { prisma } from "@/lib/prisma";
+import { prisma, TransactionClient } from "@/lib/prisma";
 import { patchLegSchema } from "@/lib/validations/trip";
 
 // ---------------------------------------------------------------------------
@@ -173,7 +173,7 @@ export async function DELETE(
     });
 
     // 5. Atomic transaction: delete slots -> delete leg -> re-number remaining
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: TransactionClient) => {
       // 5a. Delete all slots belonging to this leg
       await tx.itinerarySlot.deleteMany({ where: { tripLegId: legId } });
 

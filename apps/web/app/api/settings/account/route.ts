@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { updateAccountSchema, deleteAccountSchema } from "@/lib/validations/settings";
-import { prisma } from "@/lib/prisma";
+import { prisma, TransactionClient } from "@/lib/prisma";
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -73,7 +73,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: TransactionClient) => {
       // Step 1: Anonymize 6 orphan tables (no FK cascade)
       await tx.trip.updateMany({ where: { userId }, data: { userId: "DELETED" } });
       await tx.behavioralSignal.updateMany({ where: { userId }, data: { userId: "DELETED" } });
