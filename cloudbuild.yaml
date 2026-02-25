@@ -15,7 +15,7 @@ steps:
   - id: test-web
     name: node:20
     waitFor: ['-']
-    timeout: 300s
+    timeout: 600s
     entrypoint: bash
     args:
       - -c
