@@ -75,7 +75,7 @@ steps:
       - --concurrency=40
       - --timeout=300s
       - --cpu-boost
-      - --add-cloudsql-instances=overplanned-app:us-central1:overplanned-db
+      - --add-cloudsql-instances=overplanned-app:us-central1:overplanned
       - --set-env-vars=NODE_ENV=production
       - --set-secrets=DATABASE_URL=DATABASE_URL:latest,NEXTAUTH_SECRET=NEXTAUTH_SECRET:latest,NEXTAUTH_URL=NEXTAUTH_URL:latest,GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest,GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest,SENTRY_DSN=SENTRY_DSN:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,RESEND_API_KEY=RESEND_API_KEY:latest,BETA_CODE=BETA_CODE:latest
 
