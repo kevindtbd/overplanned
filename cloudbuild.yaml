@@ -18,7 +18,7 @@ steps:
     entrypoint: bash
     args:
       - -c
-      - npm ci && cd apps/web && npx vitest run --reporter=dot --pool=forks --poolOptions.forks.maxForks=2
+      - npm ci && cd apps/web && npx vitest run --reporter=dot --maxWorkers=2
 
   # ── Build web image (starts immediately, parallel with tests) ──
   - id: build-web
