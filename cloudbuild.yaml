@@ -11,33 +11,35 @@ substitutions:
   _WEB_MAX_INSTANCES: '10'
 
 steps:
-  # ── Run tests ──
+  # ── Run tests (parallel with docker build) ──
   - id: test-web
     name: node:20
     waitFor: ['-']
     entrypoint: bash
     args:
       - -c
-      - npm ci && cd apps/web && npx vitest run --exclude '.claude/**'
+      - npm ci && cd apps/web && npx vitest run --reporter=dot --pool=forks --poolOptions.forks.maxForks=2
 
-  # ── Build web image ──
+  # ── Build web image (starts immediately, parallel with tests) ──
   - id: build-web
     name: gcr.io/cloud-builders/docker
-    waitFor: ['test-web']
+    waitFor: ['-']
     args:
       - build
       - -f
       - Dockerfile.web
+      - --cache-from
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_WEB_SERVICE}:latest'
       - -t
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_WEB_SERVICE}:${SHORT_SHA}'
       - -t
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_WEB_SERVICE}:latest'
       - .
 
-  # ── Push web image ──
+  # ── Push web image (waits for both tests + build) ──
   - id: push-web
     name: gcr.io/cloud-builders/docker
-    waitFor: ['build-web']
+    waitFor: ['test-web', 'build-web']
     args:
       - push
       - '--all-tags'
