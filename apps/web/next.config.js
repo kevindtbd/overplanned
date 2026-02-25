@@ -1,3 +1,5 @@
+const path = require("path");
+
 /** @type {import('next').NextConfig} */
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -49,6 +51,7 @@ const nextConfig = {
   output: "standalone",
   experimental: {
     serverComponentsExternalPackages: ["@prisma/client"],
+    outputFileTracingRoot: path.join(__dirname, "../../"),
   },
   images: {
     remotePatterns: [

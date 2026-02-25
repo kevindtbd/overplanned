@@ -28,8 +28,14 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages ./packages
 
+# Copy package source files (deps stage only has package.json + prisma)
+COPY packages/db ./packages/db
+COPY packages/schemas ./packages/schemas
+COPY packages/shared-types ./packages/shared-types
+
 # Copy source
 COPY apps/web ./apps/web
+COPY data ./data
 COPY package.json package-lock.json ./
 
 # next.config.js must enable standalone output for Docker
