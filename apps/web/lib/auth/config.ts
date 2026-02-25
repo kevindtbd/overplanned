@@ -55,10 +55,15 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
-        // First sign-in — encode user data into JWT
+        // First sign-in — PrismaAdapter only passes standard OAuth fields,
+        // so fetch custom fields (subscriptionTier, systemRole) from DB
         token.id = user.id;
-        token.subscriptionTier = user.subscriptionTier;
-        token.systemRole = user.systemRole;
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { subscriptionTier: true, systemRole: true },
+        });
+        token.subscriptionTier = dbUser?.subscriptionTier ?? "beta";
+        token.systemRole = dbUser?.systemRole ?? "user";
       }
       return token;
     },
