@@ -55,7 +55,7 @@ export default function DashboardPage() {
         throw new Error(data.error || "Failed to load trips");
       }
       const { trips: tripList } = await tripsRes.json();
-      setTrips(tripList);
+      setTrips(tripList ?? []);
 
       // Backfill trips are non-critical — fail silently
       if (backfillRes.ok) {
