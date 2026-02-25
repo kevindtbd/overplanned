@@ -20,10 +20,6 @@ RUN npm ci --ignore-scripts
 COPY packages/db/prisma ./packages/db/prisma
 # Only generate JS client (skip Python generator which isn't available in this image)
 RUN npx prisma generate --schema=packages/db/prisma/schema.prisma --generator client
-# Prisma generates relative to schema (packages/db/node_modules/@prisma/client).
-# apps/web resolves from root node_modules — copy generated client there.
-RUN cp -r packages/db/node_modules/@prisma/client node_modules/@prisma/client && \
-    if [ -d packages/db/node_modules/.prisma ]; then cp -r packages/db/node_modules/.prisma node_modules/.prisma; fi
 
 # --- Stage 2: Build ---
 FROM node:20-alpine AS builder
