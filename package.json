@@ -18,7 +18,7 @@
     "codegen:qdrant": "tsx scripts/jsonschema-to-qdrant.ts",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
-    "prepare": "husky"
+    "prepare": "npx --no-install husky || true"
   },
   "devDependencies": {
     "@exodus/bytes": "^1.14.1",
