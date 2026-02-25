@@ -8,7 +8,7 @@
  * PREREQUISITE: ownerTip field must exist in schema (added via M-001 migration)
  */
 
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -20,7 +20,7 @@ async function migrateVoteState() {
     const slotsWithHints = await prisma.itinerarySlot.findMany({
       where: {
         voteState: {
-          not: null,
+          not: Prisma.DbNull,
         },
       },
       select: {
@@ -51,7 +51,7 @@ async function migrateVoteState() {
         where: { id: slot.id },
         data: {
           ownerTip: voteState.narrativeHint,
-          voteState: null,
+          voteState: Prisma.DbNull,
         },
       });
     });

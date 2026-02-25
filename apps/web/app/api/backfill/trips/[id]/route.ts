@@ -93,7 +93,7 @@ export async function GET(
     // Generate signed URLs for all photos; build safe venue shape
     const tripVenues = trip.venues;
     const venues = await Promise.all(
-      tripVenues.map(async (venue) => {
+      tripVenues.map(async (venue: (typeof tripVenues)[number]) => {
         if (venue.isQuarantined) {
           // Return minimal shape for quarantined venues — no reason exposed
           return {

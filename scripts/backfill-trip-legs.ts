@@ -138,7 +138,7 @@ async function main() {
       tripId: trip.id,
       position: 0,
       city,
-      country,
+      country: country!,
       timezone: timezone ?? "UTC",
       destination,
       startDate: trip.startDate,

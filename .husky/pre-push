@@ -1,1 +1,2 @@
-cd apps/web && npx tsc --noEmit
+(cd apps/web && npx tsc --noEmit)
+npx tsc --noEmit
