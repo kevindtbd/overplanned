@@ -76,7 +76,7 @@ export async function POST(
     }
 
     // Build slot lookup for activityNodeId resolution
-    const slotMap = new Map(trip.slots.map((s) => [s.id, s.activityNodeId]));
+    const slotMap = new Map(trip.slots.map((s: (typeof trip.slots)[number]) => [s.id, s.activityNodeId]));
 
     // Validate all slotIds belong to this trip
     for (const r of parsed.data.ratings) {

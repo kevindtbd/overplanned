@@ -150,7 +150,7 @@ export async function POST(
 
   // --- Fetch alternatives ---
   const existingSlotNodeIds = slot.trip.slots
-    .map((s) => s.activityNodeId)
+    .map((s: (typeof slot.trip.slots)[number]) => s.activityNodeId)
     .filter(Boolean) as string[];
 
   const alternatives = await prisma.activityNode.findMany({
@@ -173,7 +173,7 @@ export async function POST(
   const personaSlugs = personaSeed?.vibes ?? [];
 
   // Score and rank
-  const scored = alternatives.map((node) => ({
+  const scored = alternatives.map((node: (typeof alternatives)[number]) => ({
     node,
     score: scoreAlternative(node, personaSlugs),
   }));
@@ -214,7 +214,7 @@ export async function POST(
     ]);
 
     // Build alternative response objects
-    const alternativeDetails = top3.map((s) => ({
+    const alternativeDetails = top3.map((s: (typeof top3)[number]) => ({
       id: s.node.id,
       name: s.node.name,
       category: s.node.category,

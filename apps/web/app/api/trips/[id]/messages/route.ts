@@ -75,7 +75,7 @@ export async function GET(
     });
 
     // Add isStale flag to messages with slot references
-    const enriched = messages.map((msg) => ({
+    const enriched = messages.map((msg: (typeof messages)[number]) => ({
       ...msg,
       slotRef: msg.slotRef
         ? {

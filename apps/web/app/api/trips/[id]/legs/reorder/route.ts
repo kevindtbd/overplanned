@@ -89,7 +89,7 @@ export async function POST(
       select: { id: true },
     });
 
-    const existingIds = new Set(existingLegs.map((l) => l.id));
+    const existingIds = new Set(existingLegs.map((l: (typeof existingLegs)[number]) => l.id));
 
     // -------------------------------------------------------------------------
     // 6. Three-part validation

@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Reshape vibeTags for client consumption
-    const shaped = nodes.map((n) => ({
+    const shaped = nodes.map((n: (typeof nodes)[number]) => ({
       id: n.id,
       name: n.name,
       city: n.city,
@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
       descriptionShort: n.descriptionShort,
       primaryImageUrl: n.primaryImageUrl,
       neighborhood: n.neighborhood,
-      vibeTags: n.vibeTags.map((vt) => ({
+      vibeTags: n.vibeTags.map((vt: (typeof n.vibeTags)[number]) => ({
         slug: vt.vibeTag.slug,
         name: vt.vibeTag.name,
         score: vt.score,

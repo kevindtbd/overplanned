@@ -158,7 +158,7 @@ export async function GET(
     return NextResponse.json({
       trip: tripPreview,
       slotsByDay,
-      legs: trip.legs.map((leg) => ({
+      legs: trip.legs.map((leg: (typeof trip.legs)[number]) => ({
         position: leg.position,
         city: leg.city,
         country: leg.country,

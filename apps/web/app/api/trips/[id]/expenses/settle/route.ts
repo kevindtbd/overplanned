@@ -48,12 +48,12 @@ export async function GET(
       }),
     ]);
 
-    const memberIds = members.map((m) => m.userId);
+    const memberIds = members.map((m: (typeof members)[number]) => m.userId);
     const settlements = computeSettlements(expenses, memberIds);
 
     // Build lookup for hydration
     const memberLookup = new Map(
-      members.map((m) => [m.userId, m.user.name ?? "Unknown"])
+      members.map((m: (typeof members)[number]) => [m.userId, m.user.name ?? "Unknown"])
     );
 
     const hydratedSettlements = settlements.map((s) => ({
