@@ -253,7 +253,7 @@ async def get_trip_calendar(
         """
         SELECT id, destination, city, country, timezone,
                "startDate", "endDate"
-        FROM "Trip"
+        FROM trips
         WHERE id = $1
         """,
         trip_id,
@@ -280,8 +280,8 @@ async def get_trip_calendar(
             an.latitude      AS activity_lat,
             an.longitude     AS activity_lng,
             an."descriptionShort" AS activity_desc
-        FROM "ItinerarySlot" s
-        LEFT JOIN "ActivityNode" an ON an.id = s."activityNodeId"
+        FROM itinerary_slots s
+        LEFT JOIN activity_nodes an ON an.id = s."activityNodeId"
         WHERE s."tripId" = $1
           AND s.status NOT IN ('skipped', 'proposed')
         ORDER BY s."dayNumber", s."sortOrder"

@@ -241,7 +241,7 @@ async def apply_cascade(
             try:
                 await db.execute(
                     """
-                    UPDATE "ItinerarySlot"
+                    UPDATE itinerary_slots
                     SET
                         "startTime" = $1,
                         "endTime"   = $2,
@@ -297,7 +297,7 @@ async def fetch_same_day_slots(
             "isLocked",
             "slotType",
             status
-        FROM "ItinerarySlot"
+        FROM itinerary_slots
         WHERE "tripId" = $1
           AND "dayNumber" = $2
         ORDER BY "sortOrder" ASC
@@ -342,7 +342,7 @@ async def check_cross_day_impact(
     last_slot = await db.fetchrow(
         """
         SELECT "endTime"
-        FROM "ItinerarySlot"
+        FROM itinerary_slots
         WHERE "tripId" = $1
           AND "dayNumber" = $2
           AND "endTime" IS NOT NULL
@@ -363,7 +363,7 @@ async def check_cross_day_impact(
     next_day_conflict = await db.fetchrow(
         """
         SELECT id
-        FROM "ItinerarySlot"
+        FROM itinerary_slots
         WHERE "tripId" = $1
           AND "dayNumber" = $2
           AND "startTime" IS NOT NULL

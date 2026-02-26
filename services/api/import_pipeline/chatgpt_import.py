@@ -192,13 +192,13 @@ def _extract_user_messages_from_conversation(conversation: dict) -> list[str]:
 # ---------------------------------------------------------------------------
 
 _CREATE_JOB_SQL = """
-INSERT INTO "ImportJob" (id, "userId", status, "createdAt", "updatedAt")
+INSERT INTO import_jobs (id, "userId", status, "createdAt", "updatedAt")
 VALUES ($1, $2, $3, $4, $4)
 RETURNING id
 """
 
 _UPDATE_JOB_STATUS_SQL = """
-UPDATE "ImportJob"
+UPDATE import_jobs
 SET status = $2, "updatedAt" = $3, "errorMessage" = $4,
     "conversationsFound" = $5, "signalsExtracted" = $6
 WHERE id = $1
@@ -206,13 +206,13 @@ WHERE id = $1
 
 _RATE_LIMIT_CHECK_SQL = """
 SELECT COUNT(*) AS cnt
-FROM "ImportJob"
+FROM import_jobs
 WHERE "userId" = $1
   AND "createdAt" > $2
 """
 
 _INSERT_SIGNAL_SQL = """
-INSERT INTO "ImportPreferenceSignal"
+INSERT INTO import_preference_signals
   (id, "importJobId", dimension, direction, confidence, "sourceText",
    "piiScrubbed", "createdAt")
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)

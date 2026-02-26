@@ -643,4 +643,4 @@ class TestDBInteraction:
         conn = db_pool.acquire.return_value.__aenter__.return_value
         if conn.executemany.called:
             sql_arg = conn.executemany.call_args_list[0][0][0]
-            assert '"BehavioralSignal"' in sql_arg
+            assert 'behavioral_signals' in sql_arg

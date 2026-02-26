@@ -113,7 +113,7 @@ async def find_nodes_along_path(
     already_scheduled = await db.fetch(
         """
         SELECT "activityNodeId"
-        FROM "ItinerarySlot"
+        FROM itinerary_slots
         WHERE "tripId" = $1
           AND "dayNumber" = $2
           AND "activityNodeId" IS NOT NULL
@@ -160,7 +160,7 @@ async def find_nodes_along_path(
                 an."descriptionShort",
                 an."primaryImageUrl",
                 an.neighborhood
-            FROM "ActivityNode" an, buffered
+            FROM activity_nodes an, buffered
             WHERE
                 an.status = 'approved'
                 AND an."isCanonical" = true

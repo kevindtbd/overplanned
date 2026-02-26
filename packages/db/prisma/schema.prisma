@@ -59,6 +59,8 @@ model User {
   // Group features
   messages      Message[]
   paidExpenses  Expense[]
+
+  @@map("users")
 }
 
 model Session {
@@ -68,6 +70,8 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expires      DateTime
   createdAt    DateTime @default(now())
+
+  @@map("sessions")
 }
 
 model Account {
@@ -86,6 +90,7 @@ model Account {
   session_state     String?
 
   @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model VerificationToken {
@@ -94,6 +99,7 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 model Trip {
@@ -129,6 +135,8 @@ model Trip {
   photos       TripPhoto[]
   messages     Message[]
   expenses     Expense[]
+
+  @@map("trips")
 }
 
 model TripLeg {
@@ -162,6 +170,7 @@ model TripLeg {
   @@unique([tripId, position])
   @@index([tripId])
   @@index([city])
+  @@map("trip_legs")
 }
 
 model TripMember {
@@ -179,6 +188,7 @@ model TripMember {
 
   @@unique([tripId, userId])
   @@index([tripId, status])
+  @@map("trip_members")
 }
 
 model Message {
@@ -193,6 +203,7 @@ model Message {
   createdAt DateTime       @default(now())
 
   @@index([tripId, createdAt])
+  @@map("messages")
 }
 
 model Expense {
@@ -208,6 +219,7 @@ model Expense {
   createdAt   DateTime @default(now())
 
   @@index([tripId, createdAt])
+  @@map("expenses")
 }
 
 model ItinerarySlot {
@@ -243,6 +255,7 @@ model ItinerarySlot {
   messages Message[]
 
   @@index([tripLegId])
+  @@map("itinerary_slots")
 }
 
 // ============================================================================
@@ -296,12 +309,15 @@ model ActivityNode {
   ml_served_count          Int       @default(0)
   // Pre-launch behavioral scaffolding
   behavioralUpdatedAt      DateTime? // timestamp of last behavioral write-back
+  cantMiss                 Boolean   @default(false) // ~0.1% of nodes. Score floor 0.72. Set during seeding.
 
   vibeTags       ActivityNodeVibeTag[]
   aliases        ActivityAlias[]
   qualitySignals QualitySignal[]
   slots          ItinerarySlot[]
   backfillVenues BackfillVenue[]
+
+  @@map("activity_nodes")
 }
 
 model VibeTag {
@@ -314,6 +330,8 @@ model VibeTag {
   createdAt DateTime @default(now())
 
   activityNodeVibeTags ActivityNodeVibeTag[]
+
+  @@map("vibe_tags")
 }
 
 model ActivityNodeVibeTag {
@@ -327,6 +345,7 @@ model ActivityNodeVibeTag {
   createdAt      DateTime     @default(now())
 
   @@unique([activityNodeId, vibeTagId, source])
+  @@map("activity_node_vibe_tags")
 }
 
 model ActivityAlias {
@@ -339,6 +358,7 @@ model ActivityAlias {
 
   @@index([alias])
   @@index([activityNodeId])
+  @@map("activity_aliases")
 }
 
 model QualitySignal {
@@ -356,6 +376,7 @@ model QualitySignal {
   createdAt           DateTime     @default(now())
 
   @@index([activityNodeId, sourceName])
+  @@map("quality_signals")
 }
 
 model CityVibeProfile {
@@ -373,6 +394,7 @@ model CityVibeProfile {
   @@unique([city, vibeKey])
   @@index([vibeKey, score])
   @@index([city])
+  @@map("city_vibe_profiles")
 }
 
 // ============================================================================
@@ -406,6 +428,7 @@ model BehavioralSignal {
   @@index([userId, tripId, signalType, source]) // V2: compound index with source for quarantine queries
   @@index([activityNodeId, signalType])
   @@index([candidateSetId])
+  @@map("behavioral_signals")
 }
 
 model IntentionSignal {
@@ -421,6 +444,7 @@ model IntentionSignal {
 
   @@index([behavioralSignalId])
   @@index([userId, intentionType])
+  @@map("intention_signals")
 }
 
 model RawEvent {
@@ -449,6 +473,7 @@ model RawEvent {
   @@index([createdAt])
   @@index([intentClass, eventType])
   @@index([trainingExtracted, createdAt])
+  @@map("raw_events")
 }
 
 // ============================================================================
@@ -476,6 +501,7 @@ model ModelRegistry {
 
   @@unique([modelName, modelVersion])
   @@index([modelName, stage])
+  @@map("model_registry")
 }
 
 model PersonaDimension {
@@ -488,9 +514,13 @@ model PersonaDimension {
   updatedAt  DateTime @updatedAt
   createdAt  DateTime @default(now())
 
+  negativeTagAffinities Json?   // JSONB: {"hidden-gem": -0.3, "party-central": -0.8} — vibe tags the user rejects
+  version               Int     @default(0) // incremented by nightly batch; TripPersonaCache checks this
+
   @@unique([userId, dimension])
   @@index([userId])
   @@index([dimension, value])
+  @@map("persona_dimensions")
 }
 
 model RankingEvent {
@@ -522,6 +552,7 @@ model RankingEvent {
   @@index([userId, createdAt])
   @@index([tripId, dayNumber])
   @@index([modelName, modelVersion])
+  @@map("ranking_events")
 }
 
 model PivotEvent {
@@ -540,6 +571,7 @@ model PivotEvent {
 
   @@index([tripId, createdAt])
   @@index([status])
+  @@map("pivot_events")
 }
 
 // ============================================================================
@@ -563,6 +595,7 @@ model ArbitrationEvent {
   @@index([userId, createdAt])
   @@index([tripId])
   @@index([arbitrationRule])
+  @@map("arbitration_events")
 }
 
 model ImportJob {
@@ -581,6 +614,7 @@ model ImportJob {
   signals ImportPreferenceSignal[]
 
   @@index([userId, status])
+  @@map("import_jobs")
 }
 
 model ImportPreferenceSignal {
@@ -598,6 +632,7 @@ model ImportPreferenceSignal {
 
   @@index([importJobId])
   @@index([dimension, direction])
+  @@map("import_preference_signals")
 }
 
 model CorpusIngestionRequest {
@@ -612,6 +647,7 @@ model CorpusIngestionRequest {
 
   @@index([userId])
   @@index([status])
+  @@map("corpus_ingestion_requests")
 }
 
 model WriteBackRun {
@@ -624,6 +660,7 @@ model WriteBackRun {
   createdAt    DateTime @default(now())
 
   @@unique([runDate])
+  @@map("write_back_runs")
 }
 
 model AuditLog {
@@ -640,6 +677,7 @@ model AuditLog {
 
   @@index([actorId, createdAt])
   @@index([targetType, targetId])
+  @@map("audit_logs")
 }
 
 // ============================================================================
@@ -659,6 +697,7 @@ model SharedTripToken {
   createdAt   DateTime  @default(now())
 
   @@index([token])
+  @@map("shared_trip_tokens")
 }
 
 model InviteToken {
@@ -675,6 +714,7 @@ model InviteToken {
   createdAt DateTime  @default(now())
 
   @@index([token])
+  @@map("invite_tokens")
 }
 
 // ============================================================================
@@ -702,6 +742,7 @@ model BackfillTrip {
   signals BackfillSignal[]
 
   @@index([userId, status])
+  @@map("backfill_trips")
 }
 
 model BackfillLeg {
@@ -720,6 +761,7 @@ model BackfillLeg {
 
   @@unique([backfillTripId, position])
   @@index([backfillTripId])
+  @@map("backfill_legs")
 }
 
 model BackfillVenue {
@@ -748,6 +790,7 @@ model BackfillVenue {
 
   @@index([backfillTripId])
   @@index([activityNodeId])
+  @@map("backfill_venues")
 }
 
 model BackfillPhoto {
@@ -763,6 +806,7 @@ model BackfillPhoto {
   createdAt        DateTime      @default(now())
 
   @@index([backfillVenueId])
+  @@map("backfill_photos")
 }
 
 model TripPhoto {
@@ -785,6 +829,7 @@ model TripPhoto {
   @@index([tripId])
   @@index([slotId])
   @@index([userId])
+  @@map("trip_photos")
 }
 
 model BackfillSignal {
@@ -806,6 +851,7 @@ model BackfillSignal {
 
   @@index([userId, createdAt])
   @@index([backfillTripId])
+  @@map("backfill_signals")
 }
 
 model PersonaDelta {
@@ -822,6 +868,7 @@ model PersonaDelta {
 
   @@index([userId, dimensionName])
   @@index([backfillSignalId])
+  @@map("persona_deltas")
 }
 
 // ============================================================================
@@ -850,6 +897,8 @@ model UserPreference {
   theme              String   @default("system")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  @@map("user_preferences")
 }
 
 model NotificationPreference {
@@ -867,6 +916,8 @@ model NotificationPreference {
   preTripDaysBefore Int      @default(3)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  @@map("notification_preferences")
 }
 
 model DataConsent {
@@ -877,6 +928,94 @@ model DataConsent {
   anonymizedResearch Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  @@map("data_consents")
+}
+
+// ============================================================================
+// PHANTOM TABLES (previously managed by Python CREATE TABLE IF NOT EXISTS)
+// ============================================================================
+
+model ShadowResult {
+  id                  String   @id @default(uuid())
+  modelId             String
+  modelVersion        String
+  userId              String
+  tripId              String
+  shadowRankings      Json
+  productionRankings  Json
+  overlapAt5          Float
+  ndcgAt10            Float
+  latencyMs           Int
+  createdAt           DateTime @default(now())
+
+  @@map("shadow_results")
+}
+
+model EvalRun {
+  id           String   @id @default(uuid())
+  modelId      String
+  modelVersion String
+  hrAt5        Float
+  mrr          Float
+  ndcgAt10     Float
+  totalQueries Int
+  durationMs   Int
+  passedGates  Boolean
+  gateDetails  Json     @default("{}")
+  createdAt    DateTime @default(now())
+
+  @@map("eval_runs")
+}
+
+model TrainingExtractRun {
+  id            String   @id @default(uuid())
+  targetDate    DateTime @db.Date
+  status        String
+  rowsExtracted Int      @default(0)
+  filePath      String?
+  durationMs    Int      @default(0)
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+
+  @@map("training_extract_runs")
+}
+
+model PersonaUpdateRun {
+  id                Int      @id @default(autoincrement())
+  runDate           DateTime @db.Date
+  status            String
+  usersUpdated      Int      @default(0)
+  dimensionsUpdated Int      @default(0)
+  durationMs        Int      @default(0)
+  createdAt         DateTime @default(now())
+
+  @@map("persona_update_runs")
+}
+
+model PushToken {
+  id          String    @id @default(uuid())
+  userId      String
+  deviceToken String
+  deviceId    String
+  platform    String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, deviceId])
+  @@map("push_tokens")
+}
+
+model EmailPreference {
+  id           String   @id @default(uuid())
+  userId       String
+  category     String
+  unsubscribed Boolean  @default(false)
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, category])
+  @@map("email_preferences")
 }
 
 // ============================================================================
@@ -1024,6 +1163,11 @@ enum SignalType {
   card_viewed
   card_dismissed
   card_impression
+  // Cold-start negative space (L4, L6)
+  preset_selected
+  preset_hovered
+  preset_all_skipped
+  pre_trip_slot_removed_reason
 }
 
 enum TripPhase {

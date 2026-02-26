@@ -151,9 +151,9 @@ async def _fetch_canonical_nodes(
                 array_agg(DISTINCT vt.slug) FILTER (WHERE vt.slug IS NOT NULL),
                 ARRAY[]::text[]
             ) AS vibe_tag_slugs
-        FROM "ActivityNode" an
-        LEFT JOIN "ActivityNodeVibeTag" anvt ON anvt."activityNodeId" = an.id
-        LEFT JOIN "VibeTag" vt ON vt.id = anvt."vibeTagId"
+        FROM activity_nodes an
+        LEFT JOIN activity_node_vibe_tags anvt ON anvt."activityNodeId" = an.id
+        LEFT JOIN vibe_tags vt ON vt.id = anvt."vibeTagId"
         WHERE an."isCanonical" = true
     """
 
@@ -183,7 +183,7 @@ async def _get_canonical_count(pool: asyncpg.Pool) -> int:
     """Count canonical ActivityNodes in Postgres."""
     async with pool.acquire() as conn:
         return await conn.fetchval(
-            'SELECT COUNT(*) FROM "ActivityNode" WHERE "isCanonical" = true'
+            'SELECT COUNT(*) FROM activity_nodes WHERE "isCanonical" = true'
         )
 
 

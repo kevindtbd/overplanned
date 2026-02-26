@@ -53,25 +53,8 @@ class ShadowResult:
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-# SQL: ensure the ShadowResult table exists
-_CREATE_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS "ShadowResult" (
-    "id" TEXT PRIMARY KEY,
-    "modelId" TEXT NOT NULL,
-    "modelVersion" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "tripId" TEXT NOT NULL,
-    "shadowRankings" JSONB NOT NULL,
-    "productionRankings" JSONB NOT NULL,
-    "overlapAt5" DOUBLE PRECISION NOT NULL,
-    "ndcgAt10" DOUBLE PRECISION NOT NULL,
-    "latencyMs" INTEGER NOT NULL,
-    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
-)
-"""
-
 _INSERT_RESULT_SQL = """
-INSERT INTO "ShadowResult"
+INSERT INTO shadow_results
     ("id", "modelId", "modelVersion", "userId", "tripId",
      "shadowRankings", "productionRankings", "overlapAt5", "ndcgAt10",
      "latencyMs", "createdAt")
@@ -80,7 +63,7 @@ VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9, $10, $11)
 
 _GET_SHADOW_MODEL_SQL = """
 SELECT "modelName", "modelVersion", "artifactPath", "configSnapshot"
-FROM "ModelRegistry"
+FROM model_registry
 WHERE "stage" = 'ab_test'
 ORDER BY "createdAt" DESC
 LIMIT 1
@@ -164,15 +147,6 @@ class ShadowRunner:
     def __init__(self, pool, model: ShadowModel | None = None):
         self._pool = pool
         self._model = model
-        self._table_ensured = False
-
-    async def _ensure_table(self) -> None:
-        """Create the ShadowResult table if it does not exist."""
-        if self._table_ensured:
-            return
-        async with self._pool.acquire() as conn:
-            await conn.execute(_CREATE_TABLE_SQL)
-        self._table_ensured = True
 
     async def _get_shadow_model_info(self) -> dict | None:
         """Fetch the active shadow model from ModelRegistry."""
@@ -189,7 +163,6 @@ class ShadowRunner:
         result: ShadowResult,
     ) -> None:
         """Persist a ShadowResult to the database."""
-        await self._ensure_table()
         import json
         async with self._pool.acquire() as conn:
             await conn.execute(

@@ -85,6 +85,7 @@ export async function GET(req: NextRequest) {
         primaryImageUrl: true,
         neighborhood: true,
         vibeTags: {
+          where: { vibeTag: { isActive: true } },
           select: {
             score: true,
             vibeTag: {

@@ -26,7 +26,7 @@ class Base(DeclarativeBase):
 class AuditLog(Base):
     """Append-only audit log. NEVER update or delete rows from this table."""
 
-    __tablename__ = "AuditLog"
+    __tablename__ = "audit_logs"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
     actorId: Mapped[str] = mapped_column(String)
@@ -41,7 +41,7 @@ class AuditLog(Base):
 
 
 class Trip(Base):
-    __tablename__ = "Trip"
+    __tablename__ = "trips"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
     userId: Mapped[str] = mapped_column(String)
@@ -66,7 +66,7 @@ class Trip(Base):
 
 
 class TripMember(Base):
-    __tablename__ = "TripMember"
+    __tablename__ = "trip_members"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
     tripId: Mapped[str] = mapped_column(String)
@@ -78,7 +78,7 @@ class TripMember(Base):
 
 
 class InviteToken(Base):
-    __tablename__ = "InviteToken"
+    __tablename__ = "invite_tokens"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
     tripId: Mapped[str] = mapped_column(String)
@@ -93,7 +93,7 @@ class InviteToken(Base):
 
 
 class SharedTripToken(Base):
-    __tablename__ = "SharedTripToken"
+    __tablename__ = "shared_trip_tokens"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
     tripId: Mapped[str] = mapped_column(String)
@@ -107,7 +107,7 @@ class SharedTripToken(Base):
 
 
 class ItinerarySlot(Base):
-    __tablename__ = "ItinerarySlot"
+    __tablename__ = "itinerary_slots"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
     tripId: Mapped[str] = mapped_column(String)
@@ -129,7 +129,7 @@ class ItinerarySlot(Base):
 
 
 class BehavioralSignal(Base):
-    __tablename__ = "BehavioralSignal"
+    __tablename__ = "behavioral_signals"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
     userId: Mapped[str] = mapped_column(String)
@@ -156,7 +156,7 @@ class BehavioralSignal(Base):
 
 
 class IntentionSignal(Base):
-    __tablename__ = "IntentionSignal"
+    __tablename__ = "intention_signals"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
     behavioralSignalId: Mapped[str] = mapped_column(String)
@@ -170,7 +170,7 @@ class IntentionSignal(Base):
 
 
 class RankingEvent(Base):
-    __tablename__ = "RankingEvent"
+    __tablename__ = "ranking_events"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
     userId: Mapped[str] = mapped_column(String)
@@ -199,7 +199,7 @@ class RankingEvent(Base):
 
 
 class RawEvent(Base):
-    __tablename__ = "RawEvent"
+    __tablename__ = "raw_events"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
     userId: Mapped[str] = mapped_column(String)

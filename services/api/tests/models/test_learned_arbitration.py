@@ -259,7 +259,7 @@ class TestSaveLoad:
 
 class TestSQLStructure:
     def test_readiness_sql_references_arbitration_event(self):
-        assert '"ArbitrationEvent"' in _READINESS_SQL
+        assert 'arbitration_events' in _READINESS_SQL
         assert '"accepted"' in _READINESS_SQL
 
     def test_training_sql_has_required_columns(self):

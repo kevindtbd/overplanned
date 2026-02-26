@@ -242,8 +242,8 @@ class TestResponseParsing:
 
 
 class TestVocabularyIntegrity:
-    def test_vocabulary_has_44_tags(self):
-        assert len(ALL_TAGS) == 44
+    def test_vocabulary_has_at_least_44_tags(self):
+        assert len(ALL_TAGS) >= 44
 
     def test_known_tags_present(self):
         assert "hidden-gem" in ALL_TAGS

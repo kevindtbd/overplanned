@@ -59,7 +59,7 @@ _DEDUP_SIGNAL_TYPE: str = "slot_confirm"
 
 _SQL_DEDUP_CHECK = """
     SELECT 1
-    FROM "BehavioralSignal"
+    FROM behavioral_signals
     WHERE "userId" = $1
       AND "tripId" = $2
       AND "signalType" = $3
@@ -71,7 +71,7 @@ _SQL_DEDUP_CHECK = """
 """
 
 _SQL_INSERT_SIGNAL = """
-    INSERT INTO "BehavioralSignal" (
+    INSERT INTO behavioral_signals (
         id, "userId", "tripId", "activityNodeId",
         "signalType", "signalValue", "tripPhase",
         "rawAction", "source", "subflow", "signal_weight",
@@ -87,7 +87,7 @@ _SQL_INSERT_SIGNAL = """
 """
 
 _SQL_INSERT_INGESTION = """
-    INSERT INTO "CorpusIngestionRequest" (
+    INSERT INTO corpus_ingestion_requests (
         id, "rawPlaceName", "tripId", "userId",
         source, status, "createdAt"
     ) VALUES (

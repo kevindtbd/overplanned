@@ -36,7 +36,7 @@ class CollabFilterConfig:
 _WARM_USER_COUNT_SQL = """
 SELECT COUNT(*) AS cnt FROM (
     SELECT "userId"
-    FROM "Trip"
+    FROM trips
     WHERE "status" = 'completed'
     GROUP BY "userId"
     HAVING COUNT(*) >= 3
@@ -46,7 +46,7 @@ SELECT COUNT(*) AS cnt FROM (
 # SQL: fetch behavioral signal averages grouped by user + signalType
 _WARM_USER_SIGNALS_SQL = """
 SELECT bs."userId", bs."signalType", AVG(bs."signalValue") AS avg_value
-FROM "BehavioralSignal" bs
+FROM behavioral_signals bs
 WHERE bs."userId" = ANY($1::text[])
 GROUP BY bs."userId", bs."signalType"
 """

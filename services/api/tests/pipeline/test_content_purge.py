@@ -150,8 +150,8 @@ class TestPurgePreservesDerivedData:
         # Should NOT touch these columns
         assert '"convergenceScore"' not in source
         assert '"authorityScore"' not in source
-        assert '"VibeTag"' not in source
-        assert '"ActivityNodeVibeTag"' not in source
+        assert 'vibe_tags' not in source
+        assert 'activity_node_vibe_tags' not in source
 
     def test_reddit_sources_are_frozen(self):
         """REDDIT_SOURCES should be immutable."""

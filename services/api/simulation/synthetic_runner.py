@@ -466,7 +466,7 @@ def _validate_haiku_output(raw: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 _INSERT_BEHAVIORAL_SIGNAL_SQL = """
-INSERT INTO "BehavioralSignal"
+INSERT INTO behavioral_signals
   (id, "userId", "tripId", "slotId", "activityNodeId", "signalType",
    "signalValue", "tripPhase", "rawAction", "modelVersion", "promptVersion",
    "source", signal_weight, "createdAt")

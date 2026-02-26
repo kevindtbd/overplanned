@@ -367,7 +367,7 @@ async def seed_personas(
                 """
                 SELECT "id", "name", "category", "neighborhood",
                        "convergenceScore", "priceLevel"
-                FROM "ActivityNode"
+                FROM activity_nodes
                 WHERE "city" = $1 AND "status" != 'archived'
                 """,
                 city,
@@ -434,11 +434,11 @@ async def _seed_single_persona(
             # Upsert user — get the actual ID (handles reruns)
             user_id = await conn.fetchval(
                 """
-                INSERT INTO "User" (
+                INSERT INTO users (
                     "id", "email", "name", "subscriptionTier", "systemRole",
                     "onboardingComplete", "createdAt", "updatedAt"
                 ) VALUES ($1, $2, $3, 'beta', 'user', true, $4, $4)
-                ON CONFLICT ("email") DO UPDATE SET "updatedAt" = "User"."updatedAt"
+                ON CONFLICT ("email") DO UPDATE SET "updatedAt" = users."updatedAt"
                 RETURNING "id"
                 """,
                 str(uuid.uuid4()),
@@ -449,7 +449,7 @@ async def _seed_single_persona(
 
             # Check if this user already has trips (rerun detection)
             existing_trips = await conn.fetchval(
-                'SELECT COUNT(*) FROM "Trip" WHERE "userId" = $1',
+                'SELECT COUNT(*) FROM trips WHERE "userId" = $1',
                 user_id,
             )
             if existing_trips > 0:
@@ -508,7 +508,7 @@ async def _seed_trip_with_signals(
 
     await conn.execute(
         """
-        INSERT INTO "Trip" (
+        INSERT INTO trips (
             "id", "userId", "mode", "status", "destination",
             "city", "country", "timezone",
             "startDate", "endDate", "personaSeed",
@@ -531,7 +531,7 @@ async def _seed_trip_with_signals(
 
     await conn.execute(
         """
-        INSERT INTO "TripMember" (
+        INSERT INTO trip_members (
             "id", "tripId", "userId", "role", "status",
             "personaSeed", "joinedAt", "createdAt"
         ) VALUES ($1, $2, $3, 'organizer', 'joined', $4, $5, $5)
@@ -594,7 +594,7 @@ async def _seed_trip_with_signals(
 
             await conn.execute(
                 """
-                INSERT INTO "ItinerarySlot" (
+                INSERT INTO itinerary_slots (
                     "id", "tripId", "activityNodeId", "dayNumber",
                     "sortOrder", "slotType", "status",
                     "startTime", "durationMinutes",
@@ -627,7 +627,7 @@ async def _seed_trip_with_signals(
             for sig in signals:
                 await conn.execute(
                     """
-                    INSERT INTO "BehavioralSignal" (
+                    INSERT INTO behavioral_signals (
                         "id", "userId", "tripId", "slotId",
                         "activityNodeId", "signalType", "signalValue",
                         "tripPhase", "rawAction", "createdAt"
@@ -653,7 +653,7 @@ async def _seed_trip_with_signals(
 
                 await conn.execute(
                     """
-                    INSERT INTO "ItinerarySlot" (
+                    INSERT INTO itinerary_slots (
                         "id", "tripId", "activityNodeId", "dayNumber",
                         "sortOrder", "slotType", "status",
                         "startTime", "durationMinutes",
@@ -680,7 +680,7 @@ async def _seed_trip_with_signals(
                 # Swap generates a confirm on the replacement
                 await conn.execute(
                     """
-                    INSERT INTO "BehavioralSignal" (
+                    INSERT INTO behavioral_signals (
                         "id", "userId", "tripId", "slotId",
                         "activityNodeId", "signalType", "signalValue",
                         "tripPhase", "rawAction", "createdAt"
@@ -882,8 +882,8 @@ async def _generate_post_trip_signals(
     rows = await conn.fetch(
         """
         SELECT s."id" as slot_id, s."activityNodeId", n."category"
-        FROM "ItinerarySlot" s
-        JOIN "ActivityNode" n ON n."id" = s."activityNodeId"
+        FROM itinerary_slots s
+        JOIN activity_nodes n ON n."id" = s."activityNodeId"
         WHERE s."tripId" = $1 AND s."status" = 'completed'
         """,
         trip_id,
@@ -910,7 +910,7 @@ async def _generate_post_trip_signals(
 
         await conn.execute(
             """
-            INSERT INTO "BehavioralSignal" (
+            INSERT INTO behavioral_signals (
                 "id", "userId", "tripId", "slotId",
                 "activityNodeId", "signalType", "signalValue",
                 "tripPhase", "rawAction", "createdAt"

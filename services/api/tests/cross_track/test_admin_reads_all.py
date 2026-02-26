@@ -370,7 +370,7 @@ class TestAdminReadsBehavioralSignals:
 
         results = await db.query_raw(
             'SELECT "signalType", COUNT(*) as count '
-            'FROM "BehavioralSignal" '
+            'FROM behavioral_signals '
             'GROUP BY "signalType" '
             'ORDER BY count DESC'
         )
@@ -446,7 +446,7 @@ class TestAdminReadsPivotEvents:
 
         results = await db.query_raw(
             'SELECT "triggerType", COUNT(*) as count '
-            'FROM "PivotEvent" '
+            'FROM pivot_events '
             'GROUP BY "triggerType" '
             'ORDER BY count DESC'
         )
@@ -467,7 +467,7 @@ class TestAdminReadsPivotEvents:
             'SELECT AVG("responseTimeMs") as avg_ms, '
             'PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY "responseTimeMs") as p95_ms, '
             'COUNT(*) as total '
-            'FROM "PivotEvent" '
+            'FROM pivot_events '
             'WHERE "responseTimeMs" IS NOT NULL'
         )
 
@@ -653,7 +653,7 @@ class TestAdminSafetyDashboard:
 
         results = await db.query_raw(
             'SELECT "flagReason", COUNT(*) as count '
-            'FROM "ActivityNode" '
+            'FROM activity_nodes '
             'WHERE status = \'flagged\' '
             'GROUP BY "flagReason"'
         )
@@ -719,7 +719,7 @@ class TestAdminPipelineDashboard:
             '  WHEN "convergenceScore" < 0.8 THEN \'0.6-0.8\' '
             '  ELSE \'0.8-1.0\' '
             'END as bucket, COUNT(*) as count '
-            'FROM "ActivityNode" '
+            'FROM activity_nodes '
             'WHERE "convergenceScore" IS NOT NULL '
             'GROUP BY bucket ORDER BY bucket'
         )
@@ -760,7 +760,7 @@ class TestAdminPipelineDashboard:
             'SELECT AVG("sourceCount") as avg_source_count, '
             'MAX("sourceCount") as max_source_count, '
             'MIN("sourceCount") as min_source_count '
-            'FROM "ActivityNode" '
+            'FROM activity_nodes '
             'WHERE "isCanonical" = true'
         )
 

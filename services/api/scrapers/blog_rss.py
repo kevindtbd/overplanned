@@ -447,7 +447,7 @@ class BlogRssScraper(BaseScraper):
         # Dedup: skip if we already have this exact content from this source
         existing = await self.db_pool.fetchrow(
             """
-            SELECT id FROM "QualitySignal"
+            SELECT id FROM quality_signals
             WHERE "sourceName" = $1
               AND "rawExcerpt" IS NOT NULL
               AND md5("rawExcerpt") = md5($2)
@@ -470,11 +470,12 @@ class BlogRssScraper(BaseScraper):
         unresolved_node_id = "00000000-0000-0000-0000-000000000000"
 
         signal_id = str(uuid.uuid4())
-        now = datetime.now(timezone.utc)
+        # Strip timezone — Prisma DateTime maps to timestamp without time zone
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
 
         await self.db_pool.execute(
             """
-            INSERT INTO "QualitySignal" (
+            INSERT INTO quality_signals (
                 id, "activityNodeId", "sourceName", "sourceUrl",
                 "sourceAuthority", "signalType", "rawExcerpt",
                 "extractedAt", "createdAt"

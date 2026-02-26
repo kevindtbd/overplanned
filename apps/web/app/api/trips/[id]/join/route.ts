@@ -47,7 +47,7 @@ export async function POST(
     // Atomic increment — prevents TOCTOU race (V1)
     // Only succeeds if: token matches trip, not revoked, not expired, uses remaining
     const updated = await prisma.$queryRaw<Array<{ id: string; role: string }>>`
-      UPDATE "InviteToken" SET "usedCount" = "usedCount" + 1
+      UPDATE invite_tokens SET "usedCount" = "usedCount" + 1
       WHERE token = ${token} AND "usedCount" < "maxUses"
       AND "revokedAt" IS NULL AND "expiresAt" > NOW()
       AND "tripId" = ${tripId}

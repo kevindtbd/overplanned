@@ -121,9 +121,9 @@ async def fetch_nodes(conn: asyncpg.Connection, city_name: str) -> list[dict]:
                 array_agg(DISTINCT vt.slug) FILTER (WHERE vt.slug IS NOT NULL),
                 ARRAY[]::text[]
             ) AS vibe_tags
-        FROM "ActivityNode" an
-        LEFT JOIN "ActivityNodeVibeTag" anvt ON anvt."activityNodeId" = an.id
-        LEFT JOIN "VibeTag" vt ON vt.id = anvt."vibeTagId"
+        FROM activity_nodes an
+        LEFT JOIN activity_node_vibe_tags anvt ON anvt."activityNodeId" = an.id
+        LEFT JOIN vibe_tags vt ON vt.id = anvt."vibeTagId"
         WHERE an.city = $1
           AND an."isCanonical" = true
         GROUP BY an.id, an.name, an.category, an.status,
@@ -155,8 +155,8 @@ async def fetch_quality_signals(
             qs."rawExcerpt",
             qs."extractionMetadata",
             qs."sourceAuthority"
-        FROM "QualitySignal" qs
-        WHERE qs."activityNodeId" = ANY($1::uuid[])
+        FROM quality_signals qs
+        WHERE qs."activityNodeId" = ANY($1::text[])
         ORDER BY qs."sourceAuthority" DESC, qs."createdAt" DESC
         """,
         node_ids,
@@ -421,8 +421,8 @@ def _render_node(nr: NodeReport) -> str:
     lines.append(f"[{label}] {nr.name}")
     lines.append(
         f"  Category: {nr.category} | "
-        f"Tourist: {nr.tourist_score:.2f if nr.tourist_score is not None else 'n/a'} | "
-        f"Convergence: {nr.convergence_score:.2f if nr.convergence_score is not None else 'n/a'}"
+        f"Tourist: {f'{nr.tourist_score:.2f}' if nr.tourist_score is not None else 'n/a'} | "
+        f"Convergence: {f'{nr.convergence_score:.2f}' if nr.convergence_score is not None else 'n/a'}"
     )
     if nr.vibe_tags:
         lines.append(f"  Tags: {', '.join(nr.vibe_tags)}")
@@ -614,6 +614,12 @@ async def generate_report(
 
 async def main() -> None:
     """CLI entry point."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
     parser = argparse.ArgumentParser(
         description="Generate a canary review report for a seeded city"
     )

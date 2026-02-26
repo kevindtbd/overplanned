@@ -583,7 +583,7 @@ async def validate_city_seed(
         # 1. Node count
         result.node_count = await conn.fetchval(
             """
-            SELECT COUNT(*) FROM "ActivityNode"
+            SELECT COUNT(*) FROM activity_nodes
             WHERE city = $1 AND "isCanonical" = true
             """,
             config.name,
@@ -599,9 +599,9 @@ async def validate_city_seed(
         distinct_tags = await conn.fetchval(
             """
             SELECT COUNT(DISTINCT vt.slug)
-            FROM "ActivityNodeVibeTag" anvt
-            JOIN "VibeTag" vt ON vt.id = anvt."vibeTagId"
-            JOIN "ActivityNode" an ON an.id = anvt."activityNodeId"
+            FROM activity_node_vibe_tags anvt
+            JOIN vibe_tags vt ON vt.id = anvt."vibeTagId"
+            JOIN activity_nodes an ON an.id = anvt."activityNodeId"
             WHERE an.city = $1 AND an."isCanonical" = true
             """,
             config.name,
@@ -623,7 +623,7 @@ async def validate_city_seed(
         cat_rows = await conn.fetch(
             """
             SELECT category, COUNT(*) as cnt
-            FROM "ActivityNode"
+            FROM activity_nodes
             WHERE city = $1 AND "isCanonical" = true
             GROUP BY category
             ORDER BY cnt DESC

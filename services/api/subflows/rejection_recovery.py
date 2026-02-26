@@ -97,7 +97,7 @@ _DEFAULT_ALTERNATIVES: list[str] = ["local-hidden-gem", "neighborhood-spot", "ca
 # ---------------------------------------------------------------------------
 
 _INSERT_SIGNAL_SQL = """
-INSERT INTO "BehavioralSignal" (
+INSERT INTO behavioral_signals (
     id,
     "userId",
     "tripId",

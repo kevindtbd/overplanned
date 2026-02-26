@@ -58,24 +58,10 @@ BPR_SCHEMA = pa.schema([
     pa.field("timestamp", pa.int64()),
 ])
 
-# SQL: ensure the audit table exists
-_CREATE_AUDIT_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS "TrainingExtractRun" (
-    "id" TEXT PRIMARY KEY,
-    "targetDate" DATE NOT NULL,
-    "status" TEXT NOT NULL,
-    "rowsExtracted" INTEGER NOT NULL DEFAULT 0,
-    "filePath" TEXT,
-    "durationMs" INTEGER NOT NULL DEFAULT 0,
-    "errorMessage" TEXT,
-    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
-)
-"""
-
 # SQL: fetch eligible user IDs (users with >= MIN_COMPLETED_TRIPS completed trips)
 _ELIGIBLE_USERS_SQL = """
 SELECT "userId"
-FROM "Trip"
+FROM trips
 WHERE "status" = 'completed'
 GROUP BY "userId"
 HAVING COUNT(*) >= $1
@@ -88,7 +74,7 @@ SELECT
     bs."activityNodeId",
     bs."signalType",
     EXTRACT(EPOCH FROM bs."createdAt")::BIGINT AS ts
-FROM "BehavioralSignal" bs
+FROM behavioral_signals bs
 WHERE bs."source" = 'user_behavioral'
   AND bs."activityNodeId" IS NOT NULL
   AND bs."createdAt" >= $1
@@ -100,7 +86,7 @@ ORDER BY bs."userId", bs."createdAt"
 
 # SQL: insert audit record
 _INSERT_AUDIT_SQL = """
-INSERT INTO "TrainingExtractRun" ("id", "targetDate", "status", "rowsExtracted", "filePath", "durationMs", "errorMessage")
+INSERT INTO training_extract_runs ("id", "targetDate", "status", "rowsExtracted", "filePath", "durationMs", "errorMessage")
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 """
 
@@ -119,12 +105,6 @@ class ExtractionResult:
 def _output_file_path(output_dir: str, target_date: date) -> str:
     """Build the canonical output file path for a given date."""
     return os.path.join(output_dir, f"bpr_training_{target_date.isoformat()}.parquet")
-
-
-async def _ensure_audit_table(pool) -> None:
-    """Create the TrainingExtractRun audit table if it does not exist."""
-    async with pool.acquire() as conn:
-        await conn.execute(_CREATE_AUDIT_TABLE_SQL)
 
 
 async def _get_eligible_user_ids(pool) -> list[str]:
@@ -269,13 +249,10 @@ async def extract_training_data(
             file_path=file_path,
             duration_ms=duration_ms,
         )
-        await _ensure_audit_table(pool)
         await _log_audit(pool, run_id, target_date, "skipped", 0, file_path, duration_ms, None)
         return result
 
     try:
-        await _ensure_audit_table(pool)
-
         # Get eligible users (cold-user quarantine)
         eligible_user_ids = await _get_eligible_user_ids(pool)
         if not eligible_user_ids:

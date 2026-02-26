@@ -297,7 +297,7 @@ class TestBPRRegistration:
             )
 
             sql = mock_pool.execute.call_args[0][0]
-            assert '"ModelRegistry"' in sql
+            assert 'model_registry' in sql
             assert '"modelName"' in sql
             assert '"modelVersion"' in sql
             assert '"configSnapshot"' in sql

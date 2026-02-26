@@ -408,7 +408,7 @@ class DLRMScoringHead:
 
         await pool.execute(
             """
-            INSERT INTO "ModelRegistry" (
+            INSERT INTO model_registry (
                 "id", "modelName", "modelVersion", "stage", "modelType",
                 "description", "artifactHash", "configSnapshot",
                 "createdAt", "updatedAt"

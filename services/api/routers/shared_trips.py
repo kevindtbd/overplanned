@@ -263,8 +263,8 @@ async def get_shared_trip(
             a.subcategory, a.neighborhood, a."priceLevel",
             a."primaryImageUrl", a."descriptionShort",
             a.latitude, a.longitude
-        FROM "ItinerarySlot" s
-        LEFT JOIN "ActivityNode" a ON s."activityNodeId" = a.id
+        FROM itinerary_slots s
+        LEFT JOIN activity_nodes a ON s."activityNodeId" = a.id
         WHERE s."tripId" = :trip_id
         ORDER BY s."dayNumber" ASC, s."sortOrder" ASC
     """)

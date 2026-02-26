@@ -267,7 +267,7 @@ async def run_convergence_scoring(
         if node_ids:
             nodes = await conn.fetch(
                 """
-                SELECT id FROM "ActivityNode"
+                SELECT id FROM activity_nodes
                 WHERE id = ANY($1::text[])
                   AND "isCanonical" = true
                 """,
@@ -276,7 +276,7 @@ async def run_convergence_scoring(
         else:
             nodes = await conn.fetch(
                 """
-                SELECT id FROM "ActivityNode"
+                SELECT id FROM activity_nodes
                 WHERE "isCanonical" = true
                 ORDER BY "createdAt"
                 """,
@@ -330,7 +330,7 @@ async def _score_batch(
             "sourceAuthority",
             "signalType",
             "extractionMetadata"
-        FROM "QualitySignal"
+        FROM quality_signals
         WHERE "activityNodeId" = ANY($1::text[])
         """,
         node_ids,
@@ -368,7 +368,7 @@ async def _score_batch(
     vibe_agreement = await conn.fetch(
         """
         SELECT "activityNodeId", "vibeTagId", COUNT(DISTINCT source) AS source_count
-        FROM "ActivityNodeVibeTag"
+        FROM activity_node_vibe_tags
         WHERE "activityNodeId" = ANY($1::text[])
         GROUP BY "activityNodeId", "vibeTagId"
         HAVING COUNT(DISTINCT source) >= 3
@@ -425,7 +425,7 @@ async def _score_batch(
         if tourist_score is not None:
             await conn.execute(
                 """
-                UPDATE "ActivityNode"
+                UPDATE activity_nodes
                 SET "convergenceScore" = $1,
                     "authorityScore" = $2,
                     "sourceCount" = $3,
@@ -443,7 +443,7 @@ async def _score_batch(
         else:
             await conn.execute(
                 """
-                UPDATE "ActivityNode"
+                UPDATE activity_nodes
                 SET "convergenceScore" = $1,
                     "authorityScore" = $2,
                     "sourceCount" = $3,

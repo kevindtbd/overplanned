@@ -144,7 +144,7 @@ async def _pg_fallback(
                 id, name, slug, category, "priceLevel",
                 "convergenceScore", "authorityScore",
                 "descriptionShort", "primaryImageUrl"
-            FROM "ActivityNode"
+            FROM activity_nodes
             WHERE city = $1
               AND status = 'approved'
               AND "isCanonical" = true

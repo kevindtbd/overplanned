@@ -259,8 +259,8 @@ class EntityResolver:
 
         if since is None:
             since = datetime.now(timezone.utc).replace(
-                hour=0, minute=0, second=0, microsecond=0
-            )
+                hour=0, minute=0, second=0, microsecond=0,
+            ).replace(tzinfo=None)
 
         async with self.pool.acquire() as conn:
             # Get new canonical nodes
@@ -268,7 +268,7 @@ class EntityResolver:
                 """
                 SELECT id, "canonicalName", "foursquareId", "googlePlaceId",
                        latitude, longitude, category, "contentHash", name
-                FROM "ActivityNode"
+                FROM activity_nodes
                 WHERE "isCanonical" = true
                   AND "createdAt" >= $1
                 ORDER BY "createdAt" ASC
@@ -345,7 +345,7 @@ class EntityResolver:
                 """
                 SELECT id, "canonicalName", "foursquareId", "googlePlaceId",
                        latitude, longitude, category, "contentHash", name
-                FROM "ActivityNode"
+                FROM activity_nodes
                 WHERE "isCanonical" = true
                 ORDER BY "createdAt" ASC
                 """,
@@ -355,7 +355,7 @@ class EntityResolver:
             for node in all_canonical:
                 # Skip if already merged in this run
                 is_still_canonical = await conn.fetchval(
-                    'SELECT "isCanonical" FROM "ActivityNode" WHERE id = $1',
+                    'SELECT "isCanonical" FROM activity_nodes WHERE id = $1',
                     node["id"],
                 )
                 if not is_still_canonical:
@@ -425,7 +425,7 @@ class EntityResolver:
 
             match = await conn.fetchrow(
                 f"""
-                SELECT id FROM "ActivityNode"
+                SELECT id FROM activity_nodes
                 WHERE "{id_field}" = $1
                   AND id != $2
                   AND "isCanonical" = true
@@ -458,7 +458,7 @@ class EntityResolver:
         matches = await conn.fetch(
             """
             SELECT id, "canonicalName"
-            FROM "ActivityNode"
+            FROM activity_nodes
             WHERE id != $1
               AND "isCanonical" = true
               AND category = $2
@@ -502,7 +502,7 @@ class EntityResolver:
             """
             SELECT id, "canonicalName",
                    similarity("canonicalName", $2) AS sim
-            FROM "ActivityNode"
+            FROM activity_nodes
             WHERE id != $1
               AND "isCanonical" = true
               AND category = $3
@@ -547,7 +547,7 @@ class EntityResolver:
 
         match = await conn.fetchrow(
             """
-            SELECT id FROM "ActivityNode"
+            SELECT id FROM activity_nodes
             WHERE "contentHash" = $1
               AND id != $2
               AND "isCanonical" = true
@@ -581,7 +581,7 @@ class EntityResolver:
         dupes = await conn.fetch(
             """
             SELECT "contentHash", array_agg(id ORDER BY "createdAt" ASC) AS ids
-            FROM "ActivityNode"
+            FROM activity_nodes
             WHERE "isCanonical" = true
               AND "contentHash" IS NOT NULL
             GROUP BY "contentHash"
@@ -614,7 +614,7 @@ class EntityResolver:
             dupes = await conn.fetch(
                 f"""
                 SELECT "{id_field}", array_agg(id ORDER BY "createdAt" ASC) AS ids
-                FROM "ActivityNode"
+                FROM activity_nodes
                 WHERE "isCanonical" = true
                   AND "{id_field}" IS NOT NULL
                 GROUP BY "{id_field}"
@@ -649,7 +649,7 @@ class EntityResolver:
             """
             SELECT id, "canonicalName",
                    similarity("canonicalName", $2) AS sim
-            FROM "ActivityNode"
+            FROM activity_nodes
             WHERE id != $1
               AND "isCanonical" = true
               AND category = $3
@@ -711,7 +711,7 @@ class EntityResolver:
             # Verify both nodes are still canonical (guard against race)
             check = await conn.fetch(
                 """
-                SELECT id, "isCanonical" FROM "ActivityNode"
+                SELECT id, "isCanonical" FROM activity_nodes
                 WHERE id = ANY($1)
                 """,
                 [candidate.winner_id, candidate.loser_id],
@@ -728,7 +728,7 @@ class EntityResolver:
                 """
                 SELECT name, "canonicalName", "sourceCount",
                        "foursquareId", "googlePlaceId"
-                FROM "ActivityNode" WHERE id = $1
+                FROM activity_nodes WHERE id = $1
                 """,
                 candidate.loser_id,
             )
@@ -736,7 +736,7 @@ class EntityResolver:
             # 1. Mark loser as resolved
             await conn.execute(
                 """
-                UPDATE "ActivityNode"
+                UPDATE activity_nodes
                 SET "resolvedToId" = $1,
                     "isCanonical" = false,
                     "updatedAt" = NOW()
@@ -750,7 +750,7 @@ class EntityResolver:
             alias_name = loser["name"] or loser["canonicalName"]
             await conn.execute(
                 """
-                INSERT INTO "ActivityAlias" (id, "activityNodeId", alias, source, "createdAt")
+                INSERT INTO activity_aliases (id, "activityNodeId", alias, source, "createdAt")
                 VALUES ($1, $2, $3, $4, NOW())
                 ON CONFLICT DO NOTHING
                 """,
@@ -764,7 +764,7 @@ class EntityResolver:
             # 3. Migrate QualitySignals
             migrated_signals = await conn.execute(
                 """
-                UPDATE "QualitySignal"
+                UPDATE quality_signals
                 SET "activityNodeId" = $1
                 WHERE "activityNodeId" = $2
                 """,
@@ -776,12 +776,12 @@ class EntityResolver:
             # 4. Migrate ActivityNodeVibeTags (skip existing combos)
             migrated_tags = await conn.execute(
                 """
-                UPDATE "ActivityNodeVibeTag"
+                UPDATE activity_node_vibe_tags
                 SET "activityNodeId" = $1
                 WHERE "activityNodeId" = $2
                   AND ("vibeTagId", source) NOT IN (
                       SELECT "vibeTagId", source
-                      FROM "ActivityNodeVibeTag"
+                      FROM activity_node_vibe_tags
                       WHERE "activityNodeId" = $1
                   )
                 """,
@@ -793,7 +793,7 @@ class EntityResolver:
             # Delete any orphaned vibe tags left on loser (dupes that weren't migrated)
             await conn.execute(
                 """
-                DELETE FROM "ActivityNodeVibeTag"
+                DELETE FROM activity_node_vibe_tags
                 WHERE "activityNodeId" = $1
                 """,
                 candidate.loser_id,
@@ -804,7 +804,7 @@ class EntityResolver:
                 if loser[id_field]:
                     await conn.execute(
                         f"""
-                        UPDATE "ActivityNode"
+                        UPDATE activity_nodes
                         SET "{id_field}" = $1, "updatedAt" = NOW()
                         WHERE id = $2 AND "{id_field}" IS NULL
                         """,
@@ -815,7 +815,7 @@ class EntityResolver:
             # 6. Update winner sourceCount
             await conn.execute(
                 """
-                UPDATE "ActivityNode"
+                UPDATE activity_nodes
                 SET "sourceCount" = "sourceCount" + $1,
                     "updatedAt" = NOW()
                 WHERE id = $2
@@ -859,7 +859,7 @@ class EntityResolver:
         nodes = await conn.fetch(
             """
             SELECT id, "canonicalName", latitude, longitude, category
-            FROM "ActivityNode"
+            FROM activity_nodes
             WHERE "isCanonical" = true
               AND "contentHash" IS NULL
             """,
@@ -875,7 +875,7 @@ class EntityResolver:
             )
             await conn.execute(
                 """
-                UPDATE "ActivityNode"
+                UPDATE activity_nodes
                 SET "contentHash" = $1, "updatedAt" = NOW()
                 WHERE id = $2
                 """,
@@ -909,22 +909,22 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 RECOMMENDED_INDEXES_SQL = """
 -- Trigram index for fuzzy name matching
 CREATE INDEX IF NOT EXISTS idx_activity_node_canonical_name_trgm
-ON "ActivityNode" USING gin ("canonicalName" gin_trgm_ops);
+ON activity_nodes USING gin ("canonicalName" gin_trgm_ops);
 
 -- Spatial index for geocode proximity queries
 CREATE INDEX IF NOT EXISTS idx_activity_node_geography
-ON "ActivityNode" USING gist (
+ON activity_nodes USING gist (
     (ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography)
 );
 
 -- Content hash lookup
 CREATE INDEX IF NOT EXISTS idx_activity_node_content_hash
-ON "ActivityNode" ("contentHash")
+ON activity_nodes ("contentHash")
 WHERE "isCanonical" = true;
 
 -- Resolution lookup
 CREATE INDEX IF NOT EXISTS idx_activity_node_resolved
-ON "ActivityNode" ("resolvedToId")
+ON activity_nodes ("resolvedToId")
 WHERE "resolvedToId" IS NOT NULL;
 """
 

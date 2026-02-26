@@ -181,7 +181,7 @@ async def _check_rate_limits(db, user_id: str) -> None:
 
     hourly_count = await db.fetchval(
         """
-        SELECT COUNT(*) FROM "BackfillTrip"
+        SELECT COUNT(*) FROM backfill_trips
         WHERE "userId" = $1
           AND "createdAt" >= $2
         """,
@@ -203,7 +203,7 @@ async def _check_rate_limits(db, user_id: str) -> None:
 
     daily_count = await db.fetchval(
         """
-        SELECT COUNT(*) FROM "BackfillTrip"
+        SELECT COUNT(*) FROM backfill_trips
         WHERE "userId" = $1
           AND "createdAt" >= $2
         """,
@@ -265,7 +265,7 @@ async def submit_backfill(
     dedup_hash = _submission_hash(user_id, body.text)
     existing = await db.fetchrow(
         """
-        SELECT id, status FROM "BackfillTrip"
+        SELECT id, status FROM backfill_trips
         WHERE "userId" = $1
           AND "tripNote" = $2
         LIMIT 1
@@ -295,7 +295,7 @@ async def submit_backfill(
     # Create BackfillTrip row — status=processing immediately
     await db.execute(
         """
-        INSERT INTO "BackfillTrip" (
+        INSERT INTO backfill_trips (
             id, "userId",
             "rawSubmission", "confidenceTier",
             source, "tripNote", "contextTag", status,
@@ -317,7 +317,7 @@ async def submit_backfill(
     # Create the primary leg (position=0) carrying city/country for this submission
     await db.execute(
         """
-        INSERT INTO "BackfillLeg" (
+        INSERT INTO backfill_legs (
             id, "backfillTripId", position, city, country, "createdAt"
         ) VALUES (
             $1, $2, 0, $3, $4, $5
@@ -375,7 +375,7 @@ async def _run_pipeline_safe(pool, backfill_trip_id: str) -> None:
             async with pool.acquire() as conn:
                 await conn.execute(
                     """
-                    UPDATE "BackfillTrip"
+                    UPDATE backfill_trips
                     SET status = 'rejected',
                         "rejectionReason" = $1,
                         "updatedAt" = NOW()

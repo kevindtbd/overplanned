@@ -126,7 +126,7 @@ async def _update_status(conn: asyncpg.Connection, backfill_trip_id: str, status
     """Write BackfillTrip.status before each stage (crash recovery anchor)."""
     await conn.execute(
         """
-        UPDATE "BackfillTrip"
+        UPDATE backfill_trips
         SET status = $1, "updatedAt" = NOW()
         WHERE id = $2
         """,
@@ -140,7 +140,7 @@ async def _update_confidence_tier(
 ) -> None:
     await conn.execute(
         """
-        UPDATE "BackfillTrip"
+        UPDATE backfill_trips
         SET "confidenceTier" = $1, "updatedAt" = NOW()
         WHERE id = $2
         """,
@@ -157,8 +157,8 @@ async def _fetch_backfill_trip(
         SELECT bt.id, bt."userId", bt."rawSubmission",
                bt."confidenceTier", bt.status,
                bl.city, bl.country
-        FROM "BackfillTrip" bt
-        LEFT JOIN "BackfillLeg" bl
+        FROM backfill_trips bt
+        LEFT JOIN backfill_legs bl
           ON bl."backfillTripId" = bt.id
           AND bl.position = 0
         WHERE bt.id = $1
@@ -173,7 +173,7 @@ async def _reject_trip(
 ) -> None:
     await conn.execute(
         """
-        UPDATE "BackfillTrip"
+        UPDATE backfill_trips
         SET status = 'rejected',
             "rejectionReason" = $1,
             "updatedAt" = NOW()
@@ -207,14 +207,14 @@ async def _create_or_update_legs(
     Returns the final list of leg dicts: [{ id, position, city, country }, ...]
     sorted by position ascending.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     if extracted_cities:
         # Update leg[0] with the first extracted city
         first = extracted_cities[0]
         await conn.execute(
             """
-            UPDATE "BackfillLeg"
+            UPDATE backfill_legs
             SET city = $1, country = $2
             WHERE "backfillTripId" = $3 AND position = 0
             """,
@@ -232,7 +232,7 @@ async def _create_or_update_legs(
             leg_id = str(uuid4())
             await conn.execute(
                 """
-                INSERT INTO "BackfillLeg" (
+                INSERT INTO backfill_legs (
                     id, "backfillTripId", position, city, country, "createdAt"
                 ) VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT ("backfillTripId", position) DO UPDATE
@@ -254,7 +254,7 @@ async def _create_or_update_legs(
     rows = await conn.fetch(
         """
         SELECT id, position, city, country
-        FROM "BackfillLeg"
+        FROM backfill_legs
         WHERE "backfillTripId" = $1
         ORDER BY position ASC
         """,
@@ -345,7 +345,7 @@ async def _resolve_single_venue(
             """
             SELECT id, latitude, longitude, "priceLevel",
                    similarity("canonicalName", $1) AS sim
-            FROM "ActivityNode"
+            FROM activity_nodes
             WHERE "isCanonical" = true
               AND lower(city) = lower($2)
               AND category = $3
@@ -365,7 +365,7 @@ async def _resolve_single_venue(
             """
             SELECT id, latitude, longitude, "priceLevel",
                    similarity("canonicalName", $1) AS sim
-            FROM "ActivityNode"
+            FROM activity_nodes
             WHERE "isCanonical" = true
               AND lower(city) = lower($2)
               AND similarity("canonicalName", $1) > $3
@@ -523,8 +523,8 @@ async def _check_duplicate_submission(
     """
     row = await conn.fetchrow(
         """
-        SELECT bt.id FROM "BackfillTrip" bt
-        JOIN "BackfillLeg" bl
+        SELECT bt.id FROM backfill_trips bt
+        JOIN backfill_legs bl
           ON bl."backfillTripId" = bt.id
           AND bl.position = 0
         WHERE bt."userId" = $1
@@ -560,7 +560,7 @@ async def _write_venues(
     in the same order as checked_venues.
     """
     venue_ids: list[str] = []
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     for cv in checked_venues:
         rv = cv.resolved
@@ -569,7 +569,7 @@ async def _write_venues(
 
         await conn.execute(
             """
-            INSERT INTO "BackfillVenue" (
+            INSERT INTO backfill_venues (
                 id, "backfillTripId", "backfillLegId", "activityNodeId",
                 "extractedName", "extractedCategory", "extractedDate",
                 "extractedSentiment", latitude, longitude,
@@ -615,7 +615,7 @@ async def _write_signals(
     Returns number of signals written.
     """
     weight = TIER_WEIGHTS.get(confidence_tier, TIER_WEIGHTS["tier_4"])
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     count = 0
 
     for cv, venue_id in zip(checked_venues, venue_ids):
@@ -636,7 +636,7 @@ async def _write_signals(
         signal_id = str(uuid4())
         await conn.execute(
             """
-            INSERT INTO "BackfillSignal" (
+            INSERT INTO backfill_signals (
                 id, "userId", "backfillTripId", "backfillVenueId",
                 "signalType", "signalValue", "confidenceTier",
                 weight, "earnedOut", "createdAt", "updatedAt"
@@ -748,7 +748,7 @@ async def process_backfill(pool: asyncpg.Pool, backfill_trip_id: str) -> None:
             rows = await conn.fetch(
                 """
                 SELECT id, position, city, country
-                FROM "BackfillLeg"
+                FROM backfill_legs
                 WHERE "backfillTripId" = $1
                 ORDER BY position ASC
                 """,
@@ -949,7 +949,7 @@ async def process_backfill(pool: asyncpg.Pool, backfill_trip_id: str) -> None:
             # Mark complete
             await conn.execute(
                 """
-                UPDATE "BackfillTrip"
+                UPDATE backfill_trips
                 SET status = 'complete', "updatedAt" = NOW()
                 WHERE id = $1
                 """,

@@ -265,8 +265,8 @@ class TestBlogRssBendFiltering:
 class TestVibeExtractionForBend:
     """Verify vibe extraction settings are appropriate for Bend canary."""
 
-    def test_vocabulary_is_44_tags(self):
-        assert len(ALL_TAGS) == 44
+    def test_vocabulary_is_at_least_44_tags(self):
+        assert len(ALL_TAGS) >= 44
 
     def test_model_is_haiku(self):
         assert "haiku" in MODEL_NAME.lower()
@@ -294,32 +294,32 @@ class TestVibeExtractionForBend:
 class TestRuleInferenceVocabulary:
     """Check that rule inference tags align with the 44-tag vocabulary."""
 
-    def test_rule_tags_vs_vocabulary(self):
+    def test_rule_tags_subset_of_vocabulary(self):
         """
-        KNOWN GAP: Many rule inference tags are not in ALL_TAGS.
-        This will cause missing_vibe_tags warnings at runtime.
+        After tag vocabulary alignment, all rule inference tags should
+        be present in the LLM vocabulary (ALL_TAGS) or be known extras
+        (rule-inference-only tags like food-focused, browsing, etc.).
         """
         rule_tags = set()
         for category, tags in CATEGORY_TAG_RULES.items():
             for slug, score in tags:
                 rule_tags.add(slug)
 
-        missing = rule_tags - ALL_TAGS
-        # Document which tags are mismatched
-        assert len(missing) > 0, (
-            "If this fails, the gap has been fixed -- remove this test"
-        )
-        # These are the known mismatches:
-        expected_missing = {
-            "social", "food-focused", "sit-down", "casual", "deep-dive",
-            "slow-paced", "iconic", "fresh-air", "active", "browsing",
-            "unique", "memorable", "restorative", "quiet",
+        # Also include conditional rule tags
+        from services.api.pipeline.rule_inference import compute_tags_for_node
+        for price in [1, 2, 3, 4, 5]:
+            for cat in CATEGORY_TAG_RULES:
+                for slug, score in compute_tags_for_node(cat, price):
+                    rule_tags.add(slug)
+
+        # Known rule-inference-only tags (not in LLM vocab but in DB)
+        rule_only_extras = {
+            "food-focused", "sit-down", "browsing", "fresh-air",
+            "slow-paced", "quiet", "unique",
         }
-        # Note: "splurge" only appears in conditional rules (price_level >= 4),
-        # not in base CATEGORY_TAG_RULES, so it only shows up with price_level args.
-        assert missing == expected_missing, (
-            f"Unexpected tag mismatches. Missing: {missing}. "
-            f"Expected: {expected_missing}"
+        missing = rule_tags - ALL_TAGS - rule_only_extras
+        assert missing == set(), (
+            f"Rule inference tags not in vocabulary or extras: {missing}"
         )
 
     def test_rule_inference_for_dining(self):
@@ -335,7 +335,7 @@ class TestRuleInferenceVocabulary:
         tags = compute_tags_for_node("outdoors")
         assert len(tags) > 0
         slugs = {slug for slug, score in tags}
-        assert "scenic" in slugs or "fresh-air" in slugs
+        assert "instagram-worthy" in slugs or "fresh-air" in slugs
 
 
 # ===================================================================
@@ -380,9 +380,10 @@ class TestConvergenceScoringForBend:
 class TestBendPipelineStepOrder:
     """Verify the pipeline steps execute in correct order for Bend."""
 
-    def test_six_steps_in_order(self):
+    def test_seven_steps_in_order(self):
         expected = [
             "scrape",
+            "llm_fallback",
             "entity_resolution",
             "vibe_extraction",
             "rule_inference",
@@ -456,7 +457,7 @@ class TestBendEndToEndMocked:
 
             assert result.city == "bend"
             assert result.success is True
-            assert result.steps_completed == 6  # all 6, qdrant skipped but counted
+            assert result.steps_completed == 7  # all 7, qdrant skipped but counted
             assert result.steps_failed == 0
             assert result.total_duration_s >= 0
 

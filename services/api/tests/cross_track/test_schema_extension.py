@@ -534,13 +534,13 @@ class TestVibeTagSharedContext:
 
     SHARED_VIBE_SLUGS = [
         "hidden-gem",
-        "local-favorite",
+        "local-institution",
         "street-food",
         "scenic",
-        "nightlife",
-        "cultural",
-        "family-friendly",
-        "romantic",
+        "lively",
+        "deep-history",
+        "nature-immersive",
+        "budget-friendly",
     ]
 
     def test_vibe_tag_slugs_are_consistent(self):

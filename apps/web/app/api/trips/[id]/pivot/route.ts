@@ -162,6 +162,7 @@ export async function POST(
     },
     include: {
       vibeTags: {
+        where: { vibeTag: { isActive: true } },
         include: { vibeTag: { select: { slug: true } } },
       },
     },

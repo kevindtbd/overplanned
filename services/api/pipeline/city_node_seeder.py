@@ -249,6 +249,111 @@ CITIES: dict[str, dict[str, Any]] = {
             ],
         },
     },
+    "Bend": {
+        "country": "United States",
+        "timezone": "America/Los_Angeles",
+        "center": (44.0582, -121.3153),
+        "neighborhoods": [
+            "Downtown Bend", "Old Mill District", "Westside",
+            "NorthWest Crossing", "Midtown", "South Bend",
+            "River West", "Awbrey Butte", "Boyd Acres",
+        ],
+        "nodes": {
+            "dining": [
+                ("Spork", "Eclectic small plates, local ingredients, always changing menu"),
+                ("Jackson's Corner", "Farm-to-table bakery and restaurant, wood-fired everything"),
+                ("Zydeco Kitchen & Cocktails", "Southern-inspired comfort food in the Old Mill"),
+                ("Bos Taurus", "Steakhouse with local rancher sourcing, NW Crossing gem"),
+                ("Joolz", "Middle Eastern mezze and kebabs, family-run, Westside favorite"),
+                ("Ariana", "Afghan cuisine in a strip mall, best lamb in Central Oregon"),
+                ("Wild Rose Thai", "Thai street food staples, locals-only lunch spot"),
+                ("Bangers & Brews", "Gourmet sausages and craft beer, downtown casual"),
+                ("Drake", "New American dinner spot, seasonal tasting menu option"),
+                ("El Sancho", "Taco cart turned brick-and-mortar, carnitas are the move"),
+            ],
+            "drinks": [
+                ("Deschutes Brewery", "The OG Bend brewery, Mirror Pond on tap since 1988"),
+                ("Boneyard Beer", "Hop-forward IPAs brewed in a former auto shop"),
+                ("Crux Fermentation Project", "South Bend brewery with Cascade views and food trucks"),
+                ("Bend Brewing Company", "Brewpub overlooking Mirror Pond, sunset pints"),
+                ("The Lot", "Food cart pod with covered bar area, great rotating taps"),
+                ("Spoken Moto", "Motorcycle-themed bar and coffee shop, vintage vibes"),
+                ("Worthy Brewing", "Brewery with rooftop observatory and hop garden tours"),
+                ("McMenamins Old St. Francis", "Historic school turned brewpub, soaking pool and theater"),
+            ],
+            "culture": [
+                ("High Desert Museum", "Living museum with raptor shows, porcupines, and regional history"),
+                ("Bend Art Center", "Community art gallery and classes, rotating local exhibitions"),
+                ("Tower Theatre", "Restored 1940s movie palace, now live music and film"),
+                ("Old Mill Heritage Walk", "Self-guided history trail through the former lumber mill district"),
+                ("Sunriver Nature Center", "Observatory and botanical garden south of Bend"),
+                ("Deschutes Historical Museum", "Pioneer and Native American history of Central Oregon"),
+            ],
+            "outdoors": [
+                ("Smith Rock State Park", "World-class sport climbing and hiking, Monkey Face spire"),
+                ("Deschutes River Trail", "12-mile paved path along the river through town"),
+                ("Tumalo Falls", "97-foot waterfall, short hike from trailhead, postcard views"),
+                ("Pilot Butte", "Cinder cone in the middle of town, 360-degree Cascade views"),
+                ("Todd Lake", "Alpine lake at 6,000 ft, wildflower meadows in summer"),
+                ("Shevlin Park", "Forested canyon park, trail running and mountain biking"),
+                ("Lava River Cave", "Mile-long lava tube, bring layers (it's 42F year-round)"),
+                ("Newberry Volcanic Monument", "Obsidian flows, crater lakes, and lava casts"),
+                ("Sparks Lake", "Paddle-in alpine lake with South Sister reflections"),
+            ],
+            "active": [
+                ("Mt. Bachelor", "Ski area with 3,365 ft vertical, also summer lift-accessed hiking"),
+                ("Phil's Trail Complex", "Premier mountain bike trail network, flow and tech"),
+                ("Wanoga Snow Park", "Nordic skiing and snowshoeing, groomed trails"),
+                ("Bend Whitewater Park", "Engineered rapids on the Deschutes, SUP and kayak"),
+                ("Sunriver Resort Bike Paths", "15+ miles of paved paths through the resort community"),
+                ("Paulina Plunge", "Downhill mountain bike descent from Newberry Crater, guided"),
+            ],
+            "entertainment": [
+                ("McMenamins Old St. Francis Theater", "Second-run movies with beer and pizza in a chapel"),
+                ("Volcanic Theatre Pub", "Live music venue, local and touring acts, all ages"),
+                ("Bend Comedy Night", "Weekly standup at rotating downtown venues"),
+                ("Hayden Homes Amphitheater", "Outdoor concert venue on the river, summer shows"),
+                ("Regal Old Mill", "Multiplex in the Old Mill District, IMAX screen"),
+            ],
+            "shopping": [
+                ("The Village at Sunriver", "Outdoor shopping village with local boutiques"),
+                ("Old Mill District Shops", "Converted lumber mill, REI flagship and local stores"),
+                ("Dudley's Bookshop Cafe", "Independent bookstore and coffee, downtown staple"),
+                ("Patagonia Bend", "Flagship outdoor store, repair station and local guides"),
+                ("Cowgirl Cash", "Vintage Western wear and antiques, one-of-a-kind finds"),
+                ("Hot Box Betty", "Secondhand and vintage clothing, Midtown"),
+            ],
+            "experience": [
+                ("Wanderlust Tours Cave Exploration", "Guided lava tube tours with naturalist guides"),
+                ("Bend Ale Trail", "Self-guided passport to 30+ breweries, earn prizes"),
+                ("Stand Up Paddle the Deschutes", "SUP rentals and guided floats through town"),
+                ("Cascade Lakes Scenic Byway", "66-mile drive past lakes, volcanoes, and lava fields"),
+                ("Sunriver Observatory Stargazing", "Dark-sky astronomy programs, telescope viewing"),
+                ("Float the Deschutes", "Lazy river float from Riverbend Park to Drake Park"),
+            ],
+            "nightlife": [
+                ("Astro Lounge", "Downtown cocktail bar, DJ sets on weekends"),
+                ("The Capitol", "Live music and dance floor, Bend's late-night anchor"),
+                ("Velvet", "Wine bar turned late-night spot, curated playlists"),
+                ("Silver Moon Brewing", "Brewery taproom with live music and comedy nights"),
+                ("Washington", "Craft cocktails in a speakeasy-style downtown basement"),
+            ],
+            "group_activity": [
+                ("Bend Brew Bus", "Guided brewery tour by bus, 3-4 stops with tastings"),
+                ("Escape Room Bend", "Themed puzzle rooms downtown, book ahead for groups"),
+                ("Tumalo Creek Kayak & Canoe", "Group paddle trips on the Deschutes and Cascade lakes"),
+                ("Bend Food Tours", "Walking food tour through downtown, 5-6 stops"),
+                ("Goat Yoga at Laughing Goat Farm", "Exactly what it sounds like, surprisingly fun"),
+            ],
+            "wellness": [
+                ("McMenamins Turkish Bath", "Cedar soaking pool at Old St. Francis, open late"),
+                ("Bend Hot Springs (concept)", "Natural hot springs access via forest roads"),
+                ("Namaspa", "Yoga and massage studio, Westside, drop-in classes"),
+                ("Shibui Spa", "Japanese-inspired day spa, Old Mill District"),
+                ("Juniper Swim & Fitness", "Community pool and gym, lap swimming and classes"),
+            ],
+        },
+    },
 }
 
 
@@ -298,7 +403,7 @@ async def seed_city_nodes(
 
                     result = await conn.execute(
                         """
-                        INSERT INTO "ActivityNode" (
+                        INSERT INTO activity_nodes (
                             "id", "name", "slug", "canonicalName",
                             "city", "country", "neighborhood",
                             "latitude", "longitude",
@@ -361,12 +466,12 @@ async def main():
         # Summary
         async with pool.acquire() as conn:
             rows = await conn.fetch(
-                'SELECT "city", COUNT(*) as cnt FROM "ActivityNode" GROUP BY "city" ORDER BY "city"'
+                'SELECT "city", COUNT(*) as cnt FROM activity_nodes GROUP BY "city" ORDER BY "city"'
             )
             logger.info("Final node counts:")
             for r in rows:
                 cats = await conn.fetch(
-                    'SELECT "category", COUNT(*) as cnt FROM "ActivityNode" WHERE "city" = $1 GROUP BY "category" ORDER BY cnt DESC',
+                    'SELECT "category", COUNT(*) as cnt FROM activity_nodes WHERE "city" = $1 GROUP BY "category" ORDER BY cnt DESC',
                     r["city"],
                 )
                 cat_str = ", ".join(f'{c["category"]}={c["cnt"]}' for c in cats)

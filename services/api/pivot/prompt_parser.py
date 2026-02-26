@@ -328,7 +328,7 @@ class PromptParser:
             now = datetime.now(timezone.utc)
             await self._db.execute(
                 """
-                INSERT INTO "RawEvent" (
+                INSERT INTO raw_events (
                     id, "userId", "sessionId", "tripId",
                     "clientEventId", "eventType", "intentClass",
                     surface, payload, "createdAt"
@@ -367,7 +367,7 @@ class PromptParser:
             now = datetime.now(timezone.utc)
             await self._db.execute(
                 """
-                INSERT INTO "RawEvent" (
+                INSERT INTO raw_events (
                     id, "userId", "sessionId", "tripId",
                     "clientEventId", "eventType", "intentClass",
                     surface, payload, "createdAt"

@@ -194,7 +194,7 @@ class MicroStopService:
                     s.status,
                     LAG(s."activityNodeId") OVER (ORDER BY s."sortOrder") AS origin_node_id,
                     LEAD(s."activityNodeId") OVER (ORDER BY s."sortOrder") AS dest_node_id
-                FROM "ItinerarySlot" s
+                FROM itinerary_slots s
                 WHERE s."tripId" = $1
                   AND s."dayNumber" = $2
             )
@@ -211,8 +211,8 @@ class MicroStopService:
                 dest.latitude AS dest_lat,
                 dest.longitude AS dest_lon
             FROM ranked r
-            LEFT JOIN "ActivityNode" orig ON orig.id = r.origin_node_id
-            LEFT JOIN "ActivityNode" dest ON dest.id = r.dest_node_id
+            LEFT JOIN activity_nodes orig ON orig.id = r.origin_node_id
+            LEFT JOIN activity_nodes dest ON dest.id = r.dest_node_id
             WHERE
                 r."slotType" = 'transit'
                 AND r."isLocked" = false
@@ -253,7 +253,7 @@ class MicroStopService:
         """Check if a flex slot already exists immediately after sort_order."""
         row = await self._db.fetchrow(
             """
-            SELECT id FROM "ItinerarySlot"
+            SELECT id FROM itinerary_slots
             WHERE "tripId" = $1
               AND "dayNumber" = $2
               AND "sortOrder" = $3
@@ -271,7 +271,7 @@ class MicroStopService:
         row = await self._db.fetchrow(
             """
             SELECT COALESCE(MAX("sortOrder"), 0) AS max_order
-            FROM "ItinerarySlot"
+            FROM itinerary_slots
             WHERE "tripId" = $1 AND "dayNumber" = $2
             """,
             trip_id,
@@ -338,7 +338,7 @@ class MicroStopService:
         # Shift existing slots that conflict with this sort_order
         await self._db.execute(
             """
-            UPDATE "ItinerarySlot"
+            UPDATE itinerary_slots
             SET "sortOrder" = "sortOrder" + 1, "updatedAt" = NOW()
             WHERE "tripId" = $1
               AND "dayNumber" = $2
@@ -354,7 +354,7 @@ class MicroStopService:
         now = datetime.now(timezone.utc)
         await self._db.execute(
             """
-            INSERT INTO "ItinerarySlot" (
+            INSERT INTO itinerary_slots (
                 id, "tripId", "activityNodeId",
                 "dayNumber", "sortOrder",
                 "slotType", status,

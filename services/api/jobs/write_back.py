@@ -58,14 +58,14 @@ WITH signal_agg AS (
                 'post_loved'
             )
         ) AS acceptance_count
-    FROM "BehavioralSignal"
+    FROM behavioral_signals
     WHERE "activityNodeId" IS NOT NULL
       AND source = 'user_behavioral'
       AND "createdAt" >= $1
       AND "createdAt" <  $2
     GROUP BY "activityNodeId"
 )
-UPDATE "ActivityNode" an
+UPDATE activity_nodes an
 SET
     impression_count         = an.impression_count + sa.impression_count,
     acceptance_count         = an.acceptance_count + sa.acceptance_count,
@@ -81,12 +81,12 @@ RETURNING an.id
 """
 
 _INSERT_RUN_SQL = """
-INSERT INTO "WriteBackRun" ("runDate", status, "rowsUpdated", "durationMs", "createdAt")
+INSERT INTO write_back_runs ("runDate", status, "rowsUpdated", "durationMs", "createdAt")
 VALUES ($1, $2, $3, $4, NOW())
 """
 
 _CHECK_EXISTING_SQL = """
-SELECT id FROM "WriteBackRun"
+SELECT id FROM write_back_runs
 WHERE "runDate" = $1 AND status = 'success'
 LIMIT 1
 """
@@ -222,6 +222,12 @@ async def main() -> None:
     import os
 
     logging.basicConfig(level=logging.INFO)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
     database_url = os.environ["DATABASE_URL"]
 
     pool = await asyncpg.create_pool(database_url, min_size=1, max_size=3)

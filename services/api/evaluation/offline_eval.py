@@ -60,25 +60,8 @@ class EvalResult:
     gate_details: dict = field(default_factory=dict)
 
 
-# SQL: ensure the EvalRun table exists
-_CREATE_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS "EvalRun" (
-    "id" TEXT PRIMARY KEY,
-    "modelId" TEXT NOT NULL,
-    "modelVersion" TEXT NOT NULL,
-    "hrAt5" DOUBLE PRECISION NOT NULL,
-    "mrr" DOUBLE PRECISION NOT NULL,
-    "ndcgAt10" DOUBLE PRECISION NOT NULL,
-    "totalQueries" INTEGER NOT NULL,
-    "durationMs" INTEGER NOT NULL,
-    "passedGates" BOOLEAN NOT NULL,
-    "gateDetails" JSONB NOT NULL DEFAULT '{}',
-    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
-)
-"""
-
 _INSERT_RESULT_SQL = """
-INSERT INTO "EvalRun"
+INSERT INTO eval_runs
     ("id", "modelId", "modelVersion", "hrAt5", "mrr", "ndcgAt10",
      "totalQueries", "durationMs", "passedGates", "gateDetails", "createdAt")
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11)
@@ -87,7 +70,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11)
 # SQL: get production model's NDCG@10 for gate comparison
 _PRODUCTION_NDCG_SQL = """
 SELECT "ndcgAt10"
-FROM "EvalRun"
+FROM eval_runs
 WHERE "modelId" != $1
   AND "passedGates" = true
 ORDER BY "createdAt" DESC
@@ -208,7 +191,6 @@ async def _store_result(pool, result: EvalResult) -> None:
     """Persist an EvalResult to the EvalRun table."""
     import json
     async with pool.acquire() as conn:
-        await conn.execute(_CREATE_TABLE_SQL)
         await conn.execute(
             _INSERT_RESULT_SQL,
             str(uuid.uuid4()),

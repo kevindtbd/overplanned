@@ -293,7 +293,7 @@ class TestArbitrationEventSQL:
 
         pool.execute.assert_called_once()
         sql = pool.execute.call_args[0][0]
-        assert '"ArbitrationEvent"' in sql
+        assert 'arbitration_events' in sql
         assert '"userId"' in sql
         assert '"tripId"' in sql
         assert '"mlTop3"' in sql

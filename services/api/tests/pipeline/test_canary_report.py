@@ -250,13 +250,13 @@ class TestAssembleReport:
         return [
             _make_node(node_id="n1", name="Deschutes Brewery", category="drinks",
                        tourist_score=0.2, convergence_score=0.9, source_count=4,
-                       vibe_tags=["craft-beer", "locals-regular", "casual"]),
+                       vibe_tags=["craft-beer", "locals-regular", "low-key"]),
             _make_node(node_id="n2", name="Pine Tavern", category="dining",
                        tourist_score=0.65, convergence_score=0.45, source_count=2,
-                       vibe_tags=["scenic", "traditional", "overrated"]),
+                       vibe_tags=["instagram-worthy", "traditional", "overrated"]),
             _make_node(node_id="n3", name="Smith Rock State Park", category="outdoors",
                        tourist_score=0.1, convergence_score=0.95, source_count=5,
-                       vibe_tags=["nature", "active", "scenic"]),
+                       vibe_tags=["nature", "physical", "instagram-worthy"]),
         ]
 
     def _base_signals(self):
@@ -299,8 +299,8 @@ class TestAssembleReport:
 
     def test_vibe_tag_histogram(self, rmod):
         report = rmod.assemble_report("Bend", self._base_node_rows(), self._base_signals())
-        # "scenic" appears in both Pine Tavern and Smith Rock
-        assert report.vibe_tag_histogram.get("scenic", 0) == 2
+        # "instagram-worthy" appears in both Pine Tavern and Smith Rock
+        assert report.vibe_tag_histogram.get("instagram-worthy", 0) == 2
         assert report.vibe_tag_histogram.get("craft-beer", 0) == 1
 
     def test_no_missing_categories_for_bend_with_outdoors(self, rmod):
@@ -488,12 +488,12 @@ class TestJsonSerialization:
 
     def test_json_vibe_histogram_present(self, rmod):
         nodes = [
-            _make_node(node_id="n1", vibe_tags=["nature", "scenic"]),
-            _make_node(node_id="n2", vibe_tags=["scenic", "calm"]),
+            _make_node(node_id="n1", vibe_tags=["nature", "instagram-worthy"]),
+            _make_node(node_id="n2", vibe_tags=["instagram-worthy", "calm"]),
         ]
         report = rmod.assemble_report("Bend", nodes, {})
         d = rmod._report_to_dict(report)
-        assert d["vibe_tag_histogram"]["scenic"] == 2
+        assert d["vibe_tag_histogram"]["instagram-worthy"] == 2
         assert d["vibe_tag_histogram"]["nature"] == 1
 
 
@@ -535,14 +535,14 @@ class TestChainDetection:
 class TestVibeTagHistogram:
     def test_histogram_counts_across_nodes(self, rmod):
         nodes = [
-            _make_node(node_id="n1", vibe_tags=["nature", "scenic", "active"]),
-            _make_node(node_id="n2", vibe_tags=["scenic", "calm"]),
-            _make_node(node_id="n3", vibe_tags=["active", "rugged"]),
+            _make_node(node_id="n1", vibe_tags=["nature", "instagram-worthy", "physical"]),
+            _make_node(node_id="n2", vibe_tags=["instagram-worthy", "calm"]),
+            _make_node(node_id="n3", vibe_tags=["physical", "rugged"]),
         ]
         report = rmod.assemble_report("Bend", nodes, {})
         hist = report.vibe_tag_histogram
-        assert hist["scenic"] == 2
-        assert hist["active"] == 2
+        assert hist["instagram-worthy"] == 2
+        assert hist["physical"] == 2
         assert hist["nature"] == 1
         assert hist["calm"] == 1
         assert hist["rugged"] == 1

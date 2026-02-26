@@ -54,7 +54,7 @@ async def hydrate_activity_nodes(
             an.status,
             COALESCE(vt.tags, '[]'::jsonb) AS vibe_tags,
             COALESCE(qs.signals, '[]'::jsonb) AS quality_signals
-        FROM "ActivityNode" an
+        FROM activity_nodes an
         LEFT JOIN LATERAL (
             SELECT jsonb_agg(jsonb_build_object(
                 'slug', v.slug,
@@ -63,8 +63,8 @@ async def hydrate_activity_nodes(
                 'score', avt.score,
                 'source', avt.source
             )) AS tags
-            FROM "ActivityNodeVibeTag" avt
-            JOIN "VibeTag" v ON v.id = avt."vibeTagId"
+            FROM activity_node_vibe_tags avt
+            JOIN vibe_tags v ON v.id = avt."vibeTagId"
             WHERE avt."activityNodeId" = an.id
         ) vt ON true
         LEFT JOIN LATERAL (
@@ -75,7 +75,7 @@ async def hydrate_activity_nodes(
                 'rawExcerpt', qs_inner."rawExcerpt",
                 'extractedAt', qs_inner."extractedAt"
             )) AS signals
-            FROM "QualitySignal" qs_inner
+            FROM quality_signals qs_inner
             WHERE qs_inner."activityNodeId" = an.id
         ) qs ON true
         WHERE an.id IN ({placeholders})

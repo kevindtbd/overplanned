@@ -43,8 +43,8 @@ async def assert_signal_integrity(db: DBProtocol) -> None:
     orphan_bs = await db.fetch(
         """
         SELECT bs.id, bs."userId"
-        FROM "BehavioralSignal" bs
-        LEFT JOIN "User" u ON bs."userId" = u.id
+        FROM behavioral_signals bs
+        LEFT JOIN users u ON bs."userId" = u.id
         WHERE u.id IS NULL
         """
     )
@@ -56,7 +56,7 @@ async def assert_signal_integrity(db: DBProtocol) -> None:
     # 2. BehavioralSignal required fields
     null_required_bs = await db.fetch(
         """
-        SELECT id FROM "BehavioralSignal"
+        SELECT id FROM behavioral_signals
         WHERE "signalType" IS NULL
            OR "signalValue" IS NULL
            OR "tripPhase" IS NULL
@@ -72,8 +72,8 @@ async def assert_signal_integrity(db: DBProtocol) -> None:
     orphan_is = await db.fetch(
         """
         SELECT ins.id, ins."behavioralSignalId"
-        FROM "IntentionSignal" ins
-        LEFT JOIN "BehavioralSignal" bs ON ins."behavioralSignalId" = bs.id
+        FROM intention_signals ins
+        LEFT JOIN behavioral_signals bs ON ins."behavioralSignalId" = bs.id
         WHERE bs.id IS NULL
         """
     )
@@ -86,7 +86,7 @@ async def assert_signal_integrity(db: DBProtocol) -> None:
     # 4. IntentionSignal required fields
     null_required_is = await db.fetch(
         """
-        SELECT id FROM "IntentionSignal"
+        SELECT id FROM intention_signals
         WHERE "intentionType" IS NULL
            OR confidence IS NULL
            OR source IS NULL
@@ -100,7 +100,7 @@ async def assert_signal_integrity(db: DBProtocol) -> None:
     # 5. RawEvent required fields
     null_required_re = await db.fetch(
         """
-        SELECT id FROM "RawEvent"
+        SELECT id FROM raw_events
         WHERE "eventType" IS NULL
            OR "intentClass" IS NULL
            OR "userId" IS NULL
@@ -115,7 +115,7 @@ async def assert_signal_integrity(db: DBProtocol) -> None:
     # 6. RawEvent intentClass must be valid enum value
     invalid_intent = await db.fetch(
         """
-        SELECT id, "intentClass" FROM "RawEvent"
+        SELECT id, "intentClass" FROM raw_events
         WHERE "intentClass" NOT IN ('explicit', 'implicit', 'contextual')
         """
     )
@@ -128,8 +128,8 @@ async def assert_signal_integrity(db: DBProtocol) -> None:
     orphan_bs_node = await db.fetch(
         """
         SELECT bs.id, bs."activityNodeId"
-        FROM "BehavioralSignal" bs
-        LEFT JOIN "ActivityNode" an ON bs."activityNodeId" = an.id
+        FROM behavioral_signals bs
+        LEFT JOIN activity_nodes an ON bs."activityNodeId" = an.id
         WHERE bs."activityNodeId" IS NOT NULL AND an.id IS NULL
         """
     )

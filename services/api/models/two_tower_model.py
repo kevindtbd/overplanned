@@ -364,7 +364,7 @@ class TwoTowerModel(ActivitySearchService):
 
         await pool.execute(
             """
-            INSERT INTO "ModelRegistry" (
+            INSERT INTO model_registry (
                 "id", "modelName", "modelVersion", "stage", "modelType",
                 "description", "artifactPath", "artifactHash",
                 "configSnapshot", "metrics", "evaluatedAt",

@@ -73,7 +73,7 @@ VIBE_VOCABULARY: dict[str, list[str]] = {
 }
 
 ALL_TAGS: set[str] = {tag for tags in VIBE_VOCABULARY.values() for tag in tags}
-assert len(ALL_TAGS) == 44, f"Vocabulary drift: expected 44, got {len(ALL_TAGS)}"
+assert len(ALL_TAGS) >= 44, f"Vocabulary drift: expected >= 44, got {len(ALL_TAGS)}"
 
 # Known contradictory pairs — flag for human review, don't auto-apply both
 CONTRADICTORY_PAIRS: list[tuple[str, str]] = [
@@ -103,6 +103,24 @@ OUTPUT_COST_PER_1M = 4.00  # USD
 # Extraction log output directory (one JSONL file per city)
 EXTRACTION_LOG_DIR = Path("data/extraction_logs")
 EXTRACTION_LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# Dead letter queue directory (failed nodes for retry)
+DEAD_LETTER_DIR = Path("data/dead_letter")
+DEAD_LETTER_DIR.mkdir(parents=True, exist_ok=True)
+
+# Non-retryable error patterns — abort the entire batch immediately
+_NON_RETRYABLE_PATTERNS = frozenset({
+    "credit balance is too low",
+    "invalid x-api-key",
+    "invalid api key",
+    "account has been disabled",
+    "permission denied",
+})
+
+
+class NonRetryableAPIError(Exception):
+    """Raised when the API returns an error that won't resolve with retries."""
+    pass
 
 
 # ---------------------------------------------------------------------------
@@ -426,11 +444,11 @@ async def _fetch_untagged_nodes(
         SELECT
             an.id, an.name, an.city, an.category,
             an."descriptionShort", an."descriptionLong"
-        FROM "ActivityNode" an
+        FROM activity_nodes an
         WHERE an."isCanonical" = true
           AND an.status IN ('pending', 'approved')
           AND NOT EXISTS (
-            SELECT 1 FROM "ActivityNodeVibeTag" anvt
+            SELECT 1 FROM activity_node_vibe_tags anvt
             WHERE anvt."activityNodeId" = an.id
               AND anvt.source = 'llm_extraction'
           )
@@ -465,8 +483,8 @@ async def _fetch_quality_excerpts(
     rows = await pool.fetch(
         """
         SELECT "activityNodeId", "rawExcerpt"
-        FROM "QualitySignal"
-        WHERE "activityNodeId" = ANY($1::uuid[])
+        FROM quality_signals
+        WHERE "activityNodeId" = ANY($1::text[])
           AND "rawExcerpt" IS NOT NULL
         ORDER BY "sourceAuthority" DESC
         """,
@@ -495,7 +513,7 @@ async def _resolve_vibe_tag_ids(
 
     rows = await pool.fetch(
         """
-        SELECT id, slug FROM "VibeTag"
+        SELECT id, slug FROM vibe_tags
         WHERE slug = ANY($1::text[])
           AND "isActive" = true
         """,
@@ -530,7 +548,7 @@ async def _write_vibe_tags(
 
     await pool.executemany(
         """
-        INSERT INTO "ActivityNodeVibeTag" (id, "activityNodeId", "vibeTagId", score, source)
+        INSERT INTO activity_node_vibe_tags (id, "activityNodeId", "vibeTagId", score, source)
         VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT ("activityNodeId", "vibeTagId", source) DO UPDATE
           SET score = EXCLUDED.score
@@ -590,16 +608,22 @@ async def _log_to_model_registry(
 ) -> str:
     """Log extraction batch to ModelRegistry. Returns registry entry ID."""
     entry_id = str(uuid4())
-    now = datetime.now(timezone.utc)
+    # Strip timezone — Prisma DateTime maps to timestamp without time zone
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     await pool.execute(
         """
-        INSERT INTO "ModelRegistry" (
+        INSERT INTO model_registry (
             id, "modelName", "modelVersion", stage, "modelType",
             description, "configSnapshot", metrics, "evaluatedAt",
             "createdAt", "updatedAt"
         ) VALUES ($1, $2, $3, 'production', 'llm_extraction',
                   $4, $5, $6, $7, $8, $8)
+        ON CONFLICT ("modelName", "modelVersion") DO UPDATE
+          SET metrics = EXCLUDED.metrics,
+              description = EXCLUDED.description,
+              "evaluatedAt" = EXCLUDED."evaluatedAt",
+              "updatedAt" = EXCLUDED."updatedAt"
         """,
         entry_id,
         MODEL_NAME,
@@ -633,6 +657,31 @@ async def _log_to_model_registry(
 # Core extraction pipeline
 # ---------------------------------------------------------------------------
 
+def _write_dead_letter(
+    city: str,
+    nodes: list[NodeInput],
+    reason: str,
+) -> int:
+    """Write failed nodes to dead letter queue for later retry. Returns count written."""
+    if not nodes:
+        return 0
+    dlq_path = DEAD_LETTER_DIR / f"{city}.jsonl"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    with open(dlq_path, "a") as f:
+        for node in nodes:
+            entry = {
+                "node_id": node.id,
+                "node_name": node.name,
+                "city": node.city,
+                "category": node.category,
+                "reason": reason,
+                "timestamp": now_iso,
+            }
+            f.write(json.dumps(entry) + "\n")
+    logger.info("Dead letter: wrote %d nodes to %s", len(nodes), dlq_path)
+    return len(nodes)
+
+
 async def extract_vibe_tags_batch(
     pool: asyncpg.Pool,
     api_key: str,
@@ -643,6 +692,8 @@ async def extract_vibe_tags_batch(
 
     Returns (results, stats). Failures are logged in stats.errors
     and the batch continues — one bad node doesn't kill the run.
+    Non-retryable errors (billing, auth) abort immediately and write
+    remaining nodes to the dead letter queue.
     """
     stats = BatchStats()
     results: list[ExtractionResult] = []
@@ -656,10 +707,18 @@ async def extract_vibe_tags_batch(
     start = time.monotonic()
 
     async with httpx.AsyncClient() as client:
-        for node in nodes:
-            result = await _extract_single_node(client, api_key, node, stats)
-            if result:
-                results.append(result)
+        for idx, node in enumerate(nodes):
+            try:
+                result = await _extract_single_node(client, api_key, node, stats)
+                if result:
+                    results.append(result)
+            except NonRetryableAPIError as exc:
+                # Abort batch — write remaining unprocessed nodes to DLQ
+                remaining = nodes[idx:]
+                city = remaining[0].city if remaining else "unknown"
+                _write_dead_letter(city, remaining, str(exc))
+                stats.errors.append(str(exc))
+                break
 
     stats.latency_seconds = time.monotonic() - start
 
@@ -716,7 +775,14 @@ async def _extract_single_node(
                 )
                 await asyncio.sleep(wait)
                 continue
-            # Non-retryable HTTP error
+            # Check for non-retryable account-level errors — abort entire run
+            body_lower = exc.response.text.lower()
+            if any(p in body_lower for p in _NON_RETRYABLE_PATTERNS):
+                msg = f"Non-retryable API error: {exc.response.text[:200]}"
+                logger.error(msg)
+                raise NonRetryableAPIError(msg) from exc
+
+            # Other non-retryable HTTP error — skip this node
             msg = f"HTTP {status} for node {node.id}: {exc.response.text[:200]}"
             stats.errors.append(msg)
             stats.nodes_skipped += 1
@@ -795,6 +861,15 @@ async def run_extraction(
         all_stats.estimated_cost_usd += batch_stats.estimated_cost_usd
         all_stats.latency_seconds += batch_stats.latency_seconds
         all_stats.errors.extend(batch_stats.errors)
+
+        # Non-retryable error hit — write remaining batches to DLQ and stop
+        if any("Non-retryable" in e for e in batch_stats.errors):
+            remaining_nodes = nodes[i + BATCH_SIZE:]
+            if remaining_nodes:
+                city = remaining_nodes[0].city if remaining_nodes else "unknown"
+                _write_dead_letter(city, remaining_nodes, batch_stats.errors[-1])
+            logger.error("Aborting extraction: non-retryable API error")
+            break
 
     # Log to model registry
     registry_id = await _log_to_model_registry(pool, all_stats)

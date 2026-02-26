@@ -287,7 +287,7 @@ class GroupGenerationEngine:
                 slot_id = str(uuid.uuid4())
                 await self._db.execute(
                     """
-                    INSERT INTO "ItinerarySlot" (
+                    INSERT INTO itinerary_slots (
                         id, "tripId", "activityNodeId",
                         "dayNumber", "sortOrder",
                         "slotType", status,
@@ -329,7 +329,7 @@ class GroupGenerationEngine:
         try:
             await self._db.execute(
                 """
-                UPDATE "Trip"
+                UPDATE trips
                 SET "personaSeed" = COALESCE("personaSeed", '{}'::jsonb)
                     || jsonb_build_object('generationMethod', $1::text),
                     "updatedAt" = NOW()
@@ -377,7 +377,7 @@ class GroupGenerationEngine:
             }
             await self._db.execute(
                 """
-                INSERT INTO "RawEvent" (
+                INSERT INTO raw_events (
                     id, "userId", "sessionId", "tripId",
                     "clientEventId", "eventType", "intentClass",
                     surface, payload, "createdAt"
@@ -412,7 +412,7 @@ class GroupGenerationEngine:
             }
             await self._db.execute(
                 """
-                INSERT INTO "ModelRegistry" (
+                INSERT INTO model_registry (
                     id, "modelName", "modelVersion",
                     stage, "modelType", description,
                     "configSnapshot", "createdAt", "updatedAt"

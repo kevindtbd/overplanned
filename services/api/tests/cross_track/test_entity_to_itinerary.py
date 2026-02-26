@@ -214,10 +214,10 @@ class TestVibeTagQdrantQuery:
 
     def test_multiple_vibe_tags_in_filter(self):
         """Multiple vibe tags produce a single 'match any' clause."""
-        slugs = ["hidden-gem", "street-food", "local-favorite"]
+        slugs = ["hidden-gem", "street-food", "local-institution"]
         query_filter = _build_qdrant_filter(slugs)
         match_any = query_filter["must"][0]["match"]["any"]
-        assert set(match_any) == {"hidden-gem", "street-food", "local-favorite"}
+        assert set(match_any) == {"hidden-gem", "street-food", "local-institution"}
 
     def test_empty_vibe_tags_produces_empty_match(self):
         """No vibe tags results in empty match list (no filtering)."""
@@ -226,7 +226,7 @@ class TestVibeTagQdrantQuery:
 
     def test_vibe_tag_slugs_are_lowercase_kebab(self):
         """Vibe tag slugs follow kebab-case convention for Qdrant consistency."""
-        slugs = ["hidden-gem", "street-food", "late-night", "family-friendly"]
+        slugs = ["hidden-gem", "street-food", "late-night", "group-friendly"]
         for slug in slugs:
             assert slug == slug.lower(), f"Slug '{slug}' should be lowercase"
             assert " " not in slug, f"Slug '{slug}' should not contain spaces"

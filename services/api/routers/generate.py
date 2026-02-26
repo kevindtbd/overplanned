@@ -198,7 +198,7 @@ async def _fetch_trip(db, trip_id: str) -> dict | None:
         """
         SELECT id, mode, city, country, timezone,
                "startDate", "endDate", "personaSeed", status
-        FROM "Trip"
+        FROM trips
         WHERE id = $1
         """,
         trip_id,
@@ -211,7 +211,7 @@ async def _is_trip_organizer(db, trip_id: str, user_id: str) -> bool:
     row = await db.fetchrow(
         """
         SELECT 1
-        FROM "TripMember"
+        FROM trip_members
         WHERE "tripId" = $1
           AND "userId" = $2
           AND role = 'organizer'
@@ -228,7 +228,7 @@ async def _count_existing_slots(db, trip_id: str) -> int:
     row = await db.fetchrow(
         """
         SELECT COUNT(*) AS cnt
-        FROM "ItinerarySlot"
+        FROM itinerary_slots
         WHERE "tripId" = $1
         """,
         trip_id,

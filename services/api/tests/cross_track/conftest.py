@@ -119,10 +119,10 @@ def cross_vibe_tags() -> list[dict]:
             "createdAt": _NOW - timedelta(days=90),
         },
         {
-            "id": _did("vibe-local-favorite"),
-            "slug": "local-favorite",
-            "name": "Local Favorite",
-            "category": "social-proof",
+            "id": _did("vibe-local-institution"),
+            "slug": "local-institution",
+            "name": "Local Institution",
+            "category": "food_drink",
             "isActive": True,
             "sortOrder": 1,
             "createdAt": _NOW - timedelta(days=90),
@@ -198,7 +198,7 @@ def cross_activity_node_vibe_tags(
 ) -> list[dict]:
     """Join records linking nodes to vibe tags."""
     links = []
-    # Morning node -> hidden-gem, local-favorite
+    # Morning node -> hidden-gem, local-institution
     for i, vt_idx in enumerate([0, 1]):
         links.append({
             "id": _did(f"anvt-morning-{i}"),
@@ -208,7 +208,7 @@ def cross_activity_node_vibe_tags(
             "source": "reddit",
             "createdAt": _NOW - timedelta(days=30),
         })
-    # Lunch node -> street-food, local-favorite
+    # Lunch node -> street-food, local-institution
     for i, vt_idx in enumerate([2, 1]):
         links.append({
             "id": _did(f"anvt-lunch-{i}"),
@@ -288,7 +288,7 @@ def cross_solo_trip(cross_user: dict) -> dict:
         activatedAt=_NOW - timedelta(days=8),
         completedAt=_NOW - timedelta(hours=6),
         personaSeed={
-            "vibes": ["hidden-gem", "local-favorite", "street-food"],
+            "vibes": ["hidden-gem", "local-institution", "street-food"],
             "pace": "moderate",
             "budget": "mid",
         },

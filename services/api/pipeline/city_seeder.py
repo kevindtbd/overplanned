@@ -37,6 +37,7 @@ import asyncpg
 
 from services.api.pipeline.city_configs import validate_city_seed, ValidationResult
 from services.api.pipeline.entity_resolution import EntityResolver
+from services.api.pipeline.llm_fallback_seeder import run_llm_fallback
 from services.api.pipeline.vibe_extraction import run_extraction
 from services.api.pipeline.rule_inference import run_rule_inference
 from services.api.pipeline.convergence import run_convergence_scoring
@@ -65,6 +66,7 @@ class StepStatus(str, Enum):
 
 class PipelineStep(str, Enum):
     SCRAPE = "scrape"
+    LLM_FALLBACK = "llm_fallback"
     ENTITY_RESOLUTION = "entity_resolution"
     VIBE_EXTRACTION = "vibe_extraction"
     RULE_INFERENCE = "rule_inference"
@@ -75,6 +77,7 @@ class PipelineStep(str, Enum):
 # Ordered list of steps — execution follows this sequence
 STEP_ORDER: list[PipelineStep] = [
     PipelineStep.SCRAPE,
+    PipelineStep.LLM_FALLBACK,
     PipelineStep.ENTITY_RESOLUTION,
     PipelineStep.VIBE_EXTRACTION,
     PipelineStep.RULE_INFERENCE,
@@ -335,7 +338,7 @@ async def _step_entity_resolution(
     scrape_step = progress.steps.get(PipelineStep.SCRAPE.value)
     since = None
     if scrape_step and scrape_step.started_at:
-        since = datetime.fromisoformat(scrape_step.started_at)
+        since = datetime.fromisoformat(scrape_step.started_at).replace(tzinfo=None)
 
     stats = await resolver.resolve_incremental(since=since)
     progress.nodes_resolved = stats.merges_executed
@@ -440,7 +443,7 @@ async def _step_qdrant_sync(
 
     if prev_completed:
         # Incremental: only sync nodes updated since last sync
-        since = datetime.fromisoformat(qdrant_step.finished_at)
+        since = datetime.fromisoformat(qdrant_step.finished_at).replace(tzinfo=None)
         stats = await qdrant_sync.run_incremental_sync(
             pool, embedding_service, since=since
         )
@@ -526,7 +529,7 @@ async def seed_city(
         logger.info("Skipping scrape step (skip_scrape=True)")
         _mark_step_done(progress, PipelineStep.SCRAPE, {"skipped": True})
     elif _should_run_step(progress, PipelineStep.SCRAPE):
-        logger.info("[1/6] Scraping %s...", city)
+        logger.info("[1/7] Scraping %s...", city)
         _mark_step_start(progress, PipelineStep.SCRAPE)
         try:
             metrics = await _step_scrape(pool, city, progress)
@@ -539,13 +542,45 @@ async def seed_city(
             result.steps_failed += 1
             logger.exception("Scrape step failed for %s", city)
     else:
-        logger.info("[1/6] Scrape already completed, skipping")
+        logger.info("[1/7] Scrape already completed, skipping")
         result.nodes_scraped = progress.nodes_scraped
         result.steps_completed += 1
 
-    # --- Step 2: Entity Resolution ---
+    # --- Step 1.5: LLM Fallback Node Creation ---
+    # Creates ActivityNodes from unlinked QualitySignals (sentinel node ID).
+    # Only runs when an API key is available and LLM is not skipped.
+    if skip_llm or not api_key:
+        reason = "skip_llm=True" if skip_llm else "no API key"
+        logger.info("[2/7] Skipping LLM fallback seeder (%s)", reason)
+        _mark_step_done(progress, PipelineStep.LLM_FALLBACK, {"skipped": True, "reason": reason})
+        result.steps_completed += 1
+    elif _should_run_step(progress, PipelineStep.LLM_FALLBACK):
+        logger.info("[2/7] LLM fallback node creation for %s...", city)
+        _mark_step_start(progress, PipelineStep.LLM_FALLBACK)
+        try:
+            fallback_stats = await run_llm_fallback(pool, city, api_key=api_key)
+            _mark_step_done(progress, PipelineStep.LLM_FALLBACK, {
+                "venues_created": fallback_stats.venues_created,
+                "venues_existing": fallback_stats.venues_existing,
+                "signals_relinked": fallback_stats.signals_relinked,
+                "estimated_cost_usd": round(fallback_stats.estimated_cost_usd, 4),
+                "errors": fallback_stats.errors[:10],
+            })
+            result.nodes_scraped += fallback_stats.venues_created
+            progress.nodes_scraped += fallback_stats.venues_created
+            result.steps_completed += 1
+        except Exception as exc:
+            _mark_step_failed(progress, PipelineStep.LLM_FALLBACK, str(exc))
+            result.errors.append(f"llm_fallback: {exc}")
+            result.steps_failed += 1
+            logger.exception("LLM fallback seeder failed for %s", city)
+    else:
+        logger.info("[2/7] LLM fallback already completed, skipping")
+        result.steps_completed += 1
+
+    # --- Step 3: Entity Resolution ---
     if _should_run_step(progress, PipelineStep.ENTITY_RESOLUTION):
-        logger.info("[2/6] Entity resolution for %s...", city)
+        logger.info("[3/7] Entity resolution for %s...", city)
         _mark_step_start(progress, PipelineStep.ENTITY_RESOLUTION)
         try:
             metrics = await _step_entity_resolution(pool, city, progress)
@@ -558,18 +593,18 @@ async def seed_city(
             result.steps_failed += 1
             logger.exception("Entity resolution failed for %s", city)
     else:
-        logger.info("[2/6] Entity resolution already completed, skipping")
+        logger.info("[3/7] Entity resolution already completed, skipping")
         result.nodes_resolved = progress.nodes_resolved
         result.steps_completed += 1
 
     # --- Step 3: LLM Vibe Extraction ---
     if skip_llm or not api_key:
         reason = "skip_llm=True" if skip_llm else "no API key"
-        logger.info("[3/6] Skipping LLM vibe extraction (%s)", reason)
+        logger.info("[4/7] Skipping LLM vibe extraction (%s)", reason)
         _mark_step_done(progress, PipelineStep.VIBE_EXTRACTION, {"skipped": True, "reason": reason})
         result.steps_completed += 1
     elif _should_run_step(progress, PipelineStep.VIBE_EXTRACTION):
-        logger.info("[3/6] LLM vibe extraction for %s...", city)
+        logger.info("[4/7] LLM vibe extraction for %s...", city)
         _mark_step_start(progress, PipelineStep.VIBE_EXTRACTION)
         try:
             metrics = await _step_vibe_extraction(pool, city, api_key, progress)
@@ -582,13 +617,13 @@ async def seed_city(
             result.steps_failed += 1
             logger.exception("LLM vibe extraction failed for %s", city)
     else:
-        logger.info("[3/6] LLM vibe extraction already completed, skipping")
+        logger.info("[4/7] LLM vibe extraction already completed, skipping")
         result.nodes_tagged = progress.nodes_tagged
         result.steps_completed += 1
 
     # --- Step 4: Rule-Based Vibe Inference ---
     if _should_run_step(progress, PipelineStep.RULE_INFERENCE):
-        logger.info("[4/6] Rule-based vibe inference for %s...", city)
+        logger.info("[5/7] Rule-based vibe inference for %s...", city)
         _mark_step_start(progress, PipelineStep.RULE_INFERENCE)
         try:
             metrics = await _step_rule_inference(pool, city, progress)
@@ -601,13 +636,13 @@ async def seed_city(
             result.steps_failed += 1
             logger.exception("Rule inference failed for %s", city)
     else:
-        logger.info("[4/6] Rule inference already completed, skipping")
+        logger.info("[5/7] Rule inference already completed, skipping")
         result.nodes_tagged = progress.nodes_tagged
         result.steps_completed += 1
 
     # --- Step 5: Convergence Scoring ---
     if _should_run_step(progress, PipelineStep.CONVERGENCE):
-        logger.info("[5/6] Convergence scoring for %s...", city)
+        logger.info("[6/7] Convergence scoring for %s...", city)
         _mark_step_start(progress, PipelineStep.CONVERGENCE)
         try:
             metrics = await _step_convergence(pool, city, progress)
@@ -619,16 +654,16 @@ async def seed_city(
             result.steps_failed += 1
             logger.exception("Convergence scoring failed for %s", city)
     else:
-        logger.info("[5/6] Convergence scoring already completed, skipping")
+        logger.info("[6/7] Convergence scoring already completed, skipping")
         result.steps_completed += 1
 
     # --- Step 6: Qdrant Sync ---
     if embedding_service is None:
-        logger.info("[6/6] Skipping Qdrant sync (no embedding_service)")
+        logger.info("[7/7] Skipping Qdrant sync (no embedding_service)")
         _mark_step_done(progress, PipelineStep.QDRANT_SYNC, {"skipped": True, "reason": "no embedding_service"})
         result.steps_completed += 1
     elif _should_run_step(progress, PipelineStep.QDRANT_SYNC):
-        logger.info("[6/6] Qdrant sync for %s...", city)
+        logger.info("[7/7] Qdrant sync for %s...", city)
         _mark_step_start(progress, PipelineStep.QDRANT_SYNC)
         try:
             metrics = await _step_qdrant_sync(pool, city, embedding_service, progress)
@@ -641,7 +676,7 @@ async def seed_city(
             result.steps_failed += 1
             logger.exception("Qdrant sync failed for %s", city)
     else:
-        logger.info("[6/6] Qdrant sync already completed, skipping")
+        logger.info("[7/7] Qdrant sync already completed, skipping")
         result.nodes_indexed = progress.nodes_indexed
         result.steps_completed += 1
 
@@ -707,6 +742,13 @@ async def main() -> None:
     """CLI entry point for city seeding."""
     import argparse
     import sys
+
+    # Load .env if python-dotenv is available (dev convenience)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
 
     parser = argparse.ArgumentParser(description="Seed a city with all data sources")
     parser.add_argument("city", help="City name/slug (e.g. tokyo, new-york)")

@@ -37,54 +37,53 @@ CATEGORY_TAG_RULES: dict[str, list[tuple[str, float]]] = {
     "nightlife": [
         ("late-night", 0.9),
         ("high-energy", 0.7),
-        ("social", 0.6),
+        ("lively", 0.6),
     ],
     "dining": [
         ("food-focused", 0.9),
         ("sit-down", 0.7),
     ],
     "drinks": [
-        ("social", 0.8),
-        ("casual", 0.7),
+        ("lively", 0.8),
+        ("low-key", 0.7),
         ("late-night", 0.5),
     ],
     "culture": [
-        ("deep-dive", 0.7),
+        ("educational", 0.7),
         ("slow-paced", 0.6),
-        ("iconic", 0.5),
+        ("historical", 0.5),
     ],
     "outdoors": [
         ("fresh-air", 0.9),
-        ("active", 0.6),
-        ("scenic", 0.7),
+        ("physical", 0.6),
+        ("instagram-worthy", 0.7),
     ],
     "active": [
         ("high-energy", 0.8),
-        ("active", 0.9),
+        ("physical", 0.9),
         ("fresh-air", 0.5),
     ],
     "entertainment": [
         ("high-energy", 0.6),
-        ("social", 0.7),
-        ("iconic", 0.5),
+        ("lively", 0.7),
+        ("historical", 0.5),
     ],
     "shopping": [
         ("browsing", 0.8),
-        ("casual", 0.6),
+        ("low-key", 0.6),
     ],
     "experience": [
         ("unique", 0.8),
-        ("deep-dive", 0.6),
-        ("memorable", 0.7),
+        ("educational", 0.6),
     ],
     "group_activity": [
-        ("social", 0.9),
+        ("lively", 0.9),
         ("high-energy", 0.6),
         ("group-friendly", 0.8),
     ],
     "wellness": [
         ("slow-paced", 0.8),
-        ("restorative", 0.9),
+        ("relaxing", 0.9),
         ("quiet", 0.6),
     ],
 }
@@ -98,17 +97,17 @@ def _apply_conditional_rules(
     """Return additional vibe tags based on price/subcategory conditions."""
     extra: list[tuple[str, float]] = []
 
-    # High-end dining → splurge
+    # High-end dining → splurge-worthy
     if category == "dining" and price_level is not None and price_level >= 4:
-        extra.append(("splurge", 0.8))
+        extra.append(("splurge-worthy", 0.8))
 
-    # Budget dining → casual
+    # Budget dining → low-key
     if category == "dining" and price_level is not None and price_level <= 2:
-        extra.append(("casual", 0.7))
+        extra.append(("low-key", 0.7))
 
-    # High-end drinks → splurge (cocktail bars, etc.)
+    # High-end drinks → splurge-worthy (cocktail bars, etc.)
     if category == "drinks" and price_level is not None and price_level >= 4:
-        extra.append(("splurge", 0.6))
+        extra.append(("splurge-worthy", 0.6))
 
     # Outdoor + active subcategories
     if category == "outdoors" and subcategory:
@@ -195,14 +194,14 @@ async def run_rule_inference(
         # Load the vibe tag vocabulary: slug → id
         # NOTE: Prisma uses PascalCase table names and camelCase columns (quoted).
         # Post-canary we'll standardize with @@map; for now, quote everything.
-        rows = await conn.fetch('SELECT id, slug FROM "VibeTag" WHERE "isActive" = true')
+        rows = await conn.fetch('SELECT id, slug FROM vibe_tags WHERE "isActive" = true')
         tag_lookup: dict[str, str] = {r["slug"]: r["id"] for r in rows}
 
         # Build the node query
         if node_ids:
             query = """
                 SELECT id, category, "priceLevel", subcategory
-                FROM "ActivityNode"
+                FROM activity_nodes
                 WHERE id = ANY($1::text[])
                   AND "isCanonical" = true
                   AND status != 'archived'
@@ -211,7 +210,7 @@ async def run_rule_inference(
         else:
             query = """
                 SELECT id, category, "priceLevel", subcategory
-                FROM "ActivityNode"
+                FROM activity_nodes
                 WHERE "isCanonical" = true
                   AND status != 'archived'
                 ORDER BY "createdAt"
@@ -260,7 +259,7 @@ async def run_rule_inference(
             try:
                 result = await conn.executemany(
                     """
-                    INSERT INTO "ActivityNodeVibeTag"
+                    INSERT INTO activity_node_vibe_tags
                         (id, "activityNodeId", "vibeTagId", score, source, "createdAt")
                     VALUES ($1, $2, $3, $4, $5, NOW())
                     ON CONFLICT ("activityNodeId", "vibeTagId", source)

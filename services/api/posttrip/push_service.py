@@ -50,7 +50,7 @@ async def register_push_token(
     # Upsert by user + device_id to handle token refresh
     existing = await session.execute(
         text("""
-        SELECT id FROM "PushToken"
+        SELECT id FROM push_tokens
         WHERE "userId" = :user_id AND "deviceId" = :device_id
         """),
         {"user_id": user_id, "device_id": device_id},
@@ -59,7 +59,7 @@ async def register_push_token(
     if existing.first():
         token_result = await session.execute(
             text("""
-            UPDATE "PushToken"
+            UPDATE push_tokens
             SET "deviceToken" = :device_token, "platform" = :platform,
                 "updatedAt" = NOW(), "isActive" = true
             WHERE "userId" = :user_id AND "deviceId" = :device_id
@@ -75,7 +75,7 @@ async def register_push_token(
     else:
         token_result = await session.execute(
             text("""
-            INSERT INTO "PushToken" (id, "userId", "deviceToken", "deviceId", "platform", "isActive", "createdAt", "updatedAt")
+            INSERT INTO push_tokens (id, "userId", "deviceToken", "deviceId", "platform", "isActive", "createdAt", "updatedAt")
             VALUES (:id, :user_id, :device_token, :device_id, :platform, true, NOW(), NOW())
             RETURNING id, "userId", "deviceId", "platform", "isActive", "createdAt", "updatedAt"
             """),
@@ -102,7 +102,7 @@ async def revoke_push_token(
     """Deactivate a push token (logout, uninstall)."""
     result = await session.execute(
         text("""
-        UPDATE "PushToken"
+        UPDATE push_tokens
         SET "isActive" = false, "updatedAt" = NOW()
         WHERE "userId" = :user_id AND "deviceId" = :device_id AND "isActive" = true
         RETURNING id
@@ -118,7 +118,7 @@ async def get_active_tokens(session: AsyncSession, user_id: str) -> list[dict[st
     result = await session.execute(
         text("""
         SELECT id, "deviceToken", "platform", "deviceId"
-        FROM "PushToken"
+        FROM push_tokens
         WHERE "userId" = :user_id AND "isActive" = true
         """),
         {"user_id": user_id},

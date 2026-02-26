@@ -139,7 +139,7 @@ async def list_sources(
             ROUND(MAX("sourceAuthority")::numeric, 3)::float as max_authority,
             MAX("extractedAt") as last_scraped_at,
             MIN("extractedAt") as oldest_signal_at
-        FROM "QualitySignal"
+        FROM quality_signals
         GROUP BY "sourceName"
         ORDER BY MAX("extractedAt") DESC NULLS LAST
         """
@@ -194,7 +194,7 @@ async def get_alerts(
             "sourceName" as source_name,
             COUNT(*)::int as signal_count,
             MAX("extractedAt") as last_scraped_at
-        FROM "QualitySignal"
+        FROM quality_signals
         GROUP BY "sourceName"
         ORDER BY MAX("extractedAt") ASC NULLS FIRST
         """
@@ -239,7 +239,7 @@ async def update_source_authority(
             ROUND(MIN("sourceAuthority")::numeric, 3)::float as min_authority,
             ROUND(MAX("sourceAuthority")::numeric, 3)::float as max_authority,
             COUNT(*)::int as signal_count
-        FROM "QualitySignal"
+        FROM quality_signals
         WHERE "sourceName" = $1
         """,
         source_name,
@@ -253,7 +253,7 @@ async def update_source_authority(
     # Update all signals for this source
     update_count = await db.execute_raw(
         """
-        UPDATE "QualitySignal"
+        UPDATE quality_signals
         SET "sourceAuthority" = $1
         WHERE "sourceName" = $2
         """,
@@ -273,7 +273,7 @@ async def update_source_authority(
         request=request,
         actor_id=actor_id,
         action="source.authority.update",
-        target_type="QualitySignal",
+        target_type="quality_signals",
         target_id=source_name,
         before=before,
         after={**after, "new_authority": body.authority_score},

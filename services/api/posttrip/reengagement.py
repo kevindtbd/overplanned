@@ -111,7 +111,7 @@ async def suggest_next_destination(
     activities_result = await session.execute(
         text("""
         SELECT id, name, category, city
-        FROM "ActivityNode"
+        FROM activity_nodes
         WHERE id = ANY(:ids)
         """),
         {"ids": unique_ids},
@@ -262,7 +262,7 @@ async def on_trip_completed(
 
     # Fetch user details via raw SQL (User model not in SA scope)
     user_result = await session.execute(
-        text('SELECT id, email, name FROM "User" WHERE id = :user_id'),
+        text('SELECT id, email, name FROM users WHERE id = :user_id'),
         {"user_id": user_id},
     )
     user = user_result.mappings().first()
@@ -443,8 +443,8 @@ async def _get_trip_highlights(
         SELECT
             s.id, s."dayNumber", s."activityNodeId",
             a.id AS "nodeId", a.name, a.category, a."primaryImageUrl"
-        FROM "ItinerarySlot" s
-        LEFT JOIN "ActivityNode" a ON s."activityNodeId" = a.id
+        FROM itinerary_slots s
+        LEFT JOIN activity_nodes a ON s."activityNodeId" = a.id
         WHERE s."tripId" = :trip_id
           AND s.status IN ('completed', 'confirmed')
           AND s."activityNodeId" IS NOT NULL

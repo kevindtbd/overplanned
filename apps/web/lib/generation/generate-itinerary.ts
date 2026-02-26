@@ -62,6 +62,7 @@ export async function generateLegItinerary(
       priceLevel: true,
       authorityScore: true,
       vibeTags: {
+        where: { vibeTag: { isActive: true } },
         select: {
           vibeTag: { select: { slug: true, name: true } },
           score: true,

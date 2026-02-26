@@ -36,13 +36,13 @@ class LearnedArbConfig:
 
 # SQL: check if enough ArbitrationEvent rows exist
 _READINESS_SQL = """
-SELECT COUNT(*) AS cnt FROM "ArbitrationEvent" WHERE "accepted" IS NOT NULL
+SELECT COUNT(*) AS cnt FROM arbitration_events WHERE "accepted" IS NOT NULL
 """
 
 # SQL: fetch training data
 _TRAINING_DATA_SQL = """
 SELECT "arbitrationRule", "servedSource", "accepted", "agreementScore", "contextSnapshot"
-FROM "ArbitrationEvent"
+FROM arbitration_events
 WHERE "accepted" IS NOT NULL
 ORDER BY "createdAt" ASC
 """
@@ -381,7 +381,7 @@ class LearnedArbitrator:
     async def register_model(self, pool, artifact_path: str, artifact_hash: str) -> None:
         """Register the trained model in ModelRegistry with stage='staging'."""
         register_sql = """
-        INSERT INTO "ModelRegistry" (
+        INSERT INTO model_registry (
             "id", "modelName", "modelVersion", "stage", "modelType",
             "description", "artifactPath", "artifactHash",
             "configSnapshot", "createdAt", "updatedAt"

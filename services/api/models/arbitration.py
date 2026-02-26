@@ -231,7 +231,7 @@ class Arbitrator:
 
         await pool.execute(
             """
-            INSERT INTO "ArbitrationEvent" (
+            INSERT INTO arbitration_events (
                 "id", "userId", "tripId", "mlTop3", "llmTop3",
                 "arbitrationRule", "servedSource", "accepted",
                 "agreementScore", "contextSnapshot", "createdAt"

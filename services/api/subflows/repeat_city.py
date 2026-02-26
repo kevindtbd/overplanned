@@ -66,8 +66,8 @@ _IMPRESSION_SIGNALS: frozenset[str] = frozenset({
 
 _PREVIOUS_TRIPS_SQL = """
 SELECT DISTINCT t.id
-FROM "Trip" t
-JOIN "TripLeg" tl ON tl."tripId" = t.id
+FROM trips t
+JOIN trip_legs tl ON tl."tripId" = t.id
 WHERE t."userId" = $1
   AND tl.city = $2
   AND t.status IN ('completed', 'active')
@@ -79,7 +79,7 @@ SELECT
     bs."activityNodeId",
     bs."signalType",
     bs."signal_weight"
-FROM "BehavioralSignal" bs
+FROM behavioral_signals bs
 WHERE bs."tripId" = ANY($1::text[])
   AND bs."activityNodeId" IS NOT NULL
   AND bs."userId" = $2

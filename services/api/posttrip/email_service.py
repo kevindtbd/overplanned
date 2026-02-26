@@ -124,7 +124,7 @@ async def check_unsubscribed(session: AsyncSession, user_id: str) -> bool:
     """Check if user has unsubscribed from re-engagement emails."""
     result = await session.execute(
         text("""
-        SELECT 1 FROM "EmailPreference"
+        SELECT 1 FROM email_preferences
         WHERE "userId" = :user_id AND "category" = 'reengagement' AND "unsubscribed" = true
         """),
         {"user_id": user_id},
@@ -136,7 +136,7 @@ async def unsubscribe_user(session: AsyncSession, user_id: str) -> None:
     """Unsubscribe user from re-engagement emails."""
     await session.execute(
         text("""
-        INSERT INTO "EmailPreference" (id, "userId", "category", "unsubscribed", "updatedAt")
+        INSERT INTO email_preferences (id, "userId", "category", "unsubscribed", "updatedAt")
         VALUES (gen_random_uuid(), :user_id, 'reengagement', true, NOW())
         ON CONFLICT ("userId", "category")
         DO UPDATE SET "unsubscribed" = true, "updatedAt" = NOW()

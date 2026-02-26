@@ -81,7 +81,7 @@ async def purge_expired_excerpts(
         already_null = await conn.fetchval(
             """
             SELECT COUNT(*)
-            FROM "QualitySignal"
+            FROM quality_signals
             WHERE "sourceName" = ANY($1::text[])
               AND "extractedAt" < (NOW() - make_interval(days => $2))
               AND "rawExcerpt" IS NULL
@@ -94,7 +94,7 @@ async def purge_expired_excerpts(
             eligible = await conn.fetchval(
                 """
                 SELECT COUNT(*)
-                FROM "QualitySignal"
+                FROM quality_signals
                 WHERE "sourceName" = ANY($1::text[])
                   AND "extractedAt" < (NOW() - make_interval(days => $2))
                   AND "rawExcerpt" IS NOT NULL
@@ -125,10 +125,10 @@ async def purge_expired_excerpts(
             try:
                 result = await conn.execute(
                     """
-                    UPDATE "QualitySignal"
+                    UPDATE quality_signals
                     SET "rawExcerpt" = NULL
                     WHERE id IN (
-                        SELECT id FROM "QualitySignal"
+                        SELECT id FROM quality_signals
                         WHERE "sourceName" = ANY($1::text[])
                           AND "extractedAt" < (NOW() - make_interval(days => $2))
                           AND "rawExcerpt" IS NOT NULL

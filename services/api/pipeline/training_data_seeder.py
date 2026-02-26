@@ -122,7 +122,7 @@ async def _seed_model_registry(conn: asyncpg.Connection) -> int:
     for entry in entries:
         result = await conn.execute(
             """
-            INSERT INTO "ModelRegistry" (
+            INSERT INTO model_registry (
                 "id", "modelName", "modelVersion", "stage", "modelType",
                 "description", "createdAt", "updatedAt"
             ) VALUES ($1, $2, $3, $4::\"ModelStage\", $5, $6, $7, $7)
@@ -149,10 +149,10 @@ async def _backfill_model_version(conn: asyncpg.Connection) -> int:
     """Backfill modelVersion on shadow user BehavioralSignals."""
     result = await conn.execute(
         """
-        UPDATE "BehavioralSignal"
+        UPDATE behavioral_signals
         SET "modelVersion" = 'llm_ranker:0.1.0'
         WHERE "userId" IN (
-            SELECT "id" FROM "User" WHERE "email" LIKE 'shadow-%'
+            SELECT "id" FROM users WHERE "email" LIKE 'shadow-%'
         )
         AND "modelVersion" IS NULL
         """
@@ -220,8 +220,8 @@ async def _seed_persona_dimensions(conn: asyncpg.Connection) -> int:
         SELECT DISTINCT ON (u."id")
             u."id" as user_id,
             t."personaSeed" as persona_seed
-        FROM "User" u
-        JOIN "Trip" t ON t."userId" = u."id"
+        FROM users u
+        JOIN trips t ON t."userId" = u."id"
         WHERE u."email" LIKE 'shadow-%'
         AND t."personaSeed" IS NOT NULL
         ORDER BY u."id", t."createdAt" ASC
@@ -236,8 +236,8 @@ async def _seed_persona_dimensions(conn: asyncpg.Connection) -> int:
     trip_counts = dict(await conn.fetch(
         """
         SELECT "userId", COUNT(*)::int as cnt
-        FROM "Trip"
-        WHERE "userId" IN (SELECT "id" FROM "User" WHERE "email" LIKE 'shadow-%')
+        FROM trips
+        WHERE "userId" IN (SELECT "id" FROM users WHERE "email" LIKE 'shadow-%')
         GROUP BY "userId"
         """
     ))
@@ -245,8 +245,8 @@ async def _seed_persona_dimensions(conn: asyncpg.Connection) -> int:
     # Delete existing shadow PersonaDimensions
     delete_result = await conn.execute(
         """
-        DELETE FROM "PersonaDimension"
-        WHERE "userId" IN (SELECT "id" FROM "User" WHERE "email" LIKE 'shadow-%')
+        DELETE FROM persona_dimensions
+        WHERE "userId" IN (SELECT "id" FROM users WHERE "email" LIKE 'shadow-%')
         """
     )
     deleted = int(delete_result.split()[-1])
@@ -279,7 +279,7 @@ async def _seed_persona_dimensions(conn: asyncpg.Connection) -> int:
 
             await conn.execute(
                 """
-                INSERT INTO "PersonaDimension" (
+                INSERT INTO persona_dimensions (
                     "id", "userId", "dimension", "value",
                     "confidence", "source", "updatedAt", "createdAt"
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
@@ -312,8 +312,8 @@ async def _seed_ranking_events(conn: asyncpg.Connection) -> int:
     # Delete existing shadow RankingEvents
     delete_result = await conn.execute(
         """
-        DELETE FROM "RankingEvent"
-        WHERE "userId" IN (SELECT "id" FROM "User" WHERE "email" LIKE 'shadow-%')
+        DELETE FROM ranking_events
+        WHERE "userId" IN (SELECT "id" FROM users WHERE "email" LIKE 'shadow-%')
         """
     )
     deleted = int(delete_result.split()[-1])
@@ -324,8 +324,8 @@ async def _seed_ranking_events(conn: asyncpg.Connection) -> int:
     affinity_rows = await conn.fetch(
         """
         SELECT "userId", "value"
-        FROM "PersonaDimension"
-        WHERE "userId" IN (SELECT "id" FROM "User" WHERE "email" LIKE 'shadow-%')
+        FROM persona_dimensions
+        WHERE "userId" IN (SELECT "id" FROM users WHERE "email" LIKE 'shadow-%')
         AND "dimension" = 'category_affinities'
         """
     )
@@ -341,7 +341,7 @@ async def _seed_ranking_events(conn: asyncpg.Connection) -> int:
     node_rows = await conn.fetch(
         """
         SELECT "id", "city", "category"
-        FROM "ActivityNode"
+        FROM activity_nodes
         WHERE "status" != 'archived'
         """
     )
@@ -360,8 +360,8 @@ async def _seed_ranking_events(conn: asyncpg.Connection) -> int:
             t."userId" as user_id,
             t."city",
             t."createdAt" as trip_created
-        FROM "Trip" t
-        JOIN "User" u ON u."id" = t."userId"
+        FROM trips t
+        JOIN users u ON u."id" = t."userId"
         WHERE u."email" LIKE 'shadow-%'
         ORDER BY t."userId", t."createdAt"
         """
@@ -387,7 +387,7 @@ async def _seed_ranking_events(conn: asyncpg.Connection) -> int:
         day_slots = await conn.fetch(
             """
             SELECT "dayNumber", array_agg("activityNodeId") as selected_node_ids
-            FROM "ItinerarySlot"
+            FROM itinerary_slots
             WHERE "tripId" = $1
             AND "status" IN ('confirmed', 'completed')
             AND "activityNodeId" IS NOT NULL
@@ -431,7 +431,7 @@ async def _seed_ranking_events(conn: asyncpg.Connection) -> int:
 
             await conn.execute(
                 """
-                INSERT INTO "RankingEvent" (
+                INSERT INTO ranking_events (
                     "id", "userId", "tripId", "dayNumber",
                     "modelName", "modelVersion",
                     "candidateIds", "rankedIds", "selectedIds",
@@ -478,10 +478,10 @@ async def _seed_pivot_events(conn: asyncpg.Connection) -> int:
     # Delete existing shadow PivotEvents (scoped to shadow user ownership)
     delete_result = await conn.execute(
         """
-        DELETE FROM "PivotEvent"
+        DELETE FROM pivot_events
         WHERE "tripId" IN (
-            SELECT t."id" FROM "Trip" t
-            JOIN "User" u ON u."id" = t."userId"
+            SELECT t."id" FROM trips t
+            JOIN users u ON u."id" = t."userId"
             WHERE u."email" LIKE 'shadow-%'
         )
         """
@@ -498,16 +498,16 @@ async def _seed_pivot_events(conn: asyncpg.Connection) -> int:
             skipped."id" as skipped_slot_id,
             skipped."activityNodeId" as original_node_id,
             replacement."activityNodeId" as selected_node_id
-        FROM "ItinerarySlot" skipped
-        JOIN "ItinerarySlot" replacement ON
+        FROM itinerary_slots skipped
+        JOIN itinerary_slots replacement ON
             replacement."tripId" = skipped."tripId"
             AND replacement."dayNumber" = skipped."dayNumber"
             AND replacement."sortOrder" = skipped."sortOrder"
             AND replacement."id" != skipped."id"
             AND replacement."wasSwapped" = false
             AND replacement."status" IN ('confirmed', 'completed')
-        JOIN "Trip" t ON t."id" = skipped."tripId"
-        JOIN "User" u ON u."id" = t."userId"
+        JOIN trips t ON t."id" = skipped."tripId"
+        JOIN users u ON u."id" = t."userId"
         WHERE skipped."wasSwapped" = true
         AND skipped."status" = 'skipped'
         AND u."email" LIKE 'shadow-%'
@@ -527,7 +527,7 @@ async def _seed_pivot_events(conn: asyncpg.Connection) -> int:
     for pair in swap_pairs:
         await conn.execute(
             """
-            INSERT INTO "PivotEvent" (
+            INSERT INTO pivot_events (
                 "id", "tripId", "slotId", "triggerType",
                 "originalNodeId", "selectedNodeId", "alternativeIds",
                 "status", "responseTimeMs", "resolvedAt", "createdAt"
@@ -579,8 +579,8 @@ async def _seed_intention_signals(conn: asyncpg.Connection) -> int:
     # Delete existing shadow IntentionSignals
     delete_result = await conn.execute(
         """
-        DELETE FROM "IntentionSignal"
-        WHERE "userId" IN (SELECT "id" FROM "User" WHERE "email" LIKE 'shadow-%')
+        DELETE FROM intention_signals
+        WHERE "userId" IN (SELECT "id" FROM users WHERE "email" LIKE 'shadow-%')
         """
     )
     deleted = int(delete_result.split()[-1])
@@ -597,9 +597,9 @@ async def _seed_intention_signals(conn: asyncpg.Connection) -> int:
             bs."tripId" as trip_id,
             an."category",
             an."priceLevel" as price_level
-        FROM "BehavioralSignal" bs
-        LEFT JOIN "ActivityNode" an ON an."id" = bs."activityNodeId"
-        JOIN "User" u ON u."id" = bs."userId"
+        FROM behavioral_signals bs
+        LEFT JOIN activity_nodes an ON an."id" = bs."activityNodeId"
+        JOIN users u ON u."id" = bs."userId"
         WHERE bs."signalType" = 'slot_skip'
         AND u."email" LIKE 'shadow-%'
         ORDER BY bs."userId", bs."createdAt"
@@ -615,8 +615,8 @@ async def _seed_intention_signals(conn: asyncpg.Connection) -> int:
     dim_rows = await conn.fetch(
         """
         SELECT "userId", "dimension", "value"
-        FROM "PersonaDimension"
-        WHERE "userId" IN (SELECT "id" FROM "User" WHERE "email" LIKE 'shadow-%')
+        FROM persona_dimensions
+        WHERE "userId" IN (SELECT "id" FROM users WHERE "email" LIKE 'shadow-%')
         AND "dimension" IN ('social_mode', 'budget_sensitivity')
         """
     )
@@ -675,7 +675,7 @@ async def _seed_intention_signals(conn: asyncpg.Connection) -> int:
 
             await conn.execute(
                 """
-                INSERT INTO "IntentionSignal" (
+                INSERT INTO intention_signals (
                     "id", "behavioralSignalId", "userId",
                     "intentionType", "confidence", "source",
                     "userProvided", "createdAt"
@@ -717,8 +717,8 @@ async def _seed_discovery_signals(
     # Delete existing shadow discovery signals
     delete_result = await conn.execute(
         """
-        DELETE FROM "BehavioralSignal"
-        WHERE "userId" IN (SELECT "id" FROM "User" WHERE "email" LIKE 'shadow-%')
+        DELETE FROM behavioral_signals
+        WHERE "userId" IN (SELECT "id" FROM users WHERE "email" LIKE 'shadow-%')
         AND "signalType" IN ('discover_swipe_right', 'discover_swipe_left', 'discover_shortlist')
         """
     )
@@ -729,8 +729,8 @@ async def _seed_discovery_signals(
     # Delete existing shadow discovery RankingEvents
     delete_re = await conn.execute(
         """
-        DELETE FROM "RankingEvent"
-        WHERE "userId" IN (SELECT "id" FROM "User" WHERE "email" LIKE 'shadow-%')
+        DELETE FROM ranking_events
+        WHERE "userId" IN (SELECT "id" FROM users WHERE "email" LIKE 'shadow-%')
         AND "surface" = 'discovery'
         """
     )
@@ -742,8 +742,8 @@ async def _seed_discovery_signals(
     affinity_rows = await conn.fetch(
         """
         SELECT "userId", "value"
-        FROM "PersonaDimension"
-        WHERE "userId" IN (SELECT "id" FROM "User" WHERE "email" LIKE 'shadow-%')
+        FROM persona_dimensions
+        WHERE "userId" IN (SELECT "id" FROM users WHERE "email" LIKE 'shadow-%')
         AND "dimension" = 'category_affinities'
         """
     )
@@ -755,8 +755,8 @@ async def _seed_discovery_signals(
     user_trips = await conn.fetch(
         """
         SELECT u."id" as user_id, t."id" as trip_id, t."city"
-        FROM "User" u
-        JOIN "Trip" t ON t."userId" = u."id"
+        FROM users u
+        JOIN trips t ON t."userId" = u."id"
         WHERE u."email" LIKE 'shadow-%'
         ORDER BY u."id", t."createdAt"
         """
@@ -766,7 +766,7 @@ async def _seed_discovery_signals(
     node_rows = await conn.fetch(
         """
         SELECT "id", "city", "category"
-        FROM "ActivityNode"
+        FROM activity_nodes
         WHERE "status" != 'archived'
         """
     )
@@ -884,7 +884,7 @@ async def _seed_discovery_signals(
     if signal_batch:
         await conn.executemany(
             """
-            INSERT INTO "BehavioralSignal" (
+            INSERT INTO behavioral_signals (
                 "id", "userId", "tripId", "slotId", "activityNodeId",
                 "signalType", "signalValue", "tripPhase", "rawAction", "createdAt"
             ) VALUES ($1, $2, $3, $4, $5, $6::\"SignalType\", $7, $8::\"TripPhase\", $9, $10)
@@ -896,7 +896,7 @@ async def _seed_discovery_signals(
     if ranking_batch:
         await conn.executemany(
             """
-            INSERT INTO "RankingEvent" (
+            INSERT INTO ranking_events (
                 "id", "userId", "tripId", "dayNumber",
                 "modelName", "modelVersion",
                 "candidateIds", "rankedIds", "selectedIds",
@@ -983,11 +983,11 @@ async def _backfill_weather_context(conn: asyncpg.Connection) -> int:
             t."city",
             t."startDate" as start_date,
             slot."dayNumber" as day_number
-        FROM "BehavioralSignal" bs
-        JOIN "ItinerarySlot" slot ON slot."id" = bs."slotId"
-        JOIN "Trip" t ON t."id" = bs."tripId"
-        JOIN "ActivityNode" an ON an."id" = bs."activityNodeId"
-        JOIN "User" u ON u."id" = bs."userId"
+        FROM behavioral_signals bs
+        JOIN itinerary_slots slot ON slot."id" = bs."slotId"
+        JOIN trips t ON t."id" = bs."tripId"
+        JOIN activity_nodes an ON an."id" = bs."activityNodeId"
+        JOIN users u ON u."id" = bs."userId"
         WHERE u."email" LIKE 'shadow-%'
         AND bs."weatherContext" IS NULL
         AND bs."slotId" IS NOT NULL
@@ -1027,7 +1027,7 @@ async def _backfill_weather_context(conn: asyncpg.Connection) -> int:
     for weather_str, signal_ids in updates_by_weather.items():
         result = await conn.execute(
             """
-            UPDATE "BehavioralSignal"
+            UPDATE behavioral_signals
             SET "weatherContext" = $1
             WHERE "id" = ANY($2)
             """,
@@ -1056,8 +1056,8 @@ async def _make_trips_realistic(conn: asyncpg.Connection) -> tuple[int, int]:
     # Check if we've already run (any shadow trips with status='planning')
     existing_planning = await conn.fetchval(
         """
-        SELECT COUNT(*) FROM "Trip" t
-        JOIN "User" u ON u."id" = t."userId"
+        SELECT COUNT(*) FROM trips t
+        JOIN users u ON u."id" = t."userId"
         WHERE u."email" LIKE 'shadow-%'
         AND t."status" = 'planning'
         """
@@ -1069,12 +1069,12 @@ async def _make_trips_realistic(conn: asyncpg.Connection) -> tuple[int, int]:
         abandoned_candidates = await conn.fetch(
             """
             SELECT t."id" as trip_id
-            FROM "Trip" t
-            JOIN "User" u ON u."id" = t."userId"
+            FROM trips t
+            JOIN users u ON u."id" = t."userId"
             WHERE u."email" LIKE 'shadow-%'
             AND t."status" = 'completed'
             AND t."id" NOT IN (
-                SELECT DISTINCT "tripId" FROM "BehavioralSignal"
+                SELECT DISTINCT "tripId" FROM behavioral_signals
                 WHERE "tripPhase" = 'post_trip'
                 AND "tripId" IS NOT NULL
             )
@@ -1087,7 +1087,7 @@ async def _make_trips_realistic(conn: asyncpg.Connection) -> tuple[int, int]:
             trip_ids = [r["trip_id"] for r in abandoned_candidates]
             result = await conn.execute(
                 """
-                UPDATE "Trip"
+                UPDATE trips
                 SET "status" = 'planning'::"TripStatus",
                     "completedAt" = NULL
                 WHERE "id" = ANY($1)
@@ -1100,8 +1100,8 @@ async def _make_trips_realistic(conn: asyncpg.Connection) -> tuple[int, int]:
     # Check if we've already shortened (any shadow trips with duration <= 2 days)
     existing_short = await conn.fetchval(
         """
-        SELECT COUNT(*) FROM "Trip" t
-        JOIN "User" u ON u."id" = t."userId"
+        SELECT COUNT(*) FROM trips t
+        JOIN users u ON u."id" = t."userId"
         WHERE u."email" LIKE 'shadow-%'
         AND (t."endDate" - t."startDate") <= INTERVAL '2 days'
         """
@@ -1114,8 +1114,8 @@ async def _make_trips_realistic(conn: asyncpg.Connection) -> tuple[int, int]:
         recent_candidates = await conn.fetch(
             """
             SELECT t."id" as trip_id, t."startDate" as start_date
-            FROM "Trip" t
-            JOIN "User" u ON u."id" = t."userId"
+            FROM trips t
+            JOIN users u ON u."id" = t."userId"
             WHERE u."email" LIKE 'shadow-%'
             AND t."status" = 'completed'
             AND t."startDate" >= $1
@@ -1133,7 +1133,7 @@ async def _make_trips_realistic(conn: asyncpg.Connection) -> tuple[int, int]:
             new_end = trip["start_date"] + timedelta(days=short_days)
             await conn.execute(
                 """
-                UPDATE "Trip"
+                UPDATE trips
                 SET "endDate" = $1
                 WHERE "id" = $2
                 """,

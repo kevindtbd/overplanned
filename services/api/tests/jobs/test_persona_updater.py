@@ -438,7 +438,7 @@ class TestAuditLogging:
 
         # First execute call should be CREATE TABLE
         first_call = conn.execute.call_args_list[0][0][0]
-        assert "PersonaUpdateRun" in first_call
+        assert "persona_update_runs" in first_call
 
     @pytest.mark.asyncio
     async def test_audit_row_on_no_signals(self):

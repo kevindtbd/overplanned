@@ -437,7 +437,7 @@ class PivotDetector:
             return
 
         sql = """
-            INSERT INTO "PivotEvent" (
+            INSERT INTO pivot_events (
                 id, "tripId", "slotId", "triggerType", "triggerPayload",
                 "originalNodeId", "alternativeIds", "selectedNodeId",
                 status, "resolvedAt", "responseTimeMs", "createdAt"

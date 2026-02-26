@@ -106,7 +106,7 @@ async def run_cascade(body: CascadeRequest, request: Request) -> dict:
             id, "dayNumber", "sortOrder",
             "startTime", "endTime", "durationMinutes",
             "isLocked", "slotType", status
-        FROM "ItinerarySlot"
+        FROM itinerary_slots
         WHERE id = $1 AND "tripId" = $2
         """,
         body.slotId,
@@ -130,7 +130,7 @@ async def run_cascade(body: CascadeRequest, request: Request) -> dict:
 
     # Fetch trip timezone
     trip_row = await db.fetchrow(
-        'SELECT timezone FROM "Trip" WHERE id = $1',
+        'SELECT timezone FROM trips WHERE id = $1',
         body.tripId,
     )
     if not trip_row:

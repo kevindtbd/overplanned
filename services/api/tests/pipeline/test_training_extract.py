@@ -322,7 +322,7 @@ class TestExtractTrainingData:
         assert len(execute_calls) >= 2
         # Last call should be the audit insert
         last_call_args = execute_calls[-1][0]
-        assert "TrainingExtractRun" in last_call_args[0]
+        assert "training_extract_runs" in last_call_args[0]
 
 
 # ===========================================================================

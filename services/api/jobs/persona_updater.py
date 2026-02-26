@@ -140,26 +140,14 @@ NEGATIVE_SIGNAL_TYPES = frozenset({
 # SQL
 # ---------------------------------------------------------------------------
 
-_CREATE_AUDIT_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS "PersonaUpdateRun" (
-    "id" SERIAL PRIMARY KEY,
-    "runDate" DATE NOT NULL,
-    "status" TEXT NOT NULL,
-    "usersUpdated" INTEGER NOT NULL DEFAULT 0,
-    "dimensionsUpdated" INTEGER NOT NULL DEFAULT 0,
-    "durationMs" INTEGER NOT NULL DEFAULT 0,
-    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
-)
-"""
-
 _CHECK_EXISTING_SQL = """
-SELECT id FROM "PersonaUpdateRun"
+SELECT id FROM persona_update_runs
 WHERE "runDate" = $1 AND status = 'success'
 LIMIT 1
 """
 
 _INSERT_RUN_SQL = """
-INSERT INTO "PersonaUpdateRun" ("runDate", status, "usersUpdated", "dimensionsUpdated", "durationMs")
+INSERT INTO persona_update_runs ("runDate", status, "usersUpdated", "dimensionsUpdated", "durationMs")
 VALUES ($1, $2, $3, $4, $5)
 """
 
@@ -171,9 +159,9 @@ SELECT
     bs."signalType",
     bs."tripPhase",
     an.category
-FROM "BehavioralSignal" bs
-JOIN "ItinerarySlot" isl ON isl.id = bs."slotId"
-JOIN "ActivityNode" an ON an.id = isl."activityNodeId"
+FROM behavioral_signals bs
+JOIN itinerary_slots isl ON isl.id = bs."slotId"
+JOIN activity_nodes an ON an.id = isl."activityNodeId"
 WHERE bs.source = 'user_behavioral'
   AND bs."slotId" IS NOT NULL
   AND bs."createdAt" >= $1
@@ -185,13 +173,13 @@ ORDER BY bs."userId", bs."createdAt"
 # Get current PersonaDimension rows for a user
 _GET_PERSONA_SQL = """
 SELECT dimension, value, confidence, source
-FROM "PersonaDimension"
+FROM persona_dimensions
 WHERE "userId" = $1
 """
 
 # Upsert a PersonaDimension row
 _UPSERT_PERSONA_SQL = """
-INSERT INTO "PersonaDimension" (id, "userId", dimension, value, confidence, source, "updatedAt", "createdAt")
+INSERT INTO persona_dimensions (id, "userId", dimension, value, confidence, source, "updatedAt", "createdAt")
 VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW(), NOW())
 ON CONFLICT ("userId", dimension) DO UPDATE
 SET confidence = EXCLUDED.confidence,
@@ -326,9 +314,6 @@ async def run_persona_update(
     start_ts = time.monotonic()
 
     async with pool.acquire() as conn:
-        # Ensure audit table exists
-        await conn.execute(_CREATE_AUDIT_TABLE_SQL)
-
         # Idempotency guard
         existing = await conn.fetchrow(_CHECK_EXISTING_SQL, target_date)
         if existing:
@@ -504,6 +489,12 @@ async def main() -> None:
     import os
 
     import asyncpg
+
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
 
     logging.basicConfig(
         level=logging.INFO,

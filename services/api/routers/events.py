@@ -79,7 +79,7 @@ async def ingest_events(body: BatchRequest, request: Request) -> dict:
             try:
                 await db.execute(
                     """
-                    INSERT INTO "RawEvent" (
+                    INSERT INTO raw_events (
                         id, "userId", "sessionId", "tripId", "activityNodeId",
                         "clientEventId", "eventType", "intentClass", surface,
                         payload, platform, "screenWidth", "networkType", "createdAt"

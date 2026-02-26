@@ -592,7 +592,7 @@ class ImageValidator:
             query = """
                 SELECT id, name, "canonicalName", city, "primaryImageUrl",
                        "imageSource", "foursquareId", "googlePlaceId"
-                FROM "ActivityNode"
+                FROM activity_nodes
                 WHERE "isCanonical" = true
                   AND "imageValidated" = false
                 ORDER BY "convergenceScore" DESC NULLS LAST, "createdAt" ASC
@@ -772,7 +772,7 @@ class ImageValidator:
             if result.validated and result.image_url:
                 await conn.execute(
                     """
-                    UPDATE "ActivityNode"
+                    UPDATE activity_nodes
                     SET "primaryImageUrl" = $1,
                         "imageSource" = $2,
                         "imageValidated" = true,
@@ -794,7 +794,7 @@ class ImageValidator:
 
                 await conn.execute(
                     """
-                    UPDATE "ActivityNode"
+                    UPDATE activity_nodes
                     SET "imageValidated" = false,
                         "flagReason" = $1,
                         "lastValidatedAt" = NOW(),
