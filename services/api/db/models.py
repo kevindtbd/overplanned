@@ -198,6 +198,110 @@ class RankingEvent(Base):
     createdAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
+    email: Mapped[str] = mapped_column(String, unique=True)
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    image: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    avatarUrl: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    googleId: Mapped[Optional[str]] = mapped_column(String, nullable=True, unique=True)
+    emailVerified: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    subscriptionTier: Mapped[str] = mapped_column(String, default="beta")
+    systemRole: Mapped[str] = mapped_column(String, default="user")
+    featureFlags: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    accessCohort: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    stripeCustomerId: Mapped[Optional[str]] = mapped_column(String, nullable=True, unique=True)
+    stripeSubId: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    stripePriceId: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    onboardingComplete: Mapped[bool] = mapped_column(Boolean, default=False)
+    createdAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updatedAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    lastActiveAt: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ModelRegistry(Base):
+    __tablename__ = "model_registry"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
+    modelName: Mapped[str] = mapped_column(String)
+    modelVersion: Mapped[str] = mapped_column(String)
+    stage: Mapped[str] = mapped_column(String)
+    modelType: Mapped[str] = mapped_column(String)
+    description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    artifactPath: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    artifactHash: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    configSnapshot: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    metrics: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    evaluatedAt: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    trainingDataRange: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    parentVersionId: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    promotedAt: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    promotedBy: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    createdAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updatedAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ActivityNode(Base):
+    __tablename__ = "activity_nodes"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
+    name: Mapped[str] = mapped_column(String)
+    slug: Mapped[str] = mapped_column(String, unique=True)
+    canonicalName: Mapped[str] = mapped_column(String)
+    city: Mapped[str] = mapped_column(String)
+    country: Mapped[str] = mapped_column(String)
+    neighborhood: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    latitude: Mapped[float] = mapped_column(Float)
+    longitude: Mapped[float] = mapped_column(Float)
+    category: Mapped[str] = mapped_column(String)
+    subcategory: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    priceLevel: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    hours: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    address: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    phoneNumber: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    websiteUrl: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    foursquareId: Mapped[Optional[str]] = mapped_column(String, nullable=True, unique=True)
+    googlePlaceId: Mapped[Optional[str]] = mapped_column(String, nullable=True, unique=True)
+    primaryImageUrl: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    imageSource: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    imageValidated: Mapped[bool] = mapped_column(Boolean, default=False)
+    sourceCount: Mapped[int] = mapped_column(Integer, default=0)
+    convergenceScore: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    authorityScore: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    descriptionShort: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    descriptionLong: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    contentHash: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    lastScrapedAt: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    lastValidatedAt: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String, default="pending")
+    flagReason: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    resolvedToId: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    isCanonical: Mapped[bool] = mapped_column(Boolean, default=True)
+    tourist_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    tourist_local_divergence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    impression_count: Mapped[int] = mapped_column(Integer, default=0)
+    acceptance_count: Mapped[int] = mapped_column(Integer, default=0)
+    behavioral_quality_score: Mapped[float] = mapped_column(Float, default=0.5)
+    llm_served_count: Mapped[int] = mapped_column(Integer, default=0)
+    ml_served_count: Mapped[int] = mapped_column(Integer, default=0)
+    behavioralUpdatedAt: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    cantMiss: Mapped[bool] = mapped_column(Boolean, default=False)
+    createdAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updatedAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ActivityAlias(Base):
+    __tablename__ = "activity_aliases"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
+    activityNodeId: Mapped[str] = mapped_column(String)
+    alias: Mapped[str] = mapped_column(String)
+    source: Mapped[str] = mapped_column(String)
+    createdAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class RawEvent(Base):
     __tablename__ = "raw_events"
 

@@ -130,8 +130,11 @@ def extract_client_info(request) -> tuple[str, str]:
     Returns:
         Tuple of (ip_address, user_agent)
     """
-    # Try X-Forwarded-For first (for proxy/load balancer scenarios)
-    ip_address = request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+    # Prefer X-Admin-Client-IP (set by HMAC-signed proxy, trusted)
+    # Falls back to X-Forwarded-For then direct client IP
+    ip_address = request.headers.get("X-Admin-Client-IP", "").strip()
+    if not ip_address:
+        ip_address = request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
     if not ip_address:
         ip_address = request.client.host if request.client else "unknown"
 

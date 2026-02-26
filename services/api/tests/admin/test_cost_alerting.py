@@ -12,6 +12,7 @@ Verifies:
 import pytest
 from unittest.mock import AsyncMock
 
+from services.api.tests.helpers.mock_sa import MockSASession
 from .conftest import make_cost_alert_config, make_admin_user
 
 pytestmark = pytest.mark.asyncio
@@ -25,7 +26,8 @@ class TestGetCostAlerts:
     """Read cost alert thresholds with today's spend."""
 
     async def test_returns_alert_status(self, admin_client, mock_session):
-        mock_session.query_raw = AsyncMock(return_value=[
+        # SA text() query returns rows with ._mapping
+        mock_session.returns_mapping_rows([
             {
                 "pipeline_stage": "seed_enrichment",
                 "daily_limit_usd": 50.0,
@@ -58,7 +60,7 @@ class TestGetCostAlerts:
         assert narration["pct_used"] == 110.0
 
     async def test_disabled_alert_never_exceeded(self, admin_client, mock_session):
-        mock_session.query_raw = AsyncMock(return_value=[
+        mock_session.returns_mapping_rows([
             {
                 "pipeline_stage": "experimental",
                 "daily_limit_usd": 10.0,
@@ -70,10 +72,10 @@ class TestGetCostAlerts:
         response = await admin_client.get("/admin/pipeline/alerts")
         assert response.status_code == 200
         alert = response.json()["data"][0]
-        assert alert["exceeded"] is False  # disabled → never exceeded
+        assert alert["exceeded"] is False  # disabled -> never exceeded
 
     async def test_zero_limit_pct_used_zero(self, admin_client, mock_session):
-        mock_session.query_raw = AsyncMock(return_value=[
+        mock_session.returns_mapping_rows([
             {
                 "pipeline_stage": "free_tier",
                 "daily_limit_usd": 0.0,
@@ -88,7 +90,7 @@ class TestGetCostAlerts:
         assert alert["pct_used"] == 0.0  # avoid division by zero
 
     async def test_empty_alerts(self, admin_client, mock_session):
-        mock_session.query_raw = AsyncMock(return_value=[])
+        mock_session.returns_mapping_rows([])
 
         response = await admin_client.get("/admin/pipeline/alerts")
         assert response.status_code == 200
@@ -103,10 +105,12 @@ class TestUpdateCostAlerts:
     """Update cost alert thresholds with audit logging."""
 
     async def test_update_thresholds(self, admin_client, mock_session):
-        # Before state
-        mock_session.query_raw = AsyncMock(return_value=[
+        # Before state: execute for current config query
+        mock_session.returns_mapping_rows([
             {"pipeline_stage": "seed_enrichment", "daily_limit_usd": 50.0, "enabled": True},
         ])
+        # Upsert executes happen next (2 thresholds = 2 execute calls)
+        # Then commit, then audit_action execute + commit
 
         response = await admin_client.put(
             "/admin/pipeline/alerts",
@@ -120,11 +124,11 @@ class TestUpdateCostAlerts:
         assert response.status_code == 200
         assert response.json()["data"]["updated"] == 2
 
-        # Verify upserts happened
-        assert mock_session.execute_raw.call_count == 2
+        # Verify execute was called (upserts + audit)
+        assert mock_session.mock.execute.call_count >= 3  # 1 select + 2 upserts minimum
 
     async def test_update_triggers_audit_log(self, admin_client, mock_session):
-        mock_session.query_raw = AsyncMock(return_value=[])
+        mock_session.returns_mapping_rows([])  # no existing config
 
         response = await admin_client.put(
             "/admin/pipeline/alerts",
@@ -137,8 +141,8 @@ class TestUpdateCostAlerts:
         assert response.status_code == 200
 
         # Audit entry created (SA-based audit_action calls execute + commit)
-        mock_session.execute.assert_called()
-        mock_session.commit.assert_called()
+        mock_session.mock.execute.assert_called()
+        mock_session.mock.commit.assert_called()
 
 
 # ---------------------------------------------------------------------------
@@ -149,7 +153,7 @@ class TestLLMCosts:
     """GET /admin/pipeline/llm-costs reads telemetry data."""
 
     async def test_returns_cost_summary(self, admin_client, mock_session):
-        mock_session.query_raw = AsyncMock(return_value=[
+        mock_session.returns_mapping_rows([
             {
                 "model": "claude-sonnet-4-6",
                 "date": "2026-02-19",

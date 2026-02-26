@@ -1,0 +1,130 @@
+{
+  "vectors": [
+    {
+      "description": "Simple GET request, no query params, no body",
+      "method": "GET",
+      "path": "/admin/users",
+      "queryString": "",
+      "body": "",
+      "timestamp": 1700000000,
+      "userId": "user-001",
+      "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "expectedBodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedSignature": "b0a11c20653cc9f6f083a734d64984009b13484bcd23476057455cb613a4961c"
+    },
+    {
+      "description": "POST with JSON body",
+      "method": "POST",
+      "path": "/admin/models/abc-123/promote",
+      "queryString": "",
+      "body": "{\"target_stage\":\"ab_test\"}",
+      "timestamp": 1700000100,
+      "userId": "admin-042",
+      "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "expectedBodyHash": "92960f2aa105f68c3557610b09d89e58c4b60d991c0c60f39c9697e951b85ba8",
+      "expectedSignature": "dd5449aa1491c7e4a70e78a36289b9b32778e7d3502354e68f8e748ca20b942d"
+    },
+    {
+      "description": "GET with query params (sorted)",
+      "method": "GET",
+      "path": "/admin/pipeline/llm-costs",
+      "queryString": "days=7&model=claude-sonnet",
+      "body": "",
+      "timestamp": 1700000200,
+      "userId": "user-001",
+      "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "expectedBodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedSignature": "de18bc46f023bd1f42e178570674246f568bc8c7c621ac2aa573d4082ec2efde"
+    },
+    {
+      "description": "PATCH with JSON body",
+      "method": "PATCH",
+      "path": "/admin/safety/injection-queue/evt-999",
+      "queryString": "",
+      "body": "{\"status\":\"confirmed\"}",
+      "timestamp": 1700000300,
+      "userId": "admin-042",
+      "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "expectedBodyHash": "f6cd5b66e072b8d08d6a5e4f23440d6007ed40719c6cebec92620d408db3a4b6",
+      "expectedSignature": "d777aebbbe82649b17cb55044d34b62c16968fa109e8d121eee291d2f45beda2"
+    },
+    {
+      "description": "DELETE request, no body",
+      "method": "DELETE",
+      "path": "/admin/nodes/node-555/aliases/alias-111",
+      "queryString": "",
+      "body": "",
+      "timestamp": 1700000400,
+      "userId": "user-001",
+      "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "expectedBodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedSignature": "2f8a1a068dfaa785e437a28789239e059df7e2ddc5c6d6102640e3567759711c"
+    },
+    {
+      "description": "Path with trailing slash (normalize to /admin/users)",
+      "method": "GET",
+      "path": "/admin/users/",
+      "normalizedPath": "/admin/users",
+      "queryString": "",
+      "body": "",
+      "timestamp": 1700000500,
+      "userId": "user-001",
+      "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "expectedBodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedSignature": "321569ef92d54f9ac482131ea703f8c74e489a19d08be30c089c22ecba3f2ec8"
+    },
+    {
+      "description": "Path with double slashes (normalize to /admin/models)",
+      "method": "GET",
+      "path": "/admin//models",
+      "normalizedPath": "/admin/models",
+      "queryString": "",
+      "body": "",
+      "timestamp": 1700000600,
+      "userId": "user-001",
+      "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "expectedBodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedSignature": "578d3e8b0ddcef14cf5e7bc3b42da07ee0778415260b819c85567aea36582e1f"
+    },
+    {
+      "description": "POST with Unicode body",
+      "method": "POST",
+      "path": "/admin/nodes/n-1",
+      "queryString": "",
+      "body": "{\"name\":\"Caf\u00e9 de Flore\"}",
+      "timestamp": 1700000700,
+      "userId": "admin-042",
+      "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "expectedBodyHash": "92984a3870bf810c856751afe04a63593ffd5a71bf2b509407f1a523341a07d6",
+      "expectedSignature": "b40a8619025ef0e7a390656a37e3cdf32f43684b0c825aa99210612b8291af3f"
+    },
+    {
+      "description": "Query params unsorted (sort: city, search, sort)",
+      "method": "GET",
+      "path": "/admin/nodes",
+      "queryString": "sort=name&city=tokyo&search=ramen",
+      "sortedQueryString": "city=tokyo&search=ramen&sort=name",
+      "body": "",
+      "timestamp": 1700000800,
+      "userId": "user-001",
+      "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "expectedBodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedSignature": "94fa4bf195290a12aeb483aab8fb40f7123a8be11f71daaebc63d0096fe963a4"
+    },
+    {
+      "description": "Method changes signature (GET vs POST)",
+      "method_a": "GET",
+      "method_b": "POST",
+      "path": "/admin/users",
+      "queryString": "",
+      "body": "",
+      "timestamp": 1700000000,
+      "userId": "user-001",
+      "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "expectedBodyHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "signature_a": "b0a11c20653cc9f6f083a734d64984009b13484bcd23476057455cb613a4961c",
+      "signature_b": "2551318c26588462960a6df881e9e7e6394c662ed21ab62f0747d256d9d51c11",
+      "signatures_differ": true
+    }
+  ]
+}

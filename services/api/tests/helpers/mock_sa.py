@@ -26,6 +26,8 @@ from collections import deque
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+_UNSET = object()  # sentinel for distinguishing None from unset
+
 
 class _ScalarsResult:
     """Mock for result.scalars() return value."""
@@ -45,6 +47,13 @@ class _ScalarsResult:
         return None
 
 
+class _MappingRow:
+    """Mock for a raw SQL row with ._mapping attribute (used by dict(r._mapping))."""
+
+    def __init__(self, data: dict):
+        self._mapping = data
+
+
 class _ExecuteResult:
     """Mock for session.execute() return value."""
 
@@ -56,12 +65,14 @@ class _ExecuteResult:
         rowcount: int | None = None,
         row: tuple | None = None,
         rows: list[tuple] | None = None,
+        scalar_value: Any = _UNSET,
     ):
         self._scalars_items = scalars_items
         self._scalars_single = scalars_single
         self._rowcount = rowcount
         self._row = row
         self._rows = rows
+        self._scalar_value = scalar_value
 
     def scalars(self) -> _ScalarsResult:
         return _ScalarsResult(self._scalars_items, self._scalars_single)
@@ -69,6 +80,12 @@ class _ExecuteResult:
     @property
     def rowcount(self) -> int:
         return self._rowcount if self._rowcount is not None else 0
+
+    def scalar(self) -> Any:
+        """Return a single scalar value (e.g. from SELECT COUNT(*))."""
+        if self._scalar_value is not _UNSET:
+            return self._scalar_value
+        return None
 
     def first(self) -> tuple | None:
         return self._row
@@ -104,11 +121,14 @@ class MockSASession:
 
     def __init__(self) -> None:
         self._queue: deque[_ExecuteResult] = deque()
+        self._get_queue: deque[Any] = deque()
         self.mock = AsyncMock()
         self.mock.commit = AsyncMock()
         self.mock.rollback = AsyncMock()
         self.mock.close = AsyncMock()
         self.mock.flush = AsyncMock()
+        self.mock.add = MagicMock()
+        self.mock.refresh = AsyncMock()
 
         async def _execute_side_effect(*args, **kwargs):
             if self._queue:
@@ -116,7 +136,13 @@ class MockSASession:
             # Default: empty result
             return _ExecuteResult()
 
+        async def _get_side_effect(*args, **kwargs):
+            if self._get_queue:
+                return self._get_queue.popleft()
+            return None
+
         self.mock.execute = AsyncMock(side_effect=_execute_side_effect)
+        self.mock.get = AsyncMock(side_effect=_get_side_effect)
 
     def returns_one(self, obj: Any) -> MockSASession:
         """Next execute() call returns this single object via scalars().first()."""
@@ -151,4 +177,23 @@ class MockSASession:
     def returns_mappings(self, rows: list[dict]) -> MockSASession:
         """Next execute() call returns mapping rows."""
         self._queue.append(_ExecuteResult(rows=rows))
+        return self
+
+    def returns_scalar(self, value: Any) -> MockSASession:
+        """Next execute() call returns a scalar value via .scalar()."""
+        self._queue.append(_ExecuteResult(scalar_value=value))
+        return self
+
+    def returns_mapping_rows(self, rows: list[dict]) -> MockSASession:
+        """Next execute() call returns rows with ._mapping attr (for raw SQL).
+
+        Usage for routers that do: [dict(r._mapping) for r in result.fetchall()]
+        """
+        mapping_rows = [_MappingRow(r) for r in rows]
+        self._queue.append(_ExecuteResult(rows=mapping_rows))
+        return self
+
+    def returns_get(self, obj: Any) -> MockSASession:
+        """Next db.get() call returns this object."""
+        self._get_queue.append(obj)
         return self

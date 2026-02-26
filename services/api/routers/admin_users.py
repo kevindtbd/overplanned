@@ -6,9 +6,12 @@ All actions logged to AuditLog.
 from typing import Optional, Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import select, update, func, or_
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.api.middleware.audit import audit_action
 from services.api.routers._admin_deps import require_admin_user, get_db
+from services.api.db.models import User, Trip, BehavioralSignal
 
 router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 
@@ -58,9 +61,18 @@ ALLOWED_SORT_FIELDS = {
     "subscriptionTier",
 }
 
+# Map sort field names to SA columns
+_SORT_COLUMN_MAP = {
+    "createdAt": User.createdAt,
+    "lastActiveAt": User.lastActiveAt,
+    "email": User.email,
+    "name": User.name,
+    "subscriptionTier": User.subscriptionTier,
+}
 
-def user_to_snapshot(user) -> dict:
-    """Convert a Prisma User to a serialisable dict for audit before/after."""
+
+def user_to_snapshot(user: User) -> dict:
+    """Convert an SA User to a serialisable dict for audit before/after."""
     return {
         "id": user.id,
         "email": user.email,
@@ -88,42 +100,50 @@ async def search_users(
     order: str = Query("desc"),
     skip: int = Query(0, ge=0),
     take: int = Query(50, ge=1, le=200),
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
     Search users by email/name. Supports tier and role filters.
     All lookups logged to AuditLog (action: "user_lookup").
     """
-    where: dict = {}
+    stmt = select(User)
+    count_stmt = select(func.count()).select_from(User)
 
     # Text search on email or name
     if q:
-        where["OR"] = [
-            {"email": {"contains": q, "mode": "insensitive"}},
-            {"name": {"contains": q, "mode": "insensitive"}},
-        ]
+        search_filter = or_(
+            User.email.ilike(f"%{q}%"),
+            User.name.ilike(f"%{q}%"),
+        )
+        stmt = stmt.where(search_filter)
+        count_stmt = count_stmt.where(search_filter)
 
     # Tier filter
     if tier and tier in VALID_TIERS:
-        where["subscriptionTier"] = tier
+        stmt = stmt.where(User.subscriptionTier == tier)
+        count_stmt = count_stmt.where(User.subscriptionTier == tier)
 
     # Role filter
     if role and role in {"user", "admin"}:
-        where["systemRole"] = role
+        stmt = stmt.where(User.systemRole == role)
+        count_stmt = count_stmt.where(User.systemRole == role)
 
-    # Validate sort field
+    # Sort
     sort_field = sort if sort in ALLOWED_SORT_FIELDS else "createdAt"
-    sort_order = "asc" if order == "asc" else "desc"
+    sort_col = _SORT_COLUMN_MAP[sort_field]
+    if order == "asc":
+        stmt = stmt.order_by(sort_col.asc())
+    else:
+        stmt = stmt.order_by(sort_col.desc())
 
-    users = await db.user.find_many(
-        where=where,
-        order={sort_field: sort_order},
-        skip=skip,
-        take=take,
-    )
+    stmt = stmt.offset(skip).limit(take)
 
-    total = await db.user.count(where=where)
+    result = await db.execute(stmt)
+    users = result.scalars().all()
+
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar() or 0
 
     # Log the lookup
     await audit_action(
@@ -162,31 +182,40 @@ async def search_users(
 async def get_user(
     user_id: str,
     request: Request,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
     Get single user with signals, trips, tier, and feature flags.
     Lookup logged to AuditLog.
     """
-    user = await db.user.find_unique(where={"id": user_id})
+    user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Fetch related data
-    trips = await db.trip.find_many(
-        where={"userId": user_id},
-        order={"createdAt": "desc"},
-        take=20,
+    # Fetch related trips
+    trips_result = await db.execute(
+        select(Trip)
+        .where(Trip.userId == user_id)
+        .order_by(Trip.createdAt.desc())
+        .limit(20)
     )
+    trips = trips_result.scalars().all()
 
-    signal_count = await db.behavioralsignal.count(where={"userId": user_id})
-
-    recent_signals = await db.behavioralsignal.find_many(
-        where={"userId": user_id},
-        order={"createdAt": "desc"},
-        take=20,
+    # Signal count
+    count_result = await db.execute(
+        select(func.count()).select_from(BehavioralSignal).where(BehavioralSignal.userId == user_id)
     )
+    signal_count = count_result.scalar() or 0
+
+    # Recent signals
+    signals_result = await db.execute(
+        select(BehavioralSignal)
+        .where(BehavioralSignal.userId == user_id)
+        .order_by(BehavioralSignal.createdAt.desc())
+        .limit(20)
+    )
+    recent_signals = signals_result.scalars().all()
 
     # Log the lookup
     await audit_action(
@@ -244,14 +273,14 @@ async def update_feature_flags(
     user_id: str,
     body: FeatureFlagUpdate,
     request: Request,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
     Override feature flags for a user.
     Merges with existing flags. Logged to AuditLog with before/after.
     """
-    user = await db.user.find_unique(where={"id": user_id})
+    user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -260,10 +289,13 @@ async def update_feature_flags(
     # Merge new flags into existing
     merged = {**before_flags, **body.flags}
 
-    updated = await db.user.update(
-        where={"id": user_id},
-        data={"featureFlags": merged},
+    await db.execute(
+        update(User).where(User.id == user_id).values(featureFlags=merged)
     )
+    await db.commit()
+
+    # Re-fetch to return updated state
+    await db.refresh(user)
 
     await audit_action(
         db=db,
@@ -277,7 +309,7 @@ async def update_feature_flags(
     )
 
     return {
-        "featureFlags": updated.featureFlags,
+        "featureFlags": user.featureFlags,
         "auditAction": "user.feature_flag_override",
     }
 
@@ -287,7 +319,7 @@ async def update_subscription_tier(
     user_id: str,
     body: SubscriptionTierUpdate,
     request: Request,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
@@ -300,16 +332,18 @@ async def update_subscription_tier(
             detail=f"Invalid tier: {body.tier}. Must be one of: {', '.join(sorted(VALID_TIERS))}",
         )
 
-    user = await db.user.find_unique(where={"id": user_id})
+    user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     before_tier = user.subscriptionTier
 
-    updated = await db.user.update(
-        where={"id": user_id},
-        data={"subscriptionTier": body.tier},
+    await db.execute(
+        update(User).where(User.id == user_id).values(subscriptionTier=body.tier)
     )
+    await db.commit()
+
+    await db.refresh(user)
 
     await audit_action(
         db=db,
@@ -323,6 +357,6 @@ async def update_subscription_tier(
     )
 
     return {
-        "subscriptionTier": updated.subscriptionTier,
+        "subscriptionTier": user.subscriptionTier,
         "auditAction": "user.subscription_tier_change",
     }
