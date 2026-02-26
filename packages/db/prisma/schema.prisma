@@ -311,6 +311,15 @@ model ActivityNode {
   behavioralUpdatedAt      DateTime? // timestamp of last behavioral write-back
   cantMiss                 Boolean   @default(false) // ~0.1% of nodes. Score floor 0.72. Set during seeding.
 
+  // Pipeline D: LLM Research Synthesis additive columns
+  researchSynthesisId      String?
+  pipelineDConfidence      Float?
+  pipelineCConfidence      Float?
+  crossRefAgreementScore   Float?
+  sourceAmplificationFlag  Boolean   @default(false)
+  signalConflictFlag       Boolean   @default(false)
+  temporalNotes            String?   @map("pipelineDTemporalNotes")
+
   vibeTags       ActivityNodeVibeTag[]
   aliases        ActivityAlias[]
   qualitySignals QualitySignal[]
@@ -504,6 +513,124 @@ model ModelRegistry {
   @@map("model_registry")
 }
 
+model ResearchJob {
+  id                  String            @id @default(uuid())
+  cityId              String
+  status              ResearchJobStatus @default(QUEUED)
+  triggeredBy         ResearchTrigger
+  modelVersion        String
+  passATokens         Int               @default(0)
+  passBTokens         Int               @default(0)
+  totalCostUsd        Float             @default(0)
+  venuesResearched    Int               @default(0)
+  venuesResolved      Int               @default(0)
+  venuesUnresolved    Int               @default(0)
+  validationWarnings  Json?
+  errorMessage        String?
+  createdAt           DateTime          @default(now())
+  completedAt         DateTime?
+
+  synthesis           CityResearchSynthesis?
+  venueSignals        VenueResearchSignal[]
+  crossRefResults     CrossReferenceResult[]
+
+  @@index([cityId, createdAt])
+  @@index([status])
+  @@map("research_jobs")
+}
+
+model CityResearchSynthesis {
+  id                       String      @id @default(uuid())
+  researchJobId            String      @unique
+  researchJob              ResearchJob @relation(fields: [researchJobId], references: [id], onDelete: Cascade)
+  cityId                   String
+  neighborhoodCharacter    Json
+  temporalPatterns         Json
+  peakAndDeclineFlags      Json
+  sourceAmplificationFlags Json
+  divergenceSignals        Json
+  synthesisConfidence      Float
+  modelVersion             String
+  generatedAt              DateTime
+
+  venueSignals VenueResearchSignal[]
+
+  @@index([cityId])
+  @@map("city_research_syntheses")
+}
+
+model VenueResearchSignal {
+  id                           String                 @id @default(uuid())
+  researchJobId                String
+  researchJob                  ResearchJob            @relation(fields: [researchJobId], references: [id], onDelete: Cascade)
+  cityResearchSynthesisId      String?
+  cityResearchSynthesis        CityResearchSynthesis? @relation(fields: [cityResearchSynthesisId], references: [id])
+  activityNodeId               String?
+  venueNameRaw                 String
+  resolutionMatchType          String?
+  resolutionConfidence         Float?
+  vibeTags                     String[]
+  touristScore                 Float?
+  temporalNotes                String?
+  sourceAmplification          Boolean                @default(false)
+  localVsTouristSignalConflict Boolean                @default(false)
+  researchConfidence           Float?
+  knowledgeSource              KnowledgeSource?
+  notes                        String?
+  createdAt                    DateTime               @default(now())
+
+  unresolvedSignal UnresolvedResearchSignal?
+
+  @@index([researchJobId])
+  @@index([activityNodeId])
+  @@map("venue_research_signals")
+}
+
+model UnresolvedResearchSignal {
+  id                       String              @id @default(uuid())
+  venueResearchSignalId    String              @unique
+  venueResearchSignal      VenueResearchSignal @relation(fields: [venueResearchSignalId], references: [id], onDelete: Cascade)
+  cityId                   String
+  venueNameRaw             String
+  resolutionAttempts       Int                 @default(0)
+  lastAttemptAt            DateTime?
+  resolvedAt               DateTime?
+  resolvedToActivityNodeId String?
+
+  @@index([cityId, resolvedAt])
+  @@map("unresolved_research_signals")
+}
+
+model CrossReferenceResult {
+  id                 String      @id @default(uuid())
+  activityNodeId     String
+  cityId             String
+  researchJobId      String
+  researchJob        ResearchJob @relation(fields: [researchJobId], references: [id], onDelete: Cascade)
+  hasPipelineDSignal Boolean     @default(false)
+  hasPipelineCSignal Boolean     @default(false)
+  dOnly              Boolean     @default(false)
+  cOnly              Boolean     @default(false)
+  bothAgree          Boolean     @default(false)
+  bothConflict       Boolean     @default(false)
+  tagAgreementScore  Float?
+  touristScoreDelta  Float?
+  signalConflict     Boolean     @default(false)
+  mergedVibeTags     String[]
+  mergedTouristScore Float?
+  mergedConfidence   Float?
+  resolvedBy         String?
+  resolvedAt         DateTime?
+  resolutionAction   String?
+  previousValues     Json?
+  computedAt         DateTime    @default(now())
+
+  @@unique([activityNodeId, researchJobId])
+  @@index([cityId])
+  @@index([signalConflict])
+  @@map("cross_reference_results")
+}
+
 model PersonaDimension {
   id         String   @id @default(uuid())
   userId     String
@@ -547,6 +674,15 @@ model RankingEvent {
   weatherContext     Json?    // { condition, temp_celsius, precipitation_pct, wind_kph }
   personaSnapshot    Json?    // denormalized persona dimensions at ranking time
   candidateSetId     String?  @unique // UUID join key → BehavioralSignal.candidateSetId
+
+  // Pipeline D: cross-reference training features
+  hasDSignal              Boolean?
+  hasCSignal              Boolean?
+  dCAgreement             Float?
+  signalConflictAtServe   Boolean?
+  dKnowledgeSource        String?
+  rankPipelineDConfidence Float?
+
   createdAt          DateTime @default(now())
 
   @@index([userId, createdAt])
@@ -1094,6 +1230,33 @@ enum NodeStatus {
   approved
   flagged
   archived
+}
+
+enum ResearchJobStatus {
+  QUEUED
+  ASSEMBLING_BUNDLE
+  RUNNING_PASS_A
+  RUNNING_PASS_B
+  VALIDATING
+  RESOLVING
+  CROSS_REFERENCING
+  WRITING_BACK
+  COMPLETE
+  VALIDATION_FAILED
+  ERROR
+}
+
+enum ResearchTrigger {
+  admin_seed
+  tier2_graduation
+  on_demand_fallback
+}
+
+enum KnowledgeSource {
+  bundle_primary
+  training_prior
+  both
+  neither
 }
 
 enum SignalType {

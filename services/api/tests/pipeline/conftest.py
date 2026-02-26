@@ -368,3 +368,129 @@ def fake_qdrant():
 def days_ago(n: int) -> datetime:
     """Return a datetime n days in the past."""
     return datetime.now(timezone.utc) - timedelta(days=n)
+
+
+# ---------------------------------------------------------------------------
+# HTTP client mocks (for reddit_download tests)
+# ---------------------------------------------------------------------------
+
+
+class FakeHTTPXResponse:
+    """Mock httpx.Response with status_code, json(), text, headers."""
+
+    def __init__(self, status_code: int = 200, data: Any = None, text: str = ""):
+        self.status_code = status_code
+        self._data = data
+        self.text = text or (json.dumps(data) if data else "")
+        self.headers: dict[str, str] = {}
+
+    def json(self) -> Any:
+        return self._data
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise Exception(f"HTTP {self.status_code}")
+
+
+class FakeHTTPXClient:
+    """Queue-based async mock for httpx.AsyncClient.
+
+    Push responses with .queue_response(). Tracks all requests in .requests.
+    """
+
+    def __init__(self):
+        self.responses: list[FakeHTTPXResponse] = []
+        self.requests: list[dict] = []
+
+    def queue_response(self, resp: FakeHTTPXResponse):
+        self.responses.append(resp)
+
+    async def get(self, url: str, **kwargs) -> FakeHTTPXResponse:
+        self.requests.append({"method": "GET", "url": url, **kwargs})
+        if self.responses:
+            return self.responses.pop(0)
+        return FakeHTTPXResponse(200, {"data": []})
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        pass
+
+
+class FakeFileLock:
+    """Injectable mock for FileLock protocol.
+
+    Pre-set locked paths. Tracks acquire/release calls.
+    """
+
+    def __init__(self, locked_paths: set[str] | None = None):
+        self._locked = locked_paths or set()
+        self.acquired: list[Path] = []
+        self.released: list[Path] = []
+
+    def try_acquire(self, path: Path) -> bool:
+        if str(path) in self._locked:
+            return False
+        self._locked.add(str(path))
+        self.acquired.append(path)
+        return True
+
+    def release(self, path: Path) -> None:
+        self._locked.discard(str(path))
+        self.released.append(path)
+
+
+# ---------------------------------------------------------------------------
+# Pipeline D factories
+# ---------------------------------------------------------------------------
+
+def make_research_job(**overrides):
+    base = {
+        "id": str(uuid.uuid4()),
+        "cityId": "bend",
+        "status": "COMPLETE",
+        "triggeredBy": "admin_seed",
+        "modelVersion": "claude-sonnet-4-20250514",
+        "passATokens": 0,
+        "passBTokens": 0,
+        "totalCostUsd": 0.0,
+        "venuesResearched": 0,
+        "venuesResolved": 0,
+        "venuesUnresolved": 0,
+        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None),
+    }
+    base.update(overrides)
+    return base
+
+
+def make_venue_research_signal(**overrides):
+    base = {
+        "id": str(uuid.uuid4()),
+        "researchJobId": str(uuid.uuid4()),
+        "venueNameRaw": "Test Venue",
+        "vibeTags": ["hidden-gem"],
+        "touristScore": 0.5,
+        "researchConfidence": 0.7,
+        "knowledgeSource": "bundle_primary",
+        "createdAt": datetime.now(timezone.utc).replace(tzinfo=None),
+    }
+    base.update(overrides)
+    return base
+
+
+def make_cross_reference_result(**overrides):
+    base = {
+        "id": str(uuid.uuid4()),
+        "activityNodeId": str(uuid.uuid4()),
+        "cityId": "bend",
+        "researchJobId": str(uuid.uuid4()),
+        "hasPipelineDSignal": True,
+        "hasPipelineCSignal": True,
+        "bothAgree": True,
+        "tagAgreementScore": 0.65,
+        "mergedConfidence": 0.72,
+        "computedAt": datetime.now(timezone.utc).replace(tzinfo=None),
+    }
+    base.update(overrides)
+    return base

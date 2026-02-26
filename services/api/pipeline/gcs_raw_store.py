@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,9 @@ logger = logging.getLogger(__name__)
 
 _RAW_PREFIX = "raw_places"
 _GEO_PREFIX = "geocoded_venues"
+RESEARCH_PREFIX = "research_bundles"
+VALID_BUNDLE_TYPES = frozenset({"reddit", "blogs", "atlas", "editorial", "places_metadata"})
+_PII_PATTERN = re.compile(r"(?:/u/|u/)([A-Za-z0-9_-]+)")
 
 
 def _blob_path(prefix: str, city_slug: str) -> str:
@@ -275,4 +279,74 @@ async def read_geocoded_venues_from_gcs(
             "GCS read failed for geocoded venues (%s): %s",
             city_slug, exc,
         )
+        return []
+
+
+# ---------------------------------------------------------------------------
+# Public API — research bundles
+# ---------------------------------------------------------------------------
+
+def strip_pii(text: str) -> str:
+    """Strip Reddit usernames from text before GCS persistence."""
+    return _PII_PATTERN.sub("[user]", text)
+
+
+async def write_research_bundle(
+    city_slug: str,
+    source_type: str,
+    records: list[dict],
+    bucket_name: str = "overplanned-raw",
+    project_id: str = "",
+) -> int:
+    """Append research bundle records to GCS. Returns count written, 0 on error."""
+    if source_type not in VALID_BUNDLE_TYPES:
+        raise ValueError(f"Invalid source_type '{source_type}'. Must be one of: {VALID_BUNDLE_TYPES}")
+    try:
+        client = _get_client(project_id)
+        bucket = client.bucket(bucket_name)
+        blob_path = f"{RESEARCH_PREFIX}/{city_slug}/{source_type}.jsonl"
+        blob = bucket.blob(blob_path)
+
+        sanitized = []
+        for rec in records:
+            clean = dict(rec)
+            if "body" in clean and clean["body"]:
+                clean["body"] = strip_pii(clean["body"])
+            if "title" in clean and clean["title"]:
+                clean["title"] = strip_pii(clean["title"])
+            sanitized.append(clean)
+
+        new_content = _encode_jsonl(sanitized)
+        if blob.exists():
+            existing = blob.download_as_bytes()
+            merged = existing + new_content
+        else:
+            merged = new_content
+        blob.upload_from_string(merged, content_type="application/x-ndjson")
+        return len(sanitized)
+    except Exception as exc:
+        logger.warning("GCS research bundle write failed for %s/%s (non-fatal): %s",
+                       city_slug, source_type, exc)
+        return 0
+
+
+async def read_research_bundle(
+    city_slug: str,
+    source_type: str,
+    bucket_name: str = "overplanned-raw",
+    project_id: str = "",
+) -> list[dict]:
+    """Read research bundle JSONL from GCS. Returns [] on error."""
+    try:
+        client = _get_client(project_id)
+        bucket = client.bucket(bucket_name)
+        blob_path = f"{RESEARCH_PREFIX}/{city_slug}/{source_type}.jsonl"
+        blob = bucket.blob(blob_path)
+        if not blob.exists():
+            return []
+        content = blob.download_as_bytes().decode("utf-8")
+        return [json.loads(line) for line in content.strip().split("\n") if line.strip()]
+    except Exception as exc:
+        logger.warning("GCS research bundle read failed for %s/%s (non-fatal): %s",
+                       city_slug, source_type, exc)
         return []
