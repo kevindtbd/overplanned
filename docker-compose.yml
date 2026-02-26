@@ -119,6 +119,7 @@ services:
       ENVIRONMENT: development
     volumes:
       - ./services/api:/app/services/api
+      - ./data:/app/data
       - embedding_cache:/root/.cache/torch
     networks:
       - overplanned-net

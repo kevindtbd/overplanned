@@ -36,7 +36,7 @@ COPY packages/shared-types ./packages/shared-types
 
 # Copy source
 COPY apps/web ./apps/web
-COPY data ./data
+COPY data/climate_averages.json ./data/climate_averages.json
 COPY package.json package-lock.json ./
 
 # next.config.js must enable standalone output for Docker
