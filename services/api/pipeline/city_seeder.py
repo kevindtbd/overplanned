@@ -5,7 +5,7 @@ Seeds a city with all data sources, resolves entities, extracts/infers
 vibe tags, scores convergence + authority, and syncs to Qdrant.
 
 Pipeline steps (in order):
-  1. Scrape — blog RSS, Atlas Obscura, Foursquare, Arctic Shift (Reddit)
+  1. Scrape — blog RSS, Atlas Obscura, Arctic Shift (Reddit)
   2. Entity resolution — deduplicate new ActivityNodes
   3. LLM vibe extraction — Haiku-based tag classification (untagged nodes)
   4. Rule-based vibe inference — deterministic category→tag baseline
@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import time
+import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from enum import Enum
@@ -44,7 +45,6 @@ from services.api.pipeline.convergence import run_convergence_scoring
 from services.api.pipeline import qdrant_sync
 from services.api.scrapers.blog_rss import BlogRssScraper
 from services.api.scrapers.atlas_obscura import AtlasObscuraScraper
-from services.api.scrapers.foursquare import FoursquareScraper
 from services.api.scrapers.arctic_shift import ArcticShiftScraper
 
 logger = logging.getLogger(__name__)
@@ -259,6 +259,106 @@ class SeedResult:
 # Step implementations
 # ---------------------------------------------------------------------------
 
+SENTINEL_NODE_ID = "00000000-0000-0000-0000-000000000000"
+
+
+async def _ensure_sentinel_node(pool: asyncpg.Pool) -> None:
+    """
+    Ensure the sentinel ActivityNode exists.
+
+    Scrapers store QualitySignals with this sentinel activityNodeId when the
+    real node doesn't exist yet. The LLM fallback seeder later creates real
+    nodes and relinks the signals.
+    """
+    await pool.execute(
+        """
+        INSERT INTO activity_nodes (
+            id, name, slug, "canonicalName", city, country, category,
+            latitude, longitude, "sourceCount",
+            "convergenceScore", "authorityScore",
+            "isCanonical", status, "createdAt", "updatedAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        ON CONFLICT (id) DO NOTHING
+        """,
+        SENTINEL_NODE_ID,
+        "__unresolved__",
+        "__unresolved__",
+        "__unresolved__",
+        "__sentinel__",
+        "__sentinel__",
+        "experience",
+        0.0,
+        0.0,
+        0,
+        0.0,
+        0.0,
+        False,
+        "archived",
+        datetime.now(timezone.utc).replace(tzinfo=None),
+        datetime.now(timezone.utc).replace(tzinfo=None),
+    )
+
+
+async def _persist_scraper_signals(
+    pool: asyncpg.Pool,
+    signals: list[dict[str, Any]],
+    source_name: str,
+) -> int:
+    """
+    Persist in-memory quality signals to the DB via batch insert.
+
+    Scrapers like Arctic Shift and Atlas Obscura accumulate signals in memory
+    rather than writing to DB directly (unlike Blog RSS). This function
+    writes them with the sentinel activityNodeId so the LLM fallback seeder
+    can pick them up.
+
+    Uses executemany for efficient batch writes instead of per-row inserts.
+
+    Returns the number of signals persisted.
+    """
+    if not signals:
+        return 0
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    # Build batch args
+    rows = []
+    for signal in signals:
+        signal_id = str(uuid.uuid4())
+        metadata = signal.get("metadata")
+        metadata_json = json.dumps(metadata) if metadata else None
+
+        rows.append((
+            signal_id,
+            signal.get("activityNodeId") or SENTINEL_NODE_ID,
+            signal.get("sourceName", source_name),
+            signal.get("sourceUrl"),
+            signal.get("sourceAuthority", 0.5),
+            signal.get("signalType", "mention"),
+            signal.get("rawExcerpt"),
+            now,
+            now,
+            metadata_json,
+        ))
+
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.executemany(
+                """
+                INSERT INTO quality_signals (
+                    id, "activityNodeId", "sourceName", "sourceUrl",
+                    "sourceAuthority", "signalType", "rawExcerpt",
+                    "extractedAt", "createdAt", "extractionMetadata"
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ON CONFLICT DO NOTHING
+                """,
+                rows,
+            )
+
+    logger.info("Persisted %d signals from %s", len(rows), source_name)
+    return len(rows)
+
+
 async def _step_scrape(
     pool: asyncpg.Pool,
     city: str,
@@ -268,12 +368,18 @@ async def _step_scrape(
     Step 1: Run all scrapers for the city.
 
     Each scraper runs independently — one failure doesn't block others.
+    After scraping, persists in-memory signals to the DB so the LLM
+    fallback seeder can create ActivityNodes from them.
+
     Returns metrics dict with per-scraper stats.
     """
     metrics: dict[str, Any] = {}
     total_scraped = 0
 
-    # Blog RSS — filter feeds by city
+    # Ensure sentinel node exists for unlinked quality signals
+    await _ensure_sentinel_node(pool)
+
+    # Blog RSS — filter feeds by city (persists to DB in store() directly)
     try:
         blog_scraper = BlogRssScraper(db_pool=pool, feed_filter=city)
         stats = blog_scraper.run()
@@ -284,7 +390,8 @@ async def _step_scrape(
         metrics["blog_rss"] = {"error": str(exc)}
         logger.exception("Blog RSS scrape failed for %s", city)
 
-    # Atlas Obscura
+    # Atlas Obscura (accumulates in memory — persist after run)
+    atlas_scraper = None
     try:
         atlas_scraper = AtlasObscuraScraper(city=city)
         stats = atlas_scraper.run()
@@ -295,18 +402,36 @@ async def _step_scrape(
         metrics["atlas_obscura"] = {"error": str(exc)}
         logger.exception("Atlas Obscura scrape failed for %s", city)
 
-    # Foursquare
-    try:
-        fsq_scraper = FoursquareScraper(near=city)
-        stats = fsq_scraper.run()
-        metrics["foursquare"] = stats
-        total_scraped += stats.get("success", 0)
-        logger.info("Foursquare scrape: %s", stats)
-    except Exception as exc:
-        metrics["foursquare"] = {"error": str(exc)}
-        logger.exception("Foursquare scrape failed for %s", city)
+    # Persist Atlas Obscura signals
+    if atlas_scraper is not None:
+        try:
+            results = atlas_scraper.collect_results()
+            # Atlas results are ActivityNode-shaped — normalize to QualitySignal shape
+            atlas_signals = []
+            for node in results:
+                for qs in node.get("quality_signals", []):
+                    atlas_signals.append({
+                        "sourceName": qs.get("source", "atlas_obscura"),
+                        "sourceUrl": node.get("source_url"),
+                        "sourceAuthority": qs.get("score", 0.75),
+                        "signalType": qs.get("signal_type", "hidden_gem"),
+                        "rawExcerpt": node.get("description", ""),
+                        "metadata": {
+                            "venue_name": node.get("name"),
+                            "city": node.get("city", city),
+                            "category": node.get("category"),
+                            "evidence": qs.get("evidence"),
+                        },
+                    })
+            persisted = await _persist_scraper_signals(
+                pool, atlas_signals, "atlas_obscura"
+            )
+            metrics.setdefault("atlas_obscura", {})["signals_persisted"] = persisted
+        except Exception as exc:
+            logger.exception("Failed to persist Atlas Obscura signals for %s", city)
 
-    # Arctic Shift (Reddit)
+    # Arctic Shift (Reddit) (accumulates in memory — persist after run)
+    reddit_scraper = None
     try:
         reddit_scraper = ArcticShiftScraper(target_cities=[city])
         stats = reddit_scraper.run()
@@ -316,6 +441,17 @@ async def _step_scrape(
     except Exception as exc:
         metrics["arctic_shift"] = {"error": str(exc)}
         logger.exception("Arctic Shift scrape failed for %s", city)
+
+    # Persist Arctic Shift signals
+    if reddit_scraper is not None:
+        try:
+            results = reddit_scraper.get_results()
+            persisted = await _persist_scraper_signals(
+                pool, results.get("quality_signals", []), "reddit"
+            )
+            metrics.setdefault("arctic_shift", {})["signals_persisted"] = persisted
+        except Exception as exc:
+            logger.exception("Failed to persist Arctic Shift signals for %s", city)
 
     progress.nodes_scraped += total_scraped
     metrics["total_scraped"] = total_scraped

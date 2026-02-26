@@ -1,0 +1,96 @@
+{
+  "city": "tacoma",
+  "run_id": "20260226T051046",
+  "started_at": "2026-02-26T05:10:46.866629+00:00",
+  "finished_at": "2026-02-26T05:10:51.904969+00:00",
+  "overall_status": "completed",
+  "nodes_scraped": 0,
+  "nodes_resolved": 99,
+  "nodes_tagged": 686,
+  "nodes_indexed": 0,
+  "steps": {
+    "scrape": {
+      "status": "completed",
+      "started_at": null,
+      "finished_at": "2026-02-26T05:10:46.866987+00:00",
+      "error": null,
+      "metrics": {
+        "skipped": true
+      }
+    },
+    "llm_fallback": {
+      "status": "completed",
+      "started_at": null,
+      "finished_at": "2026-02-26T05:10:46.867214+00:00",
+      "error": null,
+      "metrics": {
+        "skipped": true,
+        "reason": "skip_llm=True"
+      }
+    },
+    "entity_resolution": {
+      "status": "completed",
+      "started_at": "2026-02-26T05:10:46.867436+00:00",
+      "finished_at": "2026-02-26T05:10:51.835619+00:00",
+      "error": null,
+      "metrics": {
+        "nodes_scanned": 181,
+        "candidates_found": 750,
+        "merges_executed": 99,
+        "merges_by_tier": {
+          "external_id": 0,
+          "geocode_proximity": 99,
+          "fuzzy_name": 0,
+          "content_hash": 0
+        },
+        "errors": 651
+      }
+    },
+    "vibe_extraction": {
+      "status": "completed",
+      "started_at": null,
+      "finished_at": "2026-02-26T05:10:51.835925+00:00",
+      "error": null,
+      "metrics": {
+        "skipped": true,
+        "reason": "skip_llm=True"
+      }
+    },
+    "rule_inference": {
+      "status": "completed",
+      "started_at": "2026-02-26T05:10:51.836115+00:00",
+      "finished_at": "2026-02-26T05:10:51.871109+00:00",
+      "error": null,
+      "metrics": {
+        "nodes_processed": 247,
+        "tags_created": 686,
+        "tags_skipped": 0,
+        "missing_vibe_tags": 0,
+        "errors": 0
+      }
+    },
+    "convergence": {
+      "status": "completed",
+      "started_at": "2026-02-26T05:10:51.871434+00:00",
+      "finished_at": "2026-02-26T05:10:51.904389+00:00",
+      "error": null,
+      "metrics": {
+        "nodes_processed": 247,
+        "nodes_updated": 12,
+        "nodes_skipped": 235,
+        "vibe_boosts_applied": 0,
+        "errors": 0
+      }
+    },
+    "qdrant_sync": {
+      "status": "completed",
+      "started_at": null,
+      "finished_at": "2026-02-26T05:10:51.904723+00:00",
+      "error": null,
+      "metrics": {
+        "skipped": true,
+        "reason": "no embedding_service"
+      }
+    }
+  }
+}
