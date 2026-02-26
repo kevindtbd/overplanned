@@ -5,13 +5,17 @@ Reads historical Parquet dumps from Arctic Shift (not live Reddit API).
 Extracts venue mentions, location context, and sentiment from travel
 subreddits, weighted by score/upvotes for authority signals.
 
-Target subs: r/JapanTravel, r/solotravel, r/travel, r/foodtravel,
-plus city-specific subs (r/Tokyo, r/kyoto, r/osaka, etc.).
+Target subs: city-specific subreddits driven by city_configs.py.
+General subs: r/solotravel, r/travel, r/foodtravel, etc.
 
 Output: QualitySignal rows linked to venue names + city context.
+
+Dynamic city support: import get_target_cities_dict() and
+get_all_subreddit_weights() from pipeline.city_configs to drive
+TARGET_CITIES and SUBREDDIT_WEIGHTS. Japan configs preserved as
+fallback for backward compatibility when city_configs is unavailable.
 """
 
-import json
 import logging
 import re
 from dataclasses import dataclass, field
@@ -24,55 +28,118 @@ from .base import BaseScraper, SourceRegistry, DeadLetterQueue
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Constants
+# Dynamic city/subreddit config from city_configs.py
 # ---------------------------------------------------------------------------
 
-# Subreddits to process, with authority weight multipliers.
-# Higher weight = more trusted for travel recommendations.
-SUBREDDIT_WEIGHTS: Dict[str, float] = {
-    "japantravel": 1.0,
-    "solotravel": 0.85,
-    "travel": 0.7,
-    "foodtravel": 0.9,
-    # City-specific subs
-    "tokyo": 0.95,
-    "kyoto": 0.95,
-    "osaka": 0.95,
-    "japanlife": 0.8,
-    "movingtojapan": 0.6,
-}
+def _load_city_configs():
+    """
+    Load TARGET_CITIES and SUBREDDIT_WEIGHTS from city_configs.py.
 
-# Minimum score (upvotes) to consider a post/comment worth processing.
-MIN_SCORE_THRESHOLD = 3
+    Returns (target_cities_dict, subreddit_weights_dict).
+    Falls back to Japan-only hardcoded values if import fails
+    (e.g. running arctic_shift in isolation without full package).
+    """
+    try:
+        from services.api.pipeline.city_configs import (
+            get_target_cities_dict,
+            get_all_subreddit_weights,
+        )
+        return get_target_cities_dict(), get_all_subreddit_weights()
+    except ImportError:
+        logger.warning(
+            "Could not import city_configs — falling back to Japan-only hardcoded config. "
+            "Install or wire services.api.pipeline.city_configs to enable dynamic city support."
+        )
+        _fallback_cities: Dict[str, List[str]] = {
+            "tokyo": [
+                "tokyo", "shinjuku", "shibuya", "harajuku", "akihabara",
+                "ginza", "roppongi", "asakusa", "ueno", "ikebukuro",
+                "tsukiji", "odaiba", "shimokitazawa", "nakameguro",
+                "yanaka", "koenji", "kichijoji", "ebisu",
+            ],
+            "kyoto": [
+                "kyoto", "gion", "arashiyama", "fushimi", "higashiyama",
+                "nishiki", "pontocho", "kiyomizu", "nara",
+            ],
+            "osaka": [
+                "osaka", "dotonbori", "namba", "umeda", "shinsekai",
+                "amerikamura", "tennoji", "kuromon",
+            ],
+        }
+        _fallback_weights: Dict[str, float] = {
+            "japantravel": 1.0,
+            "solotravel": 0.85,
+            "travel": 0.7,
+            "foodtravel": 0.9,
+            "tokyo": 0.95,
+            "kyoto": 0.95,
+            "osaka": 0.95,
+            "japanlife": 0.8,
+            "movingtojapan": 0.6,
+        }
+        return _fallback_cities, _fallback_weights
 
-# Cities we care about for MVP (Tokyo/Kyoto/Osaka focus).
-TARGET_CITIES: Dict[str, List[str]] = {
-    "tokyo": [
-        "tokyo", "shinjuku", "shibuya", "harajuku", "akihabara",
-        "ginza", "roppongi", "asakusa", "ueno", "ikebukuro",
-        "tsukiji", "odaiba", "shimokitazawa", "nakameguro",
-        "yanaka", "koenji", "kichijoji", "ebisu",
-    ],
-    "kyoto": [
-        "kyoto", "gion", "arashiyama", "fushimi", "higashiyama",
-        "nishiki", "pontocho", "kiyomizu", "nara",
-    ],
-    "osaka": [
-        "osaka", "dotonbori", "namba", "umeda", "shinsekai",
-        "amerikamura", "tennoji", "kuromon",
-    ],
-}
 
-# Flatten for quick lookup
+# Build module-level dicts — populated once on import.
+TARGET_CITIES, SUBREDDIT_WEIGHTS = _load_city_configs()
+
+# Flatten term -> city_slug for quick lookup
 ALL_CITY_TERMS: Set[str] = set()
 TERM_TO_CITY: Dict[str, str] = {}
-for city, terms in TARGET_CITIES.items():
-    for term in terms:
-        ALL_CITY_TERMS.add(term)
-        TERM_TO_CITY[term] = city
+for _city_slug, _terms in TARGET_CITIES.items():
+    for _term in _terms:
+        ALL_CITY_TERMS.add(_term)
+        TERM_TO_CITY[_term] = _city_slug
 
-# Patterns that suggest a venue mention (proper noun followed by context).
-# These are intentionally broad; false positives are filtered downstream.
+
+# ---------------------------------------------------------------------------
+# Quality filter thresholds (playbook requirement)
+# ---------------------------------------------------------------------------
+
+# Minimum score (upvotes) to consider a post/comment worth processing.
+# For Bend canary: still apply threshold, but log how many are filtered.
+MIN_SCORE_THRESHOLD = 3
+
+# Playbook quality gate: applied at ingest time on top of MIN_SCORE_THRESHOLD.
+QUALITY_FILTER_MIN_SCORE = 10
+QUALITY_FILTER_MIN_UPVOTE_RATIO = 0.70
+
+
+# ---------------------------------------------------------------------------
+# is_local detection patterns
+# ---------------------------------------------------------------------------
+
+# Patterns indicating the author is a local resident.
+# Matched case-insensitively against post body/title.
+LOCAL_INDICATOR_PATTERNS = [
+    re.compile(r"\bi\s+live\s+here\b", re.IGNORECASE),
+    re.compile(r"\bas\s+a\s+local\b", re.IGNORECASE),
+    re.compile(r"\bgrew\s+up\s+here\b", re.IGNORECASE),
+    re.compile(r"\bbeen\s+here\s+\d+\s+years?\b", re.IGNORECASE),
+    re.compile(r"\bmoved\s+here\b", re.IGNORECASE),
+    re.compile(r"\blocal\s+here\b", re.IGNORECASE),
+]
+
+
+def detect_is_local(text: str) -> bool:
+    """
+    Detect if the post author self-identifies as a local resident.
+
+    Checks for patterns like 'I live here', 'as a local', 'grew up here',
+    'been here X years', 'moved here', 'local here'.
+
+    Returns True if any pattern matches.
+    """
+    for pattern in LOCAL_INDICATOR_PATTERNS:
+        if pattern.search(text):
+            return True
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Venue hint patterns
+# ---------------------------------------------------------------------------
+
 VENUE_HINT_PATTERNS = [
     # "I recommend X" / "definitely try X" / "check out X"
     re.compile(
@@ -113,6 +180,10 @@ VENUE_STOPWORDS: Set[str] = {
     "saturday", "sunday", "january", "february", "march", "april",
     "may", "june", "july", "august", "september", "october",
     "november", "december", "edit", "update", "tldr",
+    # US generic terms
+    "bend", "portland", "seattle", "austin", "new orleans",
+    "downtown", "uptown", "midtown", "westside", "eastside",
+    "united states", "oregon", "washington",
 }
 
 # Sentiment keywords (simple lexicon-based approach).
@@ -149,6 +220,7 @@ class VenueMention:
     author: str
     created_utc: int
     permalink: str
+    is_local: bool = False
 
 
 @dataclass
@@ -157,8 +229,11 @@ class ArcticShiftConfig:
     parquet_dir: str = "data/arctic_shift"
     subreddits: List[str] = field(default_factory=lambda: list(SUBREDDIT_WEIGHTS.keys()))
     min_score: int = MIN_SCORE_THRESHOLD
-    target_cities: List[str] = field(default_factory=lambda: ["tokyo", "kyoto", "osaka"])
+    target_cities: List[str] = field(default_factory=lambda: list(TARGET_CITIES.keys()))
     max_rows_per_file: int = 0  # 0 = no limit
+    # Quality filter thresholds (playbook requirement)
+    quality_min_score: int = QUALITY_FILTER_MIN_SCORE
+    quality_min_upvote_ratio: float = QUALITY_FILTER_MIN_UPVOTE_RATIO
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +244,8 @@ def detect_city(text: str) -> Optional[str]:
     """
     Detect which target city a text is about.
 
-    Returns the city key (tokyo/kyoto/osaka) or None.
+    Returns the city slug (e.g. 'tokyo', 'bend') or None.
+    Uses the dynamically built TERM_TO_CITY map from city_configs.
     """
     text_lower = text.lower()
     # Score each city by how many of its terms appear
@@ -240,6 +316,7 @@ def compute_authority_score(
     score: int,
     subreddit: str,
     sentiment: str,
+    is_local: bool = False,
 ) -> float:
     """
     Compute a 0.0-1.0 authority score for a venue mention.
@@ -248,13 +325,15 @@ def compute_authority_score(
     - Reddit score (log-scaled, capped)
     - Subreddit weight
     - Sentiment bonus (positive mentions slightly more authoritative)
+    - Local author bonus: local posts get a 3x weight via signalType downstream,
+      but we also apply a small authority bump here for ranking within the scraper.
     """
     import math
 
     # Log-scale the score: log2(score+1) / log2(1001) -> 0..1
     score_factor = min(math.log2(max(score, 1) + 1) / math.log2(1001), 1.0)
 
-    # Subreddit weight
+    # Subreddit weight — check dynamic SUBREDDIT_WEIGHTS first
     sub_weight = SUBREDDIT_WEIGHTS.get(subreddit.lower(), 0.5)
 
     # Sentiment modifier
@@ -262,7 +341,11 @@ def compute_authority_score(
         sentiment, 1.0
     )
 
-    raw = score_factor * sub_weight * sentiment_mod
+    # Local author bonus: 10% bump for self-identified locals.
+    # The full 3x weighting happens downstream via signalType="local_recommendation".
+    local_mod = 1.10 if is_local else 1.0
+
+    raw = score_factor * sub_weight * sentiment_mod * local_mod
     return round(min(max(raw, 0.0), 1.0), 4)
 
 
@@ -287,6 +370,41 @@ def extract_text_excerpt(text: str, venue_name: str, max_len: int = 500) -> str:
         excerpt = excerpt + "..."
 
     return excerpt
+
+
+def passes_quality_filter(
+    row: Dict[str, Any],
+    min_score: int = QUALITY_FILTER_MIN_SCORE,
+    min_upvote_ratio: float = QUALITY_FILTER_MIN_UPVOTE_RATIO,
+) -> bool:
+    """
+    Apply playbook quality gate: score > min_score AND upvote_ratio > min_upvote_ratio.
+
+    Returns True if the row passes, False if it should be filtered out.
+    Rows missing upvote_ratio are treated as passing (ratio unknown = not penalized).
+    Small-corpus cities like Bend depend on this being lenient when data is sparse.
+    """
+    score = row.get("score", 0) or 0
+    if isinstance(score, str):
+        try:
+            score = int(score)
+        except ValueError:
+            score = 0
+
+    if score <= min_score:
+        return False
+
+    # upvote_ratio is present in post dumps, absent in comment dumps.
+    upvote_ratio = row.get("upvote_ratio")
+    if upvote_ratio is not None:
+        try:
+            ratio = float(upvote_ratio)
+        except (ValueError, TypeError):
+            ratio = 1.0  # unknown — don't penalize
+        if ratio < min_upvote_ratio:
+            return False
+
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -350,10 +468,24 @@ class ArcticShiftScraper(BaseScraper):
     posts and comments, extracts venue mentions with location context
     and sentiment, and produces QualitySignal-shaped rows.
 
+    Supports any city configured in city_configs.py. Use target_city
+    to scope to a single city (e.g. for the Bend canary run).
+
+    Quality filtering: upvote_ratio > 0.70 AND score > 10 applied at
+    ingest time. Counts logged for debugging small-corpus cities.
+
+    is_local detection: posts matching local-indicator patterns set
+    signalType="local_recommendation" for 3x downstream weighting.
+
     Usage:
+        # Full multi-city run
+        scraper = ArcticShiftScraper(parquet_dir="data/arctic_shift")
+        stats = scraper.run()
+
+        # Canary single-city run (Bend)
         scraper = ArcticShiftScraper(
             parquet_dir="data/arctic_shift",
-            target_cities=["tokyo", "kyoto", "osaka"],
+            target_city="bend",
         )
         stats = scraper.run()
         results = scraper.get_results()
@@ -374,23 +506,51 @@ class ArcticShiftScraper(BaseScraper):
         subreddits: Optional[List[str]] = None,
         min_score: int = MIN_SCORE_THRESHOLD,
         target_cities: Optional[List[str]] = None,
+        target_city: Optional[str] = None,
         max_rows_per_file: int = 0,
+        quality_min_score: int = QUALITY_FILTER_MIN_SCORE,
+        quality_min_upvote_ratio: float = QUALITY_FILTER_MIN_UPVOTE_RATIO,
     ):
         """
         Args:
             parquet_dir: Directory containing Arctic Shift Parquet files.
-            subreddits: Subreddits to process (defaults to SUBREDDIT_WEIGHTS keys).
-            min_score: Minimum post/comment score to include.
-            target_cities: City keys to extract venues for (default: tokyo/kyoto/osaka).
-            max_rows_per_file: Limit rows per Parquet file (0 = no limit, useful for testing).
+            subreddits: Subreddits to process (defaults to all from city_configs).
+            min_score: Minimum post/comment score for initial pass.
+            target_cities: City slugs to extract venues for.
+                Defaults to all cities in city_configs.
+            target_city: Convenience arg to scope to a single city slug
+                (e.g. "bend" for the canary run). Overrides target_cities
+                when provided.
+            max_rows_per_file: Limit rows per Parquet file (0 = no limit).
+            quality_min_score: Playbook quality gate — score threshold.
+            quality_min_upvote_ratio: Playbook quality gate — upvote ratio threshold.
         """
         super().__init__()
+
+        # Resolve target city list: target_city overrides target_cities
+        if target_city is not None:
+            resolved_cities = [target_city]
+        elif target_cities is not None:
+            resolved_cities = list(target_cities)
+        else:
+            resolved_cities = list(TARGET_CITIES.keys())
+
+        # Resolve subreddits: if target_city is set, prefer city-specific subs
+        if subreddits is not None:
+            resolved_subreddits = list(subreddits)
+        elif target_city is not None:
+            resolved_subreddits = self._subreddits_for_city(target_city)
+        else:
+            resolved_subreddits = list(SUBREDDIT_WEIGHTS.keys())
+
         self.config = ArcticShiftConfig(
             parquet_dir=parquet_dir,
-            subreddits=subreddits or list(SUBREDDIT_WEIGHTS.keys()),
+            subreddits=resolved_subreddits,
             min_score=min_score,
-            target_cities=target_cities or ["tokyo", "kyoto", "osaka"],
+            target_cities=resolved_cities,
             max_rows_per_file=max_rows_per_file,
+            quality_min_score=quality_min_score,
+            quality_min_upvote_ratio=quality_min_upvote_ratio,
         )
         self._parquet_path = Path(parquet_dir)
         self._target_subs: Set[str] = {s.lower() for s in self.config.subreddits}
@@ -403,6 +563,27 @@ class ArcticShiftScraper(BaseScraper):
         self._files_processed = 0
         self._rows_scanned = 0
         self._rows_relevant = 0
+        self._rows_quality_filtered = 0  # rows dropped by quality gate
+        self._local_posts_detected = 0
+
+    @staticmethod
+    def _subreddits_for_city(city_slug: str) -> List[str]:
+        """
+        Return subreddits relevant to a specific city slug.
+
+        Includes the city's own subreddits from city_configs plus
+        general travel subs (solotravel, travel, foodtravel).
+        Falls back to all SUBREDDIT_WEIGHTS keys if city not found.
+        """
+        try:
+            from services.api.pipeline.city_configs import get_city_config
+            config = get_city_config(city_slug)
+            city_subs = list(config.subreddits.keys())
+        except (ImportError, KeyError):
+            city_subs = []
+
+        general_subs = [s for s in SUBREDDIT_WEIGHTS.keys() if s not in city_subs]
+        return city_subs + general_subs
 
     # -- BaseScraper interface ------------------------------------------------
 
@@ -410,8 +591,12 @@ class ArcticShiftScraper(BaseScraper):
         """
         Read all Parquet files from the configured directory.
 
-        Returns a list of raw Reddit post/comment dicts that pass
-        the subreddit + score filters.
+        Applies two-stage filtering:
+        1. Subreddit membership + basic score threshold (fast, pre-quality)
+        2. Playbook quality gate: score > 10 AND upvote_ratio > 0.70
+
+        Returns relevant rows that pass both stages. Logs filtered counts
+        for small-corpus city debugging (Bend canary).
         """
         if not self._parquet_path.exists():
             raise FileNotFoundError(
@@ -428,6 +613,8 @@ class ArcticShiftScraper(BaseScraper):
         )
 
         relevant_rows: List[Dict[str, Any]] = []
+        pre_quality_count = 0
+        post_quality_count = 0
 
         for pf in parquet_files:
             try:
@@ -440,14 +627,34 @@ class ArcticShiftScraper(BaseScraper):
                 self._rows_scanned += len(rows)
                 self._files_processed += 1
 
+                file_pre = 0
+                file_post = 0
                 for row in rows:
-                    if _is_relevant_post(row, self._target_subs, self.config.min_score):
-                        relevant_rows.append(row)
-                        self._rows_relevant += 1
+                    if not _is_relevant_post(row, self._target_subs, self.config.min_score):
+                        continue
+
+                    file_pre += 1
+                    pre_quality_count += 1
+
+                    # Apply playbook quality gate
+                    if not passes_quality_filter(
+                        row,
+                        min_score=self.config.quality_min_score,
+                        min_upvote_ratio=self.config.quality_min_upvote_ratio,
+                    ):
+                        self._rows_quality_filtered += 1
+                        continue
+
+                    file_post += 1
+                    post_quality_count += 1
+                    relevant_rows.append(row)
+                    self._rows_relevant += 1
 
                 logger.info(
-                    f"Processed {pf.name}: {len(rows)} rows, "
-                    f"{self._rows_relevant} relevant so far"
+                    f"Processed {pf.name}: {len(rows)} rows scanned, "
+                    f"{file_pre} passed subreddit/score filter, "
+                    f"{file_post} passed quality gate "
+                    f"(filtered {file_pre - file_post})"
                 )
 
             except Exception as e:
@@ -461,7 +668,11 @@ class ArcticShiftScraper(BaseScraper):
         logger.info(
             f"Arctic Shift scan complete: {self._files_processed} files, "
             f"{self._rows_scanned} rows scanned, "
-            f"{self._rows_relevant} relevant rows"
+            f"{pre_quality_count} passed subreddit/score, "
+            f"{self._rows_quality_filtered} dropped by quality gate "
+            f"(score>{self.config.quality_min_score} AND "
+            f"ratio>{self.config.quality_min_upvote_ratio}), "
+            f"{self._rows_relevant} final relevant rows"
         )
         return relevant_rows
 
@@ -471,6 +682,10 @@ class ArcticShiftScraper(BaseScraper):
 
         A single post can mention multiple venues. Returns a dict
         with a 'mentions' list, or None if no venues detected.
+
+        Detects is_local patterns and sets signalType accordingly:
+        - Local authors -> signalType="local_recommendation" (3x downstream weight)
+        - Others -> signalType="recommendation" or "mention"
         """
         # Get text content (posts have 'selftext', comments have 'body')
         text = raw_item.get("selftext") or raw_item.get("body") or ""
@@ -517,13 +732,31 @@ class ArcticShiftScraper(BaseScraper):
         if not permalink and post_id:
             permalink = f"/r/{subreddit}/comments/{post_id}"
 
+        # Detect is_local for the whole post (applies to all venue mentions within it)
+        is_local = detect_is_local(full_text)
+        if is_local:
+            self._local_posts_detected += 1
+            logger.debug(
+                f"Local author detected in post {post_id} "
+                f"(subreddit={subreddit}, city={city})"
+            )
+
         mentions: List[Dict[str, Any]] = []
         for venue_name in venues:
             sentiment = compute_sentiment(
                 extract_text_excerpt(full_text, venue_name, max_len=300)
             )
-            authority = compute_authority_score(score, subreddit, sentiment)
+            authority = compute_authority_score(score, subreddit, sentiment, is_local=is_local)
             excerpt = extract_text_excerpt(full_text, venue_name)
+
+            # signalType: local authors get "local_recommendation" for 3x weighting.
+            # Non-locals get "recommendation" (strong intent words present) or "mention".
+            if is_local:
+                signal_type = "local_recommendation"
+            elif sentiment == "positive":
+                signal_type = "recommendation"
+            else:
+                signal_type = "mention"
 
             mention = {
                 "venue_name": venue_name,
@@ -538,6 +771,8 @@ class ArcticShiftScraper(BaseScraper):
                 "created_utc": created_utc,
                 "permalink": permalink,
                 "authority_score": authority,
+                "is_local": is_local,
+                "signal_type": signal_type,
             }
             mentions.append(mention)
 
@@ -548,6 +783,7 @@ class ArcticShiftScraper(BaseScraper):
             "source_row": raw_item.get("id", ""),
             "city": city,
             "subreddit": subreddit,
+            "is_local": is_local,
             "mentions": mentions,
         }
 
@@ -571,6 +807,7 @@ class ArcticShiftScraper(BaseScraper):
                 author=mention["author"],
                 created_utc=mention["created_utc"],
                 permalink=mention["permalink"],
+                is_local=mention.get("is_local", False),
             )
             self._mentions.append(vm)
 
@@ -582,7 +819,7 @@ class ArcticShiftScraper(BaseScraper):
                     if mention["permalink"]
                     else None,
                 "sourceAuthority": mention["authority_score"],
-                "signalType": "mention",
+                "signalType": mention.get("signal_type", "mention"),
                 "sentiment": mention["sentiment"],
                 "rawExcerpt": mention["text_excerpt"],
                 "extractedAt": datetime.utcnow().isoformat(),
@@ -595,6 +832,7 @@ class ArcticShiftScraper(BaseScraper):
                     "created_utc": mention["created_utc"],
                     "post_id": mention["post_id"],
                     "comment_id": mention.get("comment_id"),
+                    "is_local": mention.get("is_local", False),
                 },
             }
             self._quality_signals.append(signal)
@@ -622,6 +860,7 @@ class ArcticShiftScraper(BaseScraper):
                     "score": m.score,
                     "sentiment": m.sentiment,
                     "permalink": m.permalink,
+                    "is_local": m.is_local,
                 }
                 for m in self._mentions
             ],
@@ -629,6 +868,8 @@ class ArcticShiftScraper(BaseScraper):
                 "files_processed": self._files_processed,
                 "rows_scanned": self._rows_scanned,
                 "rows_relevant": self._rows_relevant,
+                "rows_quality_filtered": self._rows_quality_filtered,
+                "local_posts_detected": self._local_posts_detected,
                 "venues_extracted": len(self._mentions),
                 "quality_signals": len(self._quality_signals),
                 "by_city": self._count_by_city(),
@@ -641,6 +882,13 @@ class ArcticShiftScraper(BaseScraper):
         return [
             s for s in self._quality_signals
             if s.get("metadata", {}).get("city") == city
+        ]
+
+    def get_local_signals(self) -> List[Dict[str, Any]]:
+        """Return only signals from self-identified local authors."""
+        return [
+            s for s in self._quality_signals
+            if s.get("metadata", {}).get("is_local") is True
         ]
 
     def _count_by_city(self) -> Dict[str, int]:
@@ -690,6 +938,8 @@ class ArcticShiftScraper(BaseScraper):
         self._files_processed = 0
         self._rows_scanned = 0
         self._rows_relevant = 0
+        self._rows_quality_filtered = 0
+        self._local_posts_detected = 0
 
         try:
             stats = self.run()

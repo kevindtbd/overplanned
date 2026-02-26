@@ -127,6 +127,62 @@ FEED_REGISTRY: list[FeedSource] = [
         authority_score=0.83,
         category="dining",
     ),
+
+    # --- Bend, Oregon (canary city) ---
+    # Source Weekly: Bend's alt-weekly. Best local editorial signal for Central OR.
+    # Zero affiliate model, resident staff, covers food/culture/nightlife.
+    # Modeled after The Stranger (Seattle) — same alt-weekly profile.
+    FeedSource(
+        name="Source Weekly",
+        feed_url="https://www.sourceweekly.com/CivicAlerts.aspx?AID=1&format=rss",
+        base_url="https://www.sourceweekly.com",
+        authority_score=0.81,
+        city="Bend",
+        category="culture",
+    ),
+    # Bend Bulletin: local newspaper of record for Central Oregon.
+    # Authority score reflects local editorial depth; some wire content mixed in.
+    FeedSource(
+        name="Bend Bulletin",
+        feed_url="https://www.bendbulletin.com/feeds/latest/",
+        base_url="https://www.bendbulletin.com",
+        authority_score=0.72,
+        city="Bend",
+        category="travel",
+    ),
+    # Visit Bend: official tourism board. High coverage, lower authenticity signal.
+    # Use for structural data (events, seasonal timing) not vibe signal.
+    # Authority capped at 0.55 — tourism board content is tourist-facing by definition.
+    FeedSource(
+        name="Visit Bend",
+        feed_url="https://www.visitbend.com/feed/",
+        base_url="https://www.visitbend.com",
+        authority_score=0.55,
+        city="Bend",
+        category="travel",
+    ),
+    # Sunset Magazine: covers PNW and Central Oregon with genuine regional knowledge.
+    # Applies to Bend for outdoor/lifestyle content; not Bend-exclusive.
+    FeedSource(
+        name="Sunset Magazine",
+        feed_url="https://www.sunset.com/feed",
+        base_url="https://www.sunset.com",
+        authority_score=0.73,
+        city=None,  # multi-city PNW coverage
+        category="travel",
+    ),
+    # OregonLive — Bend/Central Oregon section (no dedicated RSS as of Feb 2026).
+    # The main OregonLive feed covers statewide news; Bend content is mixed in.
+    # TODO: When OregonLive adds a Central Oregon RSS endpoint, update feed_url.
+    #   Workaround: use full feed + filter by city="Bend" in parse() downstream.
+    FeedSource(
+        name="OregonLive",
+        feed_url="https://www.oregonlive.com/arc/outboundfeeds/rss/?rss=home",
+        base_url="https://www.oregonlive.com",
+        authority_score=0.67,
+        city=None,  # statewide; Bend content filtered by keyword downstream
+        category="travel",
+    ),
 ]
 
 

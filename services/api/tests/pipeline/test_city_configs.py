@@ -45,16 +45,19 @@ EXPECTED_CITY_SLUGS = [
     "portland",
     "mexico-city",
     "bend",
+    "tacoma",
+    "nashville",
+    "denver",
 ]
 
 
 class TestAllCitiesPresent:
-    def test_all_7_cities_configured(self):
+    def test_all_cities_configured(self):
         for slug in EXPECTED_CITY_SLUGS:
             assert slug in CITY_CONFIGS, f"Missing city config for {slug}"
 
     def test_no_extra_cities(self):
-        """Only the 7 expected cities should be configured."""
+        """All expected cities should be configured (no unknown slugs)."""
         assert set(CITY_CONFIGS.keys()) == set(EXPECTED_CITY_SLUGS)
 
     @pytest.mark.parametrize("slug", EXPECTED_CITY_SLUGS)
@@ -98,9 +101,12 @@ class TestCanaryCity:
     def test_bend_is_canary(self):
         assert CITY_CONFIGS["bend"].is_canary is True
 
-    def test_no_other_canary(self):
-        canaries = [s for s, c in CITY_CONFIGS.items() if c.is_canary]
-        assert canaries == ["bend"]
+    def test_tacoma_is_second_canary(self):
+        assert CITY_CONFIGS["tacoma"].is_canary is True
+
+    def test_only_bend_and_tacoma_are_canary(self):
+        canaries = sorted([s for s, c in CITY_CONFIGS.items() if c.is_canary])
+        assert canaries == ["bend", "tacoma"]
 
     def test_bend_lower_minimum(self):
         """Bend is a small city -- lower node minimum than others."""
@@ -130,7 +136,8 @@ class TestMexicoCityConfig:
         assert "juárez" in terms
 
     def test_us_cities_default_english(self):
-        for slug in ["austin", "seattle", "portland", "bend", "asheville"]:
+        for slug in ["austin", "seattle", "portland", "bend", "asheville",
+                     "tacoma", "nashville", "denver"]:
             config = CITY_CONFIGS[slug]
             assert config.language_hints == ["en"]
 
@@ -263,6 +270,21 @@ class TestBoundingBox:
         # Downtown Bend
         assert bbox.contains(44.0582, -121.3153) is True
 
+    def test_tacoma_bbox_contains_downtown(self):
+        bbox = CITY_CONFIGS["tacoma"].bbox
+        # Downtown Tacoma approximate coordinates
+        assert bbox.contains(47.2529, -122.4443) is True
+
+    def test_nashville_bbox_contains_downtown(self):
+        bbox = CITY_CONFIGS["nashville"].bbox
+        # Downtown Nashville (Broadway strip)
+        assert bbox.contains(36.1627, -86.7816) is True
+
+    def test_denver_bbox_contains_downtown(self):
+        bbox = CITY_CONFIGS["denver"].bbox
+        # Downtown Denver (16th Street Mall)
+        assert bbox.contains(39.7392, -104.9903) is True
+
 
 # ===================================================================
 # Helper function tests
@@ -291,6 +313,9 @@ class TestHelperFunctions:
         assert "seattle" in weights
         assert "cdmx" in weights
         assert "bend" in weights
+        assert "tacoma" in weights
+        assert "nashville" in weights
+        assert "denver" in weights
 
     def test_subreddit_weights_higher_wins(self):
         """If a sub appears in multiple configs, highest weight wins."""
@@ -308,6 +333,9 @@ class TestHelperFunctions:
         assert terms.get("pilot butte") == "bend"
         assert terms.get("alberta") == "portland"
         assert terms.get("river arts district") == "asheville"
+        assert terms.get("proctor district") == "tacoma"
+        assert terms.get("east nashville") == "nashville"
+        assert terms.get("rino") == "denver"
 
     def test_get_target_cities_dict_format(self):
         target = get_target_cities_dict()

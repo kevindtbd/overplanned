@@ -1,10 +1,11 @@
 """
 LLM-based vibe tag extraction for ActivityNodes.
 
-Uses Claude Haiku to classify ActivityNodes against the locked 42-tag
+Uses Claude Haiku to classify ActivityNodes against the locked 44-tag
 vibe vocabulary.  Each node's name, description, and quality signal
 excerpts are sent as input; the model returns scored tags from the
-controlled set.
+controlled set, plus extraction metadata (overrated_flag, price_signal,
+explicit_recommendation, author_type, crowd_notes).
 
 Extraction rules (from vibe-vocabulary.md + heuristics-addendum.md):
   - 3–8 tags per node, max 5 per source ("llm_extraction")
@@ -14,6 +15,7 @@ Extraction rules (from vibe-vocabulary.md + heuristics-addendum.md):
   - Contradictory pairs flagged for human review
   - Results written to ActivityNodeVibeTag with source = "llm_extraction"
   - Every extraction batch logged in ModelRegistry with cost + latency
+  - Per-mention extraction details logged to data/extraction_logs/{city}.jsonl
 """
 
 import asyncio
@@ -22,7 +24,8 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
+from pathlib import Path
+from typing import Literal, Optional
 from uuid import uuid4
 
 import asyncpg
@@ -86,7 +89,7 @@ CONTRADICTORY_PAIRS: list[tuple[str, str]] = [
 # ---------------------------------------------------------------------------
 
 MODEL_NAME = "claude-haiku-4-5-20251001"
-PROMPT_VERSION = "vibe-extract-v1"
+PROMPT_VERSION = "vibe-extract-v2"
 CONFIDENCE_THRESHOLD = 0.75
 MAX_TAGS_PER_SOURCE = 5
 BATCH_SIZE = 10
@@ -97,10 +100,18 @@ RETRY_BACKOFF_BASE = 2.0  # exponential backoff seconds
 INPUT_COST_PER_1M = 0.80   # USD
 OUTPUT_COST_PER_1M = 4.00  # USD
 
+# Extraction log output directory (one JSONL file per city)
+EXTRACTION_LOG_DIR = Path("data/extraction_logs")
+EXTRACTION_LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
+
+PriceSignal = Optional[Literal["budget", "mid", "splurge", "free"]]
+AuthorType = Literal["local", "expat", "tourist", "unknown"]
+
 
 @dataclass
 class NodeInput:
@@ -122,10 +133,29 @@ class TagResult:
 
 
 @dataclass
+class ExtractionMetadata:
+    """
+    Per-venue extraction metadata captured alongside vibe tags.
+
+    These fields are not vibe tags — they describe the signal quality and
+    character of the sources. Stored in QualitySignal JSON payload fields
+    pending the A.WT1 schema migration that adds a dedicated column.
+    """
+    overrated_flag: bool = False
+    price_signal: PriceSignal = None
+    explicit_recommendation: bool = False
+    author_type: AuthorType = "unknown"
+    crowd_notes: Optional[str] = None
+
+
+@dataclass
 class ExtractionResult:
     """Result of extracting vibe tags for one ActivityNode."""
     node_id: str
+    node_name: str
+    city: str
     tags: list[TagResult]
+    metadata: ExtractionMetadata
     flagged_contradictions: list[tuple[str, str]]
     input_tokens: int
     output_tokens: int
@@ -151,7 +181,8 @@ class BatchStats:
 
 SYSTEM_PROMPT = """You are a venue classification system for a travel planning app.
 You receive a venue's name, city, category, description, and review excerpts.
-You must classify the venue against a FIXED vocabulary of 42 vibe tags.
+You must classify the venue against a FIXED vocabulary of 44 vibe tags AND extract
+signal metadata about the sources.
 
 RULES:
 - Return ONLY tags from the provided vocabulary. No invented tags.
@@ -159,7 +190,8 @@ RULES:
 - Each tag gets a confidence score between 0.0 and 1.0.
 - Only include tags where you have genuine evidence from the provided text.
 - Tags are POSITIVE signals only. No negative associations.
-- If the text is too sparse for confident tagging, return fewer tags."""
+- If the text is too sparse for confident tagging, return fewer tags.
+- Output ONLY a JSON object — no prose, no markdown, no explanation."""
 
 
 def _build_user_prompt(node: NodeInput) -> str:
@@ -182,11 +214,18 @@ def _build_user_prompt(node: NodeInput) -> str:
     tag_list = ", ".join(sorted(ALL_TAGS))
     parts.append(
         f"\nValid tags (use ONLY these): {tag_list}"
-        "\n\nReturn a JSON object with a single key \"tags\" containing an array of "
-        "objects, each with \"tag\" (string from the vocabulary) and \"score\" "
-        "(float 0.0-1.0). Example:\n"
-        '{\"tags\": [{\"tag\": \"hidden-gem\", \"score\": 0.92}, '
-        '{\"tag\": \"street-food\", \"score\": 0.85}]}'
+        "\n\nReturn a JSON object with exactly two keys:"
+        "\n1. \"tags\": array of objects with \"tag\" (string) and \"score\" (float 0.0-1.0)"
+        "\n2. \"metadata\": object with:"
+        "\n   - \"overrated_flag\": boolean — true if any source calls this a tourist trap or overrated"
+        "\n   - \"price_signal\": one of \"budget\"|\"mid\"|\"splurge\"|\"free\"|null"
+        "\n   - \"explicit_recommendation\": boolean — true if any source explicitly recommends this venue"
+        "\n   - \"author_type\": one of \"local\"|\"expat\"|\"tourist\"|\"unknown\" — inferred from writing style/context"
+        "\n   - \"crowd_notes\": string with crowd/atmosphere summary, or null if no crowd info present"
+        "\n\nExample output:"
+        '\n{"tags": [{"tag": "hidden-gem", "score": 0.92}, {"tag": "street-food", "score": 0.85}],'
+        ' "metadata": {"overrated_flag": false, "price_signal": "budget",'
+        ' "explicit_recommendation": true, "author_type": "local", "crowd_notes": "packed on weekends"}}'
     )
 
     return "\n".join(parts)
@@ -207,7 +246,7 @@ async def _call_haiku(
 
     payload = {
         "model": MODEL_NAME,
-        "max_tokens": 512,
+        "max_tokens": 768,
         "system": SYSTEM_PROMPT,
         "messages": [{"role": "user", "content": user_prompt}],
     }
@@ -235,11 +274,11 @@ async def _call_haiku(
             text += block["text"]
 
     # Parse JSON from response text
-    parsed = _parse_tag_response(text)
+    tag_list, raw_metadata = _parse_extraction_response(text)
 
     # Validate tags against vocabulary + threshold
     valid_tags: list[TagResult] = []
-    for item in parsed:
+    for item in tag_list:
         slug = item.get("tag", "").strip().lower()
         raw_score = item.get("score", 0.0)
 
@@ -276,26 +315,45 @@ async def _call_haiku(
                 a, b, node.id, drop,
             )
 
+    # Parse + validate extraction metadata
+    metadata = _parse_extraction_metadata(raw_metadata)
+
     return ExtractionResult(
         node_id=node.id,
+        node_name=node.name,
+        city=node.city,
         tags=valid_tags,
+        metadata=metadata,
         flagged_contradictions=contradictions,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
     )
 
 
-def _parse_tag_response(text: str) -> list[dict]:
-    """Parse LLM response text into tag list, tolerant of formatting."""
+def _parse_extraction_response(text: str) -> tuple[list[dict], dict]:
+    """
+    Parse LLM response text into (tag_list, raw_metadata).
+
+    Returns ([], {}) on parse failure — caller handles empty gracefully.
+    Tolerates markdown code fences.
+    """
     text = text.strip()
+
+    def _extract_from_data(data: dict | list) -> tuple[list[dict], dict]:
+        if isinstance(data, dict):
+            tags = data.get("tags", [])
+            metadata = data.get("metadata", {})
+            if isinstance(tags, list):
+                return tags, (metadata if isinstance(metadata, dict) else {})
+        if isinstance(data, list):
+            # Legacy: bare tag list with no metadata
+            return data, {}
+        return [], {}
 
     # Try direct JSON parse
     try:
         data = json.loads(text)
-        if isinstance(data, dict) and "tags" in data:
-            return data["tags"]
-        if isinstance(data, list):
-            return data
+        return _extract_from_data(data)
     except json.JSONDecodeError:
         pass
 
@@ -307,15 +365,44 @@ def _parse_tag_response(text: str) -> list[dict]:
                 block = block[4:].strip()
             try:
                 data = json.loads(block)
-                if isinstance(data, dict) and "tags" in data:
-                    return data["tags"]
-                if isinstance(data, list):
-                    return data
+                return _extract_from_data(data)
             except json.JSONDecodeError:
                 continue
 
-    logger.error("Failed to parse tag response: %s", text[:200])
-    return []
+    logger.error("Failed to parse extraction response: %s", text[:200])
+    return [], {}
+
+
+_VALID_PRICE_SIGNALS: frozenset[str] = frozenset({"budget", "mid", "splurge", "free"})
+_VALID_AUTHOR_TYPES: frozenset[str] = frozenset({"local", "expat", "tourist", "unknown"})
+
+
+def _parse_extraction_metadata(raw: dict) -> ExtractionMetadata:
+    """
+    Validate and coerce raw metadata dict from LLM into ExtractionMetadata.
+
+    Unknown or malformed values are coerced to safe defaults rather than
+    raising — the extraction should never fail due to a metadata parse error.
+    """
+    overrated_flag = bool(raw.get("overrated_flag", False))
+    explicit_recommendation = bool(raw.get("explicit_recommendation", False))
+
+    raw_price = raw.get("price_signal")
+    price_signal: PriceSignal = raw_price if raw_price in _VALID_PRICE_SIGNALS else None
+
+    raw_author = raw.get("author_type", "unknown")
+    author_type: AuthorType = raw_author if raw_author in _VALID_AUTHOR_TYPES else "unknown"
+
+    crowd_notes_raw = raw.get("crowd_notes")
+    crowd_notes: Optional[str] = str(crowd_notes_raw).strip() if crowd_notes_raw else None
+
+    return ExtractionMetadata(
+        overrated_flag=overrated_flag,
+        price_signal=price_signal,
+        explicit_recommendation=explicit_recommendation,
+        author_type=author_type,
+        crowd_notes=crowd_notes,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -326,7 +413,14 @@ async def _fetch_untagged_nodes(
     pool: asyncpg.Pool,
     limit: int,
 ) -> list[NodeInput]:
-    """Fetch ActivityNodes that have no llm_extraction vibe tags yet."""
+    """
+    Fetch ActivityNodes that have no llm_extraction vibe tags yet.
+
+    Includes nodes in 'pending' or 'approved' status — new nodes created
+    by scrapers start as 'pending' and must not be filtered out.
+    The 'active' status does NOT exist in NodeStatus enum (pending/approved/
+    flagged/archived are the valid values).
+    """
     rows = await pool.fetch(
         """
         SELECT
@@ -334,7 +428,7 @@ async def _fetch_untagged_nodes(
             an."descriptionShort", an."descriptionLong"
         FROM "ActivityNode" an
         WHERE an."isCanonical" = true
-          AND an.status = 'active'
+          AND an.status IN ('pending', 'approved')
           AND NOT EXISTS (
             SELECT 1 FROM "ActivityNodeVibeTag" anvt
             WHERE anvt."activityNodeId" = an.id
@@ -446,6 +540,50 @@ async def _write_vibe_tags(
     return len(records)
 
 
+def _write_extraction_log(
+    results: list[ExtractionResult],
+    city: str,
+) -> None:
+    """
+    Append per-venue extraction results to data/extraction_logs/{city}.jsonl.
+
+    One JSON line per result. Used by canary review to inspect raw LLM output
+    before aggregation. Non-blocking — errors are logged but never re-raised.
+    """
+    if not results:
+        return
+
+    log_path = EXTRACTION_LOG_DIR / f"{city.lower().replace(' ', '_').replace('-', '_')}.jsonl"
+    try:
+        with log_path.open("a", encoding="utf-8") as fh:
+            for result in results:
+                record = {
+                    "node_id": result.node_id,
+                    "node_name": result.node_name,
+                    "city": result.city,
+                    "extracted_at": datetime.now(timezone.utc).isoformat(),
+                    "tags": [
+                        {"tag": t.tag_slug, "score": t.score} for t in result.tags
+                    ],
+                    "metadata": {
+                        "overrated_flag": result.metadata.overrated_flag,
+                        "price_signal": result.metadata.price_signal,
+                        "explicit_recommendation": result.metadata.explicit_recommendation,
+                        "author_type": result.metadata.author_type,
+                        "crowd_notes": result.metadata.crowd_notes,
+                    },
+                    "flagged_contradictions": [
+                        list(pair) for pair in result.flagged_contradictions
+                    ],
+                }
+                fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        logger.debug(
+            "Extraction log updated: %s (%d entries)", log_path, len(results)
+        )
+    except OSError as exc:
+        logger.warning("Could not write extraction log to %s: %s", log_path, exc)
+
+
 async def _log_to_model_registry(
     pool: asyncpg.Pool,
     stats: BatchStats,
@@ -530,6 +668,13 @@ async def extract_vibe_tags_batch(
         all_slugs = {t.tag_slug for r in results for t in r.tags}
         tag_id_map = await _resolve_vibe_tag_ids(pool, all_slugs)
         stats.tags_written = await _write_vibe_tags(pool, results, tag_id_map)
+
+        # Append extraction log for canary review (grouped by city)
+        city_groups: dict[str, list[ExtractionResult]] = {}
+        for r in results:
+            city_groups.setdefault(r.city, []).append(r)
+        for city, city_results in city_groups.items():
+            _write_extraction_log(city_results, city)
 
     # Compute cost
     stats.estimated_cost_usd = (

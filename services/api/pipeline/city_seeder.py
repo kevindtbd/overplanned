@@ -35,6 +35,7 @@ from typing import Any, Optional
 
 import asyncpg
 
+from services.api.pipeline.city_configs import validate_city_seed, ValidationResult
 from services.api.pipeline.entity_resolution import EntityResolver
 from services.api.pipeline.vibe_extraction import run_extraction
 from services.api.pipeline.rule_inference import run_rule_inference
@@ -247,6 +248,8 @@ class SeedResult:
     steps_failed: int = 0
     total_duration_s: float = 0.0
     errors: list[str] = field(default_factory=list)
+    # Post-seed validation result (populated automatically after each successful run)
+    validation: Optional[ValidationResult] = None
 
 
 # ---------------------------------------------------------------------------
@@ -651,6 +654,36 @@ async def seed_city(
     )
     progress.finished_at = datetime.now(timezone.utc).isoformat()
     _save_progress(progress)
+
+    # --- Post-seed validation (runs automatically on every successful seed) ---
+    # Validation logs warnings but does NOT block — the canary review is the real gate.
+    if result.success:
+        try:
+            validation = await validate_city_seed(pool, city)
+            result.validation = validation
+            if validation.passed:
+                logger.info(
+                    "Post-seed validation PASSED for %s: "
+                    "nodes=%d vibe_coverage=%.1f%% max_cat_share=%.1f%%",
+                    city,
+                    validation.node_count,
+                    validation.vibe_coverage_pct,
+                    validation.max_category_share * 100,
+                )
+            else:
+                logger.warning(
+                    "Post-seed validation FAILED for %s (%d issue(s)): %s",
+                    city,
+                    len(validation.issues),
+                    " | ".join(validation.issues),
+                )
+        except Exception as exc:
+            # Validation failures must never block a completed seed
+            logger.warning(
+                "Post-seed validation raised an exception for %s (non-fatal): %s",
+                city,
+                exc,
+            )
 
     logger.info(
         "=== City seed %s: %s | scraped=%d resolved=%d tagged=%d indexed=%d | %.1fs ===",

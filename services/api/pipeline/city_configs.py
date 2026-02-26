@@ -129,8 +129,8 @@ CITY_CONFIGS: dict[str, CityConfig] = {
             lat_min=30.10, lat_max=30.55,
             lng_min=-97.95, lng_max=-97.55,
         ),
-        expected_nodes_min=200,
-        expected_nodes_max=1500,
+        expected_nodes_min=300,
+        expected_nodes_max=1000,
     ),
 
     "new-orleans": CityConfig(
@@ -267,8 +267,8 @@ CITY_CONFIGS: dict[str, CityConfig] = {
             lat_min=45.43, lat_max=45.60,
             lng_min=-122.84, lng_max=-122.50,
         ),
-        expected_nodes_min=200,
-        expected_nodes_max=1500,
+        expected_nodes_min=300,
+        expected_nodes_max=1000,
     ),
 
     "mexico-city": CityConfig(
@@ -341,6 +341,115 @@ CITY_CONFIGS: dict[str, CityConfig] = {
         expected_nodes_min=100,  # canary city, small venue set
         expected_nodes_max=500,
         is_canary=True,
+    ),
+
+    "tacoma": CityConfig(
+        name="Tacoma",
+        slug="tacoma",
+        country="United States",
+        timezone="America/Los_Angeles",
+        subreddits={
+            "tacoma": 1.0,
+            "pnw": 0.75,
+        },
+        neighborhood_terms=[
+            "tacoma", "t-town", "ttown",
+            "downtown tacoma", "stadium district",
+            "6th avenue", "sixth avenue", "proctor district",
+            "hilltop", "north end", "north tacoma",
+            "ruston way", "point defiance", "south end",
+            "east side", "eastside tacoma",
+            "fircrest", "university place",
+            "tacoma waterfront", "thea foss waterway",
+            "cheney stadium", "tollefson plaza",
+            "museum district",
+        ],
+        stopwords=[],
+        bbox=BoundingBox(
+            lat_min=47.17, lat_max=47.33,
+            lng_min=-122.56, lng_max=-122.37,
+        ),
+        expected_nodes_min=80,
+        expected_nodes_max=300,
+        is_canary=True,  # second canary city
+    ),
+
+    "nashville": CityConfig(
+        name="Nashville",
+        slug="nashville",
+        country="United States",
+        timezone="America/Chicago",
+        subreddits={
+            "nashville": 1.0,
+            "visitingnashville": 0.9,
+        },
+        neighborhood_terms=[
+            "nashville", "nash", "nashvegas",
+            "east nashville", "east nash",
+            "12 south", "twelve south",
+            "gulch", "the gulch",
+            "germantown", "salemtown",
+            "5 points", "five points",
+            "hillsboro village", "belmont", "waverly-belmont",
+            "sylvan park", "charlotte avenue", "charlotte pike",
+            "wedgewood-houston", "wedge-hou",
+            "berry hill", "green hills",
+            "melrose", "8th avenue south", "edgehill",
+            "marathon village", "marathon",
+            "nations", "the nations",
+            "midtown nashville", "music row",
+            "downtown nashville", "broadway nashville",
+            "pennywhistle", "brentwood",
+        ],
+        stopwords=[
+            "hattie b's",    # chain expanding rapidly — keep data, note it
+            "princes hot chicken",  # intentional keep — local icon
+        ],
+        bbox=BoundingBox(
+            lat_min=35.98, lat_max=36.22,
+            lng_min=-87.05, lng_max=-86.63,
+        ),
+        expected_nodes_min=200,
+        expected_nodes_max=800,
+    ),
+
+    "denver": CityConfig(
+        name="Denver",
+        slug="denver",
+        country="United States",
+        timezone="America/Denver",
+        subreddits={
+            "denver": 1.0,
+            "denverfood": 0.9,
+        },
+        neighborhood_terms=[
+            "denver", "denvercolorado", "mile high",
+            "rino", "river north", "river north art district",
+            "capitol hill", "cap hill denver",
+            "highlands", "lower highlands", "lohi",
+            "five points", "whittier",
+            "baker", "south broadway", "soco denver",
+            "cherry creek", "cherry creek north",
+            "lodo", "lower downtown",
+            "ball arena", "coors field",
+            "berkeley", "tennyson street",
+            "sloan lake", "edgewater",
+            "sunnyside", "potter-highland",
+            "cole", "city park", "congress park",
+            "park hill", "stapleton", "central park",
+            "washington park", "wash park",
+            "platte park", "overland",
+            "golden triangle",
+        ],
+        stopwords=[
+            "chipotle",  # founded in Denver -- still a chain stopword
+        ],
+        bbox=BoundingBox(
+            lat_min=39.61, lat_max=39.91,
+            lng_min=-105.11, lng_max=-104.72,
+        ),
+        expected_nodes_min=200,
+        expected_nodes_max=800,
     ),
 }
 

@@ -21,11 +21,12 @@ from services.api.pipeline.vibe_extraction import (
     INPUT_COST_PER_1M,
     OUTPUT_COST_PER_1M,
     BatchStats,
+    ExtractionMetadata,
     ExtractionResult,
     NodeInput,
     TagResult,
     _build_user_prompt,
-    _parse_tag_response,
+    _parse_extraction_response,
     ALL_TAGS,
 )
 
@@ -42,7 +43,7 @@ class TestModelConstants:
         assert "haiku" in MODEL_NAME.lower()
 
     def test_prompt_version_set(self):
-        assert PROMPT_VERSION == "vibe-extract-v1"
+        assert PROMPT_VERSION == "vibe-extract-v2"
 
     def test_confidence_threshold(self):
         assert CONFIDENCE_THRESHOLD == 0.75
@@ -129,10 +130,13 @@ class TestExtractionResult:
     def test_result_structure(self):
         result = ExtractionResult(
             node_id="test-node",
+            node_name="Test Venue",
+            city="tokyo",
             tags=[
                 TagResult(tag_slug="hidden-gem", score=0.92),
                 TagResult(tag_slug="local-institution", score=0.85),
             ],
+            metadata=ExtractionMetadata(),
             flagged_contradictions=[],
             input_tokens=500,
             output_tokens=100,
@@ -146,10 +150,13 @@ class TestExtractionResult:
     def test_result_with_contradictions(self):
         result = ExtractionResult(
             node_id="test",
+            node_name="Test Venue",
+            city="tokyo",
             tags=[
                 TagResult(tag_slug="hidden-gem", score=0.9),
                 TagResult(tag_slug="iconic-worth-it", score=0.8),
             ],
+            metadata=ExtractionMetadata(),
             flagged_contradictions=[("hidden-gem", "iconic-worth-it")],
             input_tokens=0,
             output_tokens=0,
@@ -207,24 +214,25 @@ class TestPromptConstruction:
 class TestResponseParsing:
     def test_parse_valid_json(self):
         text = '{"tags": [{"tag": "hidden-gem", "score": 0.9}]}'
-        result = _parse_tag_response(text)
+        result, _meta = _parse_extraction_response(text)
         assert len(result) == 1
         assert result[0]["tag"] == "hidden-gem"
 
     def test_parse_json_array(self):
+        # Legacy bare array — still supported for backward compat
         text = '[{"tag": "street-food", "score": 0.85}]'
-        result = _parse_tag_response(text)
+        result, _meta = _parse_extraction_response(text)
         assert len(result) == 1
 
     def test_parse_markdown_code_block(self):
         text = '```json\n{"tags": [{"tag": "lively", "score": 0.88}]}\n```'
-        result = _parse_tag_response(text)
+        result, _meta = _parse_extraction_response(text)
         assert len(result) == 1
         assert result[0]["tag"] == "lively"
 
     def test_parse_invalid_json(self):
         text = "This is not JSON at all"
-        result = _parse_tag_response(text)
+        result, _meta = _parse_extraction_response(text)
         assert result == []
 
 
