@@ -85,13 +85,14 @@ function validPayload(overrides: Record<string, unknown> = {}) {
 
 describe("POST /api/signals/behavioral", () => {
   let POST: typeof import("../../../app/api/signals/behavioral/route").POST;
-  let rateLimitMap: typeof import("../../../app/api/signals/behavioral/route").rateLimitMap;
+  let rateLimitMap: typeof import("../../../app/api/signals/behavioral/_rate-limit").rateLimitMap;
 
   beforeEach(async () => {
     vi.resetAllMocks();
     const mod = await import("../../../app/api/signals/behavioral/route");
     POST = mod.POST;
-    rateLimitMap = mod.rateLimitMap;
+    const rl = await import("../../../app/api/signals/behavioral/_rate-limit");
+    rateLimitMap = rl.rateLimitMap;
     // Clear rate limit state between tests
     rateLimitMap.clear();
   });
