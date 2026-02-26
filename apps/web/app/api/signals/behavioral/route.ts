@@ -63,8 +63,6 @@ function isRateLimited(userId: string): boolean {
   return entry.count > MAX_SIGNALS_PER_WINDOW;
 }
 
-// Exported for testing
-export { rateLimitMap, ALLOWED_SIGNAL_TYPES };
 
 // ---------------------------------------------------------------------------
 // Season helper
