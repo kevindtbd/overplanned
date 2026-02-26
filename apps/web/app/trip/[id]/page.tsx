@@ -190,6 +190,7 @@ export default function TripDetailPage() {
             : undefined,
           day_number: targetSlot?.dayNumber,
           ...(event.moveData ?? {}),
+          ...(event.removalReason ? { removal_reason: event.removalReason } : {}),
         },
       });
 
@@ -243,7 +244,10 @@ export default function TripDetailPage() {
         const res = await fetch(`/api/slots/${event.slotId}/status`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: event.action }),
+          body: JSON.stringify({
+            action: event.action,
+            ...(event.removalReason ? { removalReason: event.removalReason } : {}),
+          }),
         });
         if (!res.ok) {
           // Revert on failure
@@ -667,6 +671,7 @@ export default function TripDetailPage() {
             showPivot={trip!.mode === "group" && (trip!.status === "planning" || trip!.status === "active")}
             onPivotCreated={fetchTrip}
             onShareToChat={trip!.mode === "group" ? handleShareToChat : undefined}
+            tripPhase={tripPhase}
           />
 
           {/* Packing list — active or completed trips only */}

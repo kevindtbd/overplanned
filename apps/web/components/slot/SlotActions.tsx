@@ -4,6 +4,10 @@
 // Emits BehavioralSignal-shaped callbacks. Used inside SlotCard.
 // Usage: <SlotActions slotId="abc" status="proposed" onAction={handleAction} />
 
+import { useState } from "react";
+import { type RemovalReason } from "@/lib/constants/removal-reasons";
+import { RemovalReasonPicker } from "./RemovalReasonPicker";
+
 export type SlotActionType = "confirm" | "skip" | "lock" | "move";
 
 export interface SlotActionEvent {
@@ -15,6 +19,8 @@ export interface SlotActionEvent {
   signalValue: number;
   /** Move-specific payload */
   moveData?: { dayNumber?: number; sortOrder?: number };
+  /** Removal reason (pre-trip skip only) */
+  removalReason?: RemovalReason;
 }
 
 interface SlotActionsProps {
@@ -31,6 +37,10 @@ interface SlotActionsProps {
   slotIndex?: number;
   /** Total number of slots in this day (enables up/down reorder arrows) */
   totalSlotsInDay?: number;
+  /** Trip phase — controls whether removal reason picker appears on skip */
+  tripPhase?: "pre_trip" | "active" | "post_trip";
+  /** Activity name shown in the removal reason picker */
+  activityName?: string;
 }
 
 // SVG icons rendered inline per design system (no icon libraries)
@@ -145,8 +155,11 @@ export function SlotActions({
   currentDay,
   slotIndex,
   totalSlotsInDay,
+  tripPhase,
+  activityName,
 }: SlotActionsProps) {
   const isTerminal = status === "completed" || status === "skipped";
+  const [showRemovalPicker, setShowRemovalPicker] = useState(false);
 
   function handleConfirm() {
     onAction({
@@ -158,11 +171,27 @@ export function SlotActions({
   }
 
   function handleSkip() {
+    // In pre-trip phase, show the removal reason picker instead of skipping immediately
+    if (tripPhase === "pre_trip") {
+      setShowRemovalPicker(true);
+      return;
+    }
     onAction({
       slotId,
       action: "skip",
       signalType: "slot_skip",
       signalValue: -0.5,
+    });
+  }
+
+  function handleRemovalReasonSelect(reason: RemovalReason) {
+    setShowRemovalPicker(false);
+    onAction({
+      slotId,
+      action: "skip",
+      signalType: "slot_skip",
+      signalValue: -0.5,
+      removalReason: reason,
     });
   }
 
@@ -345,6 +374,14 @@ export function SlotActions({
           ))}
         </select>
       )}
+
+      {/* Removal reason picker — pre-trip skip only */}
+      <RemovalReasonPicker
+        open={showRemovalPicker}
+        onSelect={handleRemovalReasonSelect}
+        onClose={() => setShowRemovalPicker(false)}
+        activityName={activityName}
+      />
     </div>
   );
 }

@@ -38,6 +38,8 @@ interface DayViewProps {
   timeFormat?: "12h" | "24h";
   /** Callback to share a slot into trip chat */
   onShareToChat?: (slot: { id: string; name: string; category: string; dayNumber: number }) => void;
+  /** Trip phase — controls removal reason picker on skip */
+  tripPhase?: "pre_trip" | "active" | "post_trip";
 }
 
 function formatTimeMarker(isoString: string, timezone?: string, timeFormat?: "12h" | "24h"): string {
@@ -115,6 +117,7 @@ export function DayView({
   totalDays,
   timeFormat = "12h",
   onShareToChat,
+  tripPhase,
 }: DayViewProps) {
   // Sort slots by sortOrder (already from DB) or startTime fallback
   const sortedSlots = [...slots].sort((a, b) => {
@@ -196,6 +199,7 @@ export function DayView({
                 slotIndex={index}
                 totalSlotsInDay={sortedSlots.length}
                 onShareToChat={onShareToChat}
+                tripPhase={tripPhase}
               />
             </div>
           </div>

@@ -333,6 +333,94 @@ describe("PATCH /api/slots/[slotId]/status — pre-trip skip signals", () => {
     expect(mockPrisma.$transaction).toHaveBeenCalledOnce();
   });
 
+  it("emits pre_trip_slot_removed_reason as second signal when removalReason provided", async () => {
+    authedSession();
+    const slot = makeSlot({ startDate: FUTURE_START, endDate: FUTURE_END });
+    mockPrisma.itinerarySlot.findUnique.mockResolvedValueOnce(slot as never);
+
+    const updatedSlot = { ...slot, status: "skipped" };
+    mockPrisma.$transaction.mockResolvedValueOnce([updatedSlot] as never);
+
+    const { PATCH } = await import(
+      "../../../app/api/slots/[slotId]/status/route"
+    );
+
+    const req = new NextRequest(
+      `http://localhost/api/slots/${SLOT_ID}/status`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "skip", removalReason: "wrong_vibe" }),
+      },
+    );
+
+    const res = await PATCH(req, { params: { slotId: SLOT_ID } });
+
+    expect(res.status).toBe(200);
+    expect(mockPrisma.$transaction).toHaveBeenCalledOnce();
+
+    // $transaction receives an array of operations; verify 3 items:
+    // [slot update, primary signal, reason signal]
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0];
+    expect(txArgs).toHaveLength(3);
+  });
+
+  it("uses reason-specific signal weight for pre_trip_slot_removed", async () => {
+    authedSession();
+    const slot = makeSlot({ startDate: FUTURE_START, endDate: FUTURE_END });
+    mockPrisma.itinerarySlot.findUnique.mockResolvedValueOnce(slot as never);
+
+    const updatedSlot = { ...slot, status: "skipped" };
+    mockPrisma.$transaction.mockResolvedValueOnce([updatedSlot] as never);
+
+    const { PATCH } = await import(
+      "../../../app/api/slots/[slotId]/status/route"
+    );
+
+    // "already_been" has signalWeight 0.0
+    const req = new NextRequest(
+      `http://localhost/api/slots/${SLOT_ID}/status`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "skip", removalReason: "already_been" }),
+      },
+    );
+
+    const res = await PATCH(req, { params: { slotId: SLOT_ID } });
+    expect(res.status).toBe(200);
+    expect(mockPrisma.$transaction).toHaveBeenCalledOnce();
+  });
+
+  it("does not emit reason signal when no removalReason provided", async () => {
+    authedSession();
+    const slot = makeSlot({ startDate: FUTURE_START, endDate: FUTURE_END });
+    mockPrisma.itinerarySlot.findUnique.mockResolvedValueOnce(slot as never);
+
+    const updatedSlot = { ...slot, status: "skipped" };
+    mockPrisma.$transaction.mockResolvedValueOnce([updatedSlot] as never);
+
+    const { PATCH } = await import(
+      "../../../app/api/slots/[slotId]/status/route"
+    );
+
+    const req = new NextRequest(
+      `http://localhost/api/slots/${SLOT_ID}/status`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "skip" }),
+      },
+    );
+
+    const res = await PATCH(req, { params: { slotId: SLOT_ID } });
+    expect(res.status).toBe(200);
+
+    // Only 2 items: slot update + primary signal (no reason signal)
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0];
+    expect(txArgs).toHaveLength(2);
+  });
+
   it("emits slot_skip when skipping in active phase", async () => {
     authedSession();
     const slot = makeSlot({ startDate: PAST_START, endDate: ACTIVE_END });

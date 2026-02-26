@@ -97,6 +97,8 @@ export interface SlotCardProps {
   slotIndex?: number;
   /** Total slots in this day */
   totalSlotsInDay?: number;
+  /** Trip phase — controls removal reason picker on skip */
+  tripPhase?: "pre_trip" | "active" | "post_trip";
 }
 
 // ---------- Helpers ----------
@@ -225,6 +227,7 @@ export function SlotCard({
   currentDay,
   slotIndex,
   totalSlotsInDay,
+  tripPhase,
 }: SlotCardProps) {
   const statusConfig = STATUS_CONFIG[slot.status];
   const [showPivotDrawer, setShowPivotDrawer] = useState(false);
@@ -316,6 +319,8 @@ export function SlotCard({
         currentDay={currentDay}
         slotIndex={slotIndex}
         totalSlotsInDay={totalSlotsInDay}
+        tripPhase={tripPhase}
+        activityName={slot.activityName}
       />
 
       {showVoting && tripId && myUserId && votePanelData && votePanelData.memberVotes.length > 0 && (

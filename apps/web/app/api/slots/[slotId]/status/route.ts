@@ -22,6 +22,7 @@ import {
   VALID_TRANSITIONS,
 } from "@/lib/validations/slot";
 import { getTripPhase } from "@/lib/trip-status";
+import { REMOVAL_REASONS, DEFAULT_REMOVAL_REASON } from "@/lib/constants/removal-reasons";
 
 const ACTION_TO_STATUS = {
   confirm: "confirmed",
@@ -61,7 +62,7 @@ export async function PATCH(
     );
   }
 
-  const { action } = parsed.data;
+  const { action, removalReason } = parsed.data;
 
   // Fetch slot and verify joined trip membership in one query
   const slot = await prisma.itinerarySlot.findUnique({
@@ -146,12 +147,16 @@ export async function PATCH(
     isPreTrip && action === "skip"
       ? "pre_trip_slot_removed"
       : ACTION_TO_SIGNAL[action].signalType;
+
+  // If a removal reason is provided, use its weight; otherwise fall back to -0.7
+  const resolvedRemovalReason = removalReason ?? DEFAULT_REMOVAL_REASON;
+  const reasonEntry = REMOVAL_REASONS.find((r) => r.id === resolvedRemovalReason);
   const resolvedSignalValue =
     isPreTrip && action === "skip"
-      ? -0.7
+      ? (reasonEntry?.signalWeight ?? -0.7)
       : ACTION_TO_SIGNAL[action].signalValue;
 
-  const [updatedSlot] = await prisma.$transaction([
+  const txOps = [
     prisma.itinerarySlot.update({
       where: { id: slotId },
       data: { status: targetStatus, updatedAt: new Date() },
@@ -173,11 +178,39 @@ export async function PATCH(
                 day_number: slot.dayNumber,
                 slot_index: slot.sortOrder,
                 trip_phase: "pre_trip",
+                removal_reason: resolvedRemovalReason,
               }
             : undefined,
       },
     }),
-  ]);
+  ];
+
+  // Emit a second signal with the specific removal reason type (backwards compat)
+  if (isPreTrip && action === "skip" && removalReason) {
+    txOps.push(
+      prisma.behavioralSignal.create({
+        data: {
+          id: uuidv4(),
+          userId,
+          tripId: slot.tripId,
+          slotId,
+          activityNodeId: slot.activityNodeId,
+          signalType: "pre_trip_slot_removed_reason",
+          signalValue: reasonEntry?.signalWeight ?? -0.7,
+          tripPhase,
+          rawAction: `slot_skip_reason_${removalReason}`,
+          metadata: {
+            removal_reason: removalReason,
+            day_number: slot.dayNumber,
+            slot_index: slot.sortOrder,
+            trip_phase: "pre_trip",
+          },
+        },
+      }),
+    );
+  }
+
+  const [updatedSlot] = await prisma.$transaction(txOps);
 
   return NextResponse.json({ success: true, data: updatedSlot });
 }
