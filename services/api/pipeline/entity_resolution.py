@@ -90,6 +90,20 @@ def _katakana_to_hiragana(text: str) -> str:
     return "".join(result)
 
 
+_PUNCT_RE = re.compile(r"['\"\-.,!?&()]+")
+
+
+def _normalize_for_containment(name: str) -> str:
+    """
+    Normalize a venue name for substring containment matching.
+
+    Strips punctuation (apostrophes, hyphens, etc.), lowercases,
+    and collapses whitespace. "Salamone's" -> "salamones",
+    "E9 Firehouse & Gastropub" -> "e9 firehouse gastropub".
+    """
+    return _PUNCT_RE.sub("", name).lower().strip()
+
+
 def strip_accents(text: str) -> str:
     """
     Remove diacritical marks (accents) from text.
@@ -503,8 +517,17 @@ class EntityResolver:
         """
         Tier 3: pg_trgm trigram similarity on canonicalName.
 
+        Two sub-checks:
+        1. Standard trigram similarity > FUZZY_THRESHOLD (0.7)
+        2. Normalized containment: if the shorter name (stripped of
+           punctuation) is fully contained in the longer one and both
+           are same category, match with confidence 0.80. Catches
+           "El Toro" vs "El Toro on Pearl", "7 Seas" vs "7 Seas
+           Brewery and Taproom", "Salamones" vs "Salamone's".
+
         Requires pg_trgm extension (CREATE EXTENSION IF NOT EXISTS pg_trgm).
         """
+        # Sub-check 1: standard trigram similarity
         matches = await conn.fetch(
             """
             SELECT id, "canonicalName",
@@ -524,7 +547,9 @@ class EntityResolver:
         )
 
         candidates = []
+        seen_ids = set()
         for match in matches:
+            seen_ids.add(match["id"])
             winner_id, loser_id = self._pick_winner(
                 conn, match["id"], node["id"]
             )
@@ -535,6 +560,43 @@ class EntityResolver:
                 confidence=float(match["sim"]),
                 detail=f'"{node["canonicalName"]}" ~ "{match["canonicalName"]}" (sim={match["sim"]:.3f})',
             ))
+
+        # Sub-check 2: normalized containment
+        # Strip punctuation for comparison, check if shorter is in longer
+        node_name = node["canonicalName"]
+        node_norm = _normalize_for_containment(node_name)
+        if len(node_norm) >= 3:  # skip trivially short names
+            containment_matches = await conn.fetch(
+                """
+                SELECT id, "canonicalName"
+                FROM activity_nodes
+                WHERE id != $1
+                  AND "isCanonical" = true
+                  AND category = $2
+                  AND city = $3
+                LIMIT 200
+                """,
+                node["id"],
+                node["category"],
+                node.get("city", ""),
+            )
+            for match in containment_matches:
+                if match["id"] in seen_ids:
+                    continue
+                match_norm = _normalize_for_containment(match["canonicalName"])
+                shorter, longer = sorted([node_norm, match_norm], key=len)
+                if len(shorter) >= 3 and shorter in longer:
+                    seen_ids.add(match["id"])
+                    winner_id, loser_id = self._pick_winner(
+                        conn, match["id"], node["id"]
+                    )
+                    candidates.append(MergeCandidate(
+                        winner_id=winner_id,
+                        loser_id=loser_id,
+                        tier=MatchTier.FUZZY_NAME,
+                        confidence=0.80,
+                        detail=f'containment: "{shorter}" in "{longer}"',
+                    ))
 
         return candidates
 
