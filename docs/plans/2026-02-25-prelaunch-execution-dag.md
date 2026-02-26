@@ -105,23 +105,31 @@ GATE 0: SA Test Cleanup (6 files)                    <<<< WAVE 1 DONE
 ## Wave 3 (After Wave 2 + B pipeline fixes merged)
 
 ```
-    ├── A.WT4: Nightly Jobs
-    │   - training_extract.py: mark trainingExtracted, in-batch negatives
-    │   - write_back.py: behavioralUpdatedAt + served counts
-    │   - persona_updater.py (NEW): EMA, mid-trip 3x weight
-    │   DEPENDS ON: A.WT2 (taxonomy)
+    ├── A.WT4: Nightly Jobs ────────────────────────── WAVE 3 DONE
+    │   - persona_updater.py (NEW): EMA alpha=0.3, mid-trip 3x weight
+    │   - training_extract.py + write_back.py already existed
+    │   - 63 new tests (39 persona + 24 training_extract)
     │
-    ├── BEND CANARY RUN
-    │   - python3 -m services.api.pipeline.city_seeder bend -v
-    │   - Kevin manual review via bend_canary_report.py
-    │   - Fix pipeline if tourist traps surface
-    │   DEPENDS ON: B.WT1 + B.WT2 + B.WT3 merged
+    ├── BEND CANARY VALIDATION ─────────────────────── WAVE 3 DONE
+    │   - docs/guides/bend-canary-execution.md (execution guide)
+    │   - 44 integration tests for pipeline chain
+    │   - 3/5 agent-reported gaps were false alarms (stale code reads)
+    │   - 1 REAL gap: rule_inference.py snake_case SQL (pre-existing bug)
+    │   - 1 NEEDS VERIFICATION: tag slug vocabulary alignment
+    │   - BLOCKED: live canary run needs rule_inference.py SQL fix first
     │
-    └── B.WT4: LLM Fallback Pipeline
+    └── B.WT4: LLM Fallback Pipeline ──────────────── PENDING
         - On-demand city seeding (Google Places + LLM enrichment)
         - DB write-back flywheel
         - Graduation query (monthly)
-        DEPENDS ON: Bend canary validated
+        DEPENDS ON: Bend canary validated (manual review by Kevin)
+```
+
+### Wave 3 Findings
+- training_extract.py and write_back.py already existed — only persona_updater.py was new
+- Canary agent reported 5 blocking gaps, but 3 were false alarms (agent read stale worktree code, not main)
+- rule_inference.py SQL naming is a pre-existing bug: uses `activity_nodes` / `is_canonical` instead of `"ActivityNode"` / `"isCanonical"`
+- This is a symptom of the broader Prisma camelCase vs Python snake_case tension
 ```
 
 ## Key Discoveries from Wave 1
