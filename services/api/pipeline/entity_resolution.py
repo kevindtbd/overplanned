@@ -281,7 +281,7 @@ class EntityResolver:
             new_nodes = await conn.fetch(
                 """
                 SELECT id, "canonicalName", "foursquareId", "googlePlaceId",
-                       latitude, longitude, category, "contentHash", name
+                       latitude, longitude, category, "contentHash", name, city
                 FROM activity_nodes
                 WHERE "isCanonical" = true
                   AND "createdAt" >= $1
@@ -358,7 +358,7 @@ class EntityResolver:
             all_canonical = await conn.fetch(
                 """
                 SELECT id, "canonicalName", "foursquareId", "googlePlaceId",
-                       latitude, longitude, category, "contentHash", name
+                       latitude, longitude, category, "contentHash", name, city
                 FROM activity_nodes
                 WHERE "isCanonical" = true
                 ORDER BY "createdAt" ASC
