@@ -247,44 +247,6 @@ def make_http_response(
 
 
 # ---------------------------------------------------------------------------
-# Foursquare response factory
-# ---------------------------------------------------------------------------
-
-def make_foursquare_venue(
-    *,
-    fsq_id: str = "abc123",
-    name: str = "Test Restaurant",
-    latitude: float = 35.6762,
-    longitude: float = 139.6503,
-    category_id: str = "13065",
-    category_name: str = "Restaurant",
-    city: str = "Tokyo",
-    country: str = "JP",
-) -> dict:
-    """Factory for a Foursquare API venue result."""
-    return {
-        "fsq_id": fsq_id,
-        "name": name,
-        "geocodes": {
-            "main": {"latitude": latitude, "longitude": longitude}
-        },
-        "location": {
-            "locality": city,
-            "country": country,
-        },
-        "categories": [
-            {"id": int(category_id), "name": category_name}
-        ],
-        "hours": None,
-        "price": 2,
-        "tel": None,
-        "website": None,
-        "description": f"A lovely {name.lower()} in {city}",
-        "photos": [],
-    }
-
-
-# ---------------------------------------------------------------------------
 # Atlas Obscura HTML factory
 # ---------------------------------------------------------------------------
 

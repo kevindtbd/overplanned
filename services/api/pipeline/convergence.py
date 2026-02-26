@@ -40,7 +40,6 @@ logger = logging.getLogger(__name__)
 SOURCE_AUTHORITY_DEFAULTS: dict[str, float] = {
     "the_infatuation": 0.9,
     "atlas_obscura": 0.85,
-    "foursquare": 0.7,
     "reddit_high_upvotes": 0.6,
     "generic_blog": 0.4,
 }

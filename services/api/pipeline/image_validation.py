@@ -3,7 +3,7 @@ Image validation and curation for ActivityNodes.
 
 Priority waterfall for sourcing images:
   1. Unsplash (free API, high quality, landscape/travel focus)
-  2. Foursquare venue photos (via Places API v3)
+  2. Google Places photos (via Places API)
   3. Google Places photos (via Places API)
   4. None (no image — node stays imageless)
 
@@ -38,9 +38,6 @@ MIN_HEIGHT = 300
 # Unsplash API (free tier: 50 req/hr)
 UNSPLASH_API_URL = "https://api.unsplash.com"
 
-# Foursquare Places API v3
-FOURSQUARE_PHOTO_URL = "https://api.foursquare.com/v3/places/{fsq_id}/photos"
-
 # Google Places Photo API
 GOOGLE_PLACES_PHOTO_URL = "https://places.googleapis.com/v1/{name}/media"
 
@@ -64,7 +61,6 @@ MAX_CONCURRENT = 10
 class ImageSource(str, Enum):
     """Where the image came from."""
     UNSPLASH = "unsplash"
-    FOURSQUARE = "foursquare"
     GOOGLE_PLACES = "google_places"
     EXISTING = "existing"  # already had a URL, just validated
 
@@ -127,7 +123,6 @@ class ValidationStats:
     images_skipped: int = 0  # already validated
     by_source: dict[str, int] = field(default_factory=lambda: {
         ImageSource.UNSPLASH.value: 0,
-        ImageSource.FOURSQUARE.value: 0,
         ImageSource.GOOGLE_PLACES.value: 0,
         ImageSource.EXISTING.value: 0,
     })
@@ -207,51 +202,6 @@ async def _trigger_unsplash_download(
         )
     except Exception:
         pass  # best-effort, don't fail the pipeline
-
-
-async def _fetch_foursquare_photo(
-    client: httpx.AsyncClient,
-    foursquare_id: str,
-    api_key: str,
-) -> Optional[str]:
-    """
-    Fetch the first photo for a Foursquare venue.
-
-    Returns the photo URL or None.
-    """
-    try:
-        resp = await client.get(
-            FOURSQUARE_PHOTO_URL.format(fsq_id=foursquare_id),
-            params={"limit": 1, "sort": "popular"},
-            headers={
-                "Authorization": api_key,
-                "Accept": "application/json",
-            },
-            timeout=10.0,
-        )
-        resp.raise_for_status()
-        photos = resp.json()
-
-        if not photos:
-            return None
-
-        photo = photos[0]
-        prefix = photo.get("prefix", "")
-        suffix = photo.get("suffix", "")
-        if prefix and suffix:
-            # Request 800px wide version
-            return f"{prefix}800x600{suffix}"
-
-        return None
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 429:
-            logger.warning("Foursquare rate limit hit")
-        else:
-            logger.warning("Foursquare photo fetch failed for %s: %s", foursquare_id, exc)
-        return None
-    except Exception as exc:
-        logger.warning("Foursquare photo error for %s: %s", foursquare_id, exc)
-        return None
 
 
 async def _fetch_google_places_photo(
@@ -551,9 +501,8 @@ class ImageValidator:
     Priority waterfall:
       1. Keep existing primaryImageUrl if it passes validation
       2. Unsplash search (name + city)
-      3. Foursquare venue photo (if foursquareId present)
-      4. Google Places photo (if googlePlaceId present)
-      5. No image (flag as no_image_found)
+      3. Google Places photo (if googlePlaceId present)
+      4. No image (flag as no_image_found)
 
     Usage:
         validator = ImageValidator(pool)
@@ -565,13 +514,11 @@ class ImageValidator:
         pool: asyncpg.Pool,
         *,
         unsplash_api_key: Optional[str] = None,
-        foursquare_api_key: Optional[str] = None,
         google_api_key: Optional[str] = None,
         vision_api_key: Optional[str] = None,
     ):
         self.pool = pool
         self.unsplash_key = unsplash_api_key or os.environ.get("UNSPLASH_ACCESS_KEY")
-        self.foursquare_key = foursquare_api_key or os.environ.get("FOURSQUARE_API_KEY")
         self.google_key = google_api_key or os.environ.get("GOOGLE_PLACES_API_KEY")
         self.vision_key = vision_api_key or os.environ.get("GOOGLE_VISION_API_KEY")
 
@@ -591,7 +538,7 @@ class ImageValidator:
             # Fetch unvalidated canonical nodes
             query = """
                 SELECT id, name, "canonicalName", city, "primaryImageUrl",
-                       "imageSource", "foursquareId", "googlePlaceId"
+                       "imageSource", "googlePlaceId"
                 FROM activity_nodes
                 WHERE "isCanonical" = true
                   AND "imageValidated" = false
@@ -674,15 +621,13 @@ class ImageValidator:
         Waterfall order:
           1. Existing primaryImageUrl (validate it)
           2. Unsplash search
-          3. Foursquare venue photo
-          4. Google Places photo
-          5. No image found
+          3. Google Places photo
+          4. No image found
         """
         node_id = node["id"]
         existing_url = node["primaryImageUrl"]
         name = node["name"] or node["canonicalName"]
         city = node["city"]
-        fsq_id = node["foursquareId"]
         google_id = node["googlePlaceId"]
 
         # --- Try existing URL first ---
@@ -714,21 +659,6 @@ class ImageValidator:
                         node_id=node_id,
                         image_url=url,
                         source=ImageSource.UNSPLASH,
-                        width=validation.width,
-                        height=validation.height,
-                        validated=True,
-                    )
-
-        # --- Waterfall: Foursquare ---
-        if self.foursquare_key and fsq_id:
-            url = await _fetch_foursquare_photo(client, fsq_id, self.foursquare_key)
-            if url:
-                validation = await self._validate(client, url)
-                if validation.flag is None:
-                    return ImageResult(
-                        node_id=node_id,
-                        image_url=url,
-                        source=ImageSource.FOURSQUARE,
                         width=validation.width,
                         height=validation.height,
                         validated=True,
@@ -815,7 +745,6 @@ async def run_image_validation(
     *,
     limit: Optional[int] = None,
     unsplash_api_key: Optional[str] = None,
-    foursquare_api_key: Optional[str] = None,
     google_api_key: Optional[str] = None,
     vision_api_key: Optional[str] = None,
 ) -> ValidationStats:
@@ -826,7 +755,6 @@ async def run_image_validation(
         pool: asyncpg connection pool.
         limit: Max nodes to process (None = all).
         unsplash_api_key: Unsplash API key (falls back to UNSPLASH_ACCESS_KEY env).
-        foursquare_api_key: Foursquare API key (falls back to FOURSQUARE_API_KEY env).
         google_api_key: Google Places API key (falls back to GOOGLE_PLACES_API_KEY env).
         vision_api_key: Cloud Vision API key (falls back to GOOGLE_VISION_API_KEY env).
             If not set, uses lightweight validation (resolution only).
@@ -837,7 +765,6 @@ async def run_image_validation(
     validator = ImageValidator(
         pool,
         unsplash_api_key=unsplash_api_key,
-        foursquare_api_key=foursquare_api_key,
         google_api_key=google_api_key,
         vision_api_key=vision_api_key,
     )

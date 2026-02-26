@@ -114,7 +114,6 @@ async def _check_rate_limit(redis) -> None:
 
 # Rough per-source cost model (API calls × avg cost per call)
 _SOURCE_COSTS = {
-    "foursquare": {"calls_per_city": 120, "cost_per_call": 0.005},
     "google_places": {"calls_per_city": 80, "cost_per_call": 0.017},
     "reddit": {"calls_per_city": 40, "cost_per_call": 0.0},
     "tabelog": {"calls_per_city": 60, "cost_per_call": 0.0},

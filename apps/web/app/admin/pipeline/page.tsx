@@ -93,7 +93,6 @@ const JOB_STATUS_COLORS: Record<string, string> = {
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
-  foursquare: 'Foursquare',
   google: 'Google Places',
   openweathermap: 'OpenWeatherMap',
 };

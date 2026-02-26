@@ -4,7 +4,7 @@ Admin Pipeline Health & Cost Dashboard API.
 Reads pipeline telemetry data written by Track 2 (Data Pipeline).
 Expected source tables:
   - llm_call_log: every LLM call with model, cost, latency, pipeline_stage
-  - api_call_log: external API calls (Foursquare, Google, OpenWeatherMap)
+  - api_call_log: external API calls (Google, OpenWeatherMap)
   - pipeline_job: seed/scrape job runs with status, timing, error info
   - cost_alert_config: per-stage threshold config (admin-writable)
 
@@ -188,7 +188,7 @@ async def get_api_calls(
 ) -> dict:
     """
     External API call counts by provider and date.
-    Providers: foursquare, google, openweathermap.
+    Providers: google, openweathermap.
     """
     if days < 1 or days > 90:
         raise HTTPException(status_code=400, detail="days must be 1-90")

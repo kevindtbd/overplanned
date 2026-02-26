@@ -459,7 +459,6 @@ class TestQualitySignalSources:
         "reddit",
         "tabelog",
         "atlas_obscura",
-        "foursquare",
     ]
 
     @pytest.mark.parametrize("source", PIPELINE_SOURCES)
@@ -502,15 +501,6 @@ class TestQualitySignalSources:
         )
         assert signal["sourceName"] == "atlas_obscura"
 
-    def test_foursquare_source(self):
-        """Foursquare signals for venue data enrichment."""
-        signal = make_quality_signal(
-            sourceName="foursquare",
-            sourceUrl="https://foursquare.com/v/...",
-            sourceAuthority=0.60,
-            signalType="venue_data",
-        )
-        assert signal["sourceName"] == "foursquare"
 
     def test_multiple_sources_same_node(self):
         """Multiple QualitySignals from different sources for one ActivityNode."""

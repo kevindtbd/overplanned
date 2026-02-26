@@ -1,5 +1,5 @@
 """
-Unit tests for all scrapers: Foursquare, BlogRSS, AtlasObscura, ArcticShift.
+Unit tests for all scrapers: BlogRSS, AtlasObscura, ArcticShift.
 
 Covers:
 - Mock HTTP responses per scraper
@@ -22,10 +22,6 @@ from services.api.scrapers.base import (
     SourceRegistry,
     retry_with_backoff,
 )
-from services.api.scrapers.foursquare import (
-    FoursquareScraper,
-    map_foursquare_category,
-)
 from services.api.scrapers.atlas_obscura import (
     AtlasObscuraScraper,
     _compute_hidden_gem_score,
@@ -40,7 +36,6 @@ from services.api.scrapers.arctic_shift import (
 )
 
 from .conftest import (
-    make_foursquare_venue,
     make_http_response,
     make_atlas_card_html,
 )
@@ -117,84 +112,6 @@ class TestRetryAndDeadLetter:
             DeadLetterQueue.add("src", {}, "err")
             DeadLetterQueue.clear()
             assert DeadLetterQueue.read_all() == []
-
-
-# ===================================================================
-# Foursquare scraper tests
-# ===================================================================
-
-
-class TestFoursquareScraper:
-    @pytest.fixture
-    def scraper(self, tmp_path):
-        """Create a FoursquareScraper with mocked env + quota."""
-        with patch.dict("os.environ", {"FOURSQUARE_API_KEY": "test-key"}):
-            with patch(
-                "services.api.scrapers.foursquare.QUOTA_PATH",
-                tmp_path / "quota.json",
-            ):
-                s = FoursquareScraper(near="Tokyo", limit=10)
-                return s
-
-    def test_parse_valid_venue(self, scraper):
-        raw = make_foursquare_venue(
-            fsq_id="fsq_abc",
-            name="Ichiran Ramen",
-            latitude=35.6762,
-            longitude=139.6503,
-            category_id="13065",
-        )
-        parsed = scraper.parse(raw)
-
-        assert parsed is not None
-        assert parsed["name"] == "Ichiran Ramen"
-        assert parsed["category"] == "dining"
-        assert parsed["latitude"] == 35.6762
-        assert parsed["foursquareId"] == "fsq_abc"
-        assert parsed["isCanonical"] is True
-        assert parsed["sourceCount"] == 1
-
-    def test_parse_missing_geocodes_returns_none(self, scraper):
-        raw = {"fsq_id": "x", "name": "No Location", "geocodes": {}}
-        assert scraper.parse(raw) is None
-
-    def test_parse_missing_name_returns_none(self, scraper):
-        raw = {
-            "fsq_id": "x",
-            "name": None,
-            "geocodes": {"main": {"latitude": 0, "longitude": 0}},
-        }
-        assert scraper.parse(raw) is None
-
-    def test_store_accumulates_node_and_signal(self, scraper):
-        raw = make_foursquare_venue(fsq_id="fsq_store_test")
-        parsed = scraper.parse(raw)
-        scraper.store(parsed)
-
-        results = scraper.get_results()
-        assert len(results["nodes"]) == 1
-        assert len(results["quality_signals"]) == 1
-
-        signal = results["quality_signals"][0]
-        assert signal["sourceName"] == "foursquare"
-        assert signal["sourceAuthority"] == 0.75
-        assert signal["signalType"] == "mention"
-
-    def test_foursquare_category_mapping(self):
-        assert map_foursquare_category("13065") == "dining"
-        assert map_foursquare_category("16032") == "outdoors"
-        assert map_foursquare_category("10025") == "culture"
-        assert map_foursquare_category("99999") == "experience"  # unknown → fallback
-
-    def test_scrape_raises_on_http_500(self, scraper, tmp_path):
-        mock_resp = make_http_response(status_code=500)
-        with patch.object(scraper._client, "get", return_value=mock_resp):
-            with patch(
-                "services.api.scrapers.foursquare.QUOTA_PATH",
-                tmp_path / "quota.json",
-            ):
-                with pytest.raises(Exception):
-                    scraper.scrape()
 
 
 # ===================================================================

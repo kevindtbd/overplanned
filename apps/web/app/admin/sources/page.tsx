@@ -571,7 +571,7 @@ export default function AdminSourcesPage() {
                 rows={4}
                 value={perSourceDraft}
                 onChange={(e) => setPerSourceDraft(e.target.value)}
-                placeholder={'foursquare=48\nreddit=168'}
+                placeholder={'reddit=168\natlas_obscura=72'}
                 className="w-full rounded border border-ink-700 bg-white px-3 py-2 font-dm-mono text-xs text-ink-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
