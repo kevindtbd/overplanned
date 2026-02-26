@@ -70,20 +70,30 @@ steps:
           --address 0.0.0.0 --port 5432 \
           overplanned-app:us-central1:overplanned
 
-  # ── Run Prisma migrations (before deploy, after tests pass) ──
-  - id: migrate-db
+  # ── ONE-SHOT: resolve failed migration (remove after successful deploy) ──
+  - id: resolve-failed-migration
     name: node:20
     waitFor: ['start-sql-proxy']
     entrypoint: bash
     args:
       - -c
       - |
-        # Wait for proxy to be ready
         for i in 1 2 3 4 5; do
           nc -z cloud-sql-proxy 5432 && break
           echo "Waiting for Cloud SQL proxy..."
           sleep 2
         done
+        npx prisma@5.22.0 migrate resolve --rolled-back 20260226040000_prelaunch_behavioral_scaffolding --schema=packages/db/prisma/schema.prisma
+    secretEnv: ['DATABASE_URL']
+
+  # ── Run Prisma migrations (before deploy, after tests pass) ──
+  - id: migrate-db
+    name: node:20
+    waitFor: ['resolve-failed-migration']
+    entrypoint: bash
+    args:
+      - -c
+      - |
         npx prisma migrate deploy --schema=packages/db/prisma/schema.prisma
     secretEnv: ['DATABASE_URL']
 
