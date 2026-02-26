@@ -193,26 +193,28 @@ async def run_rule_inference(
 
     async with pool.acquire() as conn:
         # Load the vibe tag vocabulary: slug → id
-        rows = await conn.fetch("SELECT id, slug FROM vibe_tags WHERE is_active = true")
+        # NOTE: Prisma uses PascalCase table names and camelCase columns (quoted).
+        # Post-canary we'll standardize with @@map; for now, quote everything.
+        rows = await conn.fetch('SELECT id, slug FROM "VibeTag" WHERE "isActive" = true')
         tag_lookup: dict[str, str] = {r["slug"]: r["id"] for r in rows}
 
         # Build the node query
         if node_ids:
             query = """
-                SELECT id, category, price_level, subcategory
-                FROM activity_nodes
+                SELECT id, category, "priceLevel", subcategory
+                FROM "ActivityNode"
                 WHERE id = ANY($1::text[])
-                  AND is_canonical = true
+                  AND "isCanonical" = true
                   AND status != 'archived'
             """
             all_nodes = await conn.fetch(query, node_ids)
         else:
             query = """
-                SELECT id, category, price_level, subcategory
-                FROM activity_nodes
-                WHERE is_canonical = true
+                SELECT id, category, "priceLevel", subcategory
+                FROM "ActivityNode"
+                WHERE "isCanonical" = true
                   AND status != 'archived'
-                ORDER BY created_at
+                ORDER BY "createdAt"
             """
             all_nodes = await conn.fetch(query)
 
@@ -227,7 +229,7 @@ async def run_rule_inference(
                 stats.nodes_processed += 1
                 node_id = node["id"]
                 category = node["category"]
-                price_level = node["price_level"]
+                price_level = node["priceLevel"]
                 subcategory = node["subcategory"]
 
                 tags = compute_tags_for_node(category, price_level, subcategory)
@@ -258,10 +260,10 @@ async def run_rule_inference(
             try:
                 result = await conn.executemany(
                     """
-                    INSERT INTO activity_node_vibe_tags
-                        (id, activity_node_id, vibe_tag_id, score, source, created_at)
+                    INSERT INTO "ActivityNodeVibeTag"
+                        (id, "activityNodeId", "vibeTagId", score, source, "createdAt")
                     VALUES ($1, $2, $3, $4, $5, NOW())
-                    ON CONFLICT (activity_node_id, vibe_tag_id, source)
+                    ON CONFLICT ("activityNodeId", "vibeTagId", source)
                     DO UPDATE SET score = EXCLUDED.score
                     """,
                     insert_rows,
