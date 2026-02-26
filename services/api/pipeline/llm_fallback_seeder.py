@@ -447,13 +447,14 @@ async def _geocode_venues(
     for slug, venue in venues.items():
         try:
             query = f"{venue.name}, {city_name}"
-            resp = await client.get(
+            resp = await client.post(
                 "https://places.googleapis.com/v1/places:searchText",
                 headers={
                     "X-Goog-Api-Key": api_key,
                     "X-Goog-FieldMask": "places.id,places.location,places.formattedAddress",
+                    "Content-Type": "application/json",
                 },
-                params={"textQuery": query},
+                json={"textQuery": query},
                 timeout=10.0,
             )
             resp.raise_for_status()
@@ -630,13 +631,14 @@ async def _geocode_single_node(
 
     for attempt in range(GEOCODE_RETRY_MAX):
         try:
-            resp = await client.get(
+            resp = await client.post(
                 "https://places.googleapis.com/v1/places:searchText",
                 headers={
                     "X-Goog-Api-Key": api_key,
                     "X-Goog-FieldMask": "places.id,places.location,places.formattedAddress",
+                    "Content-Type": "application/json",
                 },
-                params={"textQuery": query},
+                json={"textQuery": query},
                 timeout=10.0,
             )
 

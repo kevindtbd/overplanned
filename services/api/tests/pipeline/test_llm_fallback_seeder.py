@@ -401,14 +401,20 @@ class TestRunLlmFallback:
             "usage": {"input_tokens": 500, "output_tokens": 100},
         }
 
+        geocode_resp = MagicMock(
+            status_code=200,
+            raise_for_status=MagicMock(),
+            json=MagicMock(return_value={"places": []}),
+        )
+
+        def _route_post(url, **kwargs):
+            if "anthropic" in url:
+                return mock_response
+            return geocode_resp
+
         with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as MockClient:
             mock_client = AsyncMock()
-            mock_client.post.return_value = mock_response
-            mock_client.get.return_value = MagicMock(
-                status_code=200,
-                raise_for_status=MagicMock(),
-                json=MagicMock(return_value={"places": []}),
-            )
+            mock_client.post = AsyncMock(side_effect=_route_post)
             MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_client)
             MockClient.return_value.__aexit__ = AsyncMock(return_value=False)
 
@@ -696,7 +702,7 @@ class TestGeocodeBackfill:
 
         with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
-            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.post = AsyncMock(return_value=mock_resp)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
             mock_client_cls.return_value = mock_client
@@ -745,7 +751,7 @@ class TestGeocodeBackfill:
 
         with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
-            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.post = AsyncMock(return_value=mock_resp)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
             mock_client_cls.return_value = mock_client
@@ -786,7 +792,7 @@ class TestGeocodeBackfill:
 
         with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
-            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.post = AsyncMock(return_value=mock_resp)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
             mock_client_cls.return_value = mock_client
@@ -816,7 +822,7 @@ class TestGeocodeBackfill:
 
         with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
-            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.post = AsyncMock(return_value=mock_resp)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
             mock_client_cls.return_value = mock_client
@@ -856,7 +862,7 @@ class TestGeocodeBackfill:
 
         with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
-            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.post = AsyncMock(return_value=mock_resp)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
             mock_client_cls.return_value = mock_client
@@ -902,7 +908,7 @@ class TestGeocodeBackfill:
 
         with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
-            mock_client.get = AsyncMock(side_effect=[
+            mock_client.post = AsyncMock(side_effect=[
                 Exception("Network error"),
                 Exception("Network error"),
                 Exception("Network error"),  # 3 retries for venue A
@@ -944,7 +950,7 @@ class TestGeocodeBackfill:
 
         with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
-            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.post = AsyncMock(return_value=mock_resp)
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
             mock_client_cls.return_value = mock_client
