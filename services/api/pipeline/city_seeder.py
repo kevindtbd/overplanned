@@ -38,7 +38,7 @@ import asyncpg
 
 from services.api.pipeline.city_configs import validate_city_seed, ValidationResult
 from services.api.pipeline.entity_resolution import EntityResolver
-from services.api.pipeline.llm_fallback_seeder import run_llm_fallback
+from services.api.pipeline.llm_fallback_seeder import run_llm_fallback, geocode_backfill
 from services.api.pipeline.vibe_extraction import run_extraction
 from services.api.pipeline.rule_inference import run_rule_inference
 from services.api.pipeline.convergence import run_convergence_scoring
@@ -67,6 +67,7 @@ class StepStatus(str, Enum):
 class PipelineStep(str, Enum):
     SCRAPE = "scrape"
     LLM_FALLBACK = "llm_fallback"
+    GEOCODE_BACKFILL = "geocode_backfill"
     ENTITY_RESOLUTION = "entity_resolution"
     VIBE_EXTRACTION = "vibe_extraction"
     RULE_INFERENCE = "rule_inference"
@@ -78,6 +79,7 @@ class PipelineStep(str, Enum):
 STEP_ORDER: list[PipelineStep] = [
     PipelineStep.SCRAPE,
     PipelineStep.LLM_FALLBACK,
+    PipelineStep.GEOCODE_BACKFILL,
     PipelineStep.ENTITY_RESOLUTION,
     PipelineStep.VIBE_EXTRACTION,
     PipelineStep.RULE_INFERENCE,
@@ -691,10 +693,12 @@ async def seed_city(
         _mark_step_done(progress, PipelineStep.LLM_FALLBACK, {"skipped": True, "reason": reason})
         result.steps_completed += 1
     elif _should_run_step(progress, PipelineStep.LLM_FALLBACK):
-        logger.info("[2/7] LLM fallback node creation for %s...", city)
+        logger.info("[2/8] LLM fallback node creation for %s...", city)
         _mark_step_start(progress, PipelineStep.LLM_FALLBACK)
         try:
-            fallback_stats = await run_llm_fallback(pool, city, api_key=api_key)
+            fallback_stats = await run_llm_fallback(
+                pool, city, api_key=api_key, skip_geocode=True,
+            )
             _mark_step_done(progress, PipelineStep.LLM_FALLBACK, {
                 "venues_created": fallback_stats.venues_created,
                 "venues_existing": fallback_stats.venues_existing,
@@ -711,10 +715,43 @@ async def seed_city(
             result.steps_failed += 1
             logger.exception("LLM fallback seeder failed for %s", city)
     else:
-        logger.info("[2/7] LLM fallback already completed, skipping")
+        logger.info("[2/8] LLM fallback already completed, skipping")
         result.steps_completed += 1
 
-    # --- Step 3: Entity Resolution ---
+    # --- Step 2.5: Geocode Backfill ---
+    # Geocodes LLM fallback nodes stuck at city bbox center.
+    # Must run BEFORE entity resolution so proximity tier has real coordinates.
+    google_places_key = os.environ.get("GOOGLE_PLACES_API_KEY")
+    if not google_places_key:
+        logger.info("[3/8] Skipping geocode backfill (no GOOGLE_PLACES_API_KEY)")
+        _mark_step_done(progress, PipelineStep.GEOCODE_BACKFILL, {
+            "skipped": True, "reason": "no API key",
+        })
+        result.steps_completed += 1
+    elif _should_run_step(progress, PipelineStep.GEOCODE_BACKFILL):
+        logger.info("[3/8] Geocode backfill for %s...", city)
+        _mark_step_start(progress, PipelineStep.GEOCODE_BACKFILL)
+        try:
+            geo_stats = await geocode_backfill(
+                pool, city, google_places_key=google_places_key,
+            )
+            _mark_step_done(progress, PipelineStep.GEOCODE_BACKFILL, {
+                "nodes_found": geo_stats.nodes_found,
+                "nodes_geocoded": geo_stats.nodes_geocoded,
+                "nodes_failed": geo_stats.nodes_failed,
+                "nodes_skipped": geo_stats.nodes_skipped,
+            })
+            result.steps_completed += 1
+        except Exception as exc:
+            _mark_step_failed(progress, PipelineStep.GEOCODE_BACKFILL, str(exc))
+            result.errors.append(f"geocode_backfill: {exc}")
+            result.steps_failed += 1
+            logger.exception("Geocode backfill failed for %s", city)
+    else:
+        logger.info("[3/8] Geocode backfill already completed, skipping")
+        result.steps_completed += 1
+
+    # --- Step 4: Entity Resolution ---
     if _should_run_step(progress, PipelineStep.ENTITY_RESOLUTION):
         logger.info("[3/7] Entity resolution for %s...", city)
         _mark_step_start(progress, PipelineStep.ENTITY_RESOLUTION)

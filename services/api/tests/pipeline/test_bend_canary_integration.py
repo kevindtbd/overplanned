@@ -371,10 +371,11 @@ class TestConvergenceScoringForBend:
 class TestBendPipelineStepOrder:
     """Verify the pipeline steps execute in correct order for Bend."""
 
-    def test_seven_steps_in_order(self):
+    def test_eight_steps_in_order(self):
         expected = [
             "scrape",
             "llm_fallback",
+            "geocode_backfill",
             "entity_resolution",
             "vibe_extraction",
             "rule_inference",
@@ -448,7 +449,7 @@ class TestBendEndToEndMocked:
 
             assert result.city == "bend"
             assert result.success is True
-            assert result.steps_completed == 7  # all 7, qdrant skipped but counted
+            assert result.steps_completed == 8  # all 8, qdrant skipped but counted
             assert result.steps_failed == 0
             assert result.total_duration_s >= 0
 

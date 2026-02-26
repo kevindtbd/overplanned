@@ -217,6 +217,7 @@ class TestPipelineStepOrder:
         expected = [
             "scrape",
             "llm_fallback",
+            "geocode_backfill",
             "entity_resolution",
             "vibe_extraction",
             "rule_inference",

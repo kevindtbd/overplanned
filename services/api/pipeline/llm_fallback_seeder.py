@@ -26,8 +26,10 @@ CLI:
 """
 
 import asyncio
+import hashlib
 import json
 import logging
+import math
 import os
 import re
 import time
@@ -134,6 +136,44 @@ class FallbackStats:
     estimated_cost_usd: float = 0.0
     latency_seconds: float = 0.0
     errors: list[str] = field(default_factory=list)
+
+
+@dataclass
+class GeocodeBackfillStats:
+    """Aggregated stats for a geocode backfill run."""
+    nodes_found: int = 0
+    nodes_geocoded: int = 0
+    nodes_failed: int = 0
+    nodes_skipped: int = 0
+    latency_seconds: float = 0.0
+
+
+# ---------------------------------------------------------------------------
+# Geocode result validation
+# ---------------------------------------------------------------------------
+
+def _validate_geocode_result(
+    lat: Any, lng: Any, place_id: Any, address: Any,
+) -> bool:
+    """Validate geocode response fields before storing in DB."""
+    if not isinstance(lat, (int, float)) or not isinstance(lng, (int, float)):
+        return False
+    if math.isnan(lat) or math.isnan(lng) or math.isinf(lat) or math.isinf(lng):
+        return False
+    if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+        return False
+    if place_id is not None and (not isinstance(place_id, str) or len(place_id) > 200):
+        return False
+    if address is not None and len(str(address)) > 500:
+        return False
+    return True
+
+
+def _compute_content_hash(name: str, lat: float, lng: float, category: str) -> str:
+    """SHA-256 hash matching entity_resolution.compute_content_hash."""
+    normalized = re.sub(r"\s+", " ", name.lower().strip())
+    payload = f"{normalized}|{lat:.4f}|{lng:.4f}|{category}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -434,6 +474,235 @@ async def _geocode_venues(
         except Exception as exc:
             stats.geocode_skipped += 1
             logger.debug("Geocode failed for %s: %s", venue.name, exc)
+
+
+# ---------------------------------------------------------------------------
+# Geocode backfill (post-creation, updates existing nodes)
+# ---------------------------------------------------------------------------
+
+GEOCODE_RETRY_MAX = 3
+GEOCODE_RETRY_BACKOFF = 2.0
+GEOCODE_INTER_REQUEST_DELAY = 0.15  # ~6.6 QPS
+
+
+async def geocode_backfill(
+    pool: asyncpg.Pool,
+    city_slug: str,
+    *,
+    google_places_key: Optional[str] = None,  # production reads from env var
+    limit: int = 100,
+) -> GeocodeBackfillStats:
+    """
+    Geocode ActivityNodes stuck at city bbox center coordinates.
+
+    Finds nodes within 200m of the city's bbox center that have no
+    googlePlaceId, calls Google Places Text Search for real lat/lng,
+    and updates the nodes in-place (including contentHash recomputation).
+
+    Args:
+        pool: asyncpg connection pool
+        city_slug: City slug matching CITY_CONFIGS key
+        google_places_key: Google Places API key (falls back to
+            GOOGLE_PLACES_API_KEY env var)
+        limit: max nodes to geocode per run (cost control)
+
+    Returns:
+        GeocodeBackfillStats with run metrics
+    """
+    t0 = time.monotonic()
+    google_places_key = google_places_key or os.environ.get("GOOGLE_PLACES_API_KEY")
+    stats = GeocodeBackfillStats()
+
+    city_config = get_city_config(city_slug)
+    center_lat = (city_config.bbox.lat_min + city_config.bbox.lat_max) / 2
+    center_lng = (city_config.bbox.lng_min + city_config.bbox.lng_max) / 2
+
+    if not google_places_key:
+        # Count how many nodes would need geocoding
+        count = await pool.fetchval(
+            """
+            SELECT COUNT(*) FROM activity_nodes
+            WHERE city = $1
+              AND "googlePlaceId" IS NULL
+              AND ST_Distance(
+                  ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
+                  ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography
+              ) < 200
+            """,
+            city_config.name, center_lng, center_lat,
+        )
+        stats.nodes_found = count or 0
+        stats.nodes_skipped = stats.nodes_found
+        logger.info(
+            "No Google Places API key -- skipping geocode backfill for %d nodes in %s",
+            stats.nodes_found, city_slug,
+        )
+        stats.latency_seconds = round(time.monotonic() - t0, 2)
+        return stats
+
+    # Find nodes at bbox center needing geocoding
+    nodes = await pool.fetch(
+        """
+        SELECT id, name, "canonicalName", category, latitude, longitude
+        FROM activity_nodes
+        WHERE city = $1
+          AND "googlePlaceId" IS NULL
+          AND ST_Distance(
+              ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
+              ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography
+          ) < 200
+        ORDER BY name
+        LIMIT $4
+        """,
+        city_config.name, center_lng, center_lat, limit,
+    )
+
+    stats.nodes_found = len(nodes)
+    if not nodes:
+        logger.info("No ungeocoded nodes at bbox center for %s", city_slug)
+        stats.latency_seconds = round(time.monotonic() - t0, 2)
+        return stats
+
+    logger.info("Found %d nodes at bbox center for %s, geocoding...", len(nodes), city_slug)
+
+    async with httpx.AsyncClient() as client:
+        for node in nodes:
+            node_id = node["id"]
+            node_name = node["name"]
+            category = node["category"]
+
+            try:
+                lat, lng, address, place_id = await _geocode_single_node(
+                    client, google_places_key, node_name, city_config,
+                )
+
+                if lat is not None:
+                    # Recompute content hash with new coordinates
+                    canonical = node["canonicalName"] or node_name.lower()
+                    content_hash = _compute_content_hash(canonical, lat, lng, category)
+
+                    await pool.execute(
+                        """
+                        UPDATE activity_nodes
+                        SET latitude = $1, longitude = $2, address = $3,
+                            "googlePlaceId" = $4, "contentHash" = $5,
+                            "updatedAt" = $6
+                        WHERE id = $7
+                        """,
+                        lat, lng, address, place_id, content_hash,
+                        datetime.now(timezone.utc).replace(tzinfo=None),
+                        node_id,
+                    )
+                    stats.nodes_geocoded += 1
+                    logger.debug("Geocoded %s -> (%.4f, %.4f)", node_name, lat, lng)
+                else:
+                    stats.nodes_skipped += 1
+
+            except Exception as exc:
+                stats.nodes_failed += 1
+                logger.warning("Geocode failed for %s: %s", node_name, exc)
+
+            # Rate limit: ~6.6 QPS
+            await asyncio.sleep(GEOCODE_INTER_REQUEST_DELAY)
+
+    stats.latency_seconds = round(time.monotonic() - t0, 2)
+    logger.info(
+        "Geocode backfill %s: found=%d geocoded=%d skipped=%d failed=%d (%.1fs)",
+        city_slug, stats.nodes_found, stats.nodes_geocoded,
+        stats.nodes_skipped, stats.nodes_failed, stats.latency_seconds,
+    )
+    return stats
+
+
+async def _geocode_single_node(
+    client: httpx.AsyncClient,
+    api_key: str,
+    venue_name: str,
+    city_config: CityConfig,
+) -> tuple[Optional[float], Optional[float], Optional[str], Optional[str]]:
+    """
+    Geocode a single venue via Google Places Text Search.
+
+    Returns (lat, lng, address, place_id) or (None, None, None, None) on failure.
+    Includes bbox validation and response sanitization.
+    """
+    query = f"{venue_name}, {city_config.name}"
+
+    for attempt in range(GEOCODE_RETRY_MAX):
+        try:
+            resp = await client.get(
+                "https://places.googleapis.com/v1/places:searchText",
+                headers={
+                    "X-Goog-Api-Key": api_key,
+                    "X-Goog-FieldMask": "places.id,places.location,places.formattedAddress",
+                },
+                params={"textQuery": query},
+                timeout=10.0,
+            )
+
+            if resp.status_code == 429 or resp.status_code >= 500:
+                wait = GEOCODE_RETRY_BACKOFF ** (attempt + 1)
+                logger.warning(
+                    "Google Places %d for %s, retry %d/%d in %.1fs",
+                    resp.status_code, venue_name, attempt + 1, GEOCODE_RETRY_MAX, wait,
+                )
+                await asyncio.sleep(wait)
+                continue
+
+            resp.raise_for_status()
+            data = resp.json()
+            places = data.get("places", [])
+
+            if not places:
+                logger.debug("No Places result for %s", venue_name)
+                return None, None, None, None
+
+            place = places[0]
+            loc = place.get("location", {})
+            lat = loc.get("latitude")
+            lng = loc.get("longitude")
+            place_id = place.get("id")
+            address = place.get("formattedAddress")
+
+            # Validate response data
+            if not _validate_geocode_result(lat, lng, place_id, address):
+                logger.warning("Invalid geocode data for %s: lat=%s lng=%s", venue_name, lat, lng)
+                return None, None, None, None
+
+            # Bbox validation: reject results outside city bounds
+            if not city_config.bbox.contains(lat, lng):
+                logger.info(
+                    "Geocode result outside bbox for %s (%.4f, %.4f) -- keeping fallback coords",
+                    venue_name, lat, lng,
+                )
+                return None, None, None, None
+
+            # Truncate address if needed
+            if address and len(address) > 500:
+                address = address[:500]
+
+            return lat, lng, address, place_id
+
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code < 500 and exc.response.status_code != 429:
+                # 4xx (non-429): skip immediately, don't retry
+                logger.debug("Google Places %d for %s, skipping", exc.response.status_code, venue_name)
+                return None, None, None, None
+            if attempt < GEOCODE_RETRY_MAX - 1:
+                wait = GEOCODE_RETRY_BACKOFF ** (attempt + 1)
+                await asyncio.sleep(wait)
+                continue
+            return None, None, None, None
+
+        except Exception as exc:
+            if attempt < GEOCODE_RETRY_MAX - 1:
+                wait = GEOCODE_RETRY_BACKOFF ** (attempt + 1)
+                logger.debug("Geocode error for %s, retry %d: %s", venue_name, attempt + 1, exc)
+                await asyncio.sleep(wait)
+                continue
+            return None, None, None, None
+
+    return None, None, None, None
 
 
 # ---------------------------------------------------------------------------
@@ -772,6 +1041,7 @@ async def run_llm_fallback(
     google_places_key: Optional[str] = None,
     gcs_bucket: str = "overplanned-raw",
     limit: int = 200,
+    skip_geocode: bool = False,
 ) -> FallbackStats:
     """
     Main entry point: extract venues from unlinked signals and create nodes.
@@ -784,6 +1054,8 @@ async def run_llm_fallback(
             GOOGLE_PLACES_API_KEY env)
         gcs_bucket: GCS bucket for raw data persistence (default "overplanned-raw")
         limit: max unlinked signals to process
+        skip_geocode: Skip inline geocoding (city_seeder passes True since
+            it runs the dedicated geocode_backfill step instead)
 
     Returns:
         FallbackStats with full run metrics
@@ -865,8 +1137,12 @@ async def run_llm_fallback(
             stats.latency_seconds = round(time.monotonic() - t0, 2)
             return stats
 
-        # 4. Optional geocoding
-        await _geocode_venues(client, deduped, city_config.name, google_places_key, stats)
+        # 4. Optional geocoding (skipped when city_seeder runs dedicated backfill step)
+        if skip_geocode:
+            stats.geocode_skipped = len(deduped)
+            logger.info("Skipping inline geocoding (skip_geocode=True, %d venues)", len(deduped))
+        else:
+            await _geocode_venues(client, deduped, city_config.name, google_places_key, stats)
 
         # 4a. Persist geocoded venue data to GCS.
         # Written inside the httpx client context so it follows geocoding
@@ -945,6 +1221,10 @@ async def main() -> None:
     parser.add_argument("city", help="City slug (e.g. bend, austin, portland)")
     parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"))
     parser.add_argument("--limit", type=int, default=200, help="Max signals to process")
+    parser.add_argument("--geocode-backfill", action="store_true",
+                        help="Run geocode backfill only (no LLM extraction)")
+    parser.add_argument("--geocode-limit", type=int, default=100,
+                        help="Max nodes to geocode (default 100)")
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
 
@@ -959,12 +1239,15 @@ async def main() -> None:
 
     pool = await asyncpg.create_pool(args.database_url)
     try:
-        stats = await run_llm_fallback(pool, args.city, limit=args.limit)
-
-        if stats.errors:
-            logger.warning("Completed with %d errors: %s", len(stats.errors), stats.errors)
+        if args.geocode_backfill:
+            geo_stats = await geocode_backfill(pool, args.city, limit=args.geocode_limit)
+            logger.info("Geocode backfill: %s", geo_stats)
         else:
-            logger.info("Completed successfully: %s", stats)
+            stats = await run_llm_fallback(pool, args.city, limit=args.limit)
+            if stats.errors:
+                logger.warning("Completed with %d errors: %s", len(stats.errors), stats.errors)
+            else:
+                logger.info("Completed successfully: %s", stats)
     finally:
         await pool.close()
 
