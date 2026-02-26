@@ -289,11 +289,13 @@ model ActivityNode {
   // V2 ML: scoring + feedback loop columns
   tourist_score            Float?
   tourist_local_divergence Float?
-  impression_count         Int    @default(0)
-  acceptance_count         Int    @default(0)
-  behavioral_quality_score Float  @default(0.5) // Laplace: (acceptance+1)/(impression+2)
-  llm_served_count         Int    @default(0)
-  ml_served_count          Int    @default(0)
+  impression_count         Int       @default(0)
+  acceptance_count         Int       @default(0)
+  behavioral_quality_score Float     @default(0.5) // Laplace: (acceptance+1)/(impression+2)
+  llm_served_count         Int       @default(0)
+  ml_served_count          Int       @default(0)
+  // Pre-launch behavioral scaffolding
+  behavioralUpdatedAt      DateTime? // timestamp of last behavioral write-back
 
   vibeTags       ActivityNodeVibeTag[]
   aliases        ActivityAlias[]
@@ -340,16 +342,18 @@ model ActivityAlias {
 }
 
 model QualitySignal {
-  id              String       @id @default(uuid())
-  activityNodeId  String
-  activityNode    ActivityNode @relation(fields: [activityNodeId], references: [id], onDelete: Cascade)
-  sourceName      String
-  sourceUrl       String?
-  sourceAuthority Float
-  signalType      String
-  rawExcerpt      String?
-  extractedAt     DateTime
-  createdAt       DateTime     @default(now())
+  id                  String       @id @default(uuid())
+  activityNodeId      String
+  activityNode        ActivityNode @relation(fields: [activityNodeId], references: [id], onDelete: Cascade)
+  sourceName          String
+  sourceUrl           String?
+  sourceAuthority     Float
+  signalType          String
+  rawExcerpt          String?
+  extractedAt         DateTime
+  // Pre-launch: data seeding pipeline provenance
+  extractionMetadata  Json?        // overrated_flag, price_signal, author_type, crowd_notes
+  createdAt           DateTime     @default(now())
 
   @@index([activityNodeId, sourceName])
 }
@@ -392,11 +396,16 @@ model BehavioralSignal {
   subflow        String? // context tag: which subflow generated this signal
   signal_weight  Float      @default(1.0) // confidence weight, SERVER-ONLY (never from client). CHECK [-1.0, 3.0] via migration SQL
   source         String     @default("user_behavioral") // origin: user_behavioral | synthetic_agent_v1 | backfill | chatgpt_import
+  // Pre-launch behavioral scaffolding
+  candidateSetId String?    // UUID linking to the RankingEvent that produced this signal
+  candidateIds   String[]   @default([]) // full candidate pool shown to user
+  metadata       Json?      // RECONCILE: column already exists in DB + SA model (signal_metadata attr)
   createdAt      DateTime   @default(now())
 
   @@index([userId, createdAt])
   @@index([userId, tripId, signalType, source]) // V2: compound index with source for quarantine queries
   @@index([activityNodeId, signalType])
+  @@index([candidateSetId])
 }
 
 model IntentionSignal {
@@ -428,6 +437,9 @@ model RawEvent {
   platform       String?
   screenWidth    Int?
   networkType    String?
+  // Pre-launch behavioral scaffolding
+  trainingExtracted Boolean   @default(false)
+  extractedAt       DateTime?
   createdAt      DateTime    @default(now())
 
   @@unique([userId, clientEventId])
@@ -436,6 +448,7 @@ model RawEvent {
   @@index([sessionId])
   @@index([createdAt])
   @@index([intentClass, eventType])
+  @@index([trainingExtracted, createdAt])
 }
 
 // ============================================================================
@@ -496,6 +509,14 @@ model RankingEvent {
   shadowModelVersion String?
   shadowRankedIds    String[]
   latencyMs          Int?
+  // Pre-launch behavioral scaffolding
+  acceptedId         String?
+  rejectedIds        String[] @default([])
+  viewedIds          String[] @default([])
+  viewDurations      Json?    // { activityNodeId: milliseconds_viewed }
+  weatherContext     Json?    // { condition, temp_celsius, precipitation_pct, wind_kph }
+  personaSnapshot    Json?    // denormalized persona dimensions at ranking time
+  candidateSetId     String?  @unique // UUID join key → BehavioralSignal.candidateSetId
   createdAt          DateTime @default(now())
 
   @@index([userId, createdAt])
@@ -992,6 +1013,11 @@ enum SignalType {
   negative_preference
   // V2 ML: subflow signals (Phase 5.1)
   rejection_recovery_trigger
+  // Pre-launch behavioral scaffolding
+  pre_trip_slot_swap
+  pre_trip_slot_removed
+  pre_trip_slot_added
+  pre_trip_reorder
 }
 
 enum TripPhase {

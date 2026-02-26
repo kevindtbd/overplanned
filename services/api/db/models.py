@@ -146,7 +146,12 @@ class BehavioralSignal(Base):
     subflow: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     signal_weight: Mapped[float] = mapped_column(Float, default=1.0)
     source: Mapped[str] = mapped_column(String, default="user_behavioral")
+    # NOTE: "metadata" is a reserved attr name in DeclarativeBase — use signal_metadata
+    # as the Python attr name with an explicit column("metadata") mapping.
     signal_metadata: Mapped[Optional[dict]] = mapped_column("metadata", JSON, nullable=True)
+    # Pre-launch behavioral scaffolding
+    candidateSetId: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    candidateIds: Mapped[list[str]] = mapped_column(ARRAY(String), server_default="{}")
     createdAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
@@ -178,4 +183,7 @@ class RawEvent(Base):
     surface: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     payload: Mapped[dict] = mapped_column(JSON)
     platform: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    # Pre-launch behavioral scaffolding
+    trainingExtracted: Mapped[bool] = mapped_column(Boolean, default=False)
+    extractedAt: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     createdAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
