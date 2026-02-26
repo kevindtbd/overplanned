@@ -1018,6 +1018,12 @@ enum SignalType {
   pre_trip_slot_removed
   pre_trip_slot_added
   pre_trip_reorder
+  // Pre-launch: explicit interaction signals (Wave 2)
+  slot_confirmed
+  slot_rejected
+  card_viewed
+  card_dismissed
+  card_impression
 }
 
 enum TripPhase {

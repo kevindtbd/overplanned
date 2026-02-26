@@ -169,6 +169,35 @@ class IntentionSignal(Base):
     createdAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class RankingEvent(Base):
+    __tablename__ = "RankingEvent"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(_uuid.uuid4()))
+    userId: Mapped[str] = mapped_column(String)
+    tripId: Mapped[str] = mapped_column(String)
+    sessionId: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    dayNumber: Mapped[int] = mapped_column(Integer)
+    modelName: Mapped[str] = mapped_column(String)
+    modelVersion: Mapped[str] = mapped_column(String)
+    candidateIds: Mapped[list[str]] = mapped_column(ARRAY(String))
+    rankedIds: Mapped[list[str]] = mapped_column(ARRAY(String))
+    selectedIds: Mapped[list[str]] = mapped_column(ARRAY(String))
+    surface: Mapped[str] = mapped_column(String)
+    shadowModelName: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    shadowModelVersion: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    shadowRankedIds: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    latencyMs: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    # Pre-launch behavioral scaffolding
+    acceptedId: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    rejectedIds: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    viewedIds: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    viewDurations: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    weatherContext: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    personaSnapshot: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    candidateSetId: Mapped[Optional[str]] = mapped_column(String, nullable=True, unique=True)
+    createdAt: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class RawEvent(Base):
     __tablename__ = "RawEvent"
 
