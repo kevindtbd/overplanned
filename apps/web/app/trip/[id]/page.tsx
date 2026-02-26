@@ -25,6 +25,7 @@ import { InviteCrewCard } from "@/components/trip/InviteCrewCard";
 import { SlotSkeleton, ErrorState } from "@/components/states";
 import { getCityPhoto } from "@/lib/city-photos";
 import { useTripDetail, type ApiSlot } from "@/lib/hooks/useTripDetail";
+import { useSignalEmitter, type TripPhase } from "@/lib/hooks/useSignalEmitter";
 
 // ---------- Helpers ----------
 
@@ -63,6 +64,16 @@ export default function TripDetailPage() {
 
   const { trip, setTrip, myRole, myUserId, hasReflected, fetchState, errorMessage, fetchTrip } =
     useTripDetail(tripId);
+
+  // Derive trip phase for behavioral signal logging
+  const tripPhase: TripPhase = useMemo(() => {
+    if (!trip) return "pre_trip";
+    if (trip.status === "active") return "active";
+    if (trip.status === "completed") return "post_trip";
+    return "pre_trip";
+  }, [trip]);
+
+  const { emitSignal } = useSignalEmitter({ tripId, tripPhase });
 
   const [currentDay, setCurrentDay] = useState(1);
 
@@ -162,6 +173,26 @@ export default function TripDetailPage() {
       // Dismiss welcome card on first slot action
       setShowWelcome(false);
 
+      // Emit behavioral signal for ALL actions (fire-and-forget, never blocks UI)
+      const targetSlot = trip?.slots.find((s) => s.id === event.slotId);
+      emitSignal({
+        signalType: event.signalType,
+        signalValue: event.signalValue,
+        slotId: event.slotId,
+        activityNodeId: targetSlot?.activityNode?.id,
+        rawAction: `${event.action}_button_tap`,
+        payload: {
+          original_activity_id: targetSlot?.activityNode?.id,
+          slot_index: targetSlot
+            ? trip!.slots
+                .filter((s) => s.dayNumber === targetSlot.dayNumber)
+                .findIndex((s) => s.id === event.slotId)
+            : undefined,
+          day_number: targetSlot?.dayNumber,
+          ...(event.moveData ?? {}),
+        },
+      });
+
       // Move action — delegate to move endpoint, refetch on completion
       if (event.action === "move" && event.moveData) {
         try {
@@ -222,7 +253,7 @@ export default function TripDetailPage() {
         fetchTrip();
       }
     },
-    [fetchTrip, setTrip]
+    [fetchTrip, setTrip, emitSignal, trip]
   );
 
   const handleStartTrip = useCallback(async () => {

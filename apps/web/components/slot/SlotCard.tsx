@@ -19,6 +19,7 @@ import { VibeChips, type VibeTagDisplay } from "./VibeChips";
 import { SlotActions, type SlotActionEvent } from "./SlotActions";
 import { VotePanel, type VoteChoice, type MemberVote, type VoteState } from "@/components/group/voting/VotePanel";
 import { PivotDrawer } from "@/components/trip/PivotDrawer";
+import { useCardViewTracker } from "@/lib/hooks/useCardViewTracker";
 
 // ---------- Types ----------
 
@@ -228,6 +229,13 @@ export function SlotCard({
   const statusConfig = STATUS_CONFIG[slot.status];
   const [showPivotDrawer, setShowPivotDrawer] = useState(false);
 
+  // Impression/dwell tracking via IntersectionObserver
+  const { ref: viewTrackerRef } = useCardViewTracker({
+    activityNodeId: slot.activityNodeId ?? slot.id,
+    position: slotIndex ?? 0,
+    tripId: tripId ?? "",
+  });
+
   const handleAction = useCallback(
     (event: SlotActionEvent) => {
       onAction(event);
@@ -378,6 +386,7 @@ export function SlotCard({
 
     return (
       <article
+        ref={viewTrackerRef}
         className={`
           group relative
           rounded-[13px]
@@ -488,6 +497,7 @@ export function SlotCard({
   // ---------- Photo-heavy (original) layout ----------
   return (
     <article
+      ref={viewTrackerRef}
       className={`
         group relative rounded-[13px]
         bg-surface shadow-card overflow-hidden

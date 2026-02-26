@@ -15,10 +15,18 @@ export type EventType =
   | "slot_confirm"
   | "slot_skip"
   | "slot_lock"
+  | "slot_moved"
+  | "slot_swap"
+  | "slot_complete"
   | "screen_view"
   | "tab_switch"
   | "scroll_depth"
-  | "card_dwell";
+  | "card_dwell"
+  | "discover_swipe_right"
+  | "discover_swipe_left"
+  | "discover_shortlist"
+  | "pivot_accepted"
+  | "pivot_rejected";
 
 export interface RawEvent {
   /** UUID v4 — client-generated for deduplication */
