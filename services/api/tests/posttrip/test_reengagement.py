@@ -40,18 +40,18 @@ class TestPushTokenRegistration:
     @pytest.mark.asyncio
     async def test_register_valid_ios_token(self, mock_db_posttrip):
         """Register an iOS push token."""
-        mock_db_posttrip.query_raw = AsyncMock(
-            side_effect=[
-                [],  # no existing
-                [{"id": "tok-1", "userId": "user-1", "deviceId": "dev-1",
-                  "platform": "ios", "isActive": True,
-                  "createdAt": datetime.now(timezone.utc),
-                  "updatedAt": datetime.now(timezone.utc)}],
-            ]
-        )
+        now = datetime.now(timezone.utc)
+        # First execute: SELECT existing token -> no rows (first() returns None)
+        mock_db_posttrip.returns_none()
+        # Second execute: INSERT ... RETURNING -> mappings().first() returns row
+        mock_db_posttrip.returns_mappings([{
+            "id": "tok-1", "userId": "user-1", "deviceId": "dev-1",
+            "platform": "ios", "isActive": True,
+            "createdAt": now, "updatedAt": now,
+        }])
 
         result = await register_push_token(
-            mock_db_posttrip,
+            mock_db_posttrip.mock,
             user_id="user-1",
             device_token="fcm-token-abc",
             platform="ios",
@@ -65,7 +65,7 @@ class TestPushTokenRegistration:
         """Invalid platform should raise ValueError."""
         with pytest.raises(ValueError, match="Invalid platform"):
             await register_push_token(
-                mock_db_posttrip,
+                mock_db_posttrip.mock,
                 user_id="user-1",
                 device_token="tok",
                 platform="blackberry",
@@ -75,18 +75,22 @@ class TestPushTokenRegistration:
     @pytest.mark.asyncio
     async def test_revoke_deactivates_token(self, mock_db_posttrip):
         """Revoking a token sets isActive=false."""
-        mock_db_posttrip.query_raw = AsyncMock(return_value=[{"id": "tok-1"}])
+        # execute: UPDATE ... RETURNING id -> .first() returns a row
+        mock_db_posttrip.returns_row("tok-1")
+
         result = await revoke_push_token(
-            mock_db_posttrip, user_id="user-1", device_id="dev-1"
+            mock_db_posttrip.mock, user_id="user-1", device_id="dev-1"
         )
         assert result is True
 
     @pytest.mark.asyncio
     async def test_revoke_nonexistent_returns_false(self, mock_db_posttrip):
         """Revoking a non-existent token returns False."""
-        mock_db_posttrip.query_raw = AsyncMock(return_value=[])
+        # execute: UPDATE ... RETURNING id -> .first() returns None
+        mock_db_posttrip.returns_none()
+
         result = await revoke_push_token(
-            mock_db_posttrip, user_id="user-1", device_id="dev-999"
+            mock_db_posttrip.mock, user_id="user-1", device_id="dev-999"
         )
         assert result is False
 
@@ -125,7 +129,7 @@ class TestPushEnqueue:
         dedup_key = "posttrip:push:sent:user-1:trip-1"
         await mock_redis_posttrip.setex(dedup_key, 86400, "1")
 
-        # Second attempt — should be blocked
+        # Second attempt -- should be blocked
         result = await enqueue_trip_completion_push(
             mock_redis_posttrip,
             user_id="user-1",
@@ -176,8 +180,8 @@ class TestPushQueueProcessing:
         })
         await mock_redis_posttrip.zadd(PUSH_QUEUE_KEY, {payload: past_time.timestamp()})
 
-        # Mock push tokens for user
-        mock_db_posttrip.query_raw = AsyncMock(return_value=[
+        # SA: get_active_tokens calls session.execute(text(...)) -> mappings().all()
+        mock_db_posttrip.returns_mappings([
             {"id": "tok-1", "deviceToken": "fcm-xxx", "platform": "ios", "deviceId": "dev-1"},
         ])
 
@@ -185,7 +189,7 @@ class TestPushQueueProcessing:
             mock_fcm.return_value = True
 
             stats = await process_push_queue(
-                mock_redis_posttrip, mock_db_posttrip, batch_size=10,
+                mock_redis_posttrip, mock_db_posttrip.mock, batch_size=10,
             )
 
         assert stats["sent"] == 1
@@ -206,11 +210,11 @@ class TestPushQueueProcessing:
         })
         await mock_redis_posttrip.zadd(PUSH_QUEUE_KEY, {payload: past.timestamp()})
 
-        # No tokens
-        mock_db_posttrip.query_raw = AsyncMock(return_value=[])
+        # SA: get_active_tokens -> mappings().all() returns empty
+        mock_db_posttrip.returns_mappings([])
 
         stats = await process_push_queue(
-            mock_redis_posttrip, mock_db_posttrip, batch_size=10,
+            mock_redis_posttrip, mock_db_posttrip.mock, batch_size=10,
         )
         assert stats["skipped"] == 1
 
@@ -218,7 +222,7 @@ class TestPushQueueProcessing:
     async def test_empty_queue_returns_zero_stats(self, mock_redis_posttrip, mock_db_posttrip):
         """Empty queue returns all-zero stats."""
         stats = await process_push_queue(
-            mock_redis_posttrip, mock_db_posttrip, batch_size=10,
+            mock_redis_posttrip, mock_db_posttrip.mock, batch_size=10,
         )
         assert stats == {"sent": 0, "failed": 0, "skipped": 0}
 
@@ -250,16 +254,16 @@ class TestEmailQueueProcessing:
         })
         await mock_redis_posttrip.zadd(EMAIL_QUEUE_KEY, {email_payload: past.timestamp()})
 
-        # Not unsubscribed, not rate limited
-        mock_db_posttrip.query_raw = AsyncMock(return_value=[])
-        mock_db_posttrip.itineraryslot.find_many = AsyncMock(return_value=[])
-        mock_db_posttrip.behavioralsignal.find_many = AsyncMock(return_value=[])
+        # SA: check_unsubscribed -> session.execute(text(...)) -> .first() returns None
+        mock_db_posttrip.returns_none()
+        # SA: _get_trip_highlights -> session.execute(text(...)) -> mappings().all() returns []
+        mock_db_posttrip.returns_mappings([])
 
         with patch("services.api.posttrip.reengagement.send_trip_memory_email") as mock_send:
             mock_send.return_value = True
 
             stats = await process_pending_emails(
-                mock_redis_posttrip, mock_db_posttrip, batch_size=10,
+                mock_redis_posttrip, mock_db_posttrip.mock, batch_size=10,
             )
 
         assert stats["sent"] == 1
@@ -280,11 +284,11 @@ class TestEmailQueueProcessing:
         })
         await mock_redis_posttrip.zadd(EMAIL_QUEUE_KEY, {email_payload: past.timestamp()})
 
-        # Unsubscribed
-        mock_db_posttrip.query_raw = AsyncMock(return_value=[{"1": 1}])
+        # SA: check_unsubscribed -> session.execute(text(...)) -> .first() returns a row
+        mock_db_posttrip.returns_row(1)
 
         stats = await process_pending_emails(
-            mock_redis_posttrip, mock_db_posttrip, batch_size=10,
+            mock_redis_posttrip, mock_db_posttrip.mock, batch_size=10,
         )
         assert stats["skipped"] == 1
 
@@ -304,14 +308,14 @@ class TestEmailQueueProcessing:
         })
         await mock_redis_posttrip.zadd(EMAIL_QUEUE_KEY, {email_payload: past.timestamp()})
 
-        # Not unsubscribed
-        mock_db_posttrip.query_raw = AsyncMock(return_value=[])
+        # SA: check_unsubscribed -> .first() returns None (not unsubscribed)
+        mock_db_posttrip.returns_none()
 
         # Rate limited
         await mock_redis_posttrip.setex("posttrip:email:sent:user-rl", 604800, "1")
 
         stats = await process_pending_emails(
-            mock_redis_posttrip, mock_db_posttrip, batch_size=10,
+            mock_redis_posttrip, mock_db_posttrip.mock, batch_size=10,
         )
         assert stats["rate_limited"] == 1
 
@@ -335,28 +339,26 @@ class TestDestinationSuggestion:
             s.userId = "user-1"
             signals.append(s)
 
-        mock_db_posttrip.behavioralsignal.find_many = AsyncMock(return_value=signals)
+        # SA: select BehavioralSignal -> scalars().all() returns signals
+        mock_db_posttrip.returns_many(signals)
 
-        activities = []
-        for i in range(5):
-            a = MagicMock()
-            a.id = f"node-{i}"
-            a.name = f"Activity {i}"
-            a.category = "dining"
-            a.city = "Tokyo"
-            activities.append(a)
+        # SA: raw SQL select ActivityNode -> mappings().all()
+        activities = [
+            {"id": f"node-{i}", "name": f"Activity {i}", "category": "dining", "city": "Tokyo"}
+            for i in range(5)
+        ]
+        mock_db_posttrip.returns_mappings(activities)
 
-        mock_db_posttrip.activitynode.find_many = AsyncMock(return_value=activities)
-
+        # SA: select Trip -> scalars().first() returns trip
         trip = MagicMock()
         trip.city = "Tokyo"
-        mock_db_posttrip.trip.find_unique = AsyncMock(return_value=trip)
+        mock_db_posttrip.returns_one(trip)
 
         with patch("services.api.posttrip.reengagement.embedding_service") as mock_embed:
             mock_embed.embed_single = MagicMock(return_value=[0.1] * 768)
 
             result = await suggest_next_destination(
-                mock_db_posttrip,
+                mock_db_posttrip.mock,
                 mock_qdrant_posttrip,
                 user_id="user-1",
                 completed_trip_id="trip-1",
@@ -374,11 +376,14 @@ class TestDestinationSuggestion:
         self, mock_db_posttrip, mock_qdrant_posttrip,
     ):
         """With < 3 positive signals, should return None."""
-        signals = [MagicMock(activityNodeId="node-1", userId="user-1")]
-        mock_db_posttrip.behavioralsignal.find_many = AsyncMock(return_value=signals)
+        s = MagicMock()
+        s.activityNodeId = "node-1"
+        s.userId = "user-1"
+        # SA: select BehavioralSignal -> scalars().all() returns [s]
+        mock_db_posttrip.returns_many([s])
 
         result = await suggest_next_destination(
-            mock_db_posttrip,
+            mock_db_posttrip.mock,
             mock_qdrant_posttrip,
             user_id="user-1",
             completed_trip_id="trip-1",
@@ -391,27 +396,23 @@ class TestDestinationSuggestion:
     ):
         """Suggestion should NOT include the city that was just visited."""
         signals = [MagicMock(activityNodeId=f"n-{i}", userId="u-1") for i in range(5)]
-        mock_db_posttrip.behavioralsignal.find_many = AsyncMock(return_value=signals)
+        mock_db_posttrip.returns_many(signals)
 
-        activities = []
-        for i in range(5):
-            a = MagicMock()
-            a.id = f"n-{i}"
-            a.name = f"Act {i}"
-            a.category = "dining"
-            a.city = "Tokyo"
-            activities.append(a)
-        mock_db_posttrip.activitynode.find_many = AsyncMock(return_value=activities)
+        activities = [
+            {"id": f"n-{i}", "name": f"Act {i}", "category": "dining", "city": "Tokyo"}
+            for i in range(5)
+        ]
+        mock_db_posttrip.returns_mappings(activities)
 
         trip = MagicMock()
         trip.city = "Tokyo"
-        mock_db_posttrip.trip.find_unique = AsyncMock(return_value=trip)
+        mock_db_posttrip.returns_one(trip)
 
         with patch("services.api.posttrip.reengagement.embedding_service") as mock_embed:
             mock_embed.embed_single = MagicMock(return_value=[0.1] * 768)
 
             result = await suggest_next_destination(
-                mock_db_posttrip,
+                mock_db_posttrip.mock,
                 mock_qdrant_posttrip,
                 user_id="u-1",
                 completed_trip_id="trip-1",

@@ -13,8 +13,7 @@ RUN pip install --no-cache-dir -r services/api/requirements.txt
 COPY services/ /app/services/
 COPY prisma/ /app/prisma/
 
-# Generate Prisma Python client from schema
-RUN python -m prisma generate --schema=/app/prisma/schema.prisma
+# No generate step needed -- SA models are plain Python
 
 ENV PYTHONPATH=/app
 EXPOSE 8000

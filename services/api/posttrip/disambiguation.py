@@ -6,11 +6,15 @@ Explicit feedback (source='explicit_feedback') always takes precedence over rule
 """
 import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
+from uuid import uuid4
 
-from prisma import Prisma
-from prisma.models import BehavioralSignal, IntentionSignal
+from sqlalchemy import and_, insert, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from services.api.db.models import BehavioralSignal, IntentionSignal, RawEvent, Trip
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +76,7 @@ def evaluate_rule(rule: dict[str, Any], context: dict[str, Any]) -> bool:
 
 
 async def get_signal_context(
-    db: Prisma, signal: BehavioralSignal
+    session: AsyncSession, signal
 ) -> dict[str, Any]:
     """
     Build context dictionary from BehavioralSignal and related data.
@@ -82,25 +86,35 @@ async def get_signal_context(
     - Weather data from raw event
     - Trip context (is_group, timing)
     - User history (previously_visited)
+
+    NOTE: signal attributes use camelCase (SA model mirrors DB column names).
     """
     context: dict[str, Any] = {
-        "signal_type": signal.signal_type,
-        "user_id": signal.user_id,
+        "signal_type": signal.signalType,
+        "user_id": signal.userId,
     }
 
     # Extract metadata from signal
-    meta = signal.metadata or {}
+    meta = signal.signal_metadata or {}
 
     # Activity category (from slot or activity node)
     if "activity_category" in meta:
         context["activity_category"] = meta["activity_category"]
 
     # Weather condition (from raw event if available)
-    if signal.raw_event_id:
-        raw_event = await db.rawevent.find_unique(where={"id": signal.raw_event_id})
-        if raw_event and raw_event.payload:
-            if "weather" in raw_event.payload:
-                context["weather_condition"] = raw_event.payload["weather"]
+    if signal.slotId:
+        # rawEventId not on BehavioralSignal in current schema;
+        # weather comes from weatherContext or metadata
+        pass
+
+    # Check weatherContext field
+    if signal.weatherContext:
+        try:
+            weather_data = json.loads(signal.weatherContext) if isinstance(signal.weatherContext, str) else signal.weatherContext
+            if isinstance(weather_data, dict) and "condition" in weather_data:
+                context["weather_condition"] = weather_data["condition"]
+        except (json.JSONDecodeError, TypeError):
+            pass
 
     # Time overrun (if previous slot ran late)
     if "time_overrun" in meta:
@@ -111,13 +125,12 @@ async def get_signal_context(
         context["distance_km"] = meta["distance_km"]
 
     # Group trip context
-    if signal.trip_id:
-        trip = await db.trip.find_unique(
-            where={"id": signal.trip_id},
-            include={"travelers": True}
-        )
+    if signal.tripId:
+        stmt = select(Trip).where(Trip.id == signal.tripId)
+        result = await session.execute(stmt)
+        trip = result.scalars().first()
         if trip:
-            context["is_group_trip"] = len(trip.travelers) > 1
+            context["is_group_trip"] = (trip.memberCount or 1) > 1
             if "has_preference_conflict" in meta:
                 context["has_preference_conflict"] = meta["has_preference_conflict"]
 
@@ -129,7 +142,7 @@ async def get_signal_context(
 
 
 async def infer_intention(
-    db: Prisma, signal: BehavioralSignal
+    session: AsyncSession, signal
 ) -> tuple[SkipReason, float] | None:
     """
     Apply rules to infer skip intention from behavioral signal.
@@ -137,7 +150,7 @@ async def infer_intention(
     Returns (skip_reason, confidence) or None if no rule matches.
     """
     rules = load_rules()
-    context = await get_signal_context(db, signal)
+    context = await get_signal_context(session, signal)
 
     # Evaluate rules in order (first match wins)
     for rule in rules:
@@ -153,38 +166,42 @@ async def infer_intention(
     return None
 
 
-async def process_signal(db: Prisma, signal: BehavioralSignal) -> bool:
+async def process_signal(session: AsyncSession, signal) -> bool:
     """
     Process a single behavioral signal, creating IntentionSignal if rule matches.
 
     Returns True if IntentionSignal was created, False otherwise.
     """
     # Skip if already has explicit feedback (higher confidence source)
-    existing = await db.intentionsignal.find_first(
-        where={
-            "user_id": signal.user_id,
-            "behavioral_signal_id": signal.id,
-            "source": "explicit_feedback",
-        }
+    existing_stmt = select(IntentionSignal).where(
+        and_(
+            IntentionSignal.userId == signal.userId,
+            IntentionSignal.behavioralSignalId == signal.id,
+            IntentionSignal.source == "explicit_feedback",
+        )
     )
+    existing_result = await session.execute(existing_stmt)
+    existing = existing_result.scalars().first()
     if existing:
         logger.debug(f"Signal {signal.id} has explicit feedback, skipping inference")
         return False
 
     # Skip if already has rule-based inference (idempotency)
-    existing_rule = await db.intentionsignal.find_first(
-        where={
-            "user_id": signal.user_id,
-            "behavioral_signal_id": signal.id,
-            "source": "rule_heuristic",
-        }
+    existing_rule_stmt = select(IntentionSignal).where(
+        and_(
+            IntentionSignal.userId == signal.userId,
+            IntentionSignal.behavioralSignalId == signal.id,
+            IntentionSignal.source == "rule_heuristic",
+        )
     )
+    existing_rule_result = await session.execute(existing_rule_stmt)
+    existing_rule = existing_rule_result.scalars().first()
     if existing_rule:
         logger.debug(f"Signal {signal.id} already has rule inference")
         return False
 
     # Apply rules
-    result = await infer_intention(db, signal)
+    result = await infer_intention(session, signal)
     if not result:
         logger.debug(f"No rule matched for signal {signal.id}")
         return False
@@ -192,24 +209,19 @@ async def process_signal(db: Prisma, signal: BehavioralSignal) -> bool:
     skip_reason, confidence = result
 
     # Create IntentionSignal
-    await db.intentionsignal.create(
-        data={
-            "user_id": signal.user_id,
-            "behavioral_signal_id": signal.id,
-            "raw_event_id": signal.raw_event_id,
-            "trip_id": signal.trip_id,
-            "itinerary_slot_id": signal.itinerary_slot_id,
-            "activity_node_id": signal.activity_node_id,
-            "intention_type": "skip_reason",
-            "intention_value": skip_reason,
-            "confidence": confidence,
-            "source": "rule_heuristic",
-            "metadata": {
-                "rule_version": "1.0",
-                "inferred_at": signal.created_at.isoformat(),
-            },
-        }
+    stmt = insert(IntentionSignal).values(
+        id=str(uuid4()),
+        userId=signal.userId,
+        behavioralSignalId=signal.id,
+        rawEventId=None,
+        intentionType="skip_reason",
+        confidence=confidence,
+        source="rule_heuristic",
+        userProvided=False,
+        createdAt=datetime.now(timezone.utc),
     )
+    await session.execute(stmt)
+    await session.commit()
 
     logger.info(
         f"Created IntentionSignal for {signal.id}: {skip_reason} ({confidence})"
@@ -218,7 +230,7 @@ async def process_signal(db: Prisma, signal: BehavioralSignal) -> bool:
 
 
 async def run_disambiguation_batch(
-    db: Prisma,
+    session: AsyncSession,
     limit: int | None = None,
     backlog: bool = False,
 ) -> dict[str, int]:
@@ -226,7 +238,7 @@ async def run_disambiguation_batch(
     Run batch job to infer intentions from behavioral signals.
 
     Args:
-        db: Prisma client
+        session: SA async session
         limit: Max number of signals to process (None = all)
         backlog: If True, process all historical signals without IntentionSignals
 
@@ -236,21 +248,17 @@ async def run_disambiguation_batch(
     logger.info("Starting disambiguation batch job")
 
     # Query signals that need processing
-    # Focus on post_skipped signals (main use case for skip reason inference)
-    where_clause: dict[str, Any] = {
-        "signal_type": "post_skipped",
-    }
-
-    if not backlog:
-        # Only process recent signals (last 24h)
-        # In production, this would use a timestamp filter
-        pass
-
-    signals = await db.behavioralsignal.find_many(
-        where=where_clause,
-        take=limit,
-        order_by={"created_at": "desc"},
+    stmt = (
+        select(BehavioralSignal)
+        .where(BehavioralSignal.signalType == "post_skipped")
+        .order_by(BehavioralSignal.createdAt.desc())
     )
+
+    if limit is not None:
+        stmt = stmt.limit(limit)
+
+    result = await session.execute(stmt)
+    signals = result.scalars().all()
 
     logger.info(f"Found {len(signals)} signals to process")
 
@@ -260,7 +268,7 @@ async def run_disambiguation_batch(
 
     for signal in signals:
         processed += 1
-        if await process_signal(db, signal):
+        if await process_signal(session, signal):
             created += 1
         else:
             skipped += 1
@@ -279,15 +287,12 @@ async def main():
     """Entry point for running as standalone script."""
     logging.basicConfig(level=logging.INFO)
 
-    db = Prisma()
-    await db.connect()
+    from services.api.db.engine import standalone_session
 
-    try:
+    async with standalone_session() as session:
         # Process full backlog on first run
-        stats = await run_disambiguation_batch(db, backlog=True)
+        stats = await run_disambiguation_batch(session, backlog=True)
         print(f"Disambiguation batch complete: {stats}")
-    finally:
-        await db.disconnect()
 
 
 if __name__ == "__main__":

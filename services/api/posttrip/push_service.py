@@ -17,7 +17,8 @@ from datetime import datetime, timezone
 from typing import Any
 
 import httpx
-from prisma import Prisma
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.api.config import settings
 
@@ -33,7 +34,7 @@ FCM_SEND_URL = "https://fcm.googleapis.com/v1/projects/{project_id}/messages:sen
 
 
 async def register_push_token(
-    db: Prisma,
+    session: AsyncSession,
     *,
     user_id: str,
     device_token: str,
@@ -42,92 +43,87 @@ async def register_push_token(
 ) -> dict[str, Any]:
     """
     Register or update a push notification token for a user device.
-
-    Args:
-        db: Prisma client
-        user_id: User registering the token
-        device_token: FCM device token
-        platform: 'ios' | 'android' | 'web'
-        device_id: Unique device identifier for upsert
-
-    Returns:
-        Created/updated push token record
     """
     if platform not in ("ios", "android", "web"):
         raise ValueError(f"Invalid platform '{platform}'. Must be ios, android, or web.")
 
     # Upsert by user + device_id to handle token refresh
-    # Using raw SQL since Prisma Python doesn't support upsert on composite keys easily
-    existing = await db.query_raw(
-        """
+    existing = await session.execute(
+        text("""
         SELECT id FROM "PushToken"
-        WHERE "userId" = $1 AND "deviceId" = $2
-        """,
-        user_id,
-        device_id,
+        WHERE "userId" = :user_id AND "deviceId" = :device_id
+        """),
+        {"user_id": user_id, "device_id": device_id},
     )
 
-    if existing:
-        token_record = await db.query_raw(
-            """
+    if existing.first():
+        token_result = await session.execute(
+            text("""
             UPDATE "PushToken"
-            SET "deviceToken" = $1, "platform" = $2, "updatedAt" = NOW(), "isActive" = true
-            WHERE "userId" = $3 AND "deviceId" = $4
+            SET "deviceToken" = :device_token, "platform" = :platform,
+                "updatedAt" = NOW(), "isActive" = true
+            WHERE "userId" = :user_id AND "deviceId" = :device_id
             RETURNING id, "userId", "deviceId", "platform", "isActive", "createdAt", "updatedAt"
-            """,
-            device_token,
-            platform,
-            user_id,
-            device_id,
+            """),
+            {
+                "device_token": device_token,
+                "platform": platform,
+                "user_id": user_id,
+                "device_id": device_id,
+            },
         )
     else:
-        token_record = await db.query_raw(
-            """
+        token_result = await session.execute(
+            text("""
             INSERT INTO "PushToken" (id, "userId", "deviceToken", "deviceId", "platform", "isActive", "createdAt", "updatedAt")
-            VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
+            VALUES (:id, :user_id, :device_token, :device_id, :platform, true, NOW(), NOW())
             RETURNING id, "userId", "deviceId", "platform", "isActive", "createdAt", "updatedAt"
-            """,
-            secrets.token_urlsafe(16),
-            user_id,
-            device_token,
-            device_id,
-            platform,
+            """),
+            {
+                "id": secrets.token_urlsafe(16),
+                "user_id": user_id,
+                "device_token": device_token,
+                "device_id": device_id,
+                "platform": platform,
+            },
         )
 
-    return token_record[0] if token_record else {}
+    await session.commit()
+    row = token_result.mappings().first()
+    return dict(row) if row else {}
 
 
 async def revoke_push_token(
-    db: Prisma,
+    session: AsyncSession,
     *,
     user_id: str,
     device_id: str,
 ) -> bool:
     """Deactivate a push token (logout, uninstall)."""
-    result = await db.query_raw(
-        """
+    result = await session.execute(
+        text("""
         UPDATE "PushToken"
         SET "isActive" = false, "updatedAt" = NOW()
-        WHERE "userId" = $1 AND "deviceId" = $2 AND "isActive" = true
+        WHERE "userId" = :user_id AND "deviceId" = :device_id AND "isActive" = true
         RETURNING id
-        """,
-        user_id,
-        device_id,
+        """),
+        {"user_id": user_id, "device_id": device_id},
     )
-    return len(result) > 0
+    await session.commit()
+    return result.first() is not None
 
 
-async def get_active_tokens(db: Prisma, user_id: str) -> list[dict[str, Any]]:
+async def get_active_tokens(session: AsyncSession, user_id: str) -> list[dict[str, Any]]:
     """Get all active push tokens for a user."""
-    tokens = await db.query_raw(
-        """
+    result = await session.execute(
+        text("""
         SELECT id, "deviceToken", "platform", "deviceId"
         FROM "PushToken"
-        WHERE "userId" = $1 AND "isActive" = true
-        """,
-        user_id,
+        WHERE "userId" = :user_id AND "isActive" = true
+        """),
+        {"user_id": user_id},
     )
-    return tokens
+    return [dict(row) for row in result.mappings().all()]
 
 
 async def enqueue_trip_completion_push(
@@ -142,17 +138,7 @@ async def enqueue_trip_completion_push(
     Enqueue a 24-hour post-completion push notification.
 
     Checks dedup key to avoid double-sends.
-    Deep link uses trip ID only — NO session tokens.
-
-    Args:
-        redis_client: Async Redis client
-        user_id: Target user
-        trip_id: Completed trip
-        trip_destination: City name for notification text
-        scheduled_for: When to send (completion + 24h)
-
-    Returns:
-        True if enqueued, False if already sent
+    Deep link uses trip ID only -- NO session tokens.
     """
     dedup_key = PUSH_SENT_KEY.format(user_id=user_id, trip_id=trip_id)
 
@@ -186,7 +172,7 @@ async def enqueue_trip_completion_push(
 
 async def process_push_queue(
     redis_client,
-    db: Prisma,
+    session: AsyncSession,
     *,
     batch_size: int = 50,
 ) -> dict[str, int]:
@@ -194,9 +180,6 @@ async def process_push_queue(
     Process due push notifications from the Redis sorted set queue.
 
     Pulls items with score <= now (scheduled_for has passed).
-
-    Returns:
-        Stats dict with sent/failed/skipped counts
     """
     now = datetime.now(timezone.utc).timestamp()
     stats = {"sent": 0, "failed": 0, "skipped": 0}
@@ -224,7 +207,7 @@ async def process_push_queue(
             continue
 
         # Get user's active push tokens
-        tokens = await get_active_tokens(db, user_id)
+        tokens = await get_active_tokens(session, user_id)
         if not tokens:
             logger.info("No active push tokens for user=%s", user_id)
             stats["skipped"] += 1
@@ -239,7 +222,7 @@ async def process_push_queue(
             data={
                 "type": "trip_memory",
                 "trip_id": trip_id,
-                # NO session token — app must authenticate on open
+                # NO session token -- app must authenticate on open
             },
         )
 

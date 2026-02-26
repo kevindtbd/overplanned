@@ -49,7 +49,16 @@ def _make_db(slots: list[MagicMock] | None = None) -> AsyncMock:
     """Build a minimal Prisma mock that returns the given slots."""
     db = AsyncMock()
     db.itineraryslot = AsyncMock()
-    db.itineraryslot.find_many = AsyncMock(return_value=slots or [])
+
+    _slots = slots or []
+
+    async def _find_many(**kwargs):
+        take = kwargs.get("take")
+        if take is not None:
+            return _slots[:take]
+        return _slots
+
+    db.itineraryslot.find_many = AsyncMock(side_effect=_find_many)
     db.itineraryslot.find_unique = AsyncMock(return_value=None)
     db.itineraryslot.update = AsyncMock(return_value=None)
     db.behavioralsignal = AsyncMock()

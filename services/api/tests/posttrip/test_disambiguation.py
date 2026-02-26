@@ -55,7 +55,7 @@ class TestRuleLoading:
 # ===================================================================
 
 class TestConditionMatching:
-    """Tests for matches_condition() — the core rule evaluation primitive."""
+    """Tests for matches_condition() -- the core rule evaluation primitive."""
 
     def test_direct_equality(self):
         assert matches_condition("post_skipped", "post_skipped") is True
@@ -95,7 +95,7 @@ class TestConditionMatching:
 # ===================================================================
 
 class TestRuleEvaluation:
-    """Tests for evaluate_rule() — full rule matching against context."""
+    """Tests for evaluate_rule() -- full rule matching against context."""
 
     def test_all_conditions_must_match(self):
         """Rule matches only when ALL conditions are satisfied."""
@@ -143,17 +143,14 @@ class TestDisambiguationRules:
         """Rule: outdoor + rain -> weather (0.7)."""
         signal = MagicMock()
         signal.id = "sig-1"
-        signal.signal_type = "post_skipped"
-        signal.user_id = "user-1"
-        signal.metadata = {"activity_category": "outdoors"}
-        signal.raw_event_id = "raw-1"
-        signal.trip_id = None
+        signal.signalType = "post_skipped"
+        signal.userId = "user-1"
+        signal.signal_metadata = {"activity_category": "outdoors"}
+        signal.slotId = None
+        signal.tripId = None
+        signal.weatherContext = json.dumps({"condition": "rain"})
 
-        raw_event = MagicMock()
-        raw_event.payload = {"weather": "rain"}
-        mock_db_posttrip.rawevent.find_unique = AsyncMock(return_value=raw_event)
-
-        result = await infer_intention(mock_db_posttrip, signal)
+        result = await infer_intention(mock_db_posttrip.mock, signal)
         assert result is not None
         intention, confidence = result
         assert intention == "weather"
@@ -164,17 +161,14 @@ class TestDisambiguationRules:
         """Rule: dining + clear weather -> not_interested (0.6)."""
         signal = MagicMock()
         signal.id = "sig-2"
-        signal.signal_type = "post_skipped"
-        signal.user_id = "user-1"
-        signal.metadata = {"activity_category": "dining"}
-        signal.raw_event_id = "raw-2"
-        signal.trip_id = None
+        signal.signalType = "post_skipped"
+        signal.userId = "user-1"
+        signal.signal_metadata = {"activity_category": "dining"}
+        signal.slotId = None
+        signal.tripId = None
+        signal.weatherContext = json.dumps({"condition": "clear"})
 
-        raw_event = MagicMock()
-        raw_event.payload = {"weather": "clear"}
-        mock_db_posttrip.rawevent.find_unique = AsyncMock(return_value=raw_event)
-
-        result = await infer_intention(mock_db_posttrip, signal)
+        result = await infer_intention(mock_db_posttrip.mock, signal)
         assert result is not None
         intention, confidence = result
         assert intention == "not_interested"
@@ -185,13 +179,14 @@ class TestDisambiguationRules:
         """Rule: time_overrun=true -> bad_timing (0.8)."""
         signal = MagicMock()
         signal.id = "sig-3"
-        signal.signal_type = "post_skipped"
-        signal.user_id = "user-1"
-        signal.metadata = {"time_overrun": True}
-        signal.raw_event_id = None
-        signal.trip_id = None
+        signal.signalType = "post_skipped"
+        signal.userId = "user-1"
+        signal.signal_metadata = {"time_overrun": True}
+        signal.slotId = None
+        signal.tripId = None
+        signal.weatherContext = None
 
-        result = await infer_intention(mock_db_posttrip, signal)
+        result = await infer_intention(mock_db_posttrip.mock, signal)
         assert result is not None
         intention, confidence = result
         assert intention == "bad_timing"
@@ -202,13 +197,14 @@ class TestDisambiguationRules:
         """Rule: distance_km > 10 -> too_far (0.75)."""
         signal = MagicMock()
         signal.id = "sig-4"
-        signal.signal_type = "post_skipped"
-        signal.user_id = "user-1"
-        signal.metadata = {"distance_km": 15}
-        signal.raw_event_id = None
-        signal.trip_id = None
+        signal.signalType = "post_skipped"
+        signal.userId = "user-1"
+        signal.signal_metadata = {"distance_km": 15}
+        signal.slotId = None
+        signal.tripId = None
+        signal.weatherContext = None
 
-        result = await infer_intention(mock_db_posttrip, signal)
+        result = await infer_intention(mock_db_posttrip.mock, signal)
         assert result is not None
         intention, confidence = result
         assert intention == "too_far"
@@ -219,17 +215,19 @@ class TestDisambiguationRules:
         """Rule: group trip + preference conflict -> group_conflict (0.65)."""
         signal = MagicMock()
         signal.id = "sig-5"
-        signal.signal_type = "post_skipped"
-        signal.user_id = "user-1"
-        signal.metadata = {"has_preference_conflict": True}
-        signal.raw_event_id = None
-        signal.trip_id = "trip-group"
+        signal.signalType = "post_skipped"
+        signal.userId = "user-1"
+        signal.signal_metadata = {"has_preference_conflict": True}
+        signal.slotId = None
+        signal.tripId = "trip-group"
+        signal.weatherContext = None
 
+        # SA: session.execute(select(Trip).where(...)) -> scalars().first() -> trip
         trip = MagicMock()
-        trip.travelers = [MagicMock(), MagicMock()]  # 2 travelers = group
-        mock_db_posttrip.trip.find_unique = AsyncMock(return_value=trip)
+        trip.memberCount = 3  # group trip
+        mock_db_posttrip.returns_one(trip)
 
-        result = await infer_intention(mock_db_posttrip, signal)
+        result = await infer_intention(mock_db_posttrip.mock, signal)
         assert result is not None
         intention, confidence = result
         assert intention == "group_conflict"
@@ -240,13 +238,14 @@ class TestDisambiguationRules:
         """Rule: previously_visited=true -> already_visited (0.7)."""
         signal = MagicMock()
         signal.id = "sig-6"
-        signal.signal_type = "post_skipped"
-        signal.user_id = "user-1"
-        signal.metadata = {"previously_visited": True}
-        signal.raw_event_id = None
-        signal.trip_id = None
+        signal.signalType = "post_skipped"
+        signal.userId = "user-1"
+        signal.signal_metadata = {"previously_visited": True}
+        signal.slotId = None
+        signal.tripId = None
+        signal.weatherContext = None
 
-        result = await infer_intention(mock_db_posttrip, signal)
+        result = await infer_intention(mock_db_posttrip.mock, signal)
         assert result is not None
         intention, confidence = result
         assert intention == "already_visited"
@@ -257,13 +256,14 @@ class TestDisambiguationRules:
         """When no rule matches, infer_intention returns None."""
         signal = MagicMock()
         signal.id = "sig-none"
-        signal.signal_type = "post_skipped"
-        signal.user_id = "user-1"
-        signal.metadata = {}  # no metadata to trigger any rule
-        signal.raw_event_id = None
-        signal.trip_id = None
+        signal.signalType = "post_skipped"
+        signal.userId = "user-1"
+        signal.signal_metadata = {}  # no metadata to trigger any rule
+        signal.slotId = None
+        signal.tripId = None
+        signal.weatherContext = None
 
-        result = await infer_intention(mock_db_posttrip, signal)
+        result = await infer_intention(mock_db_posttrip.mock, signal)
         assert result is None
 
 
@@ -279,13 +279,15 @@ class TestExplicitFeedbackPrecedence:
         """If explicit_feedback IntentionSignal exists, process_signal returns False."""
         signal = MagicMock()
         signal.id = "sig-explicit"
-        signal.user_id = "user-1"
+        signal.userId = "user-1"
 
+        # SA: first execute -> select IntentionSignal where source=explicit_feedback
+        # returns an existing intention
         existing = MagicMock()
         existing.source = "explicit_feedback"
-        mock_db_posttrip.intentionsignal.find_first = AsyncMock(return_value=existing)
+        mock_db_posttrip.returns_one(existing)
 
-        result = await process_signal(mock_db_posttrip, signal)
+        result = await process_signal(mock_db_posttrip.mock, signal)
         assert result is False
 
 
@@ -301,14 +303,16 @@ class TestBatchIdempotency:
         """If rule_heuristic IntentionSignal exists, process_signal returns False."""
         signal = MagicMock()
         signal.id = "sig-idem"
-        signal.user_id = "user-1"
+        signal.userId = "user-1"
 
-        # No explicit feedback
-        mock_db_posttrip.intentionsignal.find_first = AsyncMock(
-            side_effect=[None, MagicMock(source="rule_heuristic")]
-        )
+        # First execute: check explicit_feedback -> None
+        mock_db_posttrip.returns_none()
+        # Second execute: check rule_heuristic -> existing
+        existing_rule = MagicMock()
+        existing_rule.source = "rule_heuristic"
+        mock_db_posttrip.returns_one(existing_rule)
 
-        result = await process_signal(mock_db_posttrip, signal)
+        result = await process_signal(mock_db_posttrip.mock, signal)
         assert result is False
 
     @pytest.mark.asyncio
@@ -316,37 +320,44 @@ class TestBatchIdempotency:
         """Batch stats should accurately reflect processed/created/skipped."""
         sig1 = MagicMock()
         sig1.id = "sig-new"
-        sig1.signal_type = "post_skipped"
-        sig1.user_id = "user-1"
-        sig1.metadata = {"time_overrun": True}
-        sig1.raw_event_id = None
-        sig1.trip_id = None
-        sig1.created_at = datetime.now(timezone.utc)
+        sig1.signalType = "post_skipped"
+        sig1.userId = "user-1"
+        sig1.signal_metadata = {"time_overrun": True}
+        sig1.slotId = None
+        sig1.tripId = None
+        sig1.weatherContext = None
+        sig1.createdAt = datetime.now(timezone.utc)
 
         sig2 = MagicMock()
         sig2.id = "sig-existing"
-        sig2.signal_type = "post_skipped"
-        sig2.user_id = "user-1"
-        sig2.metadata = {}
-        sig2.raw_event_id = None
-        sig2.trip_id = None
-        sig2.created_at = datetime.now(timezone.utc)
+        sig2.signalType = "post_skipped"
+        sig2.userId = "user-1"
+        sig2.signal_metadata = {}
+        sig2.slotId = None
+        sig2.tripId = None
+        sig2.weatherContext = None
+        sig2.createdAt = datetime.now(timezone.utc)
 
-        mock_db_posttrip.behavioralsignal.find_many = AsyncMock(return_value=[sig1, sig2])
+        # First execute: select BehavioralSignal -> [sig1, sig2]
+        mock_db_posttrip.returns_many([sig1, sig2])
 
-        # sig1: no existing intention -> will create
-        # sig2: no existing intention, but no rule match -> skipped
-        call_count = 0
+        # For sig1 (process_signal):
+        #   check explicit_feedback -> None
+        mock_db_posttrip.returns_none()
+        #   check rule_heuristic -> None
+        mock_db_posttrip.returns_none()
+        #   infer_intention succeeds (time_overrun rule)
+        #   insert IntentionSignal -> rowcount
+        mock_db_posttrip.returns_rowcount(1)
 
-        async def find_first_side_effect(**kwargs):
-            return None  # no existing intentions
+        # For sig2 (process_signal):
+        #   check explicit_feedback -> None
+        mock_db_posttrip.returns_none()
+        #   check rule_heuristic -> None
+        mock_db_posttrip.returns_none()
+        #   infer_intention returns None (no matching rule, empty metadata)
 
-        mock_db_posttrip.intentionsignal.find_first = AsyncMock(
-            side_effect=find_first_side_effect
-        )
-        mock_db_posttrip.intentionsignal.create = AsyncMock(return_value=MagicMock())
-
-        stats = await run_disambiguation_batch(mock_db_posttrip)
+        stats = await run_disambiguation_batch(mock_db_posttrip.mock)
 
         assert stats["processed"] == 2
         assert stats["created"] + stats["skipped"] == 2
@@ -361,24 +372,20 @@ class TestCrossTrackPivotVisibility:
 
     @pytest.mark.asyncio
     async def test_pivot_signal_metadata_available_in_context(self, mock_db_posttrip):
-        """Weather context from a pivot_accepted signal should inform disambiguation."""
+        """Weather context from weatherContext field should inform disambiguation."""
         signal = MagicMock()
         signal.id = "sig-pivot-ctx"
-        signal.signal_type = "post_skipped"
-        signal.user_id = "user-1"
-        signal.metadata = {
+        signal.signalType = "post_skipped"
+        signal.userId = "user-1"
+        signal.signal_metadata = {
             "activity_category": "outdoors",
-            # This metadata was enriched by the pivot system (Track 5)
         }
-        signal.raw_event_id = "raw-pivot"
-        signal.trip_id = None
+        signal.slotId = None
+        signal.tripId = None
+        signal.weatherContext = json.dumps({"condition": "rain", "pivot_source": "weather_trigger"})
 
-        # Raw event from pivot contains weather context
-        raw_event = MagicMock()
-        raw_event.payload = {"weather": "rain", "pivot_source": "weather_trigger"}
-        mock_db_posttrip.rawevent.find_unique = AsyncMock(return_value=raw_event)
-
-        context = await get_signal_context(mock_db_posttrip, signal)
+        # No DB calls needed -- context comes from signal attributes
+        context = await get_signal_context(mock_db_posttrip.mock, signal)
 
         assert context["weather_condition"] == "rain"
         assert context["activity_category"] == "outdoors"
@@ -388,17 +395,14 @@ class TestCrossTrackPivotVisibility:
         """A skip signal with pivot weather context should trigger weather rule."""
         signal = MagicMock()
         signal.id = "sig-pivot-disambig"
-        signal.signal_type = "post_skipped"
-        signal.user_id = "user-1"
-        signal.metadata = {"activity_category": "outdoors"}
-        signal.raw_event_id = "raw-pivot-2"
-        signal.trip_id = None
+        signal.signalType = "post_skipped"
+        signal.userId = "user-1"
+        signal.signal_metadata = {"activity_category": "outdoors"}
+        signal.slotId = None
+        signal.tripId = None
+        signal.weatherContext = json.dumps({"condition": "rain"})
 
-        raw_event = MagicMock()
-        raw_event.payload = {"weather": "rain"}
-        mock_db_posttrip.rawevent.find_unique = AsyncMock(return_value=raw_event)
-
-        result = await infer_intention(mock_db_posttrip, signal)
+        result = await infer_intention(mock_db_posttrip.mock, signal)
         assert result is not None
         intention, confidence = result
         assert intention == "weather"

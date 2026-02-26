@@ -52,7 +52,6 @@ class TestOnTripCompleted:
         trip = completed_trip
         user = completed_user
 
-        # Configure DB mocks
         trip_obj = MagicMock()
         trip_obj.id = trip["id"]
         trip_obj.destination = trip["destination"]
@@ -60,19 +59,22 @@ class TestOnTripCompleted:
         trip_obj.country = trip["country"]
         trip_obj.startDate = trip["startDate"]
         trip_obj.endDate = trip["endDate"]
-        mock_db_posttrip.trip.find_unique = AsyncMock(return_value=trip_obj)
 
-        user_obj = MagicMock()
-        user_obj.id = user["id"]
-        user_obj.email = user["email"]
-        user_obj.name = user["name"]
-        mock_db_posttrip.user.find_unique = AsyncMock(return_value=user_obj)
+        # SA: select Trip -> scalars().first() returns trip_obj
+        mock_db_posttrip.returns_one(trip_obj)
 
-        # Mock no positive signals (skip suggestion)
-        mock_db_posttrip.behavioralsignal.find_many = AsyncMock(return_value=[])
+        # SA: raw SQL select User -> mappings().first() returns user row
+        mock_db_posttrip.returns_mappings([{
+            "id": user["id"],
+            "email": user["email"],
+            "name": user["name"],
+        }])
+
+        # SA: select BehavioralSignal for suggestion -> scalars().all() returns []
+        mock_db_posttrip.returns_many([])
 
         result = await on_trip_completed(
-            mock_db_posttrip,
+            mock_db_posttrip.mock,
             mock_redis_posttrip,
             mock_qdrant_posttrip,
             trip_id=trip["id"],
@@ -88,10 +90,11 @@ class TestOnTripCompleted:
         self, mock_db_posttrip, mock_redis_posttrip, mock_qdrant_posttrip,
     ):
         """If trip doesn't exist, returns empty result without crashing."""
-        mock_db_posttrip.trip.find_unique = AsyncMock(return_value=None)
+        # SA: select Trip -> scalars().first() returns None
+        mock_db_posttrip.returns_none()
 
         result = await on_trip_completed(
-            mock_db_posttrip,
+            mock_db_posttrip.mock,
             mock_redis_posttrip,
             mock_qdrant_posttrip,
             trip_id="nonexistent",
@@ -117,38 +120,42 @@ class TestOnTripCompleted:
         trip_obj.country = trip["country"]
         trip_obj.startDate = trip["startDate"]
         trip_obj.endDate = trip["endDate"]
-        mock_db_posttrip.trip.find_unique = AsyncMock(return_value=trip_obj)
 
-        user_obj = MagicMock()
-        user_obj.id = user["id"]
-        user_obj.email = user["email"]
-        user_obj.name = user["name"]
-        mock_db_posttrip.user.find_unique = AsyncMock(return_value=user_obj)
+        # SA: select Trip -> scalars().first()
+        mock_db_posttrip.returns_one(trip_obj)
 
-        # Provide enough positive signals for suggestion
+        # SA: raw SQL select User -> mappings().first()
+        mock_db_posttrip.returns_mappings([{
+            "id": user["id"],
+            "email": user["email"],
+            "name": user["name"],
+        }])
+
+        # SA: select BehavioralSignal (positive signals) -> scalars().all()
         mock_signals = []
         for act in loved_activities:
             s = MagicMock()
             s.activityNodeId = act["id"]
             s.userId = user["id"]
             mock_signals.append(s)
-        mock_db_posttrip.behavioralsignal.find_many = AsyncMock(return_value=mock_signals)
+        mock_db_posttrip.returns_many(mock_signals)
 
-        mock_activity_objs = []
-        for act in loved_activities:
-            a = MagicMock()
-            a.id = act["id"]
-            a.name = act["name"]
-            a.category = act["category"]
-            a.city = act["city"]
-            mock_activity_objs.append(a)
-        mock_db_posttrip.activitynode.find_many = AsyncMock(return_value=mock_activity_objs)
+        # SA: raw SQL select ActivityNode -> mappings().all()
+        mock_db_posttrip.returns_mappings([
+            {"id": act["id"], "name": act["name"], "category": act["category"], "city": act["city"]}
+            for act in loved_activities
+        ])
+
+        # SA: select Trip (for visited cities exclusion) -> scalars().first()
+        trip_for_city = MagicMock()
+        trip_for_city.city = trip["city"]
+        mock_db_posttrip.returns_one(trip_for_city)
 
         with patch("services.api.posttrip.reengagement.embedding_service") as mock_embed:
             mock_embed.embed_single = MagicMock(return_value=[0.1] * 768)
 
             result = await on_trip_completed(
-                mock_db_posttrip,
+                mock_db_posttrip.mock,
                 mock_redis_posttrip,
                 mock_qdrant_posttrip,
                 trip_id=trip["id"],
@@ -171,31 +178,24 @@ class TestTripHighlights:
     @pytest.mark.asyncio
     async def test_returns_loved_activities_first(self, mock_db_posttrip):
         """Loved activities should appear before non-loved in highlights."""
-        slot1 = MagicMock()
-        slot1.activityNodeId = "node-loved"
-        slot1.activityNode = MagicMock(
-            id="node-loved", name="Tsukiji", category="dining",
-            primaryImageUrl="https://img.example.com/tsukiji.jpg",
-        )
-        slot1.dayNumber = 2
-        slot1.status = "completed"
+        # SA: raw SQL select slots+activities -> mappings().all()
+        mock_db_posttrip.returns_mappings([
+            {
+                "id": "slot-1", "dayNumber": 2, "activityNodeId": "node-loved",
+                "nodeId": "node-loved", "name": "Tsukiji", "category": "dining",
+                "primaryImageUrl": "https://img.example.com/tsukiji.jpg",
+            },
+            {
+                "id": "slot-2", "dayNumber": 1, "activityNodeId": "node-normal",
+                "nodeId": "node-normal", "name": "Temple", "category": "culture",
+                "primaryImageUrl": None,
+            },
+        ])
 
-        slot2 = MagicMock()
-        slot2.activityNodeId = "node-normal"
-        slot2.activityNode = MagicMock(
-            id="node-normal", name="Temple", category="culture",
-            primaryImageUrl=None,
-        )
-        slot2.dayNumber = 1
-        slot2.status = "completed"
+        # SA: select BehavioralSignal.activityNodeId (loved) -> .all() returns rows
+        mock_db_posttrip.returns_rows([("node-loved",)])
 
-        mock_db_posttrip.itineraryslot.find_many = AsyncMock(return_value=[slot1, slot2])
-
-        loved_signal = MagicMock()
-        loved_signal.activityNodeId = "node-loved"
-        mock_db_posttrip.behavioralsignal.find_many = AsyncMock(return_value=[loved_signal])
-
-        highlights = await _get_trip_highlights(mock_db_posttrip, "trip-1")
+        highlights = await _get_trip_highlights(mock_db_posttrip.mock, "trip-1")
 
         assert len(highlights) == 2
         assert highlights[0]["name"] == "Tsukiji"
@@ -205,29 +205,29 @@ class TestTripHighlights:
     @pytest.mark.asyncio
     async def test_empty_trip_returns_empty_highlights(self, mock_db_posttrip):
         """Trip with no completed slots returns empty highlights."""
-        mock_db_posttrip.itineraryslot.find_many = AsyncMock(return_value=[])
-        highlights = await _get_trip_highlights(mock_db_posttrip, "trip-empty")
+        # SA: raw SQL -> mappings().all() returns []
+        mock_db_posttrip.returns_mappings([])
+
+        highlights = await _get_trip_highlights(mock_db_posttrip.mock, "trip-empty")
         assert highlights == []
 
     @pytest.mark.asyncio
     async def test_highlights_capped_at_five(self, mock_db_posttrip):
         """Highlights should be capped at 5 even if more exist."""
-        slots = []
-        for i in range(8):
-            slot = MagicMock()
-            slot.activityNodeId = f"node-{i}"
-            slot.activityNode = MagicMock(
-                id=f"node-{i}", name=f"Activity {i}",
-                category="dining", primaryImageUrl=None,
-            )
-            slot.dayNumber = i + 1
-            slot.status = "completed"
-            slots.append(slot)
+        rows = [
+            {
+                "id": f"slot-{i}", "dayNumber": i + 1, "activityNodeId": f"node-{i}",
+                "nodeId": f"node-{i}", "name": f"Activity {i}",
+                "category": "dining", "primaryImageUrl": None,
+            }
+            for i in range(8)
+        ]
+        mock_db_posttrip.returns_mappings(rows)
 
-        mock_db_posttrip.itineraryslot.find_many = AsyncMock(return_value=slots)
-        mock_db_posttrip.behavioralsignal.find_many = AsyncMock(return_value=[])
+        # SA: select loved signals -> .all() returns []
+        mock_db_posttrip.returns_rows([])
 
-        highlights = await _get_trip_highlights(mock_db_posttrip, "trip-many")
+        highlights = await _get_trip_highlights(mock_db_posttrip.mock, "trip-many")
         assert len(highlights) <= 5
 
 
@@ -236,7 +236,7 @@ class TestTripHighlights:
 # ===================================================================
 
 class TestRecordSkipIntention:
-    """Tests for record_skip_intention() — explicit user feedback."""
+    """Tests for record_skip_intention() -- explicit user feedback."""
 
     @pytest.mark.asyncio
     async def test_valid_skip_reason_creates_intention(self, mock_db_posttrip):
@@ -245,22 +245,14 @@ class TestRecordSkipIntention:
         parent.id = "signal-1"
         parent.userId = "user-1"
         parent.signalType = "post_skipped"
-        mock_db_posttrip.behavioralsignal.find_unique = AsyncMock(return_value=parent)
 
-        intention = MagicMock()
-        intention.id = "int-1"
-        intention.userId = "user-1"
-        intention.behavioralSignalId = "signal-1"
-        intention.rawEventId = None
-        intention.intentionType = "not_interested"
-        intention.confidence = 1.0
-        intention.source = "user_explicit"
-        intention.userProvided = True
-        intention.createdAt = datetime.now(timezone.utc)
-        mock_db_posttrip.intentionsignal.create = AsyncMock(return_value=intention)
+        # SA: select BehavioralSignal -> scalars().first() returns parent
+        mock_db_posttrip.returns_one(parent)
+        # SA: insert IntentionSignal -> rowcount
+        mock_db_posttrip.returns_rowcount(1)
 
         result = await record_skip_intention(
-            mock_db_posttrip,
+            mock_db_posttrip.mock,
             user_id="user-1",
             behavioral_signal_id="signal-1",
             skip_reason="not_interested",
@@ -274,26 +266,19 @@ class TestRecordSkipIntention:
     async def test_all_valid_skip_reasons_accepted(self, mock_db_posttrip):
         """All six valid skip reasons should be accepted."""
         for reason in VALID_SKIP_REASONS:
+            # Reset mock queue for each iteration
+            mock_db_posttrip._queue.clear()
+
             parent = MagicMock()
             parent.id = f"signal-{reason}"
             parent.userId = "user-1"
             parent.signalType = "post_skipped"
-            mock_db_posttrip.behavioralsignal.find_unique = AsyncMock(return_value=parent)
 
-            intention = MagicMock()
-            intention.id = f"int-{reason}"
-            intention.userId = "user-1"
-            intention.behavioralSignalId = f"signal-{reason}"
-            intention.rawEventId = None
-            intention.intentionType = reason
-            intention.confidence = 1.0
-            intention.source = "user_explicit"
-            intention.userProvided = True
-            intention.createdAt = datetime.now(timezone.utc)
-            mock_db_posttrip.intentionsignal.create = AsyncMock(return_value=intention)
+            mock_db_posttrip.returns_one(parent)
+            mock_db_posttrip.returns_rowcount(1)
 
             result = await record_skip_intention(
-                mock_db_posttrip,
+                mock_db_posttrip.mock,
                 user_id="user-1",
                 behavioral_signal_id=f"signal-{reason}",
                 skip_reason=reason,
@@ -305,7 +290,7 @@ class TestRecordSkipIntention:
         """Invalid skip reason should raise ValueError."""
         with pytest.raises(ValueError, match="Invalid skip reason"):
             await record_skip_intention(
-                mock_db_posttrip,
+                mock_db_posttrip.mock,
                 user_id="user-1",
                 behavioral_signal_id="signal-1",
                 skip_reason="bored",  # not a valid reason
@@ -318,11 +303,12 @@ class TestRecordSkipIntention:
         parent.id = "signal-1"
         parent.userId = "other-user"
         parent.signalType = "post_skipped"
-        mock_db_posttrip.behavioralsignal.find_unique = AsyncMock(return_value=parent)
+
+        mock_db_posttrip.returns_one(parent)
 
         with pytest.raises(ValueError, match="does not belong"):
             await record_skip_intention(
-                mock_db_posttrip,
+                mock_db_posttrip.mock,
                 user_id="user-1",
                 behavioral_signal_id="signal-1",
                 skip_reason="not_interested",
@@ -335,11 +321,12 @@ class TestRecordSkipIntention:
         parent.id = "signal-1"
         parent.userId = "user-1"
         parent.signalType = "slot_view"  # not post_skipped
-        mock_db_posttrip.behavioralsignal.find_unique = AsyncMock(return_value=parent)
+
+        mock_db_posttrip.returns_one(parent)
 
         with pytest.raises(ValueError, match="expected 'post_skipped'"):
             await record_skip_intention(
-                mock_db_posttrip,
+                mock_db_posttrip.mock,
                 user_id="user-1",
                 behavioral_signal_id="signal-1",
                 skip_reason="not_interested",
@@ -348,11 +335,11 @@ class TestRecordSkipIntention:
     @pytest.mark.asyncio
     async def test_nonexistent_signal_raises(self, mock_db_posttrip):
         """Referencing a nonexistent signal should raise."""
-        mock_db_posttrip.behavioralsignal.find_unique = AsyncMock(return_value=None)
+        mock_db_posttrip.returns_none()
 
         with pytest.raises(ValueError, match="not found"):
             await record_skip_intention(
-                mock_db_posttrip,
+                mock_db_posttrip.mock,
                 user_id="user-1",
                 behavioral_signal_id="nonexistent",
                 skip_reason="weather",
@@ -386,15 +373,19 @@ class TestEmailGuards:
     @pytest.mark.asyncio
     async def test_unsubscribed_user_detected(self, mock_db_posttrip):
         """Unsubscribed user should be detected."""
-        mock_db_posttrip.query_raw = AsyncMock(return_value=[{"1": 1}])
-        result = await check_unsubscribed(mock_db_posttrip, "user-1")
+        # SA: session.execute(text(...)) -> .first() returns a row
+        mock_db_posttrip.returns_row(1)
+
+        result = await check_unsubscribed(mock_db_posttrip.mock, "user-1")
         assert result is True
 
     @pytest.mark.asyncio
     async def test_subscribed_user_passes(self, mock_db_posttrip):
         """Subscribed user should pass unsubscribe check."""
-        mock_db_posttrip.query_raw = AsyncMock(return_value=[])
-        result = await check_unsubscribed(mock_db_posttrip, "user-1")
+        # SA: session.execute(text(...)) -> .first() returns None
+        mock_db_posttrip.returns_none()
+
+        result = await check_unsubscribed(mock_db_posttrip.mock, "user-1")
         assert result is False
 
 
