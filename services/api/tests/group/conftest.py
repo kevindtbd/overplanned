@@ -290,8 +290,8 @@ def revoked_shared_token(group_trip, user_alice) -> dict:
 
 
 @pytest.fixture
-def mock_prisma():
-    """Mock Prisma client wired for group operations."""
+def mock_session():
+    """Mock SA session wired for group operations."""
     db = AsyncMock()
 
     # Trip

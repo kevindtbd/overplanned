@@ -26,8 +26,8 @@ pytestmark = pytest.mark.asyncio
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def mock_session():
-    """SA session mock for audit tests."""
+def sa_audit_session():
+    """SA session mock for audit unit tests."""
     return MockSASession()
 
 
@@ -38,8 +38,8 @@ def mock_session():
 class TestAuditLoggerWrite:
     """AuditLogger.log creates entries via SA insert."""
 
-    async def test_log_creates_entry(self, mock_session):
-        logger = AuditLogger(mock_session.mock)
+    async def test_log_creates_entry(self, sa_audit_session):
+        logger = AuditLogger(sa_audit_session.mock)
         entry_id = await logger.log(
             actor_id="admin-001",
             action="user.update",
@@ -51,13 +51,13 @@ class TestAuditLoggerWrite:
             after={"name": "New Name"},
         )
 
-        mock_session.mock.execute.assert_called_once()
-        mock_session.mock.commit.assert_called_once()
+        sa_audit_session.mock.execute.assert_called_once()
+        sa_audit_session.mock.commit.assert_called_once()
         assert isinstance(entry_id, str)
         assert len(entry_id) == 36  # UUID format
 
-    async def test_log_returns_entry_id(self, mock_session):
-        logger = AuditLogger(mock_session.mock)
+    async def test_log_returns_entry_id(self, sa_audit_session):
+        logger = AuditLogger(sa_audit_session.mock)
         entry_id = await logger.log(
             actor_id="admin-001",
             action="test.action",
@@ -69,9 +69,9 @@ class TestAuditLoggerWrite:
         assert isinstance(entry_id, str)
         assert len(entry_id) > 0
 
-    async def test_log_with_none_before_after(self, mock_session):
+    async def test_log_with_none_before_after(self, sa_audit_session):
         """before/after are optional (for read-only audit like lookups)."""
-        logger = AuditLogger(mock_session.mock)
+        logger = AuditLogger(sa_audit_session.mock)
         await logger.log(
             actor_id="admin-001",
             action="user_lookup",
@@ -82,8 +82,8 @@ class TestAuditLoggerWrite:
             before=None,
             after=None,
         )
-        mock_session.mock.execute.assert_called_once()
-        mock_session.mock.commit.assert_called_once()
+        sa_audit_session.mock.execute.assert_called_once()
+        sa_audit_session.mock.commit.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
@@ -93,10 +93,10 @@ class TestAuditLoggerWrite:
 class TestAuditLogBatch:
     """Batch audit logging for bulk operations."""
 
-    async def test_log_batch_creates_multiple(self, mock_session):
+    async def test_log_batch_creates_multiple(self, sa_audit_session):
         from services.api.middleware.audit import AuditLogEntry
 
-        logger = AuditLogger(mock_session.mock)
+        logger = AuditLogger(sa_audit_session.mock)
         entries = [
             AuditLogEntry(
                 actor_id="admin-001",
@@ -111,8 +111,8 @@ class TestAuditLogBatch:
 
         count = await logger.log_batch(entries)
         assert count == 3
-        mock_session.mock.execute.assert_called_once()
-        mock_session.mock.commit.assert_called_once()
+        sa_audit_session.mock.execute.assert_called_once()
+        sa_audit_session.mock.commit.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
@@ -162,9 +162,9 @@ class TestExtractClientInfo:
 class TestAuditActionConvenience:
     """audit_action extracts IP/UA and delegates to AuditLogger."""
 
-    async def test_audit_action_creates_entry(self, mock_session, mock_request):
+    async def test_audit_action_creates_entry(self, sa_audit_session, mock_request):
         entry_id = await audit_action(
-            db=mock_session.mock,
+            db=sa_audit_session.mock,
             request=mock_request,
             actor_id="admin-001",
             action="test.action",
@@ -174,8 +174,8 @@ class TestAuditActionConvenience:
             after={"new": True},
         )
 
-        mock_session.mock.execute.assert_called_once()
-        mock_session.mock.commit.assert_called_once()
+        sa_audit_session.mock.execute.assert_called_once()
+        sa_audit_session.mock.commit.assert_called_once()
         assert isinstance(entry_id, str)
 
 
@@ -186,11 +186,11 @@ class TestAuditActionConvenience:
 class TestAdminActionsProduceAuditEntries:
     """Verify that admin mutations actually call audit_action."""
 
-    async def test_revoke_shared_token_audited(self, admin_client, mock_prisma):
+    async def test_revoke_shared_token_audited(self, admin_client, mock_session):
         from .conftest import make_shared_trip_token
         token = make_shared_trip_token()
-        mock_prisma.sharedtriptoken.find_unique = AsyncMock(return_value=_make_mock_obj(token))
-        mock_prisma.sharedtriptoken.update = AsyncMock(
+        mock_session.sharedtriptoken.find_unique = AsyncMock(return_value=_make_mock_obj(token))
+        mock_session.sharedtriptoken.update = AsyncMock(
             return_value=_make_mock_obj({**token, "revokedAt": datetime.now(timezone.utc)})
         )
 
@@ -198,13 +198,13 @@ class TestAdminActionsProduceAuditEntries:
         assert response.status_code == 200
 
         # Audit entry was created -- SA-based audit_action calls execute + commit
-        mock_prisma.execute.assert_called()
-        mock_prisma.commit.assert_called()
+        mock_session.execute.assert_called()
+        mock_session.commit.assert_called()
 
-    async def test_review_injection_audited(self, admin_client, mock_prisma):
+    async def test_review_injection_audited(self, admin_client, mock_session):
         from .conftest import make_flagged_raw_event
         event = make_flagged_raw_event()
-        mock_prisma.rawevent.find_unique = AsyncMock(return_value=_make_mock_obj(event))
+        mock_session.rawevent.find_unique = AsyncMock(return_value=_make_mock_obj(event))
 
         response = await admin_client.patch(
             f"/admin/safety/injection-queue/{event['id']}",
@@ -212,5 +212,5 @@ class TestAdminActionsProduceAuditEntries:
         )
         assert response.status_code == 200
 
-        mock_prisma.execute.assert_called()
-        mock_prisma.commit.assert_called()
+        mock_session.execute.assert_called()
+        mock_session.commit.assert_called()

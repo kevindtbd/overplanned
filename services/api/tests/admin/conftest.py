@@ -188,9 +188,9 @@ def _make_mock_obj(data: dict) -> MagicMock:
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def mock_prisma():
+def mock_session():
     """
-    Mock Prisma client with all admin-relevant model delegates.
+    Mock SA session with all admin-relevant model delegates.
     Each delegate has find_many, find_unique, find_first, count, create,
     create_many, update, delete stubs.
     """
@@ -294,10 +294,10 @@ def mock_request():
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def admin_app(mock_prisma, admin_user):
+def admin_app(mock_session, admin_user):
     """
     FastAPI app with admin routers mounted and dependencies overridden.
-    Uses mock Prisma and a fixed admin user for all auth checks.
+    Uses mock SA session and a fixed admin user for all auth checks.
     """
     from services.api.routers.admin_safety import router as safety_router
     from services.api.routers.admin_models import router as models_router
@@ -310,14 +310,14 @@ def admin_app(mock_prisma, admin_user):
     app.include_router(pipeline_router)
 
     # Override dependencies -- all admin routers use shared deps from _admin_deps
-    app.dependency_overrides[admin_get_db] = lambda: mock_prisma
+    app.dependency_overrides[admin_get_db] = lambda: mock_session
     app.dependency_overrides[require_admin_user] = lambda: admin_user
 
     return app
 
 
 @pytest.fixture
-def unauthenticated_app(mock_prisma):
+def unauthenticated_app(mock_session):
     """
     FastAPI app where admin auth dependency raises 401.
     Used to test the auth guard.
@@ -334,14 +334,14 @@ def unauthenticated_app(mock_prisma):
     def raise_unauth():
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    app.dependency_overrides[admin_get_db] = lambda: mock_prisma
+    app.dependency_overrides[admin_get_db] = lambda: mock_session
     app.dependency_overrides[require_admin_user] = raise_unauth
 
     return app
 
 
 @pytest.fixture
-def non_admin_app(mock_prisma):
+def non_admin_app(mock_session):
     """
     FastAPI app where admin auth dependency raises 403.
     Used to test the auth guard for non-admin users.
@@ -356,7 +356,7 @@ def non_admin_app(mock_prisma):
     def raise_forbidden():
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    app.dependency_overrides[admin_get_db] = lambda: mock_prisma
+    app.dependency_overrides[admin_get_db] = lambda: mock_session
     app.dependency_overrides[require_admin_user] = raise_forbidden
 
     return app

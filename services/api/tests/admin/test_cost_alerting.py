@@ -24,8 +24,8 @@ pytestmark = pytest.mark.asyncio
 class TestGetCostAlerts:
     """Read cost alert thresholds with today's spend."""
 
-    async def test_returns_alert_status(self, admin_client, mock_prisma):
-        mock_prisma.query_raw = AsyncMock(return_value=[
+    async def test_returns_alert_status(self, admin_client, mock_session):
+        mock_session.query_raw = AsyncMock(return_value=[
             {
                 "pipeline_stage": "seed_enrichment",
                 "daily_limit_usd": 50.0,
@@ -57,8 +57,8 @@ class TestGetCostAlerts:
         assert narration["exceeded"] is True
         assert narration["pct_used"] == 110.0
 
-    async def test_disabled_alert_never_exceeded(self, admin_client, mock_prisma):
-        mock_prisma.query_raw = AsyncMock(return_value=[
+    async def test_disabled_alert_never_exceeded(self, admin_client, mock_session):
+        mock_session.query_raw = AsyncMock(return_value=[
             {
                 "pipeline_stage": "experimental",
                 "daily_limit_usd": 10.0,
@@ -72,8 +72,8 @@ class TestGetCostAlerts:
         alert = response.json()["data"][0]
         assert alert["exceeded"] is False  # disabled → never exceeded
 
-    async def test_zero_limit_pct_used_zero(self, admin_client, mock_prisma):
-        mock_prisma.query_raw = AsyncMock(return_value=[
+    async def test_zero_limit_pct_used_zero(self, admin_client, mock_session):
+        mock_session.query_raw = AsyncMock(return_value=[
             {
                 "pipeline_stage": "free_tier",
                 "daily_limit_usd": 0.0,
@@ -87,8 +87,8 @@ class TestGetCostAlerts:
         alert = response.json()["data"][0]
         assert alert["pct_used"] == 0.0  # avoid division by zero
 
-    async def test_empty_alerts(self, admin_client, mock_prisma):
-        mock_prisma.query_raw = AsyncMock(return_value=[])
+    async def test_empty_alerts(self, admin_client, mock_session):
+        mock_session.query_raw = AsyncMock(return_value=[])
 
         response = await admin_client.get("/admin/pipeline/alerts")
         assert response.status_code == 200
@@ -102,9 +102,9 @@ class TestGetCostAlerts:
 class TestUpdateCostAlerts:
     """Update cost alert thresholds with audit logging."""
 
-    async def test_update_thresholds(self, admin_client, mock_prisma):
+    async def test_update_thresholds(self, admin_client, mock_session):
         # Before state
-        mock_prisma.query_raw = AsyncMock(return_value=[
+        mock_session.query_raw = AsyncMock(return_value=[
             {"pipeline_stage": "seed_enrichment", "daily_limit_usd": 50.0, "enabled": True},
         ])
 
@@ -121,10 +121,10 @@ class TestUpdateCostAlerts:
         assert response.json()["data"]["updated"] == 2
 
         # Verify upserts happened
-        assert mock_prisma.execute_raw.call_count == 2
+        assert mock_session.execute_raw.call_count == 2
 
-    async def test_update_triggers_audit_log(self, admin_client, mock_prisma):
-        mock_prisma.query_raw = AsyncMock(return_value=[])
+    async def test_update_triggers_audit_log(self, admin_client, mock_session):
+        mock_session.query_raw = AsyncMock(return_value=[])
 
         response = await admin_client.put(
             "/admin/pipeline/alerts",
@@ -137,8 +137,8 @@ class TestUpdateCostAlerts:
         assert response.status_code == 200
 
         # Audit entry created (SA-based audit_action calls execute + commit)
-        mock_prisma.execute.assert_called()
-        mock_prisma.commit.assert_called()
+        mock_session.execute.assert_called()
+        mock_session.commit.assert_called()
 
 
 # ---------------------------------------------------------------------------
@@ -148,8 +148,8 @@ class TestUpdateCostAlerts:
 class TestLLMCosts:
     """GET /admin/pipeline/llm-costs reads telemetry data."""
 
-    async def test_returns_cost_summary(self, admin_client, mock_prisma):
-        mock_prisma.query_raw = AsyncMock(return_value=[
+    async def test_returns_cost_summary(self, admin_client, mock_session):
+        mock_session.query_raw = AsyncMock(return_value=[
             {
                 "model": "claude-sonnet-4-6",
                 "date": "2026-02-19",
@@ -169,7 +169,7 @@ class TestLLMCosts:
         assert data["total_calls"] == 150
         assert len(data["rows"]) == 1
 
-    async def test_invalid_days_rejected(self, admin_client, mock_prisma):
+    async def test_invalid_days_rejected(self, admin_client, mock_session):
         response = await admin_client.get("/admin/pipeline/llm-costs?days=0")
         assert response.status_code == 400
 

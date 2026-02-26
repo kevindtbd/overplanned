@@ -50,7 +50,7 @@ def _id() -> str:
     return str(uuid.uuid4())
 
 
-def _mock_prisma_with_all_tracks() -> AsyncMock:
+def _mock_session_with_all_tracks() -> AsyncMock:
     """Build a mock Prisma client with delegates for all track models."""
     db = AsyncMock()
 
@@ -126,7 +126,7 @@ class TestAdminReadsUsers:
             make_user(subscriptionTier="free"),
         ]
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.user.find_many = AsyncMock(return_value=[_make_mock_obj(u) for u in users])
 
         results = await db.user.find_many()
@@ -140,7 +140,7 @@ class TestAdminReadsUsers:
         user = make_user(name="Frequent Traveler")
         trips = [make_trip(user_id=user["id"]) for _ in range(5)]
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
 
         # Simulate user with _count include
         user_obj = _make_mock_obj(user)
@@ -160,7 +160,7 @@ class TestAdminReadsUsers:
         admin = make_user(systemRole="admin")
         regular = make_user(systemRole="user")
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.user.find_many = AsyncMock(return_value=[_make_mock_obj(admin)])
 
         results = await db.user.find_many(where={"systemRole": "admin"})
@@ -199,7 +199,7 @@ class TestAdminReadsActivityNodes:
             ),
         ]
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         node_obj = _make_mock_obj(node)
         node_obj.qualitySignals = [_make_mock_obj(s) for s in signals]
         db.activitynode.find_unique = AsyncMock(return_value=node_obj)
@@ -223,7 +223,7 @@ class TestAdminReadsActivityNodes:
         approved = make_activity_node(status="approved")
         flagged = make_activity_node(status="flagged", flagReason="wrong_information")
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.activitynode.find_many = AsyncMock(
             return_value=[_make_mock_obj(flagged)]
         )
@@ -261,7 +261,7 @@ class TestAdminReadsModelRegistry:
             ),
         ]
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.modelregistry.find_many = AsyncMock(
             return_value=[_make_mock_obj(m) for m in models]
         )
@@ -281,7 +281,7 @@ class TestAdminReadsModelRegistry:
             metrics={"f1": 0.91, "precision": 0.93, "recall": 0.89},
         )
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.modelregistry.find_unique = AsyncMock(return_value=_make_mock_obj(model))
 
         result = await db.modelregistry.find_unique(
@@ -304,7 +304,7 @@ class TestAdminReadsModelRegistry:
             },
         )
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.modelregistry.find_unique = AsyncMock(return_value=_make_mock_obj(model))
 
         result = await db.modelregistry.find_unique(where={"id": model["id"]})
@@ -347,7 +347,7 @@ class TestAdminReadsBehavioralSignals:
             ),
         ]
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.behavioralsignal.find_many = AsyncMock(
             return_value=[_make_mock_obj(s) for s in signals]
         )
@@ -361,7 +361,7 @@ class TestAdminReadsBehavioralSignals:
 
     async def test_admin_counts_signals_by_type(self):
         """Admin can get signal type distribution."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.query_raw = AsyncMock(return_value=[
             {"signalType": "slot_view", "count": 1500},
             {"signalType": "pivot_accepted", "count": 45},
@@ -388,7 +388,7 @@ class TestAdminReadsBehavioralSignals:
             weatherContext='{"condition": "rain", "temp": 14.0}',
         )
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.behavioralsignal.find_many = AsyncMock(
             return_value=[_make_mock_obj(signal)]
         )
@@ -419,7 +419,7 @@ class TestAdminReadsPivotEvents:
         for p in pivots:
             p["originalNodeId"] = _id()
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.pivotevent.find_many = AsyncMock(
             return_value=[_make_mock_obj(p) for p in pivots]
         )
@@ -435,7 +435,7 @@ class TestAdminReadsPivotEvents:
 
     async def test_admin_reads_trigger_distribution(self):
         """Admin can get trigger type distribution via raw query."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.query_raw = AsyncMock(return_value=[
             {"triggerType": "weather_change", "count": 120},
             {"triggerType": "venue_closed", "count": 45},
@@ -458,7 +458,7 @@ class TestAdminReadsPivotEvents:
 
     async def test_admin_reads_pivot_response_time_stats(self):
         """Admin can compute avg/p95 response time from PivotEvents."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.query_raw = AsyncMock(return_value=[
             {"avg_ms": 4200, "p95_ms": 9800, "total": 290},
         ])
@@ -499,7 +499,7 @@ class TestAdminReadsFlaggedNodes:
             ),
         ]
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.activitynode.find_many = AsyncMock(
             return_value=[_make_mock_obj(n) for n in flagged_nodes]
         )
@@ -513,7 +513,7 @@ class TestAdminReadsFlaggedNodes:
 
     async def test_admin_reads_flagged_node_count(self):
         """Admin dashboard shows count of flagged nodes."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.activitynode.count = AsyncMock(return_value=17)
 
         count = await db.activitynode.count(where={"status": "flagged"})
@@ -536,7 +536,7 @@ class TestAdminReadsFlaggedNodes:
             resolvedToId=canonical["id"],
         )
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.activitynode.find_unique = AsyncMock(return_value=_make_mock_obj(duplicate))
 
         result = await db.activitynode.find_unique(where={"id": duplicate["id"]})
@@ -572,7 +572,7 @@ class TestAdminReadsInjectionFlags:
             ),
         ]
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.rawevent.find_many = AsyncMock(
             return_value=[_make_mock_obj(e) for e in flagged_events]
         )
@@ -588,7 +588,7 @@ class TestAdminReadsInjectionFlags:
 
     async def test_admin_reads_injection_count(self):
         """Admin dashboard shows total injection attempt count."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.rawevent.count = AsyncMock(return_value=42)
 
         count = await db.rawevent.count(
@@ -622,7 +622,7 @@ class TestAdminSafetyDashboard:
 
     async def test_safety_dashboard_aggregates_all_flags(self):
         """Safety dashboard shows flagged nodes + injection events together."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
 
         # Flagged ActivityNodes (Track 2 / Trust Recovery)
         db.activitynode.count = AsyncMock(return_value=12)
@@ -642,7 +642,7 @@ class TestAdminSafetyDashboard:
 
     async def test_safety_dashboard_separates_by_category(self):
         """Dashboard categorizes flags by source track."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
 
         # Flagged nodes by reason
         db.query_raw = AsyncMock(return_value=[
@@ -664,7 +664,7 @@ class TestAdminSafetyDashboard:
 
     async def test_safety_dashboard_pending_review_count(self):
         """Dashboard shows count of items pending review."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
 
         # Pending injection reviews
         pending_events = [
@@ -702,7 +702,7 @@ class TestAdminPipelineDashboard:
 
     async def test_admin_reads_convergence_scores(self):
         """Admin can see convergenceScore distribution across ActivityNodes."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.query_raw = AsyncMock(return_value=[
             {"bucket": "0.0-0.2", "count": 50},
             {"bucket": "0.2-0.4", "count": 120},
@@ -733,7 +733,7 @@ class TestAdminPipelineDashboard:
 
     async def test_admin_reads_entity_resolution_stats(self):
         """Admin can see how many nodes are canonical vs resolved duplicates."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
 
         db.activitynode.count = AsyncMock(
             side_effect=lambda **kwargs: {
@@ -751,7 +751,7 @@ class TestAdminPipelineDashboard:
 
     async def test_admin_reads_source_count_distribution(self):
         """Admin can see how many sources back each ActivityNode."""
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.query_raw = AsyncMock(return_value=[
             {"avg_source_count": 3.2, "max_source_count": 12, "min_source_count": 1},
         ])
@@ -804,7 +804,7 @@ class TestAdminUserDetailSignalHistory:
             ),
         ]
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.behavioralsignal.find_many = AsyncMock(
             return_value=[_make_mock_obj(s) for s in signals]
         )
@@ -854,7 +854,7 @@ class TestAdminUserDetailSignalHistory:
             ),
         ]
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.intentionsignal.find_many = AsyncMock(
             return_value=[_make_mock_obj(i) for i in intentions]
         )
@@ -893,7 +893,7 @@ class TestAdminUserDetailSignalHistory:
         for p in pivots:
             p["originalNodeId"] = _id()
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         db.pivotevent.find_many = AsyncMock(
             return_value=[_make_mock_obj(p) for p in pivots]
         )
@@ -910,7 +910,7 @@ class TestAdminUserDetailSignalHistory:
         """User with no signals returns empty list, not an error."""
         user_id = _id()
 
-        db = _mock_prisma_with_all_tracks()
+        db = _mock_session_with_all_tracks()
         # defaults already return []
 
         signals = await db.behavioralsignal.find_many(where={"userId": user_id})

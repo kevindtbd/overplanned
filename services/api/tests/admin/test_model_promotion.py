@@ -36,11 +36,11 @@ def _model_obj(data: dict) -> MagicMock:
 class TestPromotionPath:
     """staging → ab_test → production. No other paths allowed."""
 
-    async def test_promote_staging_to_ab_test(self, admin_client, mock_prisma):
+    async def test_promote_staging_to_ab_test(self, admin_client, mock_session):
         """Valid: staging → ab_test."""
         candidate = make_model_registry_entry(stage="staging", metrics={"f1": 0.90})
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(return_value=None)  # no cooldown, no current
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(return_value=None)  # no cooldown, no current
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -51,11 +51,11 @@ class TestPromotionPath:
         assert data["previous_stage"] == "staging"
         assert data["new_stage"] == "ab_test"
 
-    async def test_promote_ab_test_to_production(self, admin_client, mock_prisma):
+    async def test_promote_ab_test_to_production(self, admin_client, mock_session):
         """Valid: ab_test → production."""
         candidate = make_model_registry_entry(stage="ab_test", metrics={"f1": 0.92})
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(return_value=None)
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(return_value=None)
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -63,10 +63,10 @@ class TestPromotionPath:
         )
         assert response.status_code == 200
 
-    async def test_cannot_promote_from_production(self, admin_client, mock_prisma):
+    async def test_cannot_promote_from_production(self, admin_client, mock_session):
         """production has no next stage — reject."""
         candidate = make_model_registry_entry(stage="production")
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -75,10 +75,10 @@ class TestPromotionPath:
         assert response.status_code == 400
         assert "no valid next stage" in response.json()["detail"].lower()
 
-    async def test_cannot_skip_stages(self, admin_client, mock_prisma):
+    async def test_cannot_skip_stages(self, admin_client, mock_session):
         """staging → production not allowed (must go through ab_test)."""
         candidate = make_model_registry_entry(stage="staging", metrics={"f1": 0.90})
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -87,8 +87,8 @@ class TestPromotionPath:
         assert response.status_code == 400
         assert "expected" in response.json()["detail"].lower()
 
-    async def test_promote_nonexistent_model_404(self, admin_client, mock_prisma):
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=None)
+    async def test_promote_nonexistent_model_404(self, admin_client, mock_session):
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=None)
 
         response = await admin_client.post(
             "/admin/models/nonexistent-id/promote",
@@ -104,7 +104,7 @@ class TestPromotionPath:
 class TestMetricsGate:
     """Candidate must beat current model on primary metric."""
 
-    async def test_candidate_beats_current_higher_is_better(self, admin_client, mock_prisma):
+    async def test_candidate_beats_current_higher_is_better(self, admin_client, mock_session):
         """f1: higher is better. Candidate 0.90 > current 0.85 → pass."""
         candidate = make_model_registry_entry(
             stage="staging", modelType="classification", metrics={"f1": 0.90}
@@ -124,8 +124,8 @@ class TestMetricsGate:
             # Second call: current model in target stage
             return _model_obj(current)
 
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(side_effect=find_first_side_effect)
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(side_effect=find_first_side_effect)
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -133,7 +133,7 @@ class TestMetricsGate:
         )
         assert response.status_code == 200
 
-    async def test_candidate_loses_to_current_rejected(self, admin_client, mock_prisma):
+    async def test_candidate_loses_to_current_rejected(self, admin_client, mock_session):
         """f1: candidate 0.75 < current 0.85 → blocked."""
         candidate = make_model_registry_entry(
             stage="staging", modelType="classification", metrics={"f1": 0.75}
@@ -151,8 +151,8 @@ class TestMetricsGate:
                 return None
             return _model_obj(current)
 
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(side_effect=find_first_side_effect)
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(side_effect=find_first_side_effect)
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -161,7 +161,7 @@ class TestMetricsGate:
         assert response.status_code == 400
         assert "does not beat" in response.json()["detail"].lower()
 
-    async def test_lower_is_better_rmse(self, admin_client, mock_prisma):
+    async def test_lower_is_better_rmse(self, admin_client, mock_session):
         """rmse: lower is better. Candidate 0.10 < current 0.15 → pass."""
         candidate = make_model_registry_entry(
             stage="staging", modelType="scoring", metrics={"rmse": 0.10}
@@ -180,8 +180,8 @@ class TestMetricsGate:
                 return None
             return _model_obj(current)
 
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(side_effect=find_first_side_effect)
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(side_effect=find_first_side_effect)
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -189,7 +189,7 @@ class TestMetricsGate:
         )
         assert response.status_code == 200
 
-    async def test_lower_is_better_rmse_candidate_worse(self, admin_client, mock_prisma):
+    async def test_lower_is_better_rmse_candidate_worse(self, admin_client, mock_session):
         """rmse: candidate 0.20 > current 0.15 → blocked."""
         candidate = make_model_registry_entry(
             stage="staging", modelType="scoring", metrics={"rmse": 0.20}
@@ -204,8 +204,8 @@ class TestMetricsGate:
                 return None
             return _model_obj(current)
 
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(side_effect=find_first_side_effect)
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(side_effect=find_first_side_effect)
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -214,13 +214,13 @@ class TestMetricsGate:
         assert response.status_code == 400
         assert "lower is better" in response.json()["detail"].lower()
 
-    async def test_no_primary_metric_blocks_promotion(self, admin_client, mock_prisma):
+    async def test_no_primary_metric_blocks_promotion(self, admin_client, mock_session):
         """Candidate with no metrics cannot be promoted."""
         candidate = make_model_registry_entry(
             stage="staging", modelType="classification", metrics={}
         )
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(return_value=None)
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(return_value=None)
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -237,7 +237,7 @@ class TestMetricsGate:
 class TestPromotionCooldown:
     """2-minute cooldown between promotions for the same model name."""
 
-    async def test_cooldown_blocks_rapid_promotion(self, admin_client, mock_prisma):
+    async def test_cooldown_blocks_rapid_promotion(self, admin_client, mock_session):
         """Promotion within 2 minutes of last promotion → 429."""
         candidate = make_model_registry_entry(
             stage="staging", metrics={"f1": 0.90}
@@ -246,8 +246,8 @@ class TestPromotionCooldown:
             promotedAt=datetime.now(timezone.utc) - timedelta(seconds=30),
         )
 
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(return_value=_model_obj(recent))
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(return_value=_model_obj(recent))
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -264,11 +264,11 @@ class TestPromotionCooldown:
 class TestPromotionAuditLog:
     """All promotions logged to AuditLog with before/after state."""
 
-    async def test_promotion_creates_audit_entry(self, admin_client, mock_prisma, admin_user):
+    async def test_promotion_creates_audit_entry(self, admin_client, mock_session, admin_user):
         """Successful promotion writes an AuditLog entry."""
         candidate = make_model_registry_entry(stage="staging", metrics={"f1": 0.90})
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(return_value=None)
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(return_value=None)
 
         response = await admin_client.post(
             f"/admin/models/{candidate['id']}/promote",
@@ -277,8 +277,8 @@ class TestPromotionAuditLog:
         assert response.status_code == 200
 
         # Verify audit log was created (SA-based audit_action calls execute + commit)
-        mock_prisma.execute.assert_called()
-        mock_prisma.commit.assert_called()
+        mock_session.execute.assert_called()
+        mock_session.commit.assert_called()
 
 
 # ---------------------------------------------------------------------------
@@ -288,13 +288,13 @@ class TestPromotionAuditLog:
 class TestModelComparison:
     """GET /admin/models/{id}/compare returns metrics comparison."""
 
-    async def test_compare_with_no_current(self, admin_client, mock_prisma):
+    async def test_compare_with_no_current(self, admin_client, mock_session):
         """First promotion — no current model in target stage."""
         candidate = make_model_registry_entry(
             stage="staging", modelType="classification", metrics={"f1": 0.85}
         )
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(return_value=None)
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(return_value=None)
 
         response = await admin_client.get(f"/admin/models/{candidate['id']}/compare")
         assert response.status_code == 200
@@ -302,30 +302,30 @@ class TestModelComparison:
         assert data["comparison"]["passes_gate"] is True
         assert data["current"]["id"] is None
 
-    async def test_compare_candidate_beats_current(self, admin_client, mock_prisma):
+    async def test_compare_candidate_beats_current(self, admin_client, mock_session):
         candidate = make_model_registry_entry(
             stage="staging", modelType="classification", metrics={"f1": 0.90}
         )
         current = make_model_registry_entry(
             stage="ab_test", modelType="classification", metrics={"f1": 0.85}
         )
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(return_value=_model_obj(current))
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(return_value=_model_obj(current))
 
         response = await admin_client.get(f"/admin/models/{candidate['id']}/compare")
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["comparison"]["passes_gate"] is True
 
-    async def test_compare_candidate_loses(self, admin_client, mock_prisma):
+    async def test_compare_candidate_loses(self, admin_client, mock_session):
         candidate = make_model_registry_entry(
             stage="staging", modelType="classification", metrics={"f1": 0.70}
         )
         current = make_model_registry_entry(
             stage="ab_test", modelType="classification", metrics={"f1": 0.85}
         )
-        mock_prisma.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
-        mock_prisma.modelregistry.find_first = AsyncMock(return_value=_model_obj(current))
+        mock_session.modelregistry.find_unique = AsyncMock(return_value=_model_obj(candidate))
+        mock_session.modelregistry.find_first = AsyncMock(return_value=_model_obj(current))
 
         response = await admin_client.get(f"/admin/models/{candidate['id']}/compare")
         assert response.status_code == 200
