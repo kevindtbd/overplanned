@@ -21,6 +21,7 @@ import {
   updateSlotStatusSchema,
   VALID_TRANSITIONS,
 } from "@/lib/validations/slot";
+import { getTripPhase } from "@/lib/trip-status";
 
 const ACTION_TO_STATUS = {
   confirm: "confirmed",
@@ -71,8 +72,12 @@ export async function PATCH(
       status: true,
       isLocked: true,
       activityNodeId: true,
+      dayNumber: true,
+      sortOrder: true,
       trip: {
         select: {
+          startDate: true,
+          endDate: true,
           members: {
             where: { userId, status: "joined" },
             select: { id: true },
@@ -133,7 +138,18 @@ export async function PATCH(
     );
   }
 
-  const { signalType, signalValue } = ACTION_TO_SIGNAL[action];
+  const tripPhase = getTripPhase(slot.trip);
+  const isPreTrip = tripPhase === "pre_trip";
+
+  // In pre-trip phase, skip -> pre_trip_slot_removed with stronger negative signal
+  const resolvedSignalType =
+    isPreTrip && action === "skip"
+      ? "pre_trip_slot_removed"
+      : ACTION_TO_SIGNAL[action].signalType;
+  const resolvedSignalValue =
+    isPreTrip && action === "skip"
+      ? -0.7
+      : ACTION_TO_SIGNAL[action].signalValue;
 
   const [updatedSlot] = await prisma.$transaction([
     prisma.itinerarySlot.update({
@@ -147,10 +163,18 @@ export async function PATCH(
         tripId: slot.tripId,
         slotId,
         activityNodeId: slot.activityNodeId,
-        signalType: signalType as "slot_confirm" | "slot_skip",
-        signalValue,
-        tripPhase: "pre_trip",
+        signalType: resolvedSignalType,
+        signalValue: resolvedSignalValue,
+        tripPhase,
         rawAction: `slot_${action}`,
+        metadata:
+          isPreTrip && action === "skip"
+            ? {
+                day_number: slot.dayNumber,
+                slot_index: slot.sortOrder,
+                trip_phase: "pre_trip",
+              }
+            : undefined,
       },
     }),
   ]);

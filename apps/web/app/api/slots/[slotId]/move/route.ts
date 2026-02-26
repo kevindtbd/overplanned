@@ -18,6 +18,7 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { authOptions } from "@/lib/auth/config";
 import { prisma, TransactionClient } from "@/lib/prisma";
+import { getTripPhase } from "@/lib/trip-status";
 
 const moveSlotSchema = z
   .object({
@@ -238,7 +239,10 @@ export async function PATCH(
     }
   });
 
-  // Log behavioral signal (non-blocking, outside transaction for perf)
+  // Log behavioral signal (fire-and-forget, outside transaction for perf)
+  const tripPhase = getTripPhase(slot.trip);
+  const isPreTrip = tripPhase === "pre_trip";
+
   try {
     await prisma.behavioralSignal.create({
       data: {
@@ -246,17 +250,26 @@ export async function PATCH(
         userId,
         tripId: slot.tripId,
         slotId,
-        signalType: "slot_moved",
-        signalValue: 1.0,
-        tripPhase: "pre_trip",
+        signalType: isPreTrip ? "pre_trip_reorder" : "slot_moved",
+        signalValue: isPreTrip ? 0.3 : 1.0,
+        tripPhase,
         rawAction: targetDay
           ? `moved_to_day_${targetDay}`
           : `reordered_to_${targetSort}`,
+        metadata: isPreTrip
+          ? {
+              day_number: targetDay ?? slot.dayNumber,
+              slot_index: targetSort ?? slot.sortOrder,
+              original_day: slot.dayNumber,
+              original_sort: slot.sortOrder,
+              trip_phase: "pre_trip",
+            }
+          : undefined,
       },
     });
   } catch {
     // Signal logging failure should not break the move
-    console.error("Failed to log slot_moved behavioral signal");
+    console.error("Failed to log move behavioral signal");
   }
 
   return NextResponse.json({ success: true, data: updatedSlot });

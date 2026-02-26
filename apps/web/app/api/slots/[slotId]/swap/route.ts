@@ -9,8 +9,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { v4 as uuidv4 } from "uuid";
 import { authOptions } from "@/lib/auth/config";
 import { prisma } from "@/lib/prisma";
+import { getTripPhase } from "@/lib/trip-status";
 
 interface SwapBody {
   pivotEventId: string;
@@ -52,9 +54,13 @@ export async function PATCH(
       id: true,
       tripId: true,
       activityNodeId: true,
+      dayNumber: true,
+      sortOrder: true,
       isLocked: true,
       trip: {
         select: {
+          startDate: true,
+          endDate: true,
           members: {
             where: { userId, status: "joined" },
             select: { id: true },
@@ -134,6 +140,36 @@ export async function PATCH(
       },
     }),
   ]);
+
+  // Emit behavioral signal (fire-and-forget)
+  const tripPhase = getTripPhase(slot.trip);
+  const originalActivityId = slot.activityNodeId;
+
+  // Fire-and-forget: .catch() handles the rejected promise, try/catch handles sync errors
+  prisma.behavioralSignal.create({
+    data: {
+      id: uuidv4(),
+      userId,
+      tripId: slot.tripId,
+      slotId,
+      activityNodeId: selectedNodeId,
+      signalType: tripPhase === "pre_trip" ? "pre_trip_slot_swap" : "slot_swap",
+      signalValue: tripPhase === "pre_trip" ? -0.5 : -0.3,
+      tripPhase,
+      rawAction: "slot_swap",
+      metadata: {
+        original_activity_id: originalActivityId,
+        replacement_activity_id: selectedNodeId,
+        pivot_event_id: pivotEventId,
+        day_number: slot.dayNumber,
+        slot_index: slot.sortOrder,
+        response_time_ms: responseTimeMs,
+        trip_phase: tripPhase,
+      },
+    },
+  }).catch((err) => {
+    console.error("Failed to log swap behavioral signal:", err);
+  });
 
   return NextResponse.json({
     success: true,

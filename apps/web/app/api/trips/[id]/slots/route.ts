@@ -16,6 +16,7 @@ import { authOptions } from "@/lib/auth/config";
 import { prisma, TransactionClient } from "@/lib/prisma";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
+import { getTripPhase } from "@/lib/trip-status";
 
 const addSlotSchema = z.object({
   activityNodeId: z.string().uuid(),
@@ -191,6 +192,9 @@ export async function POST(
         },
       });
 
+      const tripPhase = getTripPhase(trip);
+      const isPreTrip = tripPhase === "pre_trip";
+
       await tx.behavioralSignal.create({
         data: {
           id: signalId,
@@ -198,10 +202,16 @@ export async function POST(
           tripId,
           slotId,
           activityNodeId,
-          signalType: "discover_shortlist",
-          signalValue: 1.0,
-          tripPhase: "pre_trip",
+          signalType: isPreTrip ? "pre_trip_slot_added" : "discover_shortlist",
+          signalValue: isPreTrip ? 0.8 : 1.0,
+          tripPhase,
           rawAction: "add_to_trip_from_shortlist",
+          metadata: isPreTrip
+            ? {
+                day_number: requestedDay,
+                trip_phase: "pre_trip",
+              }
+            : undefined,
         },
       });
 
