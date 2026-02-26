@@ -67,30 +67,40 @@ GATE 0: SA Test Cleanup (6 files)                    <<<< WAVE 1 DONE
 ## Wave 2 (After A.WT1 merges to main)
 
 ```
-    ├── A.WT2: Signal Taxonomy + RankingEvent Logging
-    │   - services/api/signals/taxonomy.py (training weights)
-    │   - engine.py: write RankingEvent during generation
-    │   - Persona snapshot query
-    │   DEPENDS ON: A.WT1 (new columns)
+    ├── A.WT2: Signal Taxonomy + RankingEvent Logging ──── WAVE 2 DONE
+    │   - services/api/signals/taxonomy.py (4-tier, 16 types)
+    │   - ranking_logger.py: async fire-and-forget RankingEvent writer
+    │   - persona_snapshot.py: 5 persona dimensions from signal history
+    │   - RankingEvent SA model added to models.py
+    │   - 5 new SignalType enum values (slot_confirmed, slot_rejected, etc.)
+    │   - 55 tests
     │
-    ├── A.WT3: Pre-trip Modification Signals
-    │   - Slot modification API routes emit BehavioralSignal
-    │   - Wire candidateSetId from original generation
-    │   DEPENDS ON: A.WT1 (enum values)
+    ├── A.WT3: Pre-trip Modification Signals ──────────── WAVE 2 DONE
+    │   - getTripPhase() in trip-status.ts
+    │   - Move/swap/status/add routes emit phase-aware BehavioralSignal
+    │   - Fixed: swap route fire-and-forget (.catch() not void+try/catch)
+    │   - 17 tests
     │
-    ├── C.WT3: RankingEvent in Generation Pipeline
-    │   - generate-itinerary.ts writes RankingEvent in transaction
-    │   - persona-snapshot.ts utility
-    │   - Weather context via getClimateContext()
-    │   DEPENDS ON: A.WT1 (RankingEvent columns)
+    ├── C.WT3: RankingEvent in Generation Pipeline ────── WAVE 2 DONE
+    │   - generate-itinerary.ts writes RankingEvent per day in $transaction
+    │   - persona-snapshot.ts + weather-context.ts utilities
+    │   - One RankingEvent per day with full candidate pool for BPR
+    │   - 24 tests
     │
-    └── C.WT4: Behavioral Signal Route Enhancements
-        - Weather context auto-attach
-        - Rate limiting on /api/signals/behavioral
-        - signalValue server-side clamping
-        - New signal types in allowlist
-        DEPENDS ON: A.WT1 (enum values)
+    └── C.WT4: Behavioral Signal Route Enhancements ───── WAVE 2 DONE
+        - Allowlist (16 signal types, 400 on unknown)
+        - signalValue clamped to [-1.0, 1.0]
+        - Per-user rate limiting (120/min, 429 on exceed)
+        - Weather context auto-attached from TripLeg
+        - 28 tests
 ```
+
+### Wave 2 Issues Resolved
+- **Four-way schema conflict**: All 4 agents stripped Prisma columns they didn't understand.
+  Resolved by using main schema as canonical base + additive-only changes.
+- **Swap route void+try/catch**: `void` discards the promise so try/catch never fires.
+  Fixed to `.catch()` pattern.
+- **candidateIds type**: A.WT3 used `String[]`, C.WT4 used `Json?`. Kept `String[]` from main.
 
 ## Wave 3 (After Wave 2 + B pipeline fixes merged)
 
