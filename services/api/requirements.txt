@@ -1,3 +1,7 @@
+# CPU-only PyTorch (no CUDA — Cloud Run has no GPU)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+
 # Overplanned API dependencies
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
@@ -24,6 +28,9 @@ qdrant-client==1.12.1
 # Scraping / parsing
 beautifulsoup4==4.12.3
 feedparser==6.0.11
+
+# Data / Parquet
+pyarrow>=15.0.0
 
 # Utilities
 pytz==2024.2

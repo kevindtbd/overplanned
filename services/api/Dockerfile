@@ -11,9 +11,6 @@ COPY services/api/requirements.txt /app/services/api/requirements.txt
 RUN pip install --no-cache-dir -r services/api/requirements.txt
 
 COPY services/ /app/services/
-COPY prisma/ /app/prisma/
-
-# No generate step needed -- SA models are plain Python
 
 ENV PYTHONPATH=/app
 EXPOSE 8000

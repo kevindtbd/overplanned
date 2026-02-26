@@ -1,12 +1,40 @@
+# VCS / IDE
+.git/
+.DS_Store
+*.log
+
+# Env / secrets
+**/.env
+**/.env.local
+
+# Python bytecode
+__pycache__/
+*.pyc
+.venv/
+
+# Node / Next.js (not needed for API image)
 node_modules/
 dist/
 .next/
-.git/
-*.log
-**/.env
-**/.env.local
-.DS_Store
-__pycache__/
-*.pyc
+apps/
+packages/
+
+# Project dirs not needed in API container
 tracks/
 docs/
+scripts/
+data/
+docker/
+
+# Worktrees / Claude
+.worktrees/
+.claude/
+.claire/
+
+# Test / config noise
+*.md
+.eslintrc*
+.prettierrc*
+vitest.config.*
+tsconfig*
+playwright*
