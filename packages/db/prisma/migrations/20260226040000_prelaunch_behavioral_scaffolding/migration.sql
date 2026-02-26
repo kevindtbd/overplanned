@@ -66,7 +66,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_enum
     WHERE enumlabel = 'pre_trip_slot_swap'
-      AND enumtypid = 'SignalType'::regtype
+      AND enumtypid = '"SignalType"'::regtype
   ) THEN
     ALTER TYPE "SignalType" ADD VALUE 'pre_trip_slot_swap';
   END IF;
@@ -74,7 +74,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_enum
     WHERE enumlabel = 'pre_trip_slot_removed'
-      AND enumtypid = 'SignalType'::regtype
+      AND enumtypid = '"SignalType"'::regtype
   ) THEN
     ALTER TYPE "SignalType" ADD VALUE 'pre_trip_slot_removed';
   END IF;
@@ -82,7 +82,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_enum
     WHERE enumlabel = 'pre_trip_slot_added'
-      AND enumtypid = 'SignalType'::regtype
+      AND enumtypid = '"SignalType"'::regtype
   ) THEN
     ALTER TYPE "SignalType" ADD VALUE 'pre_trip_slot_added';
   END IF;
@@ -90,7 +90,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_enum
     WHERE enumlabel = 'pre_trip_reorder'
-      AND enumtypid = 'SignalType'::regtype
+      AND enumtypid = '"SignalType"'::regtype
   ) THEN
     ALTER TYPE "SignalType" ADD VALUE 'pre_trip_reorder';
   END IF;
