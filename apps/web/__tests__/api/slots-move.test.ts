@@ -210,7 +210,7 @@ describe("PATCH /api/slots/[slotId]/move — day move", () => {
         userId: "user-abc",
         tripId: "trip-1",
         slotId: "slot-123",
-        signalType: "slot_moved",
+        signalType: "pre_trip_reorder",
         rawAction: "moved_to_day_2",
       }),
     });
