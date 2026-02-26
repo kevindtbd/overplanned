@@ -3,8 +3,8 @@ Post-trip re-engagement orchestrator.
 
 Coordinates the full re-engagement pipeline after trip completion:
 1. Next destination suggestion via Qdrant persona vector search
-2. 24-hour push notification (FCM) — "Your trip memories are ready"
-3. 7-day email via Resend — trip memory + "Where next?"
+2. 24-hour push notification (FCM) -- "Your trip memories are ready"
+3. 7-day email via Resend -- trip memory + "Where next?"
 
 Entry points:
 - on_trip_completed(): Called when a trip transitions to completed status
@@ -21,8 +21,10 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from prisma import Prisma
+from sqlalchemy import and_, select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from services.api.db.models import BehavioralSignal, Trip
 from services.api.embedding.service import embedding_service
 from services.api.posttrip.email_service import (
     check_email_rate_limit,
@@ -50,7 +52,7 @@ DESTINATION_SCORE_THRESHOLD = 0.4
 
 
 async def suggest_next_destination(
-    db: Prisma,
+    session: AsyncSession,
     qdrant: QdrantSearchClient,
     *,
     user_id: str,
@@ -62,22 +64,14 @@ async def suggest_next_destination(
     Builds a persona vector from the user's behavioral signals across all trips,
     then searches Qdrant for high-affinity activity clusters in cities they
     haven't visited yet.
-
-    Args:
-        db: Prisma client
-        qdrant: Qdrant search client
-        user_id: The user to generate suggestions for
-        completed_trip_id: The just-completed trip (excluded from suggestions)
-
-    Returns:
-        Dict with city, country, reason, top_activities or None if insufficient data
     """
     # Step 1: Get user's positive behavioral signals for persona embedding
-    positive_signals = await db.behavioralsignal.find_many(
-        where={
-            "userId": user_id,
-            "signalType": {
-                "in": [
+    stmt = (
+        select(BehavioralSignal)
+        .where(
+            and_(
+                BehavioralSignal.userId == user_id,
+                BehavioralSignal.signalType.in_([
                     "slot_confirm",
                     "slot_complete",
                     "post_loved",
@@ -85,13 +79,15 @@ async def suggest_next_destination(
                     "discover_shortlist",
                     "pivot_accepted",
                     "soft_positive",
-                ],
-            },
-            "signalValue": {"gte": 0.5},
-        },
-        order_by={"createdAt": "desc"},
-        take=100,
+                ]),
+                BehavioralSignal.signalValue >= 0.5,
+            )
+        )
+        .order_by(BehavioralSignal.createdAt.desc())
+        .limit(100)
     )
+    result = await session.execute(stmt)
+    positive_signals = result.scalars().all()
 
     if len(positive_signals) < 3:
         logger.info(
@@ -111,24 +107,32 @@ async def suggest_next_destination(
     # Deduplicate
     unique_ids = list(dict.fromkeys(activity_ids))[:30]
 
-    activities = await db.activitynode.find_many(
-        where={"id": {"in": unique_ids}},
+    # ActivityNode is not in SA models scope -- use raw SQL
+    activities_result = await session.execute(
+        text("""
+        SELECT id, name, category, city
+        FROM "ActivityNode"
+        WHERE id = ANY(:ids)
+        """),
+        {"ids": unique_ids},
     )
+    activities = activities_result.mappings().all()
 
     if not activities:
         return None
 
     # Step 3: Build persona query from loved activities
-    # Combine activity names + categories into a persona search string
     activity_descriptions = []
     visited_cities: set[str] = set()
     for a in activities:
-        activity_descriptions.append(f"{a.name} ({a.category})")
-        visited_cities.add(a.city.lower())
+        activity_descriptions.append(f"{a['name']} ({a['category']})")
+        visited_cities.add(a["city"].lower())
 
     # Also get the completed trip's city to exclude
-    completed_trip = await db.trip.find_unique(where={"id": completed_trip_id})
-    if completed_trip:
+    trip_stmt = select(Trip).where(Trip.id == completed_trip_id)
+    trip_result = await session.execute(trip_stmt)
+    completed_trip = trip_result.scalars().first()
+    if completed_trip and completed_trip.city:
         visited_cities.add(completed_trip.city.lower())
 
     persona_query = "traveler who enjoys: " + ", ".join(activity_descriptions[:15])
@@ -137,7 +141,6 @@ async def suggest_next_destination(
     persona_vector = embedding_service.embed_single(persona_query, is_query=True)
 
     # Step 5: Search Qdrant for matching activities in OTHER cities
-    # We search without city filter, then group by city, excluding visited
     try:
         from qdrant_client.models import (
             Filter,
@@ -146,7 +149,6 @@ async def suggest_next_destination(
             SearchParams,
         )
 
-        # Build filter: is_canonical=true, city NOT in visited cities
         must_conditions = [
             FieldCondition(key="is_canonical", match=MatchValue(value=True)),
         ]
@@ -165,7 +167,7 @@ async def suggest_next_destination(
             collection_name="activity_nodes",
             query_vector=persona_vector,
             query_filter=qdrant_filter,
-            limit=DESTINATION_SEARCH_LIMIT * 3,  # Over-fetch to group by city
+            limit=DESTINATION_SEARCH_LIMIT * 3,
             score_threshold=DESTINATION_SCORE_THRESHOLD,
             search_params=SearchParams(hnsw_ef=128, exact=False),
         )
@@ -206,13 +208,11 @@ async def suggest_next_destination(
     if not city_scores:
         return None
 
-    # Sort by average score * activity count (balance quality and variety)
     best_city = max(
         city_scores.values(),
         key=lambda c: (c["total_score"] / c["count"]) * min(c["count"], 5),
     )
 
-    # Build reason from top activity categories
     categories = [a["category"] for a in best_city["top_activities"]]
     unique_categories = list(dict.fromkeys(categories))[:3]
     reason = f"Based on your love for {', '.join(unique_categories)}"
@@ -227,7 +227,7 @@ async def suggest_next_destination(
 
 
 async def on_trip_completed(
-    db: Prisma,
+    session: AsyncSession,
     redis_client,
     qdrant: QdrantSearchClient,
     *,
@@ -241,16 +241,6 @@ async def on_trip_completed(
     1. Enqueue 24-hour push notification
     2. Schedule 7-day email
     3. Pre-compute next destination suggestion (cached for email)
-
-    Args:
-        db: Prisma client
-        redis_client: Async Redis client
-        qdrant: Qdrant search client
-        trip_id: The completed trip
-        user_id: The trip owner
-
-    Returns:
-        Summary of what was scheduled/skipped
     """
     import json
 
@@ -263,12 +253,19 @@ async def on_trip_completed(
     }
 
     # Fetch trip details
-    trip = await db.trip.find_unique(where={"id": trip_id})
+    trip_stmt = select(Trip).where(Trip.id == trip_id)
+    trip_result = await session.execute(trip_stmt)
+    trip = trip_result.scalars().first()
     if not trip:
         logger.error("Trip %s not found for re-engagement", trip_id)
         return result
 
-    user = await db.user.find_unique(where={"id": user_id})
+    # Fetch user details via raw SQL (User model not in SA scope)
+    user_result = await session.execute(
+        text('SELECT id, email, name FROM "User" WHERE id = :user_id'),
+        {"user_id": user_id},
+    )
+    user = user_result.mappings().first()
     if not user:
         logger.error("User %s not found for re-engagement", user_id)
         return result
@@ -281,14 +278,14 @@ async def on_trip_completed(
         redis_client,
         user_id=user_id,
         trip_id=trip_id,
-        trip_destination=trip.destination,
+        trip_destination=trip.destination or "",
         scheduled_for=push_scheduled_for,
     )
 
     # 2. Pre-compute destination suggestion (used in both push context and email)
     try:
         suggestion = await suggest_next_destination(
-            db, qdrant,
+            session, qdrant,
             user_id=user_id,
             completed_trip_id=trip_id,
         )
@@ -311,11 +308,11 @@ async def on_trip_completed(
         "type": "trip_memory_7d",
         "user_id": user_id,
         "trip_id": trip_id,
-        "user_email": user.email,
-        "user_name": user.name,
-        "destination": trip.destination,
-        "city": trip.city,
-        "country": trip.country,
+        "user_email": user["email"],
+        "user_name": user["name"],
+        "destination": trip.destination or "",
+        "city": trip.city or "",
+        "country": trip.country or "",
         "start_date": trip.startDate.isoformat() if trip.startDate else "",
         "end_date": trip.endDate.isoformat() if trip.endDate else "",
         "scheduled_for": email_scheduled_for.isoformat(),
@@ -340,7 +337,7 @@ async def on_trip_completed(
 
 async def process_pending_emails(
     redis_client,
-    db: Prisma,
+    session: AsyncSession,
     *,
     batch_size: int = 20,
 ) -> dict[str, int]:
@@ -348,9 +345,6 @@ async def process_pending_emails(
     Cron job: process due 7-day re-engagement emails.
 
     Pulls items from the email queue where scheduled_for <= now.
-
-    Returns:
-        Stats dict with sent/failed/skipped/rate_limited counts
     """
     import json
 
@@ -373,7 +367,7 @@ async def process_pending_emails(
         await redis_client.zrem(EMAIL_QUEUE_KEY, raw_payload)
 
         # Check unsubscribe
-        if await check_unsubscribed(db, user_id):
+        if await check_unsubscribed(session, user_id):
             stats["skipped"] += 1
             continue
 
@@ -383,7 +377,7 @@ async def process_pending_emails(
             continue
 
         # Fetch trip highlights (top completed/loved slots)
-        highlights = await _get_trip_highlights(db, trip_id)
+        highlights = await _get_trip_highlights(session, trip_id)
 
         # Retrieve cached destination suggestion
         cache_key = f"posttrip:suggestion:{user_id}:{trip_id}"
@@ -398,7 +392,7 @@ async def process_pending_emails(
         # Send email
         success = await send_trip_memory_email(
             redis_client,
-            db,
+            session,
             user_id=user_id,
             trip_id=trip_id,
             user_email=payload["user_email"],
@@ -420,7 +414,7 @@ async def process_pending_emails(
 
 async def process_pending_pushes(
     redis_client,
-    db: Prisma,
+    session: AsyncSession,
     *,
     batch_size: int = 50,
 ) -> dict[str, int]:
@@ -429,11 +423,11 @@ async def process_pending_pushes(
 
     Thin wrapper around push_service.process_push_queue for the cron entry point.
     """
-    return await process_push_queue(redis_client, db, batch_size=batch_size)
+    return await process_push_queue(redis_client, session, batch_size=batch_size)
 
 
 async def _get_trip_highlights(
-    db: Prisma,
+    session: AsyncSession,
     trip_id: str,
     limit: int = 5,
 ) -> list[dict[str, Any]]:
@@ -441,48 +435,58 @@ async def _get_trip_highlights(
     Get top highlights from a completed trip for the memory email.
 
     Prioritizes: completed slots with post_loved signals > completed slots > confirmed slots.
+    Uses raw SQL since ActivityNode is not in SA models scope.
     """
     # Get completed/confirmed slots with their activity nodes
-    slots = await db.itineraryslot.find_many(
-        where={
-            "tripId": trip_id,
-            "status": {"in": ["completed", "confirmed"]},
-            "activityNodeId": {"not": None},
-        },
-        include={"activityNode": True},
-        order_by={"dayNumber": "asc"},
-        take=limit * 2,  # Over-fetch for ranking
+    slots_result = await session.execute(
+        text("""
+        SELECT
+            s.id, s."dayNumber", s."activityNodeId",
+            a.id AS "nodeId", a.name, a.category, a."primaryImageUrl"
+        FROM "ItinerarySlot" s
+        LEFT JOIN "ActivityNode" a ON s."activityNodeId" = a.id
+        WHERE s."tripId" = :trip_id
+          AND s.status IN ('completed', 'confirmed')
+          AND s."activityNodeId" IS NOT NULL
+        ORDER BY s."dayNumber" ASC
+        LIMIT :limit_count
+        """),
+        {"trip_id": trip_id, "limit_count": limit * 2},
     )
+    slot_rows = slots_result.mappings().all()
 
-    if not slots:
+    if not slot_rows:
         return []
 
     # Get loved signals for these activity nodes
     activity_node_ids = [
-        s.activityNodeId for s in slots
-        if s.activityNodeId is not None
+        r["activityNodeId"] for r in slot_rows
+        if r["activityNodeId"] is not None
     ]
 
-    loved_signals = await db.behavioralsignal.find_many(
-        where={
-            "activityNodeId": {"in": activity_node_ids},
-            "signalType": "post_loved",
-        },
-    )
-    loved_ids = {s.activityNodeId for s in loved_signals}
+    loved_ids: set[str] = set()
+    if activity_node_ids:
+        loved_result = await session.execute(
+            select(BehavioralSignal.activityNodeId).where(
+                and_(
+                    BehavioralSignal.activityNodeId.in_(activity_node_ids),
+                    BehavioralSignal.signalType == "post_loved",
+                )
+            )
+        )
+        loved_ids = {row[0] for row in loved_result.all() if row[0]}
 
     # Build highlights, prioritizing loved activities
     highlights: list[dict[str, Any]] = []
-    for slot in slots:
-        if slot.activityNode is None:
+    for row_data in slot_rows:
+        if row_data["nodeId"] is None:
             continue
-        node = slot.activityNode
         highlights.append({
-            "name": node.name,
-            "category": node.category,
-            "image_url": node.primaryImageUrl or "",
-            "is_loved": node.id in loved_ids,
-            "day": slot.dayNumber,
+            "name": row_data["name"],
+            "category": row_data["category"],
+            "image_url": row_data["primaryImageUrl"] or "",
+            "is_loved": row_data["nodeId"] in loved_ids,
+            "day": row_data["dayNumber"],
         })
 
     # Sort: loved first, then by day

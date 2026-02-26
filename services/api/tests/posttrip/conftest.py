@@ -9,7 +9,7 @@ Provides:
 - skip_signal: BehavioralSignal with signalType=post_skipped for disambiguation
 - mock_redis_posttrip: Redis mock with sorted-set support for push/email queues
 - mock_qdrant_posttrip: Qdrant mock returning destination suggestions
-- loved_activities: ActivityNodes + post_loved signals for highlight computation
+- mock_db_posttrip: MockSASession for SA-based posttrip code
 """
 
 from __future__ import annotations
@@ -30,6 +30,7 @@ from services.api.tests.conftest import (
     make_behavioral_signal,
     make_intention_signal,
 )
+from services.api.tests.helpers.mock_sa import MockSASession
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +66,7 @@ def second_user() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Trip fixtures — timezone diversity
+# Trip fixtures -- timezone diversity
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
@@ -88,7 +89,7 @@ def completed_trip(completed_user: dict) -> dict:
 
 @pytest.fixture
 def tokyo_trip(completed_user: dict) -> dict:
-    """Trip with Asia/Tokyo timezone — UTC+9. endDate just passed in JST."""
+    """Trip with Asia/Tokyo timezone -- UTC+9. endDate just passed in JST."""
     now = datetime.now(timezone.utc)
     return make_trip(
         user_id=completed_user["id"],
@@ -98,14 +99,14 @@ def tokyo_trip(completed_user: dict) -> dict:
         country="Japan",
         timezone="Asia/Tokyo",
         startDate=now - timedelta(days=7),
-        endDate=now - timedelta(hours=10),  # ended 10h ago UTC
+        endDate=now - timedelta(hours=10),
         activatedAt=now - timedelta(days=7),
     )
 
 
 @pytest.fixture
 def london_trip(completed_user: dict) -> dict:
-    """Trip with Europe/London timezone — UTC+0/+1 depending on DST."""
+    """Trip with Europe/London timezone -- UTC+0/+1 depending on DST."""
     now = datetime.now(timezone.utc)
     return make_trip(
         user_id=completed_user["id"],
@@ -122,7 +123,7 @@ def london_trip(completed_user: dict) -> dict:
 
 @pytest.fixture
 def honolulu_trip(completed_user: dict) -> dict:
-    """Trip with Pacific/Honolulu timezone — UTC-10. endDate not yet passed there."""
+    """Trip with Pacific/Honolulu timezone -- UTC-10. endDate not yet passed there."""
     now = datetime.now(timezone.utc)
     return make_trip(
         user_id=completed_user["id"],
@@ -132,7 +133,7 @@ def honolulu_trip(completed_user: dict) -> dict:
         country="United States",
         timezone="Pacific/Honolulu",
         startDate=now - timedelta(days=7),
-        endDate=now + timedelta(hours=8),  # 8h from now UTC = still afternoon in Honolulu
+        endDate=now + timedelta(hours=8),
         activatedAt=now - timedelta(days=7),
     )
 
@@ -156,7 +157,7 @@ def future_trip(completed_user: dict) -> dict:
 
 @pytest.fixture
 def trip_no_timezone(completed_user: dict) -> dict:
-    """Trip missing timezone — should not auto-complete."""
+    """Trip missing timezone -- should not auto-complete."""
     now = datetime.now(timezone.utc)
     return make_trip(
         user_id=completed_user["id"],
@@ -172,7 +173,7 @@ def trip_no_timezone(completed_user: dict) -> dict:
 
 @pytest.fixture
 def trip_no_enddate(completed_user: dict) -> dict:
-    """Trip missing endDate — should not auto-complete."""
+    """Trip missing endDate -- should not auto-complete."""
     now = datetime.now(timezone.utc)
     return make_trip(
         user_id=completed_user["id"],
@@ -192,13 +193,7 @@ def trip_no_enddate(completed_user: dict) -> dict:
 
 @pytest.fixture
 def reflection_slots(completed_trip: dict) -> list[dict]:
-    """Mixed status slots for post-trip reflection.
-
-    [0] completed — sushi restaurant (loved)
-    [1] completed — temple visit
-    [2] skipped   — park visit
-    [3] proposed  — never confirmed (ignored)
-    """
+    """Mixed status slots for post-trip reflection."""
     trip_id = completed_trip["id"]
     return [
         make_itinerary_slot(
@@ -255,7 +250,7 @@ def slot_completed_to_skipped(completed_trip: dict) -> dict:
 
 @pytest.fixture
 def loved_activities() -> list[dict]:
-    """Activities the user loved — for highlight computation and suggestions."""
+    """Activities the user loved -- for highlight computation and suggestions."""
     return [
         make_activity_node(
             name="Tsukiji Outer Market",
@@ -286,7 +281,7 @@ def loved_activities() -> list[dict]:
 
 @pytest.fixture
 def skipped_activity() -> dict:
-    """Activity that was skipped — for disambiguation."""
+    """Activity that was skipped -- for disambiguation."""
     return make_activity_node(
         name="Meiji Shrine",
         slug="meiji-shrine",
@@ -302,7 +297,7 @@ def skipped_activity() -> dict:
 
 @pytest.fixture
 def skip_signal(completed_user: dict, completed_trip: dict, skipped_activity: dict) -> dict:
-    """BehavioralSignal for a skipped slot — input for disambiguation."""
+    """BehavioralSignal for a skipped slot -- input for disambiguation."""
     return make_behavioral_signal(
         user_id=completed_user["id"],
         tripId=completed_trip["id"],
@@ -327,7 +322,7 @@ def loved_signals(completed_user: dict, completed_trip: dict, loved_activities: 
             tripPhase="post_trip",
             rawAction="post_loved",
         )
-        for act in loved_activities[:2]  # only first two loved
+        for act in loved_activities[:2]
     ]
 
 
@@ -363,7 +358,7 @@ def pivot_signal_from_midtrip(
 
 
 # ---------------------------------------------------------------------------
-# Mock Redis — sorted set support for push/email queues
+# Mock Redis -- sorted set support for push/email queues
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
@@ -438,7 +433,7 @@ def mock_redis_posttrip():
 
 
 # ---------------------------------------------------------------------------
-# Mock Qdrant — destination suggestion search results
+# Mock Qdrant -- destination suggestion search results
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
@@ -486,54 +481,16 @@ def mock_qdrant_posttrip():
 
 
 # ---------------------------------------------------------------------------
-# Mock Prisma DB — configurable for each test scenario
+# Mock SA Session -- configurable for each test scenario
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
 def mock_db_posttrip():
     """
-    Prisma mock with configurable find/create methods.
+    SA session mock (via MockSASession) with configurable return values.
 
-    Callers override specific methods for their test scenario.
-    Default: all finds return None/empty, creates return the input data.
+    Callers configure via session.returns_one/returns_many/returns_none
+    for their specific test scenario.
+    Default: all queries return empty/None.
     """
-    db = AsyncMock()
-
-    # Trip model
-    db.trip = AsyncMock()
-    db.trip.find_unique = AsyncMock(return_value=None)
-    db.trip.find_many = AsyncMock(return_value=[])
-    db.trip.update = AsyncMock(return_value=None)
-
-    # User model
-    db.user = AsyncMock()
-    db.user.find_unique = AsyncMock(return_value=None)
-
-    # ItinerarySlot model
-    db.itineraryslot = AsyncMock()
-    db.itineraryslot.find_many = AsyncMock(return_value=[])
-    db.itineraryslot.update = AsyncMock(return_value=None)
-
-    # BehavioralSignal model
-    db.behavioralsignal = AsyncMock()
-    db.behavioralsignal.find_many = AsyncMock(return_value=[])
-    db.behavioralsignal.find_unique = AsyncMock(return_value=None)
-    db.behavioralsignal.create = AsyncMock(return_value=None)
-
-    # IntentionSignal model
-    db.intentionsignal = AsyncMock()
-    db.intentionsignal.find_first = AsyncMock(return_value=None)
-    db.intentionsignal.create = AsyncMock(return_value=None)
-
-    # ActivityNode model
-    db.activitynode = AsyncMock()
-    db.activitynode.find_many = AsyncMock(return_value=[])
-
-    # RawEvent model
-    db.rawevent = AsyncMock()
-    db.rawevent.find_unique = AsyncMock(return_value=None)
-
-    # Raw query support
-    db.query_raw = AsyncMock(return_value=[])
-
-    return db
+    return MockSASession()

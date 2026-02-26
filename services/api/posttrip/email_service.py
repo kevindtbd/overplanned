@@ -17,7 +17,8 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from prisma import Prisma
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.api.config import settings
 
@@ -52,14 +53,6 @@ async def generate_login_link(
     - Single use (deleted from Redis on consumption)
     - 15-minute expiry
     - Maps to user_id + redirect_path
-
-    Args:
-        redis_client: Async Redis client
-        user_id: User this link authenticates
-        redirect_path: Where to redirect after auth (e.g., /trip/{id}/memory)
-
-    Returns:
-        Full login URL with token
     """
     token = secrets.token_urlsafe(32)
     key = LOGIN_LINK_KEY.format(token=token)
@@ -127,34 +120,35 @@ async def mark_email_sent(
     await redis_client.setex(key, EMAIL_RATE_LIMIT_TTL_S, "1")
 
 
-async def check_unsubscribed(db: Prisma, user_id: str) -> bool:
+async def check_unsubscribed(session: AsyncSession, user_id: str) -> bool:
     """Check if user has unsubscribed from re-engagement emails."""
-    result = await db.query_raw(
-        """
+    result = await session.execute(
+        text("""
         SELECT 1 FROM "EmailPreference"
-        WHERE "userId" = $1 AND "category" = 'reengagement' AND "unsubscribed" = true
-        """,
-        user_id,
+        WHERE "userId" = :user_id AND "category" = 'reengagement' AND "unsubscribed" = true
+        """),
+        {"user_id": user_id},
     )
-    return len(result) > 0
+    return result.first() is not None
 
 
-async def unsubscribe_user(db: Prisma, user_id: str) -> None:
+async def unsubscribe_user(session: AsyncSession, user_id: str) -> None:
     """Unsubscribe user from re-engagement emails."""
-    await db.query_raw(
-        """
+    await session.execute(
+        text("""
         INSERT INTO "EmailPreference" (id, "userId", "category", "unsubscribed", "updatedAt")
-        VALUES (gen_random_uuid(), $1, 'reengagement', true, NOW())
+        VALUES (gen_random_uuid(), :user_id, 'reengagement', true, NOW())
         ON CONFLICT ("userId", "category")
         DO UPDATE SET "unsubscribed" = true, "updatedAt" = NOW()
-        """,
-        user_id,
+        """),
+        {"user_id": user_id},
     )
+    await session.commit()
 
 
 async def send_trip_memory_email(
     redis_client,
-    db: Prisma,
+    session: AsyncSession,
     *,
     user_id: str,
     trip_id: str,
@@ -170,7 +164,7 @@ async def send_trip_memory_email(
 
     Args:
         redis_client: Async Redis client (rate limit + login links)
-        db: Prisma client (unsubscribe check)
+        session: SA async session (unsubscribe check)
         user_id: Target user
         trip_id: Completed trip
         user_email: User's email address
@@ -184,7 +178,7 @@ async def send_trip_memory_email(
         True if email sent, False if skipped (rate limited, unsubscribed, error)
     """
     # Check unsubscribe
-    if await check_unsubscribed(db, user_id):
+    if await check_unsubscribed(session, user_id):
         logger.info("User %s unsubscribed from reengagement emails", user_id)
         return False
 
@@ -376,7 +370,7 @@ def _build_trip_memory_html(
         <span style="font-family:'DM Mono',monospace;font-size:13px;color:#666;">({_escape_html(dates)})</span>.
     </p>
     <p style="font-size:15px;color:#333;line-height:1.6;margin:0 0 24px;">
-        We put together your trip memories — the spots you loved, the ones you discovered, and a few surprises.
+        We put together your trip memories -- the spots you loved, the ones you discovered, and a few surprises.
     </p>
 
     <div style="text-align:center;margin:0 0 24px;">

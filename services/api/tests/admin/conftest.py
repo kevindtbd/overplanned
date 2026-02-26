@@ -299,30 +299,19 @@ def admin_app(mock_prisma, admin_user):
     FastAPI app with admin routers mounted and dependencies overridden.
     Uses mock Prisma and a fixed admin user for all auth checks.
     """
-    from services.api.routers.admin_safety import router as safety_router, _get_db, _require_admin_user
-    from services.api.routers.admin_models import (
-        router as models_router,
-        _get_db as models_get_db,
-        _require_admin_user as models_require_admin,
-    )
-    from services.api.routers.admin_pipeline import (
-        router as pipeline_router,
-        _get_db as pipeline_get_db,
-        _require_admin_user as pipeline_require_admin,
-    )
+    from services.api.routers.admin_safety import router as safety_router
+    from services.api.routers.admin_models import router as models_router
+    from services.api.routers.admin_pipeline import router as pipeline_router
+    from services.api.routers._admin_deps import get_db as admin_get_db, require_admin_user
 
     app = FastAPI()
     app.include_router(safety_router)
     app.include_router(models_router)
     app.include_router(pipeline_router)
 
-    # Override dependencies
-    app.dependency_overrides[_get_db] = lambda: mock_prisma
-    app.dependency_overrides[_require_admin_user] = lambda: admin_user
-    app.dependency_overrides[models_get_db] = lambda: mock_prisma
-    app.dependency_overrides[models_require_admin] = lambda: admin_user
-    app.dependency_overrides[pipeline_get_db] = lambda: mock_prisma
-    app.dependency_overrides[pipeline_require_admin] = lambda: admin_user
+    # Override dependencies -- all admin routers use shared deps from _admin_deps
+    app.dependency_overrides[admin_get_db] = lambda: mock_prisma
+    app.dependency_overrides[require_admin_user] = lambda: admin_user
 
     return app
 
@@ -334,12 +323,9 @@ def unauthenticated_app(mock_prisma):
     Used to test the auth guard.
     """
     from fastapi import HTTPException
-    from services.api.routers.admin_safety import router as safety_router, _get_db, _require_admin_user
-    from services.api.routers.admin_models import (
-        router as models_router,
-        _get_db as models_get_db,
-        _require_admin_user as models_require_admin,
-    )
+    from services.api.routers.admin_safety import router as safety_router
+    from services.api.routers.admin_models import router as models_router
+    from services.api.routers._admin_deps import get_db as admin_get_db, require_admin_user
 
     app = FastAPI()
     app.include_router(safety_router)
@@ -348,10 +334,8 @@ def unauthenticated_app(mock_prisma):
     def raise_unauth():
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    app.dependency_overrides[_get_db] = lambda: mock_prisma
-    app.dependency_overrides[_require_admin_user] = raise_unauth
-    app.dependency_overrides[models_get_db] = lambda: mock_prisma
-    app.dependency_overrides[models_require_admin] = raise_unauth
+    app.dependency_overrides[admin_get_db] = lambda: mock_prisma
+    app.dependency_overrides[require_admin_user] = raise_unauth
 
     return app
 
@@ -363,7 +347,8 @@ def non_admin_app(mock_prisma):
     Used to test the auth guard for non-admin users.
     """
     from fastapi import HTTPException
-    from services.api.routers.admin_safety import router as safety_router, _get_db, _require_admin_user
+    from services.api.routers.admin_safety import router as safety_router
+    from services.api.routers._admin_deps import get_db as admin_get_db, require_admin_user
 
     app = FastAPI()
     app.include_router(safety_router)
@@ -371,8 +356,8 @@ def non_admin_app(mock_prisma):
     def raise_forbidden():
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    app.dependency_overrides[_get_db] = lambda: mock_prisma
-    app.dependency_overrides[_require_admin_user] = raise_forbidden
+    app.dependency_overrides[admin_get_db] = lambda: mock_prisma
+    app.dependency_overrides[require_admin_user] = raise_forbidden
 
     return app
 

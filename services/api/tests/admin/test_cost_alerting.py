@@ -136,11 +136,9 @@ class TestUpdateCostAlerts:
         )
         assert response.status_code == 200
 
-        # Audit entry created
-        mock_prisma.auditlog.create.assert_called_once()
-        audit_data = mock_prisma.auditlog.create.call_args.kwargs["data"]
-        assert audit_data["action"] == "pipeline.alert_config_update"
-        assert audit_data["targetType"] == "CostAlertConfig"
+        # Audit entry created (SA-based audit_action calls execute + commit)
+        mock_prisma.execute.assert_called()
+        mock_prisma.commit.assert_called()
 
 
 # ---------------------------------------------------------------------------

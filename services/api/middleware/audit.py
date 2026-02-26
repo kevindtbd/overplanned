@@ -3,16 +3,21 @@ Audit logging middleware for admin actions.
 Writes append-only AuditLog entries for every admin action.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Any
-from prisma import Prisma
+from uuid import uuid4
+
+from sqlalchemy import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
+
+from services.api.db.models import AuditLog
 
 
 class AuditLogEntry(BaseModel):
     """
     Model for creating audit log entries.
-    Maps to AuditLog Prisma model.
+    Maps to AuditLog SA model.
     """
 
     actor_id: str
@@ -31,8 +36,8 @@ class AuditLogger:
     Thread-safe, async-compatible.
     """
 
-    def __init__(self, db: Prisma):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     async def log(
         self,
@@ -66,19 +71,22 @@ class AuditLogger:
             - Before/after snapshots should exclude sensitive fields (passwords, tokens)
             - Action naming convention: {entity}.{verb} (e.g., 'user.update', 'trip.archive')
         """
-        entry = await self.db.auditlog.create(
-            data={
-                "actorId": actor_id,
-                "action": action,
-                "targetType": target_type,
-                "targetId": target_id,
-                "before": before,
-                "after": after,
-                "ipAddress": ip_address,
-                "userAgent": user_agent,
-            }
+        entry_id = str(uuid4())
+        stmt = insert(AuditLog).values(
+            id=entry_id,
+            actorId=actor_id,
+            action=action,
+            targetType=target_type,
+            targetId=target_id,
+            before=before,
+            after=after,
+            ipAddress=ip_address,
+            userAgent=user_agent,
+            createdAt=datetime.now(timezone.utc),
         )
-        return entry.id
+        await self.session.execute(stmt)
+        await self.session.commit()
+        return entry_id
 
     async def log_batch(self, entries: list[AuditLogEntry]) -> int:
         """
@@ -90,21 +98,25 @@ class AuditLogger:
         Returns:
             Number of entries written
         """
-        await self.db.auditlog.create_many(
-            data=[
-                {
-                    "actorId": e.actor_id,
-                    "action": e.action,
-                    "targetType": e.target_type,
-                    "targetId": e.target_id,
-                    "before": e.before,
-                    "after": e.after,
-                    "ipAddress": e.ip_address,
-                    "userAgent": e.user_agent,
-                }
-                for e in entries
-            ]
-        )
+        now = datetime.now(timezone.utc)
+        rows = [
+            {
+                "id": str(uuid4()),
+                "actorId": e.actor_id,
+                "action": e.action,
+                "targetType": e.target_type,
+                "targetId": e.target_id,
+                "before": e.before,
+                "after": e.after,
+                "ipAddress": e.ip_address,
+                "userAgent": e.user_agent,
+                "createdAt": now,
+            }
+            for e in entries
+        ]
+        stmt = insert(AuditLog).values(rows)
+        await self.session.execute(stmt)
+        await self.session.commit()
         return len(entries)
 
 
@@ -129,7 +141,7 @@ def extract_client_info(request) -> tuple[str, str]:
 
 
 async def audit_action(
-    db: Prisma,
+    db: AsyncSession,
     request,
     actor_id: str,
     action: str,
@@ -142,40 +154,8 @@ async def audit_action(
     Convenience function for logging admin actions.
     Automatically extracts IP and user agent from request.
 
-    Example usage in FastAPI route:
-        ```python
-        from middleware.audit import audit_action
-
-        @router.put("/admin/users/{user_id}")
-        async def update_user(
-            user_id: str,
-            update: UserUpdate,
-            request: Request,
-            current_user: User = Depends(require_admin)
-        ):
-            # Capture before state
-            before = await db.user.find_unique(where={"id": user_id})
-
-            # Perform update
-            updated_user = await db.user.update(
-                where={"id": user_id},
-                data=update.dict(exclude_unset=True)
-            )
-
-            # Log action
-            await audit_action(
-                db=db,
-                request=request,
-                actor_id=current_user.id,
-                action="user.update",
-                target_type="User",
-                target_id=user_id,
-                before=before.dict() if before else None,
-                after=updated_user.dict()
-            )
-
-            return updated_user
-        ```
+    Args:
+        db: SA AsyncSession (named 'db' for backward compat with admin routers)
     """
     logger = AuditLogger(db)
     ip_address, user_agent = extract_client_info(request)

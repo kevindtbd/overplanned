@@ -18,6 +18,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from services.api.tests.helpers.mock_sa import MockSASession
+
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault(
     "DATABASE_URL", "postgresql://test:test@localhost:25432/overplanned_test"
@@ -341,6 +343,12 @@ def mock_prisma():
     db.execute_raw = AsyncMock(return_value=0)
 
     return db
+
+
+@pytest.fixture
+def mock_sa_session():
+    """SA session mock for migrated code paths (invites, shared_trips, etc.)."""
+    return MockSASession()
 
 
 @pytest.fixture

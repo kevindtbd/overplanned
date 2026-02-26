@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 import asyncpg
 import redis.asyncio as aioredis
 from fastapi import FastAPI, Request, Response
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from starlette.responses import JSONResponse
 
 from services.api.config import settings
@@ -58,7 +59,24 @@ async def lifespan(app: FastAPI):
     app.state.redis = redis_client
     app.state.settings = settings
 
-    # Database connection pool via asyncpg
+    # Database — SA engine (replaces prisma-client-py)
+    from services.api.db.engine import create_engine as create_sa_engine
+
+    sa_engine = None
+    if settings.database_url:
+        try:
+            sa_engine = create_sa_engine()
+            app.state.db_engine = sa_engine
+            # expire_on_commit=False: NullPool returns connection after commit,
+            # lazy load on closed connection would fail without this.
+            app.state.db_session_factory = async_sessionmaker(
+                sa_engine, expire_on_commit=False
+            )
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"SA engine failed to init: {e}")
+
+    # TRANSITION: keep asyncpg pool for ActivitySearchService hydrator
+    # until hydrator is migrated to SA sessions
     db_pool = None
     if settings.database_url:
         try:
@@ -92,6 +110,8 @@ async def lifespan(app: FastAPI):
     yield
 
     await qdrant_client.close()
+    if sa_engine:
+        await sa_engine.dispose()
     if db_pool:
         await db_pool.close()
     if redis_client:

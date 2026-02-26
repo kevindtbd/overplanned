@@ -9,9 +9,14 @@ Valid skip reasons (intentionType values):
   not_interested | bad_timing | too_far | already_visited | weather | group_conflict
 """
 
+from datetime import datetime, timezone
 from typing import Literal
+from uuid import uuid4
 
-from prisma import Prisma
+from sqlalchemy import insert, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from services.api.db.models import BehavioralSignal, IntentionSignal
 
 
 SkipReason = Literal[
@@ -34,7 +39,7 @@ VALID_SKIP_REASONS: set[str] = {
 
 
 async def record_skip_intention(
-    db: Prisma,
+    session: AsyncSession,
     *,
     user_id: str,
     behavioral_signal_id: str,
@@ -48,7 +53,7 @@ async def record_skip_intention(
     exist; its ID is passed as behavioral_signal_id.
 
     Args:
-        db: Prisma client instance
+        session: SA async session
         user_id: The user providing the skip reason
         behavioral_signal_id: ID of the parent BehavioralSignal (post_skipped)
         skip_reason: One of the six predefined skip reasons
@@ -69,9 +74,10 @@ async def record_skip_intention(
         )
 
     # Verify the parent BehavioralSignal exists and belongs to this user
-    parent_signal = await db.behavioralsignal.find_unique(
-        where={"id": behavioral_signal_id}
-    )
+    stmt = select(BehavioralSignal).where(BehavioralSignal.id == behavioral_signal_id)
+    result = await session.execute(stmt)
+    parent_signal = result.scalars().first()
+
     if parent_signal is None:
         raise ValueError(
             f"BehavioralSignal '{behavioral_signal_id}' not found"
@@ -87,26 +93,31 @@ async def record_skip_intention(
             f"'{parent_signal.signalType}', expected 'post_skipped'"
         )
 
-    intention = await db.intentionsignal.create(
-        data={
-            "userId": user_id,
-            "behavioralSignalId": behavioral_signal_id,
-            "rawEventId": raw_event_id,
-            "intentionType": skip_reason,
-            "confidence": 1.0,
-            "source": "user_explicit",
-            "userProvided": True,
-        }
+    intention_id = str(uuid4())
+    now = datetime.now(timezone.utc)
+
+    insert_stmt = insert(IntentionSignal).values(
+        id=intention_id,
+        userId=user_id,
+        behavioralSignalId=behavioral_signal_id,
+        rawEventId=raw_event_id,
+        intentionType=skip_reason,
+        confidence=1.0,
+        source="user_explicit",
+        userProvided=True,
+        createdAt=now,
     )
+    await session.execute(insert_stmt)
+    await session.commit()
 
     return {
-        "id": intention.id,
-        "userId": intention.userId,
-        "behavioralSignalId": intention.behavioralSignalId,
-        "rawEventId": intention.rawEventId,
-        "intentionType": intention.intentionType,
-        "confidence": intention.confidence,
-        "source": intention.source,
-        "userProvided": intention.userProvided,
-        "createdAt": intention.createdAt.isoformat(),
+        "id": intention_id,
+        "userId": user_id,
+        "behavioralSignalId": behavioral_signal_id,
+        "rawEventId": raw_event_id,
+        "intentionType": skip_reason,
+        "confidence": 1.0,
+        "source": "user_explicit",
+        "userProvided": True,
+        "createdAt": now.isoformat(),
     }
