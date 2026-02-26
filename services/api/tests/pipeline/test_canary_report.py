@@ -348,11 +348,13 @@ class TestAssembleReport:
             _make_node(node_id="n1", category="dining", tourist_score=0.1, source_count=3),
             _make_node(node_id="n2", category="outdoors", tourist_score=0.2, source_count=2),
             _make_node(node_id="n3", category="drinks", tourist_score=0.15, source_count=4),
+            _make_node(node_id="n4", category="active", tourist_score=0.1, source_count=2),
         ]
         signals = {
             "n1": [_make_signal(data_confidence=0.8)],
             "n2": [_make_signal(data_confidence=0.9)],
             "n3": [_make_signal(data_confidence=0.7)],
+            "n4": [_make_signal(data_confidence=0.8)],
         }
         report = rmod.assemble_report("Bend", nodes, signals)
         assert report.summary_issues == ["No critical issues detected"]

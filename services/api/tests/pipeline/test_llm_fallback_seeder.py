@@ -359,8 +359,8 @@ class TestRunLlmFallback:
         # Set up pool to return unlinked signals
         # FakePool keys on query.strip()[:80] -- must match exactly
         fetch_key = (
-            'SELECT id, "sourceName", "sourceUrl", "sourceAuthority",\n'
-            '               "signalT'
+            'SELECT qs.id, qs."sourceName", qs."sourceUrl", qs."sourceAuthority",\n'
+            '           '
         )
         pool._fetch_results[fetch_key] = [
             FakeRecord(
@@ -426,8 +426,8 @@ class TestRunLlmFallback:
         signal_id = make_id()
 
         fetch_key = (
-            'SELECT id, "sourceName", "sourceUrl", "sourceAuthority",\n'
-            '               "signalT'
+            'SELECT qs.id, qs."sourceName", qs."sourceUrl", qs."sourceAuthority",\n'
+            '           '
         )
         pool._fetch_results[fetch_key] = [
             FakeRecord(

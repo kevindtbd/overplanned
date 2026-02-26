@@ -161,18 +161,14 @@ class TestBendCityConfig:
 class TestArcticShiftBendDetection:
     """Test that Arctic Shift's detect_city works (or doesn't) for Bend."""
 
-    def test_detect_city_module_level_is_japan_only(self):
+    def test_detect_city_includes_bend(self):
         """
-        KNOWN GAP: The module-level TARGET_CITIES only has Japan cities.
-        detect_city() uses these, so it will NOT detect Bend content.
+        city_configs.py provides TARGET_CITIES with Bend and other cities.
+        detect_city() should find Bend content via neighborhood terms.
         """
-        assert "bend" not in TARGET_CITIES
-        assert "bend" not in ALL_CITY_TERMS
-        # This proves the gap: detect_city won't find Bend
+        assert "bend" in TARGET_CITIES
         result = detect_city("I love hiking around Bend and Pilot Butte")
-        assert result is None, (
-            "detect_city should return None for Bend (module-level terms are Japan-only)"
-        )
+        assert result == "bend"
 
     def test_scraper_accepts_target_cities_param(self):
         """ArcticShiftScraper constructor accepts target_cities for Bend."""
@@ -182,14 +178,10 @@ class TestArcticShiftBendDetection:
         )
         assert "bend" in scraper.config.target_cities
 
-    def test_bend_subreddits_not_in_default_weights(self):
-        """
-        KNOWN GAP: Bend subreddits aren't in the module-level SUBREDDIT_WEIGHTS.
-        The scraper defaults to these when no subreddits parameter is given.
-        """
-        assert "bend" not in SUBREDDIT_WEIGHTS
-        assert "bendoregon" not in SUBREDDIT_WEIGHTS
-        assert "centraloregon" not in SUBREDDIT_WEIGHTS
+    def test_bend_subreddits_in_default_weights(self):
+        """Bend subreddits are loaded from city_configs into SUBREDDIT_WEIGHTS."""
+        # At least the city-specific sub should be present
+        assert "bendoregon" in SUBREDDIT_WEIGHTS or "bend" in SUBREDDIT_WEIGHTS
 
     def test_city_seeder_passes_city_to_scraper(self):
         """
@@ -210,28 +202,21 @@ class TestArcticShiftBendDetection:
 class TestBlogRssBendFiltering:
     """Test that Blog RSS feed filtering works for Bend."""
 
-    def test_no_bend_feeds_in_registry(self):
-        """
-        KNOWN GAP: No feeds in FEED_REGISTRY have 'bend' in name or city.
-        """
+    def test_bend_feeds_in_registry(self):
+        """Bend-specific feeds exist in FEED_REGISTRY."""
         bend_feeds = [
             f for f in FEED_REGISTRY
             if f.city and "bend" in f.city.lower()
         ]
-        assert len(bend_feeds) == 0, "Expected no Bend-specific feeds (known gap)"
+        assert len(bend_feeds) >= 1, "Expected at least one Bend-specific feed"
 
-    def test_feed_filter_bend_returns_empty(self):
-        """Filtering by 'bend' returns no feeds."""
+    def test_feed_filter_bend_returns_bend_feeds(self):
+        """Filtering by 'Bend' returns Bend-specific feeds."""
         pool = MagicMock()
-        scraper = BlogRssScraper(db_pool=pool, feed_filter="bend")
+        scraper = BlogRssScraper(db_pool=pool, feed_filter="Bend")
         active = scraper._active_feeds()
-        assert len(active) == 0
-
-    def test_multi_city_feeds_excluded_by_bend_filter(self):
-        """Even multi-city feeds (Infatuation, Eater) get excluded."""
-        pool = MagicMock()
-        scraper = BlogRssScraper(db_pool=pool, feed_filter="bend")
-        active = scraper._active_feeds()
+        assert len(active) >= 1
+        # Multi-city feeds (Infatuation, Eater) should NOT be included
         feed_names = [f.name for f in active]
         assert "The Infatuation" not in feed_names
         assert "Eater" not in feed_names
@@ -312,10 +297,16 @@ class TestRuleInferenceVocabulary:
                 for slug, score in compute_tags_for_node(cat, price):
                     rule_tags.add(slug)
 
-        # Known rule-inference-only tags (not in LLM vocab but in DB)
+        # Known rule-inference-only tags (not in LLM vocab but in DB).
+        # Includes remapped slugs from post-canary tag vocabulary alignment.
         rule_only_extras = {
             "food-focused", "sit-down", "browsing", "fresh-air",
             "slow-paced", "quiet", "unique",
+            # Remapped: social→lively, casual→low-key, active→physical,
+            # scenic→instagram-worthy, restorative→relaxing,
+            # iconic→historical, deep-dive→educational, memorable→unique
+            "low-key", "physical", "instagram-worthy", "relaxing",
+            "historical", "educational",
         }
         missing = rule_tags - ALL_TAGS - rule_only_extras
         assert missing == set(), (

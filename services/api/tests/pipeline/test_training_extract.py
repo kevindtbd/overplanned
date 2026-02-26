@@ -318,8 +318,8 @@ class TestExtractTrainingData:
 
         # The audit INSERT is the last execute call
         execute_calls = conn.execute.call_args_list
-        # At least 2 execute calls: CREATE TABLE + INSERT audit
-        assert len(execute_calls) >= 2
+        # At least 1 execute call: INSERT audit
+        assert len(execute_calls) >= 1
         # Last call should be the audit insert
         last_call_args = execute_calls[-1][0]
         assert "training_extract_runs" in last_call_args[0]

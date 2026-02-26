@@ -167,11 +167,11 @@ class TestAtlasObscuraScraper:
 
 
 class TestArcticShiftScraper:
-    def test_detect_city_tokyo(self):
-        assert detect_city("I visited Shibuya and had amazing ramen in Shinjuku") == "tokyo"
+    def test_detect_city_austin(self):
+        assert detect_city("I walked down South Congress and grabbed tacos on East Austin") == "austin"
 
-    def test_detect_city_kyoto(self):
-        assert detect_city("The temples in Arashiyama and Gion were beautiful") == "kyoto"
+    def test_detect_city_seattle(self):
+        assert detect_city("I explored Ballard and Fremont in Seattle") == "seattle"
 
     def test_detect_city_none_for_unrelated(self):
         assert detect_city("I went to a conference in Las Vegas") is None
@@ -212,38 +212,38 @@ class TestArcticShiftScraper:
     def test_parse_extracts_mentions(self):
         scraper = ArcticShiftScraper(
             parquet_dir="/nonexistent",
-            target_cities=["tokyo"],
+            target_cities=["austin"],
         )
         raw = {
             "id": "abc123",
-            "subreddit": "japantravel",
-            "title": "Tokyo trip report",
-            "selftext": "I recommend Ichiran Ramen in Shibuya, it was amazing",
+            "subreddit": "austinfood",
+            "title": "Austin food trip report",
+            "selftext": "I recommend Franklin BBQ on East Austin, it was amazing",
             "score": 50,
             "author": "traveler42",
             "created_utc": 1700000000,
-            "permalink": "/r/japantravel/comments/abc123",
+            "permalink": "/r/austinfood/comments/abc123",
         }
         parsed = scraper.parse(raw)
 
         assert parsed is not None
-        assert parsed["city"] == "tokyo"
+        assert parsed["city"] == "austin"
         assert len(parsed["mentions"]) >= 1
 
     def test_store_accumulates_quality_signals(self):
         scraper = ArcticShiftScraper(
             parquet_dir="/nonexistent",
-            target_cities=["tokyo"],
+            target_cities=["austin"],
         )
         parsed = {
             "source_row": "test",
-            "city": "tokyo",
-            "subreddit": "japantravel",
+            "city": "austin",
+            "subreddit": "austinfood",
             "mentions": [
                 {
                     "venue_name": "Test Place",
-                    "city": "tokyo",
-                    "subreddit": "japantravel",
+                    "city": "austin",
+                    "subreddit": "austinfood",
                     "post_id": "abc",
                     "comment_id": None,
                     "score": 10,
@@ -251,7 +251,7 @@ class TestArcticShiftScraper:
                     "sentiment": "positive",
                     "author": "user",
                     "created_utc": 1700000000,
-                    "permalink": "/r/japantravel/comments/abc",
+                    "permalink": "/r/austinfood/comments/abc",
                     "authority_score": 0.5,
                 },
             ],
