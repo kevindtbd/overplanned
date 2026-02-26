@@ -89,7 +89,7 @@ describe("ImpressionTracker", () => {
       );
 
       expect(dwellCalls).toHaveLength(1);
-      expect(dwellCalls[0][0].payload.dwellMs).toBe(500);
+      expect((dwellCalls[0]![0] as unknown as { payload: { dwellMs: number } }).payload.dwellMs).toBe(500);
       expect(impressionCalls).toHaveLength(0);
     });
 
@@ -109,9 +109,9 @@ describe("ImpressionTracker", () => {
       );
 
       expect(dwellCalls).toHaveLength(1);
-      expect(dwellCalls[0][0].payload.dwellMs).toBe(1500);
+      expect((dwellCalls[0]![0] as unknown as { payload: { dwellMs: number } }).payload.dwellMs).toBe(1500);
       expect(impressionCalls).toHaveLength(1);
-      expect(impressionCalls[0][0].payload.viewportDurationMs).toBe(1500);
+      expect((impressionCalls[0]![0] as unknown as { payload: { viewportDurationMs: number } }).payload.viewportDurationMs).toBe(1500);
     });
 
     it("does not emit any events for sub-100ms visibility (noise)", () => {

@@ -55,7 +55,8 @@ function makeRequest(
 ): NextRequest {
   const base = "http://localhost:3000";
   const url = `${base}/api/admin/${path}${options.query ? `?${options.query}` : ""}`;
-  const init: RequestInit = { method };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const init: any = { method };
   const headers: Record<string, string> = {};
   if (options.body !== undefined) {
     init.body = options.body;

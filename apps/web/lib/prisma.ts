@@ -1,8 +1,10 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient, $Enums } from "@prisma/client";
 
 // Re-export so route files don't need direct @prisma/client imports
 export type TransactionClient = Prisma.TransactionClient;
 export const PrismaJsonNull = Prisma.JsonNull;
+export type { $Enums, Prisma };
+export type SignalType = $Enums.SignalType;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

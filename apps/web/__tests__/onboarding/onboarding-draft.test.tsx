@@ -23,6 +23,14 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => mockSearchParams,
 }));
 
+vi.mock("@/lib/events/event-emitter", () => ({
+  eventEmitter: {
+    emit: vi.fn(),
+    start: vi.fn(),
+    stop: vi.fn(),
+  },
+}));
+
 // Mock all step sub-components so we control renders and can call their
 // callbacks directly. Each mock exposes test-ids for any buttons we need.
 
@@ -126,6 +134,20 @@ vi.mock("@/app/onboarding/components/LegReviewStep", () => ({
 }));
 
 vi.mock("@/app/onboarding/components/TripDNAStep", () => ({
+  FOOD_CHIPS: [
+    "street food",
+    "fine dining",
+    "local staples",
+    "seafood",
+    "ramen",
+    "coffee culture",
+    "bakeries",
+    "night markets",
+    "vegetarian",
+    "izakaya",
+    "wine bars",
+    "brunch spots",
+  ],
   TripDNAStep: ({
     onPaceChange,
     onMorningChange,
@@ -154,6 +176,8 @@ vi.mock("@/app/onboarding/components/TripDNAStep", () => ({
 }));
 
 vi.mock("@/app/onboarding/components/TemplateStep", () => ({
+  ALL_PRESET_IDS: ["foodie-weekend", "culture-deep-dive", "adventure", "chill", "night-owl", "local-immersion", "first-timer", "weekend-sprint"],
+  emitPresetAllSkipped: vi.fn(),
   TemplateStep: ({ onSelect }: { selected: unknown; onSelect: (t: string) => void }) => (
     <div>
       <span>TemplateStep</span>

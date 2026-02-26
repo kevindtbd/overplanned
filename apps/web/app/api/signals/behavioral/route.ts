@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
 import { v4 as uuidv4 } from "uuid";
-import { prisma } from "@/lib/prisma";
+import { prisma, type SignalType, type Prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
         tripId: tripId ?? null,
         slotId: slotId ?? null,
         activityNodeId: activityNodeId ?? null,
-        signalType,
+        signalType: signalType as SignalType,
         signalValue: clampedValue,
         tripPhase,
         rawAction,
@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
         candidateSetId: candidateSetId ?? null,
         candidateIds: candidateIds ?? undefined,
         metadata: Object.keys(enrichedMetadata).length > 0
-          ? enrichedMetadata
+          ? (enrichedMetadata as Prisma.InputJsonValue)
           : undefined,
       },
     });

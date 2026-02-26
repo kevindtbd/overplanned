@@ -92,7 +92,7 @@ describe("RankingEvent creation during generation", () => {
 
     // $transaction should be called once with an array
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
-    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
 
     // Array should contain: createMany (slots) + behavioralSignal.create + N rankingEvent.create
     // For 2 days of moderate pace (4 slots/day), we expect 2 RankingEvent creates
@@ -117,7 +117,7 @@ describe("RankingEvent creation during generation", () => {
     );
 
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
-    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+    const txArgs = mockPrisma.$transaction.mock.calls[0][0] as unknown as unknown[];
 
     // 1 (createMany) + 1 (signal) + 3 (one ranking event per day) = 5
     expect(txArgs.length).toBe(5);

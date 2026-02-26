@@ -34,7 +34,12 @@ describe("sign-request: shared test vectors", () => {
   it.each(signingVectors.map((v) => [v.description, v]))(
     "matches vector: %s",
     (_desc, vector) => {
-      const v = vector as (typeof signingVectors)[number];
+      const v = vector as {
+        description: string; method: string; path: string;
+        queryString: string; body: string; timestamp: number;
+        userId: string; secret: string; expectedSignature: string;
+        expectedBodyHash: string;
+      };
       const normalizedPath = normalizePath(v.path);
       const sortedQS = sortQueryString(v.queryString);
       const bodyHash = computeBodyHash(v.body);
