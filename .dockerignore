@@ -20,6 +20,7 @@ dist/
 # Project dirs not needed in containers
 tracks/
 data/
+!data/climate_averages.json
 docker/
 
 # Worktrees / Claude
