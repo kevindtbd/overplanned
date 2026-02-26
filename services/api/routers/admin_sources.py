@@ -2,20 +2,22 @@
 Admin Source Freshness: Monitor scraper health, source staleness, and authority scores.
 
 Endpoints:
-  GET  /admin/sources           — List all sources with freshness + stats
-  GET  /admin/sources/alerts    — Stale sources exceeding configured thresholds
-  PATCH /admin/sources/:name    — Update authority score (audit logged)
-  GET  /admin/sources/config    — Current staleness thresholds
-  PUT  /admin/sources/config    — Update staleness thresholds (audit logged)
+  GET  /admin/sources           -- List all sources with freshness + stats
+  GET  /admin/sources/alerts    -- Stale sources exceeding configured thresholds
+  PATCH /admin/sources/:name    -- Update authority score (audit logged)
+  GET  /admin/sources/config    -- Current staleness thresholds
+  PUT  /admin/sources/config    -- Update staleness thresholds (audit logged)
 
 Source data derived from QualitySignal aggregate by sourceName.
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.api.middleware.audit import audit_action
 from services.api.routers._admin_deps import require_admin_user, get_db
@@ -116,7 +118,7 @@ def _threshold_for_source(config: StalenessConfig, source_name: str) -> int:
 @router.get("", response_model=SourceListResponse)
 async def list_sources(
     request: Request,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
@@ -127,9 +129,8 @@ async def list_sources(
     config = await _get_staleness_config(redis)
 
     # Aggregate source stats from QualitySignal
-    # Raw SQL for aggregation since Prisma doesn't support groupBy well
-    results = await db.query_raw(
-        """
+    result = await db.execute(
+        text("""
         SELECT
             "sourceName" as source_name,
             COUNT(*)::int as signal_count,
@@ -142,14 +143,15 @@ async def list_sources(
         FROM quality_signals
         GROUP BY "sourceName"
         ORDER BY MAX("extractedAt") DESC NULLS LAST
-        """
+        """)
     )
 
-    now = datetime.now(timezone.utc)
+    rows = [dict(r._mapping) for r in result.fetchall()]
+
     sources = []
     stale_count = 0
 
-    for row in results:
+    for row in rows:
         last_scraped = row.get("last_scraped_at")
         staleness = _hours_since(last_scraped) if last_scraped else None
         threshold = _threshold_for_source(config, row["source_name"])
@@ -181,15 +183,15 @@ async def list_sources(
 @router.get("/alerts", response_model=AlertsResponse)
 async def get_alerts(
     request: Request,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """Return only stale sources exceeding their configured threshold."""
     redis = request.app.state.redis
     config = await _get_staleness_config(redis)
 
-    results = await db.query_raw(
-        """
+    result = await db.execute(
+        text("""
         SELECT
             "sourceName" as source_name,
             COUNT(*)::int as signal_count,
@@ -197,11 +199,13 @@ async def get_alerts(
         FROM quality_signals
         GROUP BY "sourceName"
         ORDER BY MAX("extractedAt") ASC NULLS FIRST
-        """
+        """)
     )
 
+    rows = [dict(r._mapping) for r in result.fetchall()]
+
     alerts = []
-    for row in results:
+    for row in rows:
         last_scraped = row.get("last_scraped_at")
         hours_since = _hours_since(last_scraped) if last_scraped else None
         threshold = _threshold_for_source(config, row["source_name"])
@@ -224,7 +228,7 @@ async def update_source_authority(
     source_name: str,
     body: AuthorityUpdate,
     request: Request,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """
@@ -232,34 +236,36 @@ async def update_source_authority(
     Logged to AuditLog with before/after snapshots.
     """
     # Get current authority stats for before snapshot
-    before_stats = await db.query_raw(
-        """
+    before_result = await db.execute(
+        text("""
         SELECT
             ROUND(AVG("sourceAuthority")::numeric, 3)::float as avg_authority,
             ROUND(MIN("sourceAuthority")::numeric, 3)::float as min_authority,
             ROUND(MAX("sourceAuthority")::numeric, 3)::float as max_authority,
             COUNT(*)::int as signal_count
         FROM quality_signals
-        WHERE "sourceName" = $1
-        """,
-        source_name,
+        WHERE "sourceName" = :source_name
+        """),
+        {"source_name": source_name},
     )
 
-    if not before_stats or before_stats[0]["signal_count"] == 0:
+    before_row = before_result.first()
+    before = dict(before_row._mapping) if before_row else None
+
+    if not before or before["signal_count"] == 0:
         raise HTTPException(status_code=404, detail=f"No signals found for source: {source_name}")
 
-    before = before_stats[0]
-
     # Update all signals for this source
-    update_count = await db.execute_raw(
-        """
+    update_result = await db.execute(
+        text("""
         UPDATE quality_signals
-        SET "sourceAuthority" = $1
-        WHERE "sourceName" = $2
-        """,
-        body.authority_score,
-        source_name,
+        SET "sourceAuthority" = :authority
+        WHERE "sourceName" = :source_name
+        """),
+        {"authority": body.authority_score, "source_name": source_name},
     )
+    update_count = update_result.rowcount
+    await db.commit()
 
     after = {
         "avg_authority": body.authority_score,
@@ -301,7 +307,7 @@ async def get_staleness_config(
 async def update_staleness_config(
     body: StalenessConfig,
     request: Request,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     actor_id: str = Depends(require_admin_user),
 ):
     """

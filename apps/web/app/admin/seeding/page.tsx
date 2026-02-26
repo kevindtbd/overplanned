@@ -34,7 +34,6 @@ interface CityProgress {
 // Constants
 // ---------------------------------------------------------------------------
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 const POLL_INTERVAL_MS = 5_000;
 const RATE_LIMIT_COOLDOWN_MS = 30_000;
 
@@ -102,10 +101,10 @@ export default function SeedingPage() {
     setEstimate(null);
 
     try {
-      const res = await fetch(`${API_BASE}/admin/seeding/estimate`, {
+      const res = await fetch(`/api/admin/seeding/estimate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+
         body: JSON.stringify({ city: city.trim(), country_code: countryCode.trim() }),
       });
       if (!res.ok) {
@@ -135,10 +134,10 @@ export default function SeedingPage() {
     setTriggerError('');
 
     try {
-      const res = await fetch(`${API_BASE}/admin/seeding/trigger`, {
+      const res = await fetch(`/api/admin/seeding/trigger`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+
         body: JSON.stringify({
           city: estimate.city,
           country_code: estimate.country_code,
@@ -164,8 +163,8 @@ export default function SeedingPage() {
 
   const fetchProgress = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/seeding/progress`, {
-        credentials: 'include',
+      const res = await fetch(`/api/admin/seeding/progress`, {
+
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();

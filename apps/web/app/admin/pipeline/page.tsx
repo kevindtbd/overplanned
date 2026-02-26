@@ -76,8 +76,6 @@ interface CostAlertStatus {
 // Constants
 // ---------------------------------------------------------------------------
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
-
 const DAYS_OPTIONS = [
   { value: 1, label: '24h' },
   { value: 7, label: '7d' },
@@ -220,18 +218,10 @@ export default function PipelineHealthPage() {
 
     try {
       const [costsRes, callsRes, jobsRes, alertsRes] = await Promise.all([
-        fetch(`${API_BASE}/admin/pipeline/llm-costs?days=${days}`, {
-          credentials: 'include',
-        }),
-        fetch(`${API_BASE}/admin/pipeline/api-calls?days=${days}`, {
-          credentials: 'include',
-        }),
-        fetch(`${API_BASE}/admin/pipeline/jobs?limit=50`, {
-          credentials: 'include',
-        }),
-        fetch(`${API_BASE}/admin/pipeline/alerts`, {
-          credentials: 'include',
-        }),
+        fetch(`/api/admin/pipeline/llm-costs?days=${days}`),
+        fetch(`/api/admin/pipeline/api-calls?days=${days}`),
+        fetch(`/api/admin/pipeline/jobs?limit=50`),
+        fetch(`/api/admin/pipeline/alerts`),
       ]);
 
       if (!costsRes.ok) throw new Error(`LLM costs: ${costsRes.status}`);
@@ -277,10 +267,9 @@ export default function PipelineHealthPage() {
   async function saveAlerts() {
     setAlertSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/pipeline/alerts`, {
+      const res = await fetch(`/api/admin/pipeline/alerts`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ thresholds: alertDrafts }),
       });
       if (!res.ok) {

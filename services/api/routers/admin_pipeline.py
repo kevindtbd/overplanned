@@ -16,6 +16,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.api.middleware.audit import audit_action
 from services.api.routers._admin_deps import require_admin_user, get_db
@@ -112,7 +114,7 @@ async def get_llm_costs(
     days: int = 7,
     model: Optional[str] = None,
     pipeline_stage: Optional[str] = None,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: str = Depends(require_admin_user),
 ) -> dict:
     """
@@ -125,23 +127,20 @@ async def get_llm_costs(
     now = datetime.now(timezone.utc)
     start = now - timedelta(days=days)
 
-    filters = ["created_at >= $1"]
-    params: list = [start]
-    idx = 2
+    filters = ["created_at >= :start_date"]
+    params: dict = {"start_date": start.replace(tzinfo=None)}
 
     if model:
-        filters.append(f"model_name = ${idx}")
-        params.append(model)
-        idx += 1
+        filters.append("model_name = :model")
+        params["model"] = model
     if pipeline_stage:
-        filters.append(f"pipeline_stage = ${idx}")
-        params.append(pipeline_stage)
-        idx += 1
+        filters.append("pipeline_stage = :pipeline_stage")
+        params["pipeline_stage"] = pipeline_stage
 
     where_clause = " AND ".join(filters)
 
-    rows = await db.query_raw(
-        f"""
+    result = await db.execute(
+        text(f"""
         SELECT
             model_name AS model,
             date_trunc('day', created_at)::date::text AS date,
@@ -155,10 +154,11 @@ async def get_llm_costs(
         WHERE {where_clause}
         GROUP BY model_name, date_trunc('day', created_at)::date, pipeline_stage
         ORDER BY date DESC, total_cost_usd DESC
-        """,
-        *params,
+        """),
+        params,
     )
 
+    rows = [dict(r._mapping) for r in result.fetchall()]
     parsed = [LLMCostRow(**r) for r in rows]
     total_cost = sum(r.total_cost_usd for r in parsed)
     total_calls = sum(r.call_count for r in parsed)
@@ -183,7 +183,7 @@ async def get_llm_costs(
 async def get_api_calls(
     days: int = 7,
     provider: Optional[str] = None,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: str = Depends(require_admin_user),
 ) -> dict:
     """
@@ -196,19 +196,17 @@ async def get_api_calls(
     now = datetime.now(timezone.utc)
     start = now - timedelta(days=days)
 
-    filters = ["created_at >= $1"]
-    params: list = [start]
-    idx = 2
+    filters = ["created_at >= :start_date"]
+    params: dict = {"start_date": start.replace(tzinfo=None)}
 
     if provider:
-        filters.append(f"provider = ${idx}")
-        params.append(provider)
-        idx += 1
+        filters.append("provider = :provider")
+        params["provider"] = provider
 
     where_clause = " AND ".join(filters)
 
-    rows = await db.query_raw(
-        f"""
+    result = await db.execute(
+        text(f"""
         SELECT
             provider,
             date_trunc('day', created_at)::date::text AS date,
@@ -219,10 +217,11 @@ async def get_api_calls(
         WHERE {where_clause}
         GROUP BY provider, date_trunc('day', created_at)::date
         ORDER BY date DESC, call_count DESC
-        """,
-        *params,
+        """),
+        params,
     )
 
+    rows = [dict(r._mapping) for r in result.fetchall()]
     parsed = [APICallRow(**r) for r in rows]
     total_calls = sum(r.call_count for r in parsed)
     total_errors = sum(r.error_count for r in parsed)
@@ -247,7 +246,7 @@ async def get_api_calls(
 async def get_pipeline_jobs(
     limit: int = 50,
     status: Optional[str] = None,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: str = Depends(require_admin_user),
 ) -> dict:
     """Pipeline job success/failure rates and recent job list."""
@@ -257,19 +256,17 @@ async def get_pipeline_jobs(
     now = datetime.now(timezone.utc)
 
     filters = ["1=1"]
-    params: list = []
-    idx = 1
+    params: dict = {}
 
     if status:
-        filters.append(f"status = ${idx}")
-        params.append(status)
-        idx += 1
+        filters.append("status = :status")
+        params["status"] = status
 
     where_clause = " AND ".join(filters)
 
     # Recent jobs
-    jobs_raw = await db.query_raw(
-        f"""
+    result = await db.execute(
+        text(f"""
         SELECT
             id AS job_id,
             job_type,
@@ -284,27 +281,30 @@ async def get_pipeline_jobs(
         FROM pipeline_job
         WHERE {where_clause}
         ORDER BY started_at DESC
-        LIMIT {limit}
-        """,
-        *params,
+        LIMIT :limit_val
+        """),
+        {**params, "limit_val": limit},
     )
+
+    jobs_raw = [dict(r._mapping) for r in result.fetchall()]
 
     # Aggregate stats (last 30 days)
     thirty_days_ago = now - timedelta(days=30)
-    stats = await db.query_raw(
-        """
+    stats_result = await db.execute(
+        text("""
         SELECT
             COUNT(*)::int AS total,
             COUNT(*) FILTER (WHERE status = 'completed')::int AS success,
             COUNT(*) FILTER (WHERE status = 'failed')::int AS failed,
             COUNT(*) FILTER (WHERE status IN ('running', 'pending'))::int AS running
         FROM pipeline_job
-        WHERE started_at >= $1
-        """,
-        thirty_days_ago,
+        WHERE started_at >= :cutoff
+        """),
+        {"cutoff": thirty_days_ago.replace(tzinfo=None)},
     )
 
-    s = stats[0] if stats else {"total": 0, "success": 0, "failed": 0, "running": 0}
+    s_row = stats_result.first()
+    s = dict(s_row._mapping) if s_row else {"total": 0, "success": 0, "failed": 0, "running": 0}
     total = s["total"]
     success_rate = round(s["success"] / total, 4) if total > 0 else 0.0
 
@@ -327,7 +327,7 @@ async def get_pipeline_jobs(
 
 @router.get("/alerts")
 async def get_cost_alerts(
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: str = Depends(require_admin_user),
 ) -> dict:
     """
@@ -337,8 +337,8 @@ async def get_cost_alerts(
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    rows = await db.query_raw(
-        """
+    result = await db.execute(
+        text("""
         SELECT
             c.pipeline_stage,
             c.daily_limit_usd::float,
@@ -350,26 +350,28 @@ async def get_cost_alerts(
                 pipeline_stage,
                 SUM(cost_usd) AS spend
             FROM llm_call_log
-            WHERE created_at >= $1
+            WHERE created_at >= :today_start
             GROUP BY pipeline_stage
         ) s ON s.pipeline_stage = c.pipeline_stage
         ORDER BY c.pipeline_stage
-        """,
-        today_start,
+        """),
+        {"today_start": today_start.replace(tzinfo=None)},
     )
+
+    rows = [dict(r._mapping) for r in result.fetchall()]
 
     alerts = []
     for r in rows:
-        limit = r["daily_limit_usd"]
+        limit_val = r["daily_limit_usd"]
         spend = r["current_spend_usd"]
         alerts.append(
             CostAlertStatus(
                 pipeline_stage=r["pipeline_stage"],
-                daily_limit_usd=limit,
+                daily_limit_usd=limit_val,
                 current_spend_usd=round(spend, 4),
                 enabled=r["enabled"],
-                exceeded=r["enabled"] and spend > limit,
-                pct_used=round((spend / limit) * 100, 1) if limit > 0 else 0.0,
+                exceeded=r["enabled"] and spend > limit_val,
+                pct_used=round((spend / limit_val) * 100, 1) if limit_val > 0 else 0.0,
             ).model_dump()
         )
 
@@ -383,7 +385,7 @@ async def get_cost_alerts(
 async def update_cost_alerts(
     body: CostAlertConfig,
     request: Request,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: str = Depends(require_admin_user),
 ) -> dict:
     """
@@ -393,25 +395,29 @@ async def update_cost_alerts(
     now = datetime.now(timezone.utc)
 
     # Fetch current config for audit before-state
-    current = await db.query_raw(
-        "SELECT pipeline_stage, daily_limit_usd, enabled FROM cost_alert_config ORDER BY pipeline_stage"
+    current_result = await db.execute(
+        text("SELECT pipeline_stage, daily_limit_usd, enabled FROM cost_alert_config ORDER BY pipeline_stage")
     )
-    before_state = {r["pipeline_stage"]: r for r in current}
+    before_state = {r._mapping["pipeline_stage"]: dict(r._mapping) for r in current_result.fetchall()}
 
     # Upsert each threshold
     for t in body.thresholds:
-        await db.execute_raw(
-            """
+        await db.execute(
+            text("""
             INSERT INTO cost_alert_config (pipeline_stage, daily_limit_usd, enabled, updated_at)
-            VALUES ($1, $2, $3, $4)
+            VALUES (:stage, :limit, :enabled, :now)
             ON CONFLICT (pipeline_stage)
-            DO UPDATE SET daily_limit_usd = $2, enabled = $3, updated_at = $4
-            """,
-            t.pipeline_stage,
-            t.daily_limit_usd,
-            t.enabled,
-            now,
+            DO UPDATE SET daily_limit_usd = :limit, enabled = :enabled, updated_at = :now
+            """),
+            {
+                "stage": t.pipeline_stage,
+                "limit": t.daily_limit_usd,
+                "enabled": t.enabled,
+                "now": now.replace(tzinfo=None),
+            },
         )
+
+    await db.commit()
 
     after_state = {t.pipeline_stage: {"daily_limit_usd": t.daily_limit_usd, "enabled": t.enabled} for t in body.thresholds}
 

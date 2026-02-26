@@ -1,7 +1,7 @@
 """
 Admin Model Registry API — promotion safety gates.
 
-Promotion path: staging → ab_test → production (admin-only).
+Promotion path: staging -> ab_test -> production (admin-only).
 Constraints:
   - New model must beat current on primary metric to promote
   - 2-minute cooldown between promotions per model name
@@ -14,9 +14,12 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.api.middleware.audit import audit_action
 from services.api.routers._admin_deps import require_admin_user, get_db
+from services.api.db.models import ModelRegistry
 
 router = APIRouter(prefix="/admin/models", tags=["admin-models"])
 
@@ -71,48 +74,48 @@ class ModelSummary(BaseModel):
     created_at: datetime
 
 
+def _model_to_summary(m: ModelRegistry) -> dict:
+    return ModelSummary(
+        id=m.id,
+        model_name=m.modelName,
+        model_version=m.modelVersion,
+        stage=m.stage,
+        model_type=m.modelType,
+        description=m.description,
+        artifact_path=m.artifactPath,
+        artifact_hash=m.artifactHash,
+        metrics=m.metrics,
+        evaluated_at=m.evaluatedAt,
+        training_data_range=m.trainingDataRange,
+        promoted_at=m.promotedAt,
+        promoted_by=m.promotedBy,
+        created_at=m.createdAt,
+    ).model_dump()
+
+
 @router.get("")
 async def list_models(
     model_name: Optional[str] = None,
     stage: Optional[str] = None,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     List all registered models with stage badges.
     Filterable by model_name and/or stage.
     """
-    where = {}
+    stmt = select(ModelRegistry)
     if model_name:
-        where["modelName"] = model_name
+        stmt = stmt.where(ModelRegistry.modelName == model_name)
     if stage:
-        where["stage"] = stage
+        stmt = stmt.where(ModelRegistry.stage == stage)
+    stmt = stmt.order_by(ModelRegistry.createdAt.desc())
 
-    models = await db.modelregistry.find_many(
-        where=where,
-        order={"createdAt": "desc"},
-    )
+    result = await db.execute(stmt)
+    models = result.scalars().all()
 
     return {
-        "data": [
-            ModelSummary(
-                id=m.id,
-                model_name=m.modelName,
-                model_version=m.modelVersion,
-                stage=m.stage,
-                model_type=m.modelType,
-                description=m.description,
-                artifact_path=m.artifactPath,
-                artifact_hash=m.artifactHash,
-                metrics=m.metrics,
-                evaluated_at=m.evaluatedAt,
-                training_data_range=m.trainingDataRange,
-                promoted_at=m.promotedAt,
-                promoted_by=m.promotedBy,
-                created_at=m.createdAt,
-            ).model_dump()
-            for m in models
-        ],
+        "data": [_model_to_summary(m) for m in models],
         "meta": {"timestamp": datetime.now(timezone.utc).isoformat()},
     }
 
@@ -120,31 +123,16 @@ async def list_models(
 @router.get("/{model_id}")
 async def get_model(
     model_id: str,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: str = Depends(require_admin_user),
 ) -> dict:
     """Get single model with full details."""
-    model = await db.modelregistry.find_unique(where={"id": model_id})
+    model = await db.get(ModelRegistry, model_id)
     if not model:
         raise HTTPException(status_code=404, detail="Model not found")
 
     return {
-        "data": ModelSummary(
-            id=model.id,
-            model_name=model.modelName,
-            model_version=model.modelVersion,
-            stage=model.stage,
-            model_type=model.modelType,
-            description=model.description,
-            artifact_path=model.artifactPath,
-            artifact_hash=model.artifactHash,
-            metrics=model.metrics,
-            evaluated_at=model.evaluatedAt,
-            training_data_range=model.trainingDataRange,
-            promoted_at=model.promotedAt,
-            promoted_by=model.promotedBy,
-            created_at=model.createdAt,
-        ).model_dump(),
+        "data": _model_to_summary(model),
         "meta": {"timestamp": datetime.now(timezone.utc).isoformat()},
     }
 
@@ -152,14 +140,14 @@ async def get_model(
 @router.get("/{model_id}/compare")
 async def compare_with_current(
     model_id: str,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     Compare candidate model's metrics against the current model in the
     next stage. Returns comparison data for the promotion gate UI.
     """
-    candidate = await db.modelregistry.find_unique(where={"id": model_id})
+    candidate = await db.get(ModelRegistry, model_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="Model not found")
 
@@ -171,10 +159,14 @@ async def compare_with_current(
         )
 
     # Find current model in the target stage
-    current = await db.modelregistry.find_first(
-        where={"modelName": candidate.modelName, "stage": next_stage},
-        order={"promotedAt": "desc"},
+    result = await db.execute(
+        select(ModelRegistry)
+        .where(ModelRegistry.modelName == candidate.modelName)
+        .where(ModelRegistry.stage == next_stage)
+        .order_by(ModelRegistry.promotedAt.desc())
+        .limit(1)
     )
+    current = result.scalars().first()
 
     primary_metric_key = PRIMARY_METRIC.get(candidate.modelType, "f1")
     candidate_metrics = candidate.metrics or {}
@@ -225,19 +217,19 @@ async def promote_model(
     model_id: str,
     body: PromoteRequest,
     request: Request,
-    db=Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: str = Depends(require_admin_user),
 ) -> dict:
     """
     Promote a model through the safety gate.
 
     Safety checks:
-      1. Valid promotion path (staging→ab_test→production)
+      1. Valid promotion path (staging->ab_test->production)
       2. Candidate beats current on primary metric
       3. 2-minute cooldown since last promotion for this model name
       4. Admin confirmation required (enforced by caller)
     """
-    candidate = await db.modelregistry.find_unique(where={"id": model_id})
+    candidate = await db.get(ModelRegistry, model_id)
     if not candidate:
         raise HTTPException(status_code=404, detail="Model not found")
 
@@ -246,7 +238,7 @@ async def promote_model(
     if not expected_next:
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot promote from '{candidate.stage}' — no valid next stage",
+            detail=f"Cannot promote from '{candidate.stage}' -- no valid next stage",
         )
     if body.target_stage != expected_next:
         raise HTTPException(
@@ -254,16 +246,16 @@ async def promote_model(
             detail=f"Invalid target stage '{body.target_stage}'. Expected '{expected_next}'",
         )
 
-    # 2. Cooldown check — last promotion for this model name
-    recent_promotion = await db.modelregistry.find_first(
-        where={
-            "modelName": candidate.modelName,
-            "promotedAt": {
-                "gte": datetime.now(timezone.utc) - PROMOTION_COOLDOWN,
-            },
-        },
-        order={"promotedAt": "desc"},
+    # 2. Cooldown check -- last promotion for this model name
+    cooldown_cutoff = datetime.now(timezone.utc) - PROMOTION_COOLDOWN
+    result = await db.execute(
+        select(ModelRegistry)
+        .where(ModelRegistry.modelName == candidate.modelName)
+        .where(ModelRegistry.promotedAt >= cooldown_cutoff)
+        .order_by(ModelRegistry.promotedAt.desc())
+        .limit(1)
     )
+    recent_promotion = result.scalars().first()
     if recent_promotion:
         cooldown_until = recent_promotion.promotedAt + PROMOTION_COOLDOWN
         raise HTTPException(
@@ -271,11 +263,15 @@ async def promote_model(
             detail=f"Promotion cooldown active until {cooldown_until.isoformat()}",
         )
 
-    # 3. Metrics gate — candidate must beat current
-    current = await db.modelregistry.find_first(
-        where={"modelName": candidate.modelName, "stage": body.target_stage},
-        order={"promotedAt": "desc"},
+    # 3. Metrics gate -- candidate must beat current
+    result = await db.execute(
+        select(ModelRegistry)
+        .where(ModelRegistry.modelName == candidate.modelName)
+        .where(ModelRegistry.stage == body.target_stage)
+        .order_by(ModelRegistry.promotedAt.desc())
+        .limit(1)
     )
+    current = result.scalars().first()
 
     primary_metric_key = PRIMARY_METRIC.get(candidate.modelType, "f1")
     candidate_metrics = candidate.metrics or {}
@@ -320,21 +316,24 @@ async def promote_model(
 
     # 4. Archive the current model in the target stage (if exists)
     if current:
-        await db.modelregistry.update(
-            where={"id": current.id},
-            data={"stage": "archived", "updatedAt": now},
+        await db.execute(
+            update(ModelRegistry)
+            .where(ModelRegistry.id == current.id)
+            .values(stage="archived", updatedAt=now)
         )
 
     # 5. Promote the candidate
-    await db.modelregistry.update(
-        where={"id": model_id},
-        data={
-            "stage": body.target_stage,
-            "promotedAt": now,
-            "promotedBy": admin,
-            "updatedAt": now,
-        },
+    await db.execute(
+        update(ModelRegistry)
+        .where(ModelRegistry.id == model_id)
+        .values(
+            stage=body.target_stage,
+            promotedAt=now,
+            promotedBy=admin,
+            updatedAt=now,
+        )
     )
+    await db.commit()
 
     after_state = {
         "stage": body.target_stage,

@@ -188,29 +188,32 @@ class TestAdminActionsProduceAuditEntries:
 
     async def test_revoke_shared_token_audited(self, admin_client, mock_session):
         from .conftest import make_shared_trip_token
-        token = make_shared_trip_token()
-        mock_session.sharedtriptoken.find_unique = AsyncMock(return_value=_make_mock_obj(token))
-        mock_session.sharedtriptoken.update = AsyncMock(
-            return_value=_make_mock_obj({**token, "revokedAt": datetime.now(timezone.utc)})
-        )
+        token_data = make_shared_trip_token()
+        token_obj = _make_mock_obj(token_data)
 
-        response = await admin_client.post(f"/admin/safety/tokens/shared/{token['id']}/revoke")
+        # revoke_shared_token: db.get(token) -> execute(update) -> commit -> audit(execute + commit)
+        mock_session.returns_get(token_obj)
+
+        response = await admin_client.post(f"/admin/safety/tokens/shared/{token_data['id']}/revoke")
         assert response.status_code == 200
 
         # Audit entry was created -- SA-based audit_action calls execute + commit
-        mock_session.execute.assert_called()
-        mock_session.commit.assert_called()
+        mock_session.mock.execute.assert_called()
+        mock_session.mock.commit.assert_called()
 
     async def test_review_injection_audited(self, admin_client, mock_session):
         from .conftest import make_flagged_raw_event
-        event = make_flagged_raw_event()
-        mock_session.rawevent.find_unique = AsyncMock(return_value=_make_mock_obj(event))
+        event_data = make_flagged_raw_event()
+        event_obj = _make_mock_obj(event_data)
+
+        # review_flagged_input: db.get(event) -> execute(update) -> commit -> audit(execute + commit)
+        mock_session.returns_get(event_obj)
 
         response = await admin_client.patch(
-            f"/admin/safety/injection-queue/{event['id']}",
+            f"/admin/safety/injection-queue/{event_data['id']}",
             json={"status": "confirmed"},
         )
         assert response.status_code == 200
 
-        mock_session.execute.assert_called()
-        mock_session.commit.assert_called()
+        mock_session.mock.execute.assert_called()
+        mock_session.mock.commit.assert_called()

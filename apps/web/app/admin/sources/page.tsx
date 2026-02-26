@@ -36,7 +36,6 @@ interface StalenessConfig {
 // Constants
 // ---------------------------------------------------------------------------
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 const POLL_INTERVAL_MS = 30_000;
 
 const FRESHNESS_COLORS: Record<string, string> = {
@@ -107,8 +106,8 @@ export default function AdminSourcesPage() {
 
   const fetchSources = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/sources`, {
-        credentials: 'include',
+      const res = await fetch(`/api/admin/sources`, {
+
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -121,8 +120,8 @@ export default function AdminSourcesPage() {
 
   const fetchAlerts = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/sources/alerts`, {
-        credentials: 'include',
+      const res = await fetch(`/api/admin/sources/alerts`, {
+
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -134,8 +133,8 @@ export default function AdminSourcesPage() {
 
   const fetchConfig = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/sources/config`, {
-        credentials: 'include',
+      const res = await fetch(`/api/admin/sources/config`, {
+
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: StalenessConfig = await res.json();
@@ -191,11 +190,11 @@ export default function AdminSourcesPage() {
 
     try {
       const res = await fetch(
-        `${API_BASE}/admin/sources/${encodeURIComponent(editingSource)}`,
+        `/api/admin/sources/${encodeURIComponent(editingSource)}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+  
           body: JSON.stringify({ authority_score: value }),
         }
       );
@@ -243,10 +242,10 @@ export default function AdminSourcesPage() {
     setConfigError(null);
 
     try {
-      const res = await fetch(`${API_BASE}/admin/sources/config`, {
+      const res = await fetch(`/api/admin/sources/config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+
         body: JSON.stringify({
           default_threshold_hours: defaultHours,
           per_source: perSource,

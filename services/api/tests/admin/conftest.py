@@ -2,7 +2,7 @@
 Shared test fixtures for the Admin track test suite.
 
 Provides:
-- Mock Prisma client with admin-specific model mocks
+- MockSASession with admin-specific configuration
 - Admin auth dependency overrides
 - Factory functions for admin-specific models (AuditLog, ModelRegistry, etc.)
 - FastAPI test client with admin routers mounted
@@ -17,6 +17,8 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 import pytest
 from httpx import ASGITransport, AsyncClient
 from fastapi import FastAPI, Request
+
+from services.api.tests.helpers.mock_sa import MockSASession
 
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost:25432/overplanned_test")
@@ -184,78 +186,24 @@ def _make_mock_obj(data: dict) -> MagicMock:
 
 
 # ---------------------------------------------------------------------------
-# Mock Prisma client
+# Mock SA Session
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
 def mock_session():
     """
-    Mock SA session with all admin-relevant model delegates.
-    Each delegate has find_many, find_unique, find_first, count, create,
-    create_many, update, delete stubs.
+    MockSASession with queue-based execute() dispatcher.
+
+    Usage in tests:
+        session.returns_many([user1, user2])   # next execute -> scalars().all()
+        session.returns_one(user)              # next execute -> scalars().first()
+        session.returns_scalar(5)              # next execute -> scalar() = 5
+        session.returns_get(node)              # next db.get() -> node
+        session.returns_mapping_rows([...])    # next execute -> fetchall() with ._mapping
+
+    Pass session.mock as the db dependency override.
     """
-    db = AsyncMock()
-
-    # AuditLog
-    db.auditlog = AsyncMock()
-    db.auditlog.create = AsyncMock(return_value=_make_mock_obj({"id": _gen_id()}))
-    db.auditlog.create_many = AsyncMock(return_value=None)
-    db.auditlog.find_many = AsyncMock(return_value=[])
-    db.auditlog.count = AsyncMock(return_value=0)
-    # AuditLog should NOT have update or delete
-    db.auditlog.update = AsyncMock(side_effect=Exception("AuditLog is append-only: UPDATE rejected"))
-    db.auditlog.delete = AsyncMock(side_effect=Exception("AuditLog is append-only: DELETE rejected"))
-
-    # ModelRegistry
-    db.modelregistry = AsyncMock()
-    db.modelregistry.find_many = AsyncMock(return_value=[])
-    db.modelregistry.find_unique = AsyncMock(return_value=None)
-    db.modelregistry.find_first = AsyncMock(return_value=None)
-    db.modelregistry.create = AsyncMock()
-    db.modelregistry.update = AsyncMock()
-
-    # SharedTripToken
-    db.sharedtriptoken = AsyncMock()
-    db.sharedtriptoken.find_many = AsyncMock(return_value=[])
-    db.sharedtriptoken.find_unique = AsyncMock(return_value=None)
-    db.sharedtriptoken.count = AsyncMock(return_value=0)
-    db.sharedtriptoken.update = AsyncMock()
-
-    # InviteToken
-    db.invitetoken = AsyncMock()
-    db.invitetoken.find_many = AsyncMock(return_value=[])
-    db.invitetoken.find_unique = AsyncMock(return_value=None)
-    db.invitetoken.count = AsyncMock(return_value=0)
-    db.invitetoken.update = AsyncMock()
-
-    # RawEvent
-    db.rawevent = AsyncMock()
-    db.rawevent.find_many = AsyncMock(return_value=[])
-    db.rawevent.find_unique = AsyncMock(return_value=None)
-    db.rawevent.count = AsyncMock(return_value=0)
-    db.rawevent.update = AsyncMock()
-
-    # User (for batch email lookups)
-    db.user = AsyncMock()
-    db.user.find_many = AsyncMock(return_value=[])
-    db.user.find_unique = AsyncMock(return_value=None)
-    db.user.count = AsyncMock(return_value=0)
-    db.user.update = AsyncMock()
-
-    # Trip
-    db.trip = AsyncMock()
-    db.trip.find_many = AsyncMock(return_value=[])
-
-    # BehavioralSignal
-    db.behavioralsignal = AsyncMock()
-    db.behavioralsignal.find_many = AsyncMock(return_value=[])
-    db.behavioralsignal.count = AsyncMock(return_value=0)
-
-    # Raw SQL support
-    db.query_raw = AsyncMock(return_value=[])
-    db.execute_raw = AsyncMock(return_value=0)
-
-    return db
+    return MockSASession()
 
 
 @pytest.fixture
@@ -296,22 +244,37 @@ def mock_request():
 @pytest.fixture
 def admin_app(mock_session, admin_user):
     """
-    FastAPI app with admin routers mounted and dependencies overridden.
-    Uses mock SA session and a fixed admin user for all auth checks.
+    FastAPI app with all admin routers mounted and dependencies overridden.
+    Uses MockSASession and a fixed admin user for all auth checks.
     """
+    from services.api.routers.admin_users import router as users_router
     from services.api.routers.admin_safety import router as safety_router
     from services.api.routers.admin_models import router as models_router
     from services.api.routers.admin_pipeline import router as pipeline_router
+    from services.api.routers.admin_nodes import router as nodes_router
+    from services.api.routers.admin_sources import router as sources_router
     from services.api.routers._admin_deps import get_db as admin_get_db, require_admin_user
 
     app = FastAPI()
+    app.include_router(users_router)
     app.include_router(safety_router)
     app.include_router(models_router)
     app.include_router(pipeline_router)
+    app.include_router(nodes_router)
+    app.include_router(sources_router)
+
+    # Mock Redis on app state (used by admin_sources for staleness config)
+    mock_redis = AsyncMock()
+    mock_redis.get = AsyncMock(return_value=None)
+    mock_redis.set = AsyncMock()
+    app.state.redis = mock_redis
 
     # Override dependencies -- all admin routers use shared deps from _admin_deps
-    app.dependency_overrides[admin_get_db] = lambda: mock_session
-    app.dependency_overrides[require_admin_user] = lambda: admin_user
+    async def override_get_db():
+        yield mock_session.mock
+
+    app.dependency_overrides[admin_get_db] = override_get_db
+    app.dependency_overrides[require_admin_user] = lambda: admin_user["id"]
 
     return app
 
@@ -334,7 +297,10 @@ def unauthenticated_app(mock_session):
     def raise_unauth():
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    app.dependency_overrides[admin_get_db] = lambda: mock_session
+    async def override_get_db():
+        yield mock_session.mock
+
+    app.dependency_overrides[admin_get_db] = override_get_db
     app.dependency_overrides[require_admin_user] = raise_unauth
 
     return app
@@ -356,7 +322,10 @@ def non_admin_app(mock_session):
     def raise_forbidden():
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    app.dependency_overrides[admin_get_db] = lambda: mock_session
+    async def override_get_db():
+        yield mock_session.mock
+
+    app.dependency_overrides[admin_get_db] = override_get_db
     app.dependency_overrides[require_admin_user] = raise_forbidden
 
     return app
