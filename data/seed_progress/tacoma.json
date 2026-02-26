@@ -1,69 +1,91 @@
 {
   "city": "tacoma",
-  "run_id": "20260226T051046",
-  "started_at": "2026-02-26T05:10:46.866629+00:00",
-  "finished_at": "2026-02-26T05:10:51.904969+00:00",
+  "run_id": "20260226T054222",
+  "started_at": "2026-02-26T05:42:22.947344+00:00",
+  "finished_at": "2026-02-26T05:45:45.055675+00:00",
   "overall_status": "completed",
-  "nodes_scraped": 0,
-  "nodes_resolved": 99,
-  "nodes_tagged": 686,
+  "nodes_scraped": 242,
+  "nodes_resolved": 2,
+  "nodes_tagged": 1005,
   "nodes_indexed": 0,
   "steps": {
     "scrape": {
       "status": "completed",
-      "started_at": null,
-      "finished_at": "2026-02-26T05:10:46.866987+00:00",
+      "started_at": "2026-02-26T05:42:22.947984+00:00",
+      "finished_at": "2026-02-26T05:42:28.557176+00:00",
       "error": null,
       "metrics": {
-        "skipped": true
+        "blog_rss": {
+          "success": 0,
+          "failed": 0,
+          "dead_letter": 0
+        },
+        "atlas_obscura": {
+          "error": "Client error '403 Forbidden' for url 'https://www.atlasobscura.com/things-to-do/tacoma/places'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+          "signals_persisted": 0
+        },
+        "arctic_shift": {
+          "success": 158,
+          "failed": 5156,
+          "dead_letter": 0,
+          "signals_persisted": 281
+        },
+        "total_scraped": 158
       }
     },
     "llm_fallback": {
       "status": "completed",
-      "started_at": null,
-      "finished_at": "2026-02-26T05:10:46.867214+00:00",
+      "started_at": "2026-02-26T05:42:28.557784+00:00",
+      "finished_at": "2026-02-26T05:43:38.950595+00:00",
       "error": null,
       "metrics": {
-        "skipped": true,
-        "reason": "skip_llm=True"
+        "venues_created": 84,
+        "venues_existing": 0,
+        "signals_relinked": 97,
+        "estimated_cost_usd": 0.0665,
+        "errors": []
       }
     },
     "entity_resolution": {
       "status": "completed",
-      "started_at": "2026-02-26T05:10:46.867436+00:00",
-      "finished_at": "2026-02-26T05:10:51.835619+00:00",
+      "started_at": "2026-02-26T05:43:38.951043+00:00",
+      "finished_at": "2026-02-26T05:43:39.311463+00:00",
       "error": null,
       "metrics": {
-        "nodes_scanned": 181,
-        "candidates_found": 750,
-        "merges_executed": 99,
+        "nodes_scanned": 84,
+        "candidates_found": 2,
+        "merges_executed": 2,
         "merges_by_tier": {
           "external_id": 0,
-          "geocode_proximity": 99,
-          "fuzzy_name": 0,
+          "geocode_proximity": 0,
+          "fuzzy_name": 2,
           "content_hash": 0
         },
-        "errors": 651
+        "errors": 0
       }
     },
     "vibe_extraction": {
       "status": "completed",
-      "started_at": null,
-      "finished_at": "2026-02-26T05:10:51.835925+00:00",
+      "started_at": "2026-02-26T05:43:39.311896+00:00",
+      "finished_at": "2026-02-26T05:45:44.858762+00:00",
       "error": null,
       "metrics": {
-        "skipped": true,
-        "reason": "skip_llm=True"
+        "nodes_processed": 82,
+        "tags_written": 287,
+        "nodes_skipped": 1,
+        "contradictions_flagged": 0,
+        "estimated_cost_usd": 0.1071,
+        "errors": []
       }
     },
     "rule_inference": {
       "status": "completed",
-      "started_at": "2026-02-26T05:10:51.836115+00:00",
-      "finished_at": "2026-02-26T05:10:51.871109+00:00",
+      "started_at": "2026-02-26T05:45:44.859400+00:00",
+      "finished_at": "2026-02-26T05:45:44.936960+00:00",
       "error": null,
       "metrics": {
-        "nodes_processed": 247,
-        "tags_created": 686,
+        "nodes_processed": 255,
+        "tags_created": 718,
         "tags_skipped": 0,
         "missing_vibe_tags": 0,
         "errors": 0
@@ -71,13 +93,13 @@
     },
     "convergence": {
       "status": "completed",
-      "started_at": "2026-02-26T05:10:51.871434+00:00",
-      "finished_at": "2026-02-26T05:10:51.904389+00:00",
+      "started_at": "2026-02-26T05:45:44.937783+00:00",
+      "finished_at": "2026-02-26T05:45:45.054186+00:00",
       "error": null,
       "metrics": {
-        "nodes_processed": 247,
-        "nodes_updated": 12,
-        "nodes_skipped": 235,
+        "nodes_processed": 255,
+        "nodes_updated": 58,
+        "nodes_skipped": 197,
         "vibe_boosts_applied": 0,
         "errors": 0
       }
@@ -85,7 +107,7 @@
     "qdrant_sync": {
       "status": "completed",
       "started_at": null,
-      "finished_at": "2026-02-26T05:10:51.904723+00:00",
+      "finished_at": "2026-02-26T05:45:45.055039+00:00",
       "error": null,
       "metrics": {
         "skipped": true,
