@@ -454,6 +454,9 @@ class EntityResolver:
         Tier 2: PostGIS ST_DWithin proximity + same ActivityCategory.
 
         Uses geography type for accurate meter-based distance.
+        Excludes exact-coordinate matches (distance < 1m) — those are
+        fallback city-center coordinates from LLM extraction, not real
+        geocoded positions.
         """
         matches = await conn.fetch(
             """
@@ -467,6 +470,10 @@ class EntityResolver:
                   ST_SetSRID(ST_MakePoint($3, $4), 4326)::geography,
                   $5
               )
+              AND ST_Distance(
+                  ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
+                  ST_SetSRID(ST_MakePoint($3, $4), 4326)::geography
+              ) > 1.0
             """,
             node["id"],
             node["category"],
@@ -643,7 +650,8 @@ class EntityResolver:
         Combined geo-proximity + fuzzy name check for full sweep.
 
         Finds nodes within PROXIMITY_METERS with same category,
-        then applies fuzzy name filter.
+        then applies fuzzy name filter. Excludes exact-coordinate
+        matches (< 1m) which indicate fallback city-center coords.
         """
         matches = await conn.fetch(
             """
@@ -658,6 +666,10 @@ class EntityResolver:
                   ST_SetSRID(ST_MakePoint($4, $5), 4326)::geography,
                   $6
               )
+              AND ST_Distance(
+                  ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
+                  ST_SetSRID(ST_MakePoint($4, $5), 4326)::geography
+              ) > 1.0
               AND similarity("canonicalName", $2) > $7
             ORDER BY sim DESC
             """,

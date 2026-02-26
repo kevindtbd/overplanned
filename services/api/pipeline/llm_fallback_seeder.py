@@ -156,18 +156,20 @@ def make_slug(name: str, city: str) -> str:
 # ---------------------------------------------------------------------------
 
 SYSTEM_PROMPT = """You are a venue extraction system for a travel planning app.
-You receive raw text excerpts from blog posts and RSS feeds about a specific city.
-Your job is to extract INDIVIDUAL VENUES mentioned in the text.
+You receive raw text excerpts from blog posts and Reddit about a specific city.
+Your job is to extract INDIVIDUAL VENUES that a traveler could physically visit.
 
 RULES:
-- Extract only specific, named venues (restaurants, bars, parks, museums, etc.)
-- Do NOT extract generic descriptions, neighborhoods, or chain restaurants
+- Extract only specific, named venues (restaurants, bars, parks, museums, shops, etc.)
+- A venue MUST be a place someone can go to — a physical location with a name
+- Do NOT extract: people, events, organizations, schools, government agencies, neighborhoods, or chain restaurants
+- Do NOT extract if the text is general city discussion, news, politics, or personal stories without venue recommendations
 - For each venue, provide: name, category, neighborhood (if mentioned), short description
 - Category must be one of: dining, drinks, culture, outdoors, active, entertainment, shopping, experience, nightlife, group_activity, wellness
 - Price level (1-4): 1=budget, 2=moderate, 3=upscale, 4=luxury. Omit if unclear.
-- If a venue is clearly a chain restaurant or generic, skip it
 - Output ONLY a JSON object with a "venues" array -- no prose, no markdown
 - If no specific venues can be extracted, return {"venues": []}
+- When in doubt, return fewer venues. Quality over quantity.
 
 Example output:
 {"venues": [
@@ -500,7 +502,9 @@ async def _create_activity_nodes(
         for slug, venue in venues.items():
             node_id = str(uuid.uuid4())
 
-            # Use city bbox center as fallback coordinates if no geocoding
+            # Use city bbox center as fallback when ungeocoded.
+            # Entity resolution skips geocode_proximity for nodes at
+            # exact city center to prevent over-merging.
             lat = venue.latitude
             lng = venue.longitude
             if lat is None or lng is None:
