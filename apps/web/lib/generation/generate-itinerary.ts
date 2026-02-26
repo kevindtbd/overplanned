@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from "uuid";
 import { scoreNodes, selectNodes } from "./scoring";
 import { placeSlots } from "./slot-placement";
 import { enrichWithLLM } from "./llm-enrichment";
+import { getPersonaSnapshot } from "./persona-snapshot";
+import { getWeatherContext } from "./weather-context";
 import type { PersonaSeed, PlacedSlot } from "./types";
 import { PACE_SLOTS_PER_DAY, TEMPLATE_WEIGHTS } from "./types";
 
@@ -97,7 +99,9 @@ export async function generateLegItinerary(
   // Step 3: Place into day/time slots
   const placedSlots = placeSlots(selectedNodes, totalDays, personaSeed, startDate);
 
-  // Step 4: Create all slots in one transaction
+  // Step 4: Create all slots + RankingEvent in one transaction
+  const generationStartMs = performance.now();
+
   const slotRows = placedSlots.map((s) => ({
     id: uuidv4(),
     tripId,
@@ -113,6 +117,48 @@ export async function generateLegItinerary(
     isLocked: false,
   }));
 
+  // Gather context for RankingEvent denormalization
+  const [persona, weatherCtx] = await Promise.all([
+    getPersonaSnapshot(prisma, userId),
+    Promise.resolve(getWeatherContext(city, startDate)),
+  ]);
+
+  // Build candidate pool: all node IDs that were scored (the full candidate set)
+  const allCandidateIds = scoredNodes.map((n) => n.nodeId);
+  // Ranked IDs: the selected nodes in score order (model output)
+  const rankedIds = selectedNodes.map((n) => n.nodeId);
+  // Selected IDs: what was actually placed into slots
+  const selectedSlotNodeIds = placedSlots.map((s) => s.nodeId);
+
+  const latencyMs = Math.round(performance.now() - generationStartMs);
+
+  // Build per-day RankingEvent creates — one event per day in this generation batch.
+  // Each event captures the full candidate set (for BPR negative sampling) and the
+  // day-specific ranked/selected subsets.
+  const dayNumbers = [...new Set(placedSlots.map((s) => s.dayNumber))];
+  const rankingEventCreates = dayNumbers.map((dayNum) => {
+    const daySlots = placedSlots.filter((s) => s.dayNumber === dayNum);
+    const daySelectedIds = daySlots.map((s) => s.nodeId);
+    // Day-specific ranking: nodes selected for this day in placement order
+    const dayRankedIds = daySlots.map((s) => s.nodeId);
+
+    return prisma.rankingEvent.create({
+      data: {
+        id: uuidv4(),
+        userId,
+        tripId,
+        dayNumber: dayNum,
+        modelName: "deterministic_scorer",
+        modelVersion: "1.0.0",
+        candidateIds: allCandidateIds,
+        rankedIds: dayRankedIds,
+        selectedIds: daySelectedIds,
+        surface: "itinerary",
+        latencyMs,
+      },
+    });
+  });
+
   await prisma.$transaction([
     prisma.itinerarySlot.createMany({ data: slotRows }),
     prisma.behavioralSignal.create({
@@ -126,6 +172,7 @@ export async function generateLegItinerary(
         rawAction: `itinerary_generated:${slotRows.length}_slots:${personaSeed.template ?? "no_template"}`,
       },
     }),
+    ...rankingEventCreates,
   ]);
 
   // Step 5: Fire async LLM enrichment (non-blocking)
