@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     openweathermap_api_key: str = ""
     weather_api_timeout_s: float = 8.0
 
+    # GCS
+    gcs_raw_bucket: str = Field(default="overplanned-raw")
+    gcs_project_id: str = Field(default="")
+
     model_config = {"env_prefix": "", "env_file": ".env", "extra": "ignore"}
 
 

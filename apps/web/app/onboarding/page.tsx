@@ -14,9 +14,10 @@ import {
   LegReviewStep,
   type OnboardingLeg,
 } from "./components/LegReviewStep";
-import { TripDNAStep, type Pace, type MorningPreference } from "./components/TripDNAStep";
-import { TemplateStep } from "./components/TemplateStep";
+import { TripDNAStep, FOOD_CHIPS, type Pace, type MorningPreference } from "./components/TripDNAStep";
+import { TemplateStep, emitPresetAllSkipped } from "./components/TemplateStep";
 import { ErrorState } from "@/components/states";
+import { eventEmitter } from "@/lib/events/event-emitter";
 import { nightsBetween } from "@/lib/utils/dates";
 import { MAX_TRIP_NIGHTS } from "@/lib/constants/trip";
 import { autoTripName } from "@/lib/trip-legs";
@@ -377,6 +378,19 @@ function OnboardingContent() {
       setTripName(autoTripName(currentLegs, currentLegs[0].startDate));
     }
 
+    // dna → template: emit enriched vibe_select with negative space (displayed/notSelected)
+    if (step === "dna" && nextStep === "template") {
+      eventEmitter.emit({
+        eventType: "vibe_select" as Parameters<typeof eventEmitter.emit>[0]["eventType"],
+        intentClass: "explicit",
+        payload: {
+          selected: foodPreferences,
+          displayed: FOOD_CHIPS,
+          notSelected: FOOD_CHIPS.filter((c) => !foodPreferences.includes(c)),
+        },
+      });
+    }
+
     // Step transition is NOT blocked by the draft save — fire and forget
     setStep(nextStep);
   }
@@ -444,6 +458,11 @@ function OnboardingContent() {
   async function handleComplete() {
     if (legs.length === 0 || !pace || !morningPreference) {
       return;
+    }
+
+    // Emit preset_all_skipped when user completes onboarding without selecting any template
+    if (template === null) {
+      emitPresetAllSkipped();
     }
 
     setIsSubmitting(true);

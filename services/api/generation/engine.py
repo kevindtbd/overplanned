@@ -28,6 +28,7 @@ import anthropic
 from services.api.generation.fallbacks import get_template_itinerary, run_with_fallbacks
 from services.api.generation.slot_assigner import SlotAssignment, assign_slots
 from services.api.generation.ranker import RANKER_MODEL, RANKER_PROMPT_VERSION
+from services.api.ranking.cant_miss import apply_cant_miss_floor
 from services.api.search.service import ActivitySearchService
 
 logger = logging.getLogger(__name__)
@@ -158,6 +159,16 @@ class GenerationEngine:
             db=self._db,
             qdrant_available=qdrant_available,
         )
+
+        # ------------------------------------------------------------------
+        # Step 2b: Apply cant-miss floor (L7 wire-up)
+        # Ensures high-value nodes with cantMiss=true maintain a minimum
+        # score of 0.72, preventing them from being ranked out.
+        # ------------------------------------------------------------------
+        if resolved_candidates and generation_method != "template_fallback":
+            resolved_candidates = await apply_cant_miss_floor(
+                resolved_candidates, self._db,
+            )
 
         # ------------------------------------------------------------------
         # Step 3: Slot assignment

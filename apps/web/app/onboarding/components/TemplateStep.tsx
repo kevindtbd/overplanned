@@ -1,5 +1,8 @@
 "use client";
 
+import { useRef, useCallback, useEffect } from "react";
+import { eventEmitter } from "@/lib/events/event-emitter";
+
 interface Template {
   id: string;
   name: string;
@@ -172,12 +175,63 @@ const TEMPLATES: Template[] = [
   },
 ];
 
+/** All preset IDs shown in this step — used for negative space capture. */
+export const ALL_PRESET_IDS = TEMPLATES.map((t) => t.id);
+
+const HOVER_THRESHOLD_MS = 500;
+
 interface TemplateStepProps {
   selected: string | null;
   onSelect: (templateId: string | null) => void;
+  /** Called by parent when user skips without selecting any preset */
+  onSkipWithoutSelect?: () => void;
 }
 
 export function TemplateStep({ selected, onSelect }: TemplateStepProps) {
+  // Hover timer ref: maps template id -> timeout handle
+  const hoverTimerRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // Cancel hover timers on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(hoverTimerRef.current).forEach(clearTimeout);
+    };
+  }, []);
+
+  const handleMouseEnter = useCallback((templateId: string) => {
+    // Start hover timer — emit preset_hovered if still hovering after threshold
+    hoverTimerRef.current[templateId] = setTimeout(() => {
+      eventEmitter.emit({
+        eventType: "preset_hovered" as Parameters<typeof eventEmitter.emit>[0]["eventType"],
+        intentClass: "implicit",
+        payload: { presetId: templateId, allPresetsShown: ALL_PRESET_IDS },
+      });
+      delete hoverTimerRef.current[templateId];
+    }, HOVER_THRESHOLD_MS);
+  }, []);
+
+  const handleMouseLeave = useCallback((templateId: string) => {
+    // Cancel hover timer if user left before threshold
+    if (hoverTimerRef.current[templateId]) {
+      clearTimeout(hoverTimerRef.current[templateId]);
+      delete hoverTimerRef.current[templateId];
+    }
+  }, []);
+
+  const handleSelect = useCallback((templateId: string) => {
+    const nextSelected = selected === templateId ? null : templateId;
+    onSelect(nextSelected);
+
+    // Emit preset_selected when selecting (not deselecting)
+    if (nextSelected !== null) {
+      eventEmitter.emit({
+        eventType: "preset_selected" as Parameters<typeof eventEmitter.emit>[0]["eventType"],
+        intentClass: "explicit",
+        payload: { presetId: templateId, allPresetsShown: ALL_PRESET_IDS },
+      });
+    }
+  }, [selected, onSelect]);
+
   return (
     <div className="mx-auto w-full max-w-lg">
       <h2 className="font-sora text-2xl font-semibold text-primary">
@@ -189,9 +243,9 @@ export function TemplateStep({ selected, onSelect }: TemplateStepProps) {
         {TEMPLATES.map((tpl) => (
           <button
             key={tpl.id}
-            onClick={() =>
-              onSelect(selected === tpl.id ? null : tpl.id)
-            }
+            onClick={() => handleSelect(tpl.id)}
+            onMouseEnter={() => handleMouseEnter(tpl.id)}
+            onMouseLeave={() => handleMouseLeave(tpl.id)}
             className={`group rounded-xl border p-5 text-left transition-all duration-150 ${
               selected === tpl.id
                 ? "border-accent bg-accent-light text-accent-fg"
@@ -227,4 +281,17 @@ export function TemplateStep({ selected, onSelect }: TemplateStepProps) {
       )}
     </div>
   );
+}
+
+/**
+ * Emits a preset_all_skipped signal.
+ * Called by the parent onboarding page when the user completes
+ * the flow without selecting any template.
+ */
+export function emitPresetAllSkipped(): void {
+  eventEmitter.emit({
+    eventType: "preset_all_skipped" as Parameters<typeof eventEmitter.emit>[0]["eventType"],
+    intentClass: "explicit",
+    payload: { allPresetsShown: ALL_PRESET_IDS },
+  });
 }

@@ -24,7 +24,7 @@ const MORNING_OPTIONS = [
   { id: "late" as const, label: "Late riser", time: "After 10am" },
 ];
 
-const FOOD_CHIPS = [
+export const FOOD_CHIPS = [
   "street food",
   "fine dining",
   "local staples",

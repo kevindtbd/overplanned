@@ -13,6 +13,7 @@ export default defineConfig({
       "__tests__/e2e/**",
       "**/tracks/**",
       "**/.claude/**",
+      "**/.worktrees/**",
     ],
     testTimeout: 15000,
     globals: true,

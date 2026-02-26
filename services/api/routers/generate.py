@@ -19,6 +19,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
 
 from services.api.generation.engine import GenerationEngine
+from services.api.persona import effective_persona, get_persona_for_ranking
 
 logger = logging.getLogger(__name__)
 
@@ -149,8 +150,20 @@ async def generate_itinerary(body: GenerateRequest, request: Request) -> dict:
     # ------------------------------------------------------------------
     # Parse trip fields
     # ------------------------------------------------------------------
-    persona_seed: dict = trip_row.get("personaSeed") or {}
     city: str = trip_row["city"]
+
+    # L1 wire-up: use effective_persona() instead of raw Trip.personaSeed.
+    # This resolves the full priority stack: TripPersonaCache (Redis) >
+    # PersonaDimension (DB/EMA) > CF blend > destination prior.
+    redis_client = getattr(request.app.state, "redis", None)
+    persona_snapshot = await effective_persona(
+        user_id=body.userId,
+        trip_id=body.tripId,
+        pool=db,
+        redis_client=redis_client,
+        city_slug=city,
+    )
+    persona_seed: dict = get_persona_for_ranking(persona_snapshot)
     start_date: datetime = _ensure_utc(trip_row["startDate"])
     end_date: datetime = _ensure_utc(trip_row["endDate"])
 
