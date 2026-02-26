@@ -115,6 +115,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-overplanned}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-overplanned}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       QDRANT_URL: http://qdrant:6333
+      ADMIN_HMAC_SECRET: ${ADMIN_HMAC_SECRET}
       ENVIRONMENT: development
     volumes:
       - ./services/api:/app/services/api

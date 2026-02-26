@@ -52,7 +52,7 @@ function validatePath(segments: string[]): string {
     throw new ProxyError(400, "Invalid path: traversal not allowed");
   }
 
-  const path = "/" + segments.join("/");
+  const path = "/admin/" + segments.join("/");
 
   // Scope enforcement: must start with /admin/
   if (!path.startsWith("/admin/") && path !== "/admin") {

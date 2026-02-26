@@ -29,7 +29,7 @@ def create_engine() -> AsyncEngine:
     url = settings.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     return create_async_engine(
         url,
-        pool_class=NullPool,
+        poolclass=NullPool,
         echo=settings.debug and settings.environment == "development",
     )
 

@@ -12,17 +12,13 @@ __pycache__/
 *.pyc
 .venv/
 
-# Node / Next.js (not needed for API image)
+# Node / build artifacts
 node_modules/
 dist/
 .next/
-apps/
-packages/
 
-# Project dirs not needed in API container
+# Project dirs not needed in containers
 tracks/
-docs/
-scripts/
 data/
 docker/
 
