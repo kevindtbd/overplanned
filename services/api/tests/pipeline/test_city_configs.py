@@ -47,6 +47,18 @@ EXPECTED_CITY_SLUGS = [
     "bend",
     "tacoma",
     "nashville",
+    "missoula",
+    "flagstaff",
+    "bozeman",
+    "durango",
+    "moab",
+    "taos",
+    "sedona",
+    "hood-river",
+    "truckee",
+    "mammoth-lakes",
+    "jackson-hole",
+    "telluride",
     "denver",
 ]
 

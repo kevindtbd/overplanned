@@ -215,9 +215,11 @@ class TestQdrantParity:
 class TestPipelineStepOrder:
     def test_step_order_is_correct(self):
         expected = [
+            "reddit_download",
             "scrape",
             "llm_fallback",
             "geocode_backfill",
+            "business_status",
             "entity_resolution",
             "vibe_extraction",
             "rule_inference",

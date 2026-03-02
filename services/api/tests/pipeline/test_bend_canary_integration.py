@@ -371,11 +371,13 @@ class TestConvergenceScoringForBend:
 class TestBendPipelineStepOrder:
     """Verify the pipeline steps execute in correct order for Bend."""
 
-    def test_eight_steps_in_order(self):
+    def test_nine_steps_in_order(self):
         expected = [
+            "reddit_download",
             "scrape",
             "llm_fallback",
             "geocode_backfill",
+            "business_status",
             "entity_resolution",
             "vibe_extraction",
             "rule_inference",
@@ -417,6 +419,14 @@ class TestBendEndToEndMocked:
             "services.api.pipeline.city_seeder.PROGRESS_DIR",
             tmp_path / "progress",
         ), patch(
+            "services.api.pipeline.reddit_download.download_reddit_data",
+            new_callable=AsyncMock,
+            return_value=MagicMock(
+                subreddits_checked=3, subreddits_downloaded=3,
+                subreddits_skipped_fresh=0, posts_downloaded=100,
+                comments_downloaded=50, circuit_breaker_tripped=False,
+            ),
+        ) as mock_dl, patch(
             "services.api.pipeline.city_seeder._step_scrape",
             new_callable=AsyncMock,
             return_value={"total_scraped": 42, "blog_rss": {"success": 5}},
@@ -449,7 +459,7 @@ class TestBendEndToEndMocked:
 
             assert result.city == "bend"
             assert result.success is True
-            assert result.steps_completed == 8  # all 8, qdrant skipped but counted
+            assert result.steps_completed == 10  # all 10, qdrant skipped but counted
             assert result.steps_failed == 0
             assert result.total_duration_s >= 0
 
@@ -495,6 +505,14 @@ class TestBendEndToEndMocked:
             "services.api.pipeline.city_seeder.PROGRESS_DIR",
             progress_dir,
         ), patch(
+            "services.api.pipeline.reddit_download.download_reddit_data",
+            new_callable=AsyncMock,
+            return_value=MagicMock(
+                subreddits_checked=3, subreddits_downloaded=3,
+                subreddits_skipped_fresh=0, posts_downloaded=100,
+                comments_downloaded=50, circuit_breaker_tripped=False,
+            ),
+        ), patch(
             "services.api.pipeline.city_seeder._step_scrape",
             new_callable=AsyncMock,
         ) as mock_scrape, patch(
@@ -534,6 +552,14 @@ class TestBendEndToEndMocked:
         with patch(
             "services.api.pipeline.city_seeder.PROGRESS_DIR",
             tmp_path / "progress",
+        ), patch(
+            "services.api.pipeline.reddit_download.download_reddit_data",
+            new_callable=AsyncMock,
+            return_value=MagicMock(
+                subreddits_checked=3, subreddits_downloaded=3,
+                subreddits_skipped_fresh=0, posts_downloaded=100,
+                comments_downloaded=50, circuit_breaker_tripped=False,
+            ),
         ), patch(
             "services.api.pipeline.city_seeder._step_scrape",
             new_callable=AsyncMock,
@@ -577,6 +603,14 @@ class TestBendEndToEndMocked:
         with patch(
             "services.api.pipeline.city_seeder.PROGRESS_DIR",
             tmp_path / "progress",
+        ), patch(
+            "services.api.pipeline.reddit_download.download_reddit_data",
+            new_callable=AsyncMock,
+            return_value=MagicMock(
+                subreddits_checked=3, subreddits_downloaded=3,
+                subreddits_skipped_fresh=0, posts_downloaded=100,
+                comments_downloaded=50, circuit_breaker_tripped=False,
+            ),
         ), patch(
             "services.api.pipeline.city_seeder._step_scrape",
             new_callable=AsyncMock,

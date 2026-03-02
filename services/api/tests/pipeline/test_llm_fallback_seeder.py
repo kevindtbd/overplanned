@@ -24,6 +24,7 @@ import pytest
 from services.api.pipeline.llm_fallback_seeder import (
     SENTINEL_NODE_ID,
     VALID_CATEGORIES,
+    BusinessStatusStats,
     ExtractedVenue,
     FallbackStats,
     GeocodeBackfillStats,
@@ -35,6 +36,7 @@ from services.api.pipeline.llm_fallback_seeder import (
     _parse_extraction_response,
     _validate_geocode_result,
     _validate_venue,
+    check_business_status,
     geocode_backfill,
     make_slug,
     run_llm_fallback,
@@ -969,14 +971,229 @@ class TestGeocodeBackfill:
 
 
 class TestPipelineStepOrder:
-    def test_geocode_backfill_between_llm_and_entity(self):
-        """GEOCODE_BACKFILL is ordered after LLM_FALLBACK, before ENTITY_RESOLUTION."""
+    def test_geocode_backfill_between_llm_and_business_status(self):
+        """GEOCODE_BACKFILL is ordered after LLM_FALLBACK, before BUSINESS_STATUS."""
         from services.api.pipeline.city_seeder import PipelineStep, STEP_ORDER
         idx = STEP_ORDER.index(PipelineStep.GEOCODE_BACKFILL)
         assert STEP_ORDER[idx - 1] == PipelineStep.LLM_FALLBACK
+        assert STEP_ORDER[idx + 1] == PipelineStep.BUSINESS_STATUS
+
+    def test_business_status_before_entity_resolution(self):
+        """BUSINESS_STATUS is ordered before ENTITY_RESOLUTION."""
+        from services.api.pipeline.city_seeder import PipelineStep, STEP_ORDER
+        idx = STEP_ORDER.index(PipelineStep.BUSINESS_STATUS)
         assert STEP_ORDER[idx + 1] == PipelineStep.ENTITY_RESOLUTION
 
     def test_total_steps(self):
-        """Pipeline has 8 steps total."""
+        """Pipeline has 9 steps total."""
         from services.api.pipeline.city_seeder import STEP_ORDER
-        assert len(STEP_ORDER) == 8
+        assert len(STEP_ORDER) == 10
+
+
+# ===================================================================
+# Business status check
+# ===================================================================
+
+
+class TestBusinessStatusStats:
+    def test_defaults(self):
+        stats = BusinessStatusStats()
+        assert stats.nodes_checked == 0
+        assert stats.nodes_closed == 0
+        assert stats.nodes_temp_closed == 0
+        assert stats.nodes_not_found == 0
+        assert stats.nodes_operational == 0
+        assert stats.nodes_failed == 0
+        assert stats.latency_seconds == 0.0
+
+
+class TestCheckBusinessStatus:
+    """Tests for check_business_status() function."""
+
+    def _fetch_key(self):
+        """FakePool key for the node query (first 80 chars)."""
+        return (
+            'SELECT id, name, "googlePlaceId"\n'
+            "        FROM activity_nodes\n"
+            "        WHERE city "
+        )
+
+    @pytest.mark.asyncio
+    async def test_no_api_key_returns_early(self):
+        """No Google Places API key -> early return with 0 checked."""
+        pool = FakePool()
+        stats = await check_business_status(pool, "tacoma", google_places_key=None)
+
+        assert stats.nodes_checked == 0
+        assert stats.nodes_operational == 0
+        assert len(pool._executed) == 0
+
+    @pytest.mark.asyncio
+    async def test_no_eligible_nodes(self):
+        """No nodes with googlePlaceId -> clean return."""
+        pool = FakePool()
+        pool._fetch_results[self._fetch_key()] = []
+
+        stats = await check_business_status(pool, "tacoma", google_places_key="test-key")
+
+        assert stats.nodes_checked == 0
+        assert stats.nodes_operational == 0
+
+    @pytest.mark.asyncio
+    async def test_operational_stamps_validated_at(self):
+        """OPERATIONAL -> lastValidatedAt stamped, status unchanged."""
+        pool = FakePool()
+        node_id = make_id()
+        pool._fetch_results[self._fetch_key()] = [
+            FakeRecord(id=node_id, name="Thai Pepper", googlePlaceId="ChIJtest123"),
+        ]
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"businessStatus": "OPERATIONAL"}
+
+        with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_cls:
+            mock_client = AsyncMock()
+            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_cls.return_value = mock_client
+
+            with patch("services.api.pipeline.llm_fallback_seeder.asyncio.sleep", new_callable=AsyncMock):
+                stats = await check_business_status(pool, "tacoma", google_places_key="test-key")
+
+        assert stats.nodes_checked == 1
+        assert stats.nodes_operational == 1
+        assert stats.nodes_closed == 0
+
+        # Verify UPDATE was called (lastValidatedAt only, no status change)
+        assert len(pool._executed) == 1
+        update_query, update_args = pool._executed[0]
+        assert '"lastValidatedAt"' in update_query
+        assert "status" not in update_query.lower().split("set")[1].split("where")[0]
+
+    @pytest.mark.asyncio
+    async def test_permanently_closed_flags_node(self):
+        """CLOSED_PERMANENTLY -> status=flagged, flagReason=permanently_closed."""
+        pool = FakePool()
+        node_id = make_id()
+        pool._fetch_results[self._fetch_key()] = [
+            FakeRecord(id=node_id, name="The Opal Lounge", googlePlaceId="ChIJopal999"),
+        ]
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"businessStatus": "CLOSED_PERMANENTLY"}
+
+        with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_cls:
+            mock_client = AsyncMock()
+            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_cls.return_value = mock_client
+
+            with patch("services.api.pipeline.llm_fallback_seeder.asyncio.sleep", new_callable=AsyncMock):
+                stats = await check_business_status(pool, "tacoma", google_places_key="test-key")
+
+        assert stats.nodes_checked == 1
+        assert stats.nodes_closed == 1
+        assert stats.nodes_operational == 0
+
+        # Verify flagging UPDATE
+        assert len(pool._executed) == 1
+        update_query, _ = pool._executed[0]
+        assert "status = 'flagged'" in update_query
+        assert "'permanently_closed'" in update_query
+
+    @pytest.mark.asyncio
+    async def test_404_flags_place_not_found(self):
+        """404 NOT_FOUND -> status=flagged, flagReason=place_not_found."""
+        pool = FakePool()
+        node_id = make_id()
+        pool._fetch_results[self._fetch_key()] = [
+            FakeRecord(id=node_id, name="Gone Venue", googlePlaceId="ChIJgone404"),
+        ]
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 404
+
+        with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_cls:
+            mock_client = AsyncMock()
+            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_cls.return_value = mock_client
+
+            with patch("services.api.pipeline.llm_fallback_seeder.asyncio.sleep", new_callable=AsyncMock):
+                stats = await check_business_status(pool, "tacoma", google_places_key="test-key")
+
+        assert stats.nodes_checked == 1
+        assert stats.nodes_not_found == 1
+        assert stats.nodes_operational == 0
+
+        # Verify flagging UPDATE
+        assert len(pool._executed) == 1
+        update_query, _ = pool._executed[0]
+        assert "status = 'flagged'" in update_query
+        assert "'place_not_found'" in update_query
+
+    @pytest.mark.asyncio
+    async def test_api_error_increments_failed(self):
+        """API error (e.g. 500) -> nodes_failed incremented, continues."""
+        pool = FakePool()
+        node_id = make_id()
+        pool._fetch_results[self._fetch_key()] = [
+            FakeRecord(id=node_id, name="Error Venue", googlePlaceId="ChIJerr500"),
+        ]
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 500
+
+        with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_cls:
+            mock_client = AsyncMock()
+            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_cls.return_value = mock_client
+
+            with patch("services.api.pipeline.llm_fallback_seeder.asyncio.sleep", new_callable=AsyncMock):
+                stats = await check_business_status(pool, "tacoma", google_places_key="test-key")
+
+        assert stats.nodes_checked == 1
+        assert stats.nodes_failed == 1
+        assert stats.nodes_operational == 0
+        # No DB write on error
+        assert len(pool._executed) == 0
+
+    @pytest.mark.asyncio
+    async def test_temporarily_closed_stamps_only(self):
+        """CLOSED_TEMPORARILY -> lastValidatedAt stamped, status unchanged (don't flag)."""
+        pool = FakePool()
+        node_id = make_id()
+        pool._fetch_results[self._fetch_key()] = [
+            FakeRecord(id=node_id, name="Seasonal Cafe", googlePlaceId="ChIJtemp001"),
+        ]
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"businessStatus": "CLOSED_TEMPORARILY"}
+
+        with patch("services.api.pipeline.llm_fallback_seeder.httpx.AsyncClient") as mock_cls:
+            mock_client = AsyncMock()
+            mock_client.get = AsyncMock(return_value=mock_resp)
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_cls.return_value = mock_client
+
+            with patch("services.api.pipeline.llm_fallback_seeder.asyncio.sleep", new_callable=AsyncMock):
+                stats = await check_business_status(pool, "tacoma", google_places_key="test-key")
+
+        assert stats.nodes_checked == 1
+        assert stats.nodes_temp_closed == 1
+        assert stats.nodes_closed == 0
+
+        # Verify UPDATE was called (lastValidatedAt only, no flagging)
+        assert len(pool._executed) == 1
+        update_query, _ = pool._executed[0]
+        assert '"lastValidatedAt"' in update_query
+        assert "flagged" not in update_query

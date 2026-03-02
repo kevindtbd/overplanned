@@ -91,6 +91,19 @@ for _city_slug, _terms in TARGET_CITIES.items():
         ALL_CITY_TERMS.add(_term)
         TERM_TO_CITY[_term] = _city_slug
 
+# Build subreddit -> city_slug for direct (Tier 1) attribution.
+# Only city-specific subreddits (weight >= 0.85) qualify — regional/interest subs
+# like r/oregon or r/craftbeer fall through to text matching.
+SUBREDDIT_TO_CITY: Dict[str, str] = {}
+try:
+    from services.api.pipeline.city_configs import CITY_CONFIGS as _CITY_CONFIGS
+    for _city_slug, _config in _CITY_CONFIGS.items():
+        for _sub, _weight in _config.subreddits.items():
+            if _weight >= 0.85:
+                SUBREDDIT_TO_CITY[_sub.lower()] = _city_slug
+except ImportError:
+    pass  # falls back to empty dict; detect_city will rely on text matching only
+
 
 # ---------------------------------------------------------------------------
 # Quality filter thresholds (playbook requirement)
@@ -240,24 +253,48 @@ class ArcticShiftConfig:
 # Core extraction logic
 # ---------------------------------------------------------------------------
 
-def detect_city(text: str) -> Optional[str]:
+def detect_city(text: str, subreddit: str = "") -> Optional[str]:
     """
-    Detect which target city a text is about.
+    Detect which target city a text is about. Three-tier approach:
 
-    Returns the city slug (e.g. 'tokyo', 'bend') or None.
-    Uses the dynamically built TERM_TO_CITY map from city_configs.
+    Tier 1 — city-specific subreddit (r/bend, r/asheville): direct attribution,
+              no text matching needed. Weight >= 0.85 in city config.
+
+    Tier 2 — regional subreddit (r/oregon, r/northcarolina): text matching with
+              term-specificity weighting. Multi-word terms score higher than
+              single words (e.g. "bend oregon" > "bend"). Requires score >= 1.
+
+    Tier 3 — interest/cross subreddit (r/craftbeer, r/skiing): same text matching
+              but requires score >= 2 — needs an explicit geo anchor to qualify.
+
+    Returns city slug or None.
     """
+    # Tier 1: city-specific subreddit → trust it directly
+    if subreddit and subreddit.lower() in SUBREDDIT_TO_CITY:
+        return SUBREDDIT_TO_CITY[subreddit.lower()]
+
+    # Determine subreddit tier for minimum score threshold
+    sub_weight = SUBREDDIT_WEIGHTS.get(subreddit.lower(), 0.0) if subreddit else 0.0
+    # Regional subs (0.65-0.84): min_score=1. Interest/cross subs (<0.65): min_score=2.
+    min_score = 1 if sub_weight >= 0.65 else 2
+
     text_lower = text.lower()
-    # Score each city by how many of its terms appear
-    city_scores: Dict[str, int] = {}
+    city_scores: Dict[str, float] = {}
     for term in ALL_CITY_TERMS:
         if term in text_lower:
             city = TERM_TO_CITY[term]
-            city_scores[city] = city_scores.get(city, 0) + 1
+            # Weight by term specificity: more words = more specific = more confident
+            specificity = len(term.split())
+            city_scores[city] = city_scores.get(city, 0.0) + specificity
 
     if not city_scores:
         return None
-    return max(city_scores, key=city_scores.get)
+
+    best_city = max(city_scores, key=city_scores.get)
+    if city_scores[best_city] < min_score:
+        return None
+
+    return best_city
 
 
 def extract_venue_names(text: str) -> List[str]:
@@ -695,8 +732,11 @@ class ArcticShiftScraper(BaseScraper):
         if not full_text.strip():
             return None
 
-        # Detect city context
-        city = detect_city(full_text)
+        # Extract subreddit early — needed for Tier 1 city detection
+        subreddit = (raw_item.get("subreddit") or "").lower()
+
+        # Detect city context (tiered: subreddit-first → text matching)
+        city = detect_city(full_text, subreddit)
         if city is None or city not in self.config.target_cities:
             return None
 
@@ -704,8 +744,6 @@ class ArcticShiftScraper(BaseScraper):
         venues = extract_venue_names(full_text)
         if not venues:
             return None
-
-        subreddit = (raw_item.get("subreddit") or "").lower()
         score = raw_item.get("score", 0) or 0
         if isinstance(score, str):
             try:

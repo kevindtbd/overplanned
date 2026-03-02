@@ -1,63 +1,103 @@
 {
   "city": "bend",
-  "run_id": "20260226T054041",
-  "started_at": "2026-02-26T05:40:41.805743+00:00",
-  "finished_at": "2026-02-26T05:41:01.296177+00:00",
+  "run_id": "20260302T021250",
+  "started_at": "2026-03-02T02:12:50.327073+00:00",
+  "finished_at": "2026-03-02T02:26:49.659496+00:00",
   "overall_status": "completed",
-  "nodes_scraped": 20,
-  "nodes_resolved": 0,
-  "nodes_tagged": 501,
+  "nodes_scraped": 759,
+  "nodes_resolved": 1,
+  "nodes_tagged": 307,
   "nodes_indexed": 0,
   "steps": {
+    "reddit_download": {
+      "status": "completed",
+      "started_at": "2026-03-02T02:12:50.327546+00:00",
+      "finished_at": "2026-03-02T02:22:51.402176+00:00",
+      "error": null,
+      "metrics": {
+        "subreddits_checked": 9,
+        "subreddits_downloaded": 8,
+        "subreddits_skipped_fresh": 14,
+        "posts_downloaded": 0,
+        "comments_downloaded": 45800,
+        "circuit_breaker_tripped": false
+      }
+    },
     "scrape": {
       "status": "completed",
-      "started_at": "2026-02-26T05:40:41.806147+00:00",
-      "finished_at": "2026-02-26T05:40:47.937440+00:00",
+      "started_at": "2026-03-02T02:22:51.402594+00:00",
+      "finished_at": "2026-03-02T02:24:11.785185+00:00",
       "error": null,
       "metrics": {
         "blog_rss": {
-          "success": 10,
+          "success": 20,
           "failed": 0,
           "dead_letter": 0
         },
         "atlas_obscura": {
-          "error": "Client error '403 Forbidden' for url 'https://www.atlasobscura.com/things-to-do/bend/places'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
-          "signals_persisted": 0
+          "skipped": true,
+          "reason": "403_blocked"
         },
         "arctic_shift": {
-          "success": 2,
-          "failed": 5312,
+          "success": 682,
+          "failed": 558629,
           "dead_letter": 0,
-          "signals_persisted": 3
+          "signals_persisted": 1063
         },
-        "total_scraped": 12
+        "total_scraped": 702
       }
     },
     "llm_fallback": {
       "status": "completed",
-      "started_at": "2026-02-26T05:40:47.939627+00:00",
-      "finished_at": "2026-02-26T05:40:51.536869+00:00",
+      "started_at": "2026-03-02T02:24:11.785888+00:00",
+      "finished_at": "2026-03-02T02:25:11.295383+00:00",
       "error": null,
       "metrics": {
-        "venues_created": 8,
+        "venues_created": 57,
         "venues_existing": 0,
-        "signals_relinked": 1,
-        "estimated_cost_usd": 0.003,
+        "signals_relinked": 36,
+        "estimated_cost_usd": 0.059,
         "errors": []
+      }
+    },
+    "geocode_backfill": {
+      "status": "completed",
+      "started_at": "2026-03-02T02:25:11.295933+00:00",
+      "finished_at": "2026-03-02T02:25:31.418675+00:00",
+      "error": null,
+      "metrics": {
+        "nodes_found": 57,
+        "nodes_geocoded": 50,
+        "nodes_failed": 4,
+        "nodes_skipped": 3
+      }
+    },
+    "business_status": {
+      "status": "completed",
+      "started_at": "2026-03-02T02:25:31.419127+00:00",
+      "finished_at": "2026-03-02T02:25:41.266723+00:00",
+      "error": null,
+      "metrics": {
+        "nodes_checked": 50,
+        "nodes_closed": 2,
+        "nodes_temp_closed": 1,
+        "nodes_not_found": 0,
+        "nodes_operational": 47,
+        "nodes_failed": 0
       }
     },
     "entity_resolution": {
       "status": "completed",
-      "started_at": "2026-02-26T05:40:51.537241+00:00",
-      "finished_at": "2026-02-26T05:40:51.594256+00:00",
+      "started_at": "2026-03-02T02:25:41.267202+00:00",
+      "finished_at": "2026-03-02T02:25:41.377629+00:00",
       "error": null,
       "metrics": {
-        "nodes_scanned": 8,
-        "candidates_found": 0,
-        "merges_executed": 0,
+        "nodes_scanned": 57,
+        "candidates_found": 1,
+        "merges_executed": 1,
         "merges_by_tier": {
           "external_id": 0,
-          "geocode_proximity": 0,
+          "geocode_proximity": 1,
           "fuzzy_name": 0,
           "content_hash": 0
         },
@@ -66,26 +106,26 @@
     },
     "vibe_extraction": {
       "status": "completed",
-      "started_at": "2026-02-26T05:40:51.594763+00:00",
-      "finished_at": "2026-02-26T05:41:01.245685+00:00",
+      "started_at": "2026-03-02T02:25:41.378393+00:00",
+      "finished_at": "2026-03-02T02:26:49.592671+00:00",
       "error": null,
       "metrics": {
-        "nodes_processed": 8,
-        "tags_written": 20,
-        "nodes_skipped": 0,
+        "nodes_processed": 54,
+        "tags_written": 146,
+        "nodes_skipped": 2,
         "contradictions_flagged": 0,
-        "estimated_cost_usd": 0.0094,
+        "estimated_cost_usd": 0.0672,
         "errors": []
       }
     },
     "rule_inference": {
       "status": "completed",
-      "started_at": "2026-02-26T05:41:01.246093+00:00",
-      "finished_at": "2026-02-26T05:41:01.275718+00:00",
+      "started_at": "2026-03-02T02:26:49.593661+00:00",
+      "finished_at": "2026-03-02T02:26:49.610774+00:00",
       "error": null,
       "metrics": {
-        "nodes_processed": 173,
-        "tags_created": 481,
+        "nodes_processed": 56,
+        "tags_created": 161,
         "tags_skipped": 0,
         "missing_vibe_tags": 0,
         "errors": 0
@@ -93,13 +133,13 @@
     },
     "convergence": {
       "status": "completed",
-      "started_at": "2026-02-26T05:41:01.276555+00:00",
-      "finished_at": "2026-02-26T05:41:01.295484+00:00",
+      "started_at": "2026-03-02T02:26:49.611514+00:00",
+      "finished_at": "2026-03-02T02:26:49.658692+00:00",
       "error": null,
       "metrics": {
-        "nodes_processed": 173,
-        "nodes_updated": 2,
-        "nodes_skipped": 171,
+        "nodes_processed": 56,
+        "nodes_updated": 32,
+        "nodes_skipped": 24,
         "vibe_boosts_applied": 0,
         "errors": 0
       }
@@ -107,7 +147,7 @@
     "qdrant_sync": {
       "status": "completed",
       "started_at": null,
-      "finished_at": "2026-02-26T05:41:01.295916+00:00",
+      "finished_at": "2026-03-02T02:26:49.659162+00:00",
       "error": null,
       "metrics": {
         "skipped": true,

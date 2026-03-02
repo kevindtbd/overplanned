@@ -148,6 +148,18 @@ class GeocodeBackfillStats:
     latency_seconds: float = 0.0
 
 
+@dataclass
+class BusinessStatusStats:
+    """Aggregated stats for a business status check run."""
+    nodes_checked: int = 0
+    nodes_closed: int = 0
+    nodes_temp_closed: int = 0
+    nodes_not_found: int = 0
+    nodes_operational: int = 0
+    nodes_failed: int = 0
+    latency_seconds: float = 0.0
+
+
 # ---------------------------------------------------------------------------
 # Geocode result validation
 # ---------------------------------------------------------------------------
@@ -329,7 +341,7 @@ def _parse_extraction_response(text: str) -> list[dict]:
 
 def _validate_venue(raw: dict, stopwords: set[str]) -> Optional[ExtractedVenue]:
     """Validate and coerce a raw venue dict from LLM into ExtractedVenue."""
-    name = raw.get("name", "").strip()
+    name = (raw.get("name") or "").strip()
     if not name:
         return None
 
@@ -339,7 +351,7 @@ def _validate_venue(raw: dict, stopwords: set[str]) -> Optional[ExtractedVenue]:
         return None
 
     # Category validation
-    category = raw.get("category", "").strip().lower()
+    category = (raw.get("category") or "").strip().lower()
     if category not in VALID_CATEGORIES:
         # Attempt common mappings
         cat_map = {
@@ -384,8 +396,8 @@ def _validate_venue(raw: dict, stopwords: set[str]) -> Optional[ExtractedVenue]:
         except (ValueError, TypeError):
             price_level = None
 
-    neighborhood = raw.get("neighborhood", "").strip() or None
-    description = raw.get("description", "").strip() or None
+    neighborhood = (raw.get("neighborhood") or "").strip() or None
+    description = (raw.get("description") or "").strip() or None
 
     return ExtractedVenue(
         name=name,
@@ -615,6 +627,192 @@ async def geocode_backfill(
     return stats
 
 
+# ---------------------------------------------------------------------------
+# Business status check
+# ---------------------------------------------------------------------------
+
+BUSINESS_STATUS_DELAY = 0.15  # ~6.6 QPS (Place Details is cheaper but same rate)
+BUSINESS_STATUS_LIMIT = 200
+BUSINESS_STATUS_STALE_DAYS = 30
+
+
+async def check_business_status(
+    pool: asyncpg.Pool,
+    city_slug: str,
+    *,
+    google_places_key: Optional[str] = None,
+    limit: int = BUSINESS_STATUS_LIMIT,
+) -> BusinessStatusStats:
+    """
+    Check Google Places business status for geocoded ActivityNodes.
+
+    Queries nodes with a googlePlaceId that haven't been validated recently
+    (or ever), calls the Place Details API for businessStatus, and flags
+    permanently closed venues.
+
+    Args:
+        pool: asyncpg connection pool
+        city_slug: City slug matching CITY_CONFIGS key
+        google_places_key: Google Places API key (falls back to env var)
+        limit: max nodes to check per run (cost control)
+
+    Returns:
+        BusinessStatusStats with run metrics
+    """
+    t0 = time.monotonic()
+    google_places_key = google_places_key or os.environ.get("GOOGLE_PLACES_API_KEY")
+    stats = BusinessStatusStats()
+
+    city_config = get_city_config(city_slug)
+
+    if not google_places_key:
+        logger.info(
+            "No Google Places API key -- skipping business status check for %s",
+            city_slug,
+        )
+        stats.latency_seconds = round(time.monotonic() - t0, 2)
+        return stats
+
+    # Find nodes with googlePlaceId that need validation
+    # Check all non-flagged nodes: stale (>30 days) or never validated
+    nodes = await pool.fetch(
+        """
+        SELECT id, name, "googlePlaceId"
+        FROM activity_nodes
+        WHERE city = $1
+          AND "googlePlaceId" IS NOT NULL
+          AND status != 'flagged'
+          AND (
+            "lastValidatedAt" IS NULL
+            OR "lastValidatedAt" < NOW() - INTERVAL '30 days'
+          )
+        ORDER BY "lastValidatedAt" NULLS FIRST
+        LIMIT $2
+        """,
+        city_config.name, limit,
+    )
+
+    if not nodes:
+        logger.info("No nodes need business status check for %s", city_slug)
+        stats.latency_seconds = round(time.monotonic() - t0, 2)
+        return stats
+
+    logger.info(
+        "Checking business status for %d nodes in %s...", len(nodes), city_slug,
+    )
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    async with httpx.AsyncClient() as client:
+        for node in nodes:
+            node_id = node["id"]
+            node_name = node["name"]
+            place_id = node["googlePlaceId"]
+            stats.nodes_checked += 1
+
+            try:
+                resp = await client.get(
+                    f"https://places.googleapis.com/v1/places/{place_id}",
+                    headers={
+                        "X-Goog-Api-Key": google_places_key,
+                        "X-Goog-FieldMask": "id,businessStatus",
+                    },
+                    timeout=10.0,
+                )
+
+                if resp.status_code == 404:
+                    # Place no longer exists in Google's database
+                    await pool.execute(
+                        """
+                        UPDATE activity_nodes
+                        SET status = 'flagged',
+                            "flagReason" = 'place_not_found',
+                            "lastValidatedAt" = $1,
+                            "updatedAt" = $1
+                        WHERE id = $2
+                        """,
+                        now, node_id,
+                    )
+                    stats.nodes_not_found += 1
+                    logger.info("Place not found: %s (%s)", node_name, place_id)
+
+                elif resp.status_code >= 400:
+                    # Unexpected error — don't flag, just count
+                    stats.nodes_failed += 1
+                    logger.warning(
+                        "API error %d for %s (%s)",
+                        resp.status_code, node_name, place_id,
+                    )
+
+                else:
+                    data = resp.json()
+                    business_status = data.get("businessStatus", "OPERATIONAL")
+
+                    if business_status == "CLOSED_PERMANENTLY":
+                        await pool.execute(
+                            """
+                            UPDATE activity_nodes
+                            SET status = 'flagged',
+                                "flagReason" = 'permanently_closed',
+                                "lastValidatedAt" = $1,
+                                "updatedAt" = $1
+                            WHERE id = $2
+                            """,
+                            now, node_id,
+                        )
+                        stats.nodes_closed += 1
+                        logger.info(
+                            "Permanently closed: %s (%s)", node_name, place_id,
+                        )
+
+                    elif business_status == "CLOSED_TEMPORARILY":
+                        await pool.execute(
+                            """
+                            UPDATE activity_nodes
+                            SET "lastValidatedAt" = $1,
+                                "updatedAt" = $1
+                            WHERE id = $2
+                            """,
+                            now, node_id,
+                        )
+                        stats.nodes_temp_closed += 1
+                        logger.debug(
+                            "Temporarily closed: %s (%s)", node_name, place_id,
+                        )
+
+                    else:
+                        # OPERATIONAL or unknown status — just stamp
+                        await pool.execute(
+                            """
+                            UPDATE activity_nodes
+                            SET "lastValidatedAt" = $1,
+                                "updatedAt" = $1
+                            WHERE id = $2
+                            """,
+                            now, node_id,
+                        )
+                        stats.nodes_operational += 1
+
+            except Exception as exc:
+                stats.nodes_failed += 1
+                logger.warning(
+                    "Business status check failed for %s: %s", node_name, exc,
+                )
+
+            # Rate limit
+            await asyncio.sleep(BUSINESS_STATUS_DELAY)
+
+    stats.latency_seconds = round(time.monotonic() - t0, 2)
+    logger.info(
+        "Business status %s: checked=%d operational=%d closed=%d "
+        "temp_closed=%d not_found=%d failed=%d (%.1fs)",
+        city_slug, stats.nodes_checked, stats.nodes_operational,
+        stats.nodes_closed, stats.nodes_temp_closed,
+        stats.nodes_not_found, stats.nodes_failed, stats.latency_seconds,
+    )
+    return stats
+
+
 async def _geocode_single_node(
     client: httpx.AsyncClient,
     api_key: str,
@@ -805,7 +1003,7 @@ async def _create_activity_nodes(
                 venue.name,
                 slug,
                 venue.name.lower(),
-                city_config.name,
+                city_config.slug,
                 city_config.country,
                 venue.neighborhood,
                 lat,
@@ -1227,6 +1425,10 @@ async def main() -> None:
                         help="Run geocode backfill only (no LLM extraction)")
     parser.add_argument("--geocode-limit", type=int, default=100,
                         help="Max nodes to geocode (default 100)")
+    parser.add_argument("--check-status", action="store_true",
+                        help="Run business status check only (flags closed venues)")
+    parser.add_argument("--status-limit", type=int, default=200,
+                        help="Max nodes to check (default 200)")
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
 
@@ -1241,7 +1443,12 @@ async def main() -> None:
 
     pool = await asyncpg.create_pool(args.database_url)
     try:
-        if args.geocode_backfill:
+        if args.check_status:
+            status_stats = await check_business_status(
+                pool, args.city, limit=args.status_limit,
+            )
+            logger.info("Business status check: %s", status_stats)
+        elif args.geocode_backfill:
             geo_stats = await geocode_backfill(pool, args.city, limit=args.geocode_limit)
             logger.info("Geocode backfill: %s", geo_stats)
         else:
