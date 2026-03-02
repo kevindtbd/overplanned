@@ -78,6 +78,12 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
                   Pipeline Health
                 </a>
                 <a
+                  href="/admin/seed-viz"
+                  className="text-ink-500 hover:text-accent transition-colors"
+                >
+                  Seed Viz
+                </a>
+                <a
                   href="/admin/safety"
                   className="text-ink-500 hover:text-accent transition-colors"
                 >

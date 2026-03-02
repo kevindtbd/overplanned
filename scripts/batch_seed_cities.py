@@ -48,11 +48,10 @@ async def prefetch_download(city: str) -> None:
     try:
         stats = await download_reddit_data(city)
         logger.info(
-            "PREFETCH: %s done — posts=%d comments=%d (%.0fs)",
+            "PREFETCH: %s done — posts=%d comments=%d",
             city,
             stats.posts_downloaded,
             stats.comments_downloaded,
-            stats.duration_seconds,
         )
     except Exception as exc:
         logger.warning("PREFETCH: %s failed — %s (will retry in pipeline)", city, exc)
