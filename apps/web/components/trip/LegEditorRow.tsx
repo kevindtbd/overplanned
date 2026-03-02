@@ -113,7 +113,7 @@ export function LegEditorRow({
   // Edit mode state
   const [editCity, setEditCity] = useState<CityData | null>(
     isEditing
-      ? { city: leg.city, country: leg.country, timezone: leg.timezone ?? "", destination: leg.destination }
+      ? { slug: "", city: leg.city, state: "", country: leg.country, timezone: leg.timezone ?? "", destination: leg.destination, lat: 0, lng: 0 }
       : null
   );
   const [editStartDate, setEditStartDate] = useState(leg.startDate.split("T")[0]);

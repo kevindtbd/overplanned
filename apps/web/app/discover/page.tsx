@@ -18,7 +18,7 @@ export default async function DiscoverPage({
     redirect("/auth/signin?callbackUrl=/discover");
   }
 
-  const city = searchParams.city ?? "Tokyo";
+  const city = searchParams.city ?? "Bend";
   const tripId = searchParams.tripId ?? undefined;
   const day = searchParams.day ? Number(searchParams.day) : undefined;
 

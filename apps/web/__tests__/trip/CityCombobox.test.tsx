@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { CityCombobox, type CityData } from "@/components/trip/CityCombobox";
+import { CityCombobox } from "@/components/trip/CityCombobox";
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -34,41 +34,52 @@ describe("CityCombobox", () => {
     renderCombobox();
     const input = screen.getByRole("combobox");
 
-    fireEvent.change(input, { target: { value: "tok" } });
+    fireEvent.change(input, { target: { value: "ben" } });
 
     const options = screen.getAllByRole("option");
     expect(options).toHaveLength(1);
-    expect(screen.getByText("Tokyo")).toBeInTheDocument();
+    expect(screen.getByText("Bend")).toBeInTheDocument();
   });
 
-  it("filters by country name", () => {
+  it("filters by state abbreviation", () => {
     renderCombobox();
     const input = screen.getByRole("combobox");
 
-    fireEvent.change(input, { target: { value: "japan" } });
+    fireEvent.change(input, { target: { value: "CO" } });
 
     const options = screen.getAllByRole("option");
-    expect(options).toHaveLength(3);
-    expect(screen.getByText("Tokyo")).toBeInTheDocument();
-    expect(screen.getByText("Kyoto")).toBeInTheDocument();
-    expect(screen.getByText("Osaka")).toBeInTheDocument();
+    // Denver, Durango, Fort Collins, Telluride — all CO cities
+    expect(options.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("filters by destination string", () => {
+    renderCombobox();
+    const input = screen.getByRole("combobox");
+
+    fireEvent.change(input, { target: { value: "Portland, ME" } });
+
+    const options = screen.getAllByRole("option");
+    expect(options).toHaveLength(1);
   });
 
   it("selects a city from suggestions and calls onChange", () => {
     const { onChange } = renderCombobox();
     const input = screen.getByRole("combobox");
 
-    fireEvent.change(input, { target: { value: "tok" } });
+    fireEvent.change(input, { target: { value: "ben" } });
 
-    const option = screen.getByText("Tokyo");
+    const option = screen.getByText("Bend");
     fireEvent.mouseDown(option.closest("[role='option']")!);
 
-    expect(onChange).toHaveBeenCalledWith({
-      city: "Tokyo",
-      country: "Japan",
-      timezone: "Asia/Tokyo",
-      destination: "Tokyo, Japan",
-    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: "bend",
+        city: "Bend",
+        state: "OR",
+        timezone: "America/Los_Angeles",
+        destination: "Bend, OR",
+      })
+    );
   });
 
   it("shows all LAUNCH_CITIES when focused with empty query", () => {
@@ -78,7 +89,54 @@ describe("CityCombobox", () => {
     fireEvent.focus(input);
 
     const options = screen.getAllByRole("option");
-    expect(options).toHaveLength(13);
+    expect(options).toHaveLength(30);
+  });
+
+  it("renders both Portland cities without duplicate key warnings", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    renderCombobox();
+    const input = screen.getByRole("combobox");
+
+    fireEvent.change(input, { target: { value: "Portland" } });
+
+    const options = screen.getAllByRole("option");
+    expect(options).toHaveLength(2);
+
+    // No React duplicate key warning
+    const keyWarnings = consoleSpy.mock.calls.filter((args) =>
+      String(args[0]).includes("key")
+    );
+    expect(keyWarnings).toHaveLength(0);
+    consoleSpy.mockRestore();
+  });
+
+  it("selects Portland OR when its option is clicked", () => {
+    const { onChange } = renderCombobox();
+    const input = screen.getByRole("combobox");
+
+    fireEvent.change(input, { target: { value: "Portland" } });
+
+    // Find the OR option — it comes first in the list
+    const options = screen.getAllByRole("option");
+    fireEvent.mouseDown(options[0]);
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "portland", state: "OR" })
+    );
+  });
+
+  it("selects Portland ME when its option is clicked", () => {
+    const { onChange } = renderCombobox();
+    const input = screen.getByRole("combobox");
+
+    fireEvent.change(input, { target: { value: "Portland" } });
+
+    const options = screen.getAllByRole("option");
+    fireEvent.mouseDown(options[1]);
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "portland-me", state: "ME" })
+    );
   });
 
   it("shows freeform option when no matches", () => {

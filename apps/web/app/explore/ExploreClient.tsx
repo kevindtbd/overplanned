@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
+import { getCityPhoto } from "@/lib/city-photos";
 import { VIBE_ARCHETYPE_LIST, type VibeKey } from "@/lib/vibes";
 
 /* ------------------------------------------------------------------ */
@@ -127,9 +128,7 @@ function CityCard({
   tagline: string | null;
 }) {
   // Unsplash fallback: generic city travel photo
-  const src =
-    imageUrl ??
-    `https://source.unsplash.com/800x500/?${encodeURIComponent(city)}+travel`;
+  const src = imageUrl ?? getCityPhoto(city, 800, 75);
 
   return (
     <div className="rounded-xl overflow-hidden border border-ink-700 shadow-card">

@@ -1,24 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-
-// ---------- Launch cities ----------
-
-export const LAUNCH_CITIES = [
-  { city: "Tokyo", country: "Japan", timezone: "Asia/Tokyo", destination: "Tokyo, Japan" },
-  { city: "Kyoto", country: "Japan", timezone: "Asia/Tokyo", destination: "Kyoto, Japan" },
-  { city: "Osaka", country: "Japan", timezone: "Asia/Tokyo", destination: "Osaka, Japan" },
-  { city: "Bangkok", country: "Thailand", timezone: "Asia/Bangkok", destination: "Bangkok, Thailand" },
-  { city: "Seoul", country: "South Korea", timezone: "Asia/Seoul", destination: "Seoul, South Korea" },
-  { city: "Taipei", country: "Taiwan", timezone: "Asia/Taipei", destination: "Taipei, Taiwan" },
-  { city: "Lisbon", country: "Portugal", timezone: "Europe/Lisbon", destination: "Lisbon, Portugal" },
-  { city: "Barcelona", country: "Spain", timezone: "Europe/Madrid", destination: "Barcelona, Spain" },
-  { city: "Mexico City", country: "Mexico", timezone: "America/Mexico_City", destination: "Mexico City, Mexico" },
-  { city: "New York", country: "United States", timezone: "America/New_York", destination: "New York, United States" },
-  { city: "London", country: "United Kingdom", timezone: "Europe/London", destination: "London, United Kingdom" },
-  { city: "Paris", country: "France", timezone: "Europe/Paris", destination: "Paris, France" },
-  { city: "Berlin", country: "Germany", timezone: "Europe/Berlin", destination: "Berlin, Germany" },
-];
+import { LAUNCH_CITIES } from "@/lib/cities";
 
 // ---------- Zod schema for LLM output ----------
 

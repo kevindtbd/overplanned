@@ -1,29 +1,9 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
+import { LAUNCH_CITIES, type CityData } from "@/lib/cities";
 
-export interface LaunchCity {
-  city: string;
-  country: string;
-  timezone: string;
-  destination: string;
-}
-
-export const LAUNCH_CITIES: LaunchCity[] = [
-  { city: "Tokyo", country: "Japan", timezone: "Asia/Tokyo", destination: "Tokyo, Japan" },
-  { city: "Kyoto", country: "Japan", timezone: "Asia/Tokyo", destination: "Kyoto, Japan" },
-  { city: "Osaka", country: "Japan", timezone: "Asia/Tokyo", destination: "Osaka, Japan" },
-  { city: "Bangkok", country: "Thailand", timezone: "Asia/Bangkok", destination: "Bangkok, Thailand" },
-  { city: "Seoul", country: "South Korea", timezone: "Asia/Seoul", destination: "Seoul, South Korea" },
-  { city: "Taipei", country: "Taiwan", timezone: "Asia/Taipei", destination: "Taipei, Taiwan" },
-  { city: "Lisbon", country: "Portugal", timezone: "Europe/Lisbon", destination: "Lisbon, Portugal" },
-  { city: "Barcelona", country: "Spain", timezone: "Europe/Madrid", destination: "Barcelona, Spain" },
-  { city: "Mexico City", country: "Mexico", timezone: "America/Mexico_City", destination: "Mexico City, Mexico" },
-  { city: "New York", country: "United States", timezone: "America/New_York", destination: "New York, United States" },
-  { city: "London", country: "United Kingdom", timezone: "Europe/London", destination: "London, United Kingdom" },
-  { city: "Paris", country: "France", timezone: "Europe/Paris", destination: "Paris, France" },
-  { city: "Berlin", country: "Germany", timezone: "Europe/Berlin", destination: "Berlin, Germany" },
-];
+export type { CityData };
 
 function SearchIcon({ className }: { className?: string }) {
   return (
@@ -43,8 +23,8 @@ function SearchIcon({ className }: { className?: string }) {
 }
 
 interface DestinationStepProps {
-  value: LaunchCity | null;
-  onChange: (city: LaunchCity) => void;
+  value: CityData | null;
+  onChange: (city: CityData) => void;
 }
 
 export function DestinationStep({ value, onChange }: DestinationStepProps) {
@@ -60,7 +40,8 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
     return LAUNCH_CITIES.filter(
       (c) =>
         c.city.toLowerCase().includes(q) ||
-        c.country.toLowerCase().includes(q)
+        c.state.toLowerCase().includes(q) ||
+        c.destination.toLowerCase().includes(q)
     );
   }, [query]);
 
@@ -68,7 +49,7 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
     setFocusIndex(-1);
   }, [filtered]);
 
-  function handleSelect(city: LaunchCity) {
+  function handleSelect(city: CityData) {
     onChange(city);
     setQuery(city.destination);
     setIsOpen(false);
@@ -104,7 +85,7 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
       <h2 className="font-sora text-2xl font-semibold text-primary">
         Where are you headed?
       </h2>
-      <p className="label-mono mt-2">select a launch city</p>
+      <p className="label-mono mt-2">pick a city</p>
 
       <div className="relative mt-6">
         <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" />
@@ -138,21 +119,21 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
           >
             {filtered.map((city, i) => (
               <li
-                key={city.city}
+                key={city.slug}
                 id={`city-option-${i}`}
                 role="option"
-                aria-selected={value?.city === city.city}
+                aria-selected={value?.slug === city.slug}
                 className={`cursor-pointer px-4 py-3 transition-colors ${
                   i === focusIndex
                     ? "bg-accent/10 text-primary"
                     : "text-primary hover:bg-ink-700/50"
-                } ${value?.city === city.city ? "border-l-2 border-accent" : ""}`}
+                } ${value?.slug === city.slug ? "border-l-2 border-accent" : ""}`}
                 onMouseDown={() => handleSelect(city)}
                 onMouseEnter={() => setFocusIndex(i)}
               >
                 <span className="font-sora font-medium">{city.city}</span>
                 <span className="ml-2 font-dm-mono text-xs text-secondary">
-                  {city.country}
+                  {city.state || city.country}
                 </span>
               </li>
             ))}
@@ -162,7 +143,7 @@ export function DestinationStep({ value, onChange }: DestinationStepProps) {
         {isOpen && filtered.length === 0 && query.trim() && (
           <div className="absolute z-10 mt-1 w-full rounded-lg border border-ink-700 bg-surface p-4 shadow-lg">
             <p className="text-center text-sm text-secondary">
-              No matching launch city. We're expanding soon.
+              Not in our list? Type any city name.
             </p>
           </div>
         )}

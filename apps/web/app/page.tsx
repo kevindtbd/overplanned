@@ -358,7 +358,7 @@ export default function LandingPage() {
             <span className="font-dm-mono text-[9px] tracking-[0.14em] uppercase text-ink-600">
               Featured cities
             </span>
-            {["Tokyo", "Barcelona", "New York", "Sydney"].map((city) => (
+            {["Bend", "Austin", "Nashville", "Asheville"].map((city) => (
               <span
                 key={city}
                 className="font-dm-mono text-[9px] tracking-[0.06em] text-ink-400 bg-raised border border-ink-700 rounded-full px-2.5 py-[3px]"
@@ -673,7 +673,7 @@ export default function LandingPage() {
             from <em className="italic text-gold">day one.</em>
           </h2>
           <p className="text-[15px] text-ink-400 font-light max-w-[400px] mx-auto mb-11 leading-[1.74]">
-            First cities at launch: Tokyo, Kyoto, Osaka, Seoul, Barcelona. iOS
+            First cities at launch: Bend, Austin, Seattle, Nashville, Asheville. iOS
             and Android.
           </p>
           <WaitlistForm />

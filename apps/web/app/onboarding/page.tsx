@@ -4,11 +4,8 @@ import { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ForkScreen } from "./components/ForkScreen";
 import { BackfillStep } from "./components/BackfillStep";
-import {
-  DestinationStep,
-  LAUNCH_CITIES,
-  type LaunchCity,
-} from "./components/DestinationStep";
+import { DestinationStep } from "./components/DestinationStep";
+import { LAUNCH_CITIES, type CityData } from "@/lib/cities";
 import { DatesStep } from "./components/DatesStep";
 import {
   LegReviewStep,
@@ -121,7 +118,7 @@ function OnboardingContent() {
   const [draftSaveError, setDraftSaveError] = useState(false);
 
   // Form state — destination + dates are working state for the current leg being edited
-  const [destination, setDestination] = useState<LaunchCity | null>(null);
+  const [destination, setDestination] = useState<CityData | null>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [tripName, setTripName] = useState("");
@@ -406,12 +403,16 @@ function OnboardingContent() {
         if (matchedDest) {
           setDestination(matchedDest);
         } else {
-          // Freeform city — reconstruct as a LaunchCity-shaped object
+          // Freeform city — sentinel values for slug/state/lat/lng
           setDestination({
+            slug: "",
             city: lastLeg.city,
+            state: "",
             country: lastLeg.country,
             timezone: lastLeg.timezone,
             destination: lastLeg.destination,
+            lat: 0,
+            lng: 0,
           });
         }
         setStartDate(lastLeg.startDate.split("T")[0]);

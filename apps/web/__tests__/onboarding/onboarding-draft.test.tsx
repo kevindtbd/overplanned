@@ -52,18 +52,34 @@ vi.mock("@/app/onboarding/components/BackfillStep", () => ({
   ),
 }));
 
-// DestinationStep mock: click "Select Tokyo" to set destination
-vi.mock("@/app/onboarding/components/DestinationStep", () => ({
+// Mock lib/cities — the canonical city source
+vi.mock("@/lib/cities", () => ({
   LAUNCH_CITIES: [
-    { city: "Tokyo", country: "Japan", timezone: "Asia/Tokyo", destination: "Tokyo, Japan" },
-    { city: "New York", country: "United States", timezone: "America/New_York", destination: "New York, United States" },
-    { city: "Mexico City", country: "Mexico", timezone: "America/Mexico_City", destination: "Mexico City, Mexico" },
+    { slug: "bend", city: "Bend", state: "OR", country: "United States", timezone: "America/Los_Angeles", destination: "Bend, OR", lat: 44.05, lng: -121.31 },
+    { slug: "austin", city: "Austin", state: "TX", country: "United States", timezone: "America/Chicago", destination: "Austin, TX", lat: 30.33, lng: -97.75 },
+    { slug: "seattle", city: "Seattle", state: "WA", country: "United States", timezone: "America/Los_Angeles", destination: "Seattle, WA", lat: 47.62, lng: -122.34 },
   ],
+  findCity: (slug: string) => {
+    const cities = [
+      { slug: "bend", city: "Bend", state: "OR", country: "United States", timezone: "America/Los_Angeles", destination: "Bend, OR", lat: 44.05, lng: -121.31 },
+    ];
+    return cities.find((c) => c.slug === slug);
+  },
+  getCityByName: (name: string) => {
+    const cities = [
+      { slug: "bend", city: "Bend", state: "OR", country: "United States", timezone: "America/Los_Angeles", destination: "Bend, OR", lat: 44.05, lng: -121.31 },
+    ];
+    return cities.find((c) => c.city.toLowerCase() === name.toLowerCase());
+  },
+}));
+
+// DestinationStep mock: click "Select Bend" to set destination
+vi.mock("@/app/onboarding/components/DestinationStep", () => ({
   DestinationStep: ({
     onChange,
   }: {
     value: unknown;
-    onChange: (city: { city: string; country: string; timezone: string; destination: string }) => void;
+    onChange: (city: { slug: string; city: string; state: string; country: string; timezone: string; destination: string; lat: number; lng: number }) => void;
   }) => {
     return (
       <div>
@@ -71,14 +87,18 @@ vi.mock("@/app/onboarding/components/DestinationStep", () => ({
         <button
           onClick={() =>
             onChange({
-              city: "Tokyo",
-              country: "Japan",
-              timezone: "Asia/Tokyo",
-              destination: "Tokyo, Japan",
+              slug: "bend",
+              city: "Bend",
+              state: "OR",
+              country: "United States",
+              timezone: "America/Los_Angeles",
+              destination: "Bend, OR",
+              lat: 44.05,
+              lng: -121.31,
             })
           }
         >
-          Select Tokyo
+          Select Bend
         </button>
       </div>
     );
@@ -214,8 +234,8 @@ async function advanceToDates(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: /start planning/i }));
   // backfill -> destination (skip)
   await user.click(screen.getByRole("button", { name: /skip backfill/i }));
-  // destination: select Tokyo so canAdvance = true
-  await user.click(screen.getByRole("button", { name: /select tokyo/i }));
+  // destination: select Bend so canAdvance = true
+  await user.click(screen.getByRole("button", { name: /select bend/i }));
   // destination -> dates
   await user.click(screen.getByRole("button", { name: /continue/i }));
   // dates: fill start/end
@@ -284,10 +304,10 @@ describe("Onboarding — draft save on dates advance", () => {
     expect(body.legs).toBeDefined();
     expect(body.legs).toHaveLength(1);
     expect(body.legs[0]).toMatchObject({
-      city: "Tokyo",
-      country: "Japan",
-      timezone: "Asia/Tokyo",
-      destination: "Tokyo, Japan",
+      city: "Bend",
+      country: "United States",
+      timezone: "America/Los_Angeles",
+      destination: "Bend, OR",
     });
     expect(body.startDate).toBeDefined();
     expect(body.endDate).toBeDefined();
@@ -454,10 +474,10 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
           endDate: "2026-05-07T00:00:00.000Z",
           legs: [
             {
-              city: "Tokyo",
-              country: "Japan",
-              timezone: "Asia/Tokyo",
-              destination: "Tokyo, Japan",
+              city: "Bend",
+              country: "United States",
+              timezone: "America/Los_Angeles",
+              destination: "Bend, OR",
               startDate: "2026-05-01T00:00:00.000Z",
               endDate: "2026-05-07T00:00:00.000Z",
             },
@@ -487,10 +507,10 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
           endDate: "2026-05-07T00:00:00.000Z",
           legs: [
             {
-              city: "Tokyo",
-              country: "Japan",
-              timezone: "Asia/Tokyo",
-              destination: "Tokyo, Japan",
+              city: "Bend",
+              country: "United States",
+              timezone: "America/Los_Angeles",
+              destination: "Bend, OR",
               startDate: "2026-05-01T00:00:00.000Z",
               endDate: "2026-05-07T00:00:00.000Z",
             },
@@ -523,10 +543,10 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
             endDate: "2026-05-07T00:00:00.000Z",
             legs: [
               {
-                city: "Tokyo",
-                country: "Japan",
-                timezone: "Asia/Tokyo",
-                destination: "Tokyo, Japan",
+                city: "Bend",
+                country: "United States",
+                timezone: "America/Los_Angeles",
+                destination: "Bend, OR",
                 startDate: "2026-05-01T00:00:00.000Z",
                 endDate: "2026-05-07T00:00:00.000Z",
               },
@@ -553,7 +573,7 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
 
     // Fill name — use fireEvent.change to avoid per-keystroke overhead in CI
     const nameInput = screen.getByPlaceholderText(/tokyo golden week/i);
-    fireEvent.change(nameInput, { target: { value: "Tokyo Spring" } });
+    fireEvent.change(nameInput, { target: { value: "Bend Spring" } });
 
     // Continue -> dna
     await user.click(screen.getByRole("button", { name: /continue/i }));
@@ -600,10 +620,10 @@ describe("Onboarding — resume flow (?resume=<tripId>)", () => {
           endDate: "2026-05-07T00:00:00.000Z",
           legs: [
             {
-              city: "Tokyo",
-              country: "Japan",
-              timezone: "Asia/Tokyo",
-              destination: "Tokyo, Japan",
+              city: "Bend",
+              country: "United States",
+              timezone: "America/Los_Angeles",
+              destination: "Bend, OR",
               startDate: "2026-05-01T00:00:00.000Z",
               endDate: "2026-05-07T00:00:00.000Z",
             },
@@ -686,7 +706,7 @@ describe("Onboarding — completion branching", () => {
     await user.click(screen.getByRole("button", { name: /start planning/i }));
     // backfill -> destination (skip)
     await user.click(screen.getByRole("button", { name: /skip backfill/i }));
-    await user.click(screen.getByRole("button", { name: /select tokyo/i }));
+    await user.click(screen.getByRole("button", { name: /select bend/i }));
 
     // destination -> dates
     await user.click(screen.getByRole("button", { name: /continue/i }));
@@ -705,7 +725,7 @@ describe("Onboarding — completion branching", () => {
 
     // Set trip name directly — user.type with 15 chars * 5 invocations causes CI timeout
     const nameInput = screen.getByPlaceholderText(/tokyo golden week/i);
-    fireEvent.change(nameInput, { target: { value: "Tokyo Adventure" } });
+    fireEvent.change(nameInput, { target: { value: "Bend Adventure" } });
 
     // name -> dna
     await user.click(screen.getByRole("button", { name: /continue/i }));
@@ -815,7 +835,7 @@ describe("Onboarding — completion branching", () => {
       const body = JSON.parse((postCall![1] as RequestInit).body as string);
       expect(body.legs).toBeDefined();
       expect(body.legs).toHaveLength(1);
-      expect(body.legs[0].city).toBe("Tokyo");
+      expect(body.legs[0].city).toBe("Bend");
 
       // Should NOT have called PATCH
       const patchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.find(

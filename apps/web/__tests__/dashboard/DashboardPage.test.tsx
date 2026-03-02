@@ -13,7 +13,6 @@ vi.mock("next/link", () => ({
 // Mock Next.js Image
 vi.mock("next/image", () => ({
   default: ({ src, alt }: { src: string; alt: string }) => (
-    // eslint-disable-next-line @next/next/no-img-element
     <img src={src} alt={alt} />
   ),
 }));
@@ -131,9 +130,9 @@ describe("DashboardPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Where to?")).toBeInTheDocument();
-      expect(screen.getByText("Tokyo")).toBeInTheDocument();
-      expect(screen.getByText("New York")).toBeInTheDocument();
-      expect(screen.getByText("Mexico City")).toBeInTheDocument();
+      expect(screen.getByText("Bend")).toBeInTheDocument();
+      expect(screen.getByText("Austin")).toBeInTheDocument();
+      expect(screen.getByText("Seattle")).toBeInTheDocument();
       expect(screen.getByText("Somewhere else")).toBeInTheDocument();
     });
   });
@@ -205,11 +204,11 @@ describe("DashboardPage", () => {
       expect(screen.getByText("Where to?")).toBeInTheDocument();
     });
 
-    const tokyoLink = screen.getByRole("link", { name: /Plan a trip to Tokyo/i });
-    expect(tokyoLink).toHaveAttribute("href", "/onboarding?city=Tokyo&step=dates");
+    const bendLink = screen.getByRole("link", { name: /Plan a trip to Bend/i });
+    expect(bendLink).toHaveAttribute("href", "/onboarding?city=Bend&step=dates");
 
-    const nycLink = screen.getByRole("link", { name: /Plan a trip to New York/i });
-    expect(nycLink).toHaveAttribute("href", "/onboarding?city=New%20York&step=dates");
+    const austinLink = screen.getByRole("link", { name: /Plan a trip to Austin/i });
+    expect(austinLink).toHaveAttribute("href", "/onboarding?city=Austin&step=dates");
 
     const somewhereElse = screen.getByRole("link", { name: /different city/i });
     expect(somewhereElse).toHaveAttribute("href", "/onboarding");

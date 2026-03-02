@@ -1,29 +1,9 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { LAUNCH_CITIES, type CityData } from "@/lib/cities";
 
-export interface CityData {
-  city: string;
-  country: string;
-  timezone: string;
-  destination: string;
-}
-
-export const LAUNCH_CITIES: CityData[] = [
-  { city: "Tokyo", country: "Japan", timezone: "Asia/Tokyo", destination: "Tokyo, Japan" },
-  { city: "Kyoto", country: "Japan", timezone: "Asia/Tokyo", destination: "Kyoto, Japan" },
-  { city: "Osaka", country: "Japan", timezone: "Asia/Tokyo", destination: "Osaka, Japan" },
-  { city: "Bangkok", country: "Thailand", timezone: "Asia/Bangkok", destination: "Bangkok, Thailand" },
-  { city: "Seoul", country: "South Korea", timezone: "Asia/Seoul", destination: "Seoul, South Korea" },
-  { city: "Taipei", country: "Taiwan", timezone: "Asia/Taipei", destination: "Taipei, Taiwan" },
-  { city: "Lisbon", country: "Portugal", timezone: "Europe/Lisbon", destination: "Lisbon, Portugal" },
-  { city: "Barcelona", country: "Spain", timezone: "Europe/Madrid", destination: "Barcelona, Spain" },
-  { city: "Mexico City", country: "Mexico", timezone: "America/Mexico_City", destination: "Mexico City, Mexico" },
-  { city: "New York", country: "United States", timezone: "America/New_York", destination: "New York, United States" },
-  { city: "London", country: "United Kingdom", timezone: "Europe/London", destination: "London, United Kingdom" },
-  { city: "Paris", country: "France", timezone: "Europe/Paris", destination: "Paris, France" },
-  { city: "Berlin", country: "Germany", timezone: "Europe/Berlin", destination: "Berlin, Germany" },
-];
+export type { CityData };
 
 function SearchIcon({ className }: { className?: string }) {
   return (
@@ -72,7 +52,8 @@ export function CityCombobox({
     return LAUNCH_CITIES.filter(
       (c) =>
         c.city.toLowerCase().includes(q) ||
-        c.country.toLowerCase().includes(q)
+        c.state.toLowerCase().includes(q) ||
+        c.destination.toLowerCase().includes(q)
     );
   }, [query]);
 
@@ -104,7 +85,8 @@ export function CityCombobox({
 
       // Check LAUNCH_CITIES first (client-side shortcut)
       const match = LAUNCH_CITIES.find(
-        (c) => c.city.toLowerCase() === cityName.trim().toLowerCase()
+        (c) => c.city.toLowerCase() === cityName.trim().toLowerCase() ||
+          c.destination.toLowerCase() === cityName.trim().toLowerCase()
       );
       if (match) {
         handleSelect(match);
@@ -266,21 +248,21 @@ export function CityCombobox({
         >
           {filtered.map((city, i) => (
             <li
-              key={city.city}
+              key={city.slug}
               id={`${id}-option-${i}`}
               role="option"
-              aria-selected={value?.city === city.city}
+              aria-selected={value?.slug === city.slug}
               className={`cursor-pointer px-3 py-2.5 transition-colors ${
                 i === focusIndex
                   ? "bg-accent/10 text-ink-100"
                   : "text-ink-100 hover:bg-base"
-              } ${value?.city === city.city ? "border-l-2 border-accent" : ""}`}
+              } ${value?.slug === city.slug ? "border-l-2 border-accent" : ""}`}
               onMouseDown={() => handleSelect(city)}
               onMouseEnter={() => setFocusIndex(i)}
             >
               <span className="font-sora text-sm font-medium">{city.city}</span>
               <span className="ml-2 font-dm-mono text-xs text-ink-400">
-                {city.country}
+                {city.state || city.country}
               </span>
             </li>
           ))}
