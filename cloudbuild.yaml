@@ -24,10 +24,11 @@ steps:
   - id: pull-cache
     name: gcr.io/cloud-builders/docker
     waitFor: ['-']
+    timeout: 120s
     entrypoint: bash
     args:
       - -c
-      - docker pull ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_WEB_SERVICE}:latest || true
+      - timeout 90 docker pull ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_WEB_SERVICE}:latest || true
 
   # ── Build web image (starts after cache pull, parallel with tests) ──
   # Uses bash entrypoint so secretEnv can pass SENTRY_DSN as a Docker build arg

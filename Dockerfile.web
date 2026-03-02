@@ -19,6 +19,9 @@ RUN npm ci --ignore-scripts
 # Generate Prisma client inside node_modules
 COPY packages/db/prisma ./packages/db/prisma
 # Only generate JS client (skip Python generator which isn't available in this image)
+# Prisma generate validates DATABASE_URL exists even though it never connects.
+# Provide a dummy value (same pattern as STRIPE_SECRET_KEY in build stage).
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 RUN npx prisma generate --schema=packages/db/prisma/schema.prisma --generator client
 
 # --- Stage 2: Build ---
