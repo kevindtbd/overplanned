@@ -205,13 +205,15 @@ describe("admin proxy route", () => {
     expect(body.error).toMatch(/empty/i);
   });
 
-  it("returns 400 for non-admin scope path", async () => {
+  it("auto-scopes non-admin-prefixed path under /admin/", async () => {
+    // buildPath() always prepends /admin/, so "api/users" → /admin/api/users
     mockValidAdmin();
     const req = makeRequest("GET", "api/users");
     const res = await GET(req, makeParams("api/users"));
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error).toMatch(/scope/i);
+    expect(res.status).toBe(200);
+    // Verify upstream URL was scoped under /admin/
+    const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+    expect(fetchCall[0]).toBe("http://internal:8000/admin/api/users");
   });
 
   it("returns 400 for SSRF characters: @ in path", async () => {
